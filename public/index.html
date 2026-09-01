@@ -32,6 +32,8 @@
   <link rel="preload" href="styles/components.css" as="style" onload="this.onload=null;this.rel='stylesheet'"><noscript><link rel="stylesheet" href="styles/components.css"></noscript>
   <link rel="preload" href="style.css?v=32da237f" as="style" onload="this.onload=null;this.rel='stylesheet'">
   <noscript><link rel="stylesheet" href="style.css?v=32da237f"></noscript>
+  <link rel="preload" href="styles/home.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="styles/home.css"></noscript>
   <link rel="manifest" href="manifest.json">
   <link rel="sitemap" href="sitemap.xml">
 </head>
@@ -49,46 +51,50 @@
     </div>
   </header>
 
-  <main class="app-main">
-    <section class="home-hero">
-      <div>
-        <span class="eyebrow">Community</span>
-        <h1>Stories from friends</h1>
-        <p>See what everyone's up to. Your story starts here.</p>
-        <div class="hero-actions">
-          <button id="heroPostBtn" hidden class="hero-btn" type="button">Create a post <span>+</span></button>
-          <button id="storyPostBtn" hidden class="hero-btn secondary" type="button" aria-label="Create a story">📸 Story</button>
-          <button id="installBtn" hidden class="hero-btn secondary" type="button" aria-label="Install Trio Day">📲 Install app</button>
-          <a id="apkDownloadBtn" class="hero-btn secondary" href="https://github.com/nikhilkumar210h-debug/trio-day-releases/releases/download/v1.1/Trio.Day.apk" target="_blank" rel="noopener" aria-label="Download Trio Day APK" style="text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:6px">📥 Download APK</a>
-        </div>
-        <p style="font-size:12px;color:var(--ink-dim);margin:4px 0 0">Tap <span style="display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;background:var(--primary);color:#fff;font-size:12px;vertical-align:middle">+</span> to create story or post</p>
-      </div>
-      <div class="hero-stories" id="heroStories" aria-label="Friends stories">
-        <!-- Insta-style circles injected by JS; chakra removed -->
-        <div class="hero-stories-empty" id="heroStoriesEmpty">No stories yet — be the first!</div>
-      </div>
+  <main class="app-main nkm-home">
+    <!-- Community Pulse — NKM-specific (compact, no fake data) -->
+    <section id="communityPulse" class="nkm-pulse" aria-label="Community Pulse">
+      <div class="nkm-pulse-card" id="pulseChallenge"><span style="font-size:16px">⚡</span><h3>Today's Challenge</h3><p id="pulseChallengeText">Loading…</p></div>
+      <div class="nkm-pulse-card" id="pulseBuzz"><span style="font-size:16px">💬</span><h3>Community Buzz</h3><p id="pulseBuzzText">No buzz yet — be first to post.</p></div>
+      <div class="nkm-pulse-card" id="pulseCreator"><span style="font-size:16px">🌟</span><h3>Rising Creator</h3><p id="pulseCreatorText">Discover creators in Community.</p></div>
     </section>
 
-    <section class="section-title">
-      <div><span class="eyebrow">Community wall</span>
-        <h2>Latest posts</h2>
-      </div><span class="scroll-hint">newest first</span>
+    <!-- Create Something — single NKM entry (consolidates headerPlus/fab/hero buttons) -->
+    <section id="nkmCreateBar" class="nkm-create-bar" aria-label="Create Something">
+      <div class="nkm-create-avatar" id="nkmCreateAvatar">+</div>
+      <button id="nkmCreateTrigger" class="nkm-create-trigger" type="button">Create Something — post, story, thought…</button>
+      <div class="nkm-create-actions">
+        <button id="nkmCreatePhoto" type="button" title="Photo" aria-label="Create post">📷</button>
+        <button id="nkmCreateStory" type="button" title="Story" aria-label="Create story">✨</button>
+      </div>
     </section>
-    <div id="feedLoading" class="skeleton-stack">
-      <div class="skeleton-card"></div>
-      <div class="skeleton-card"></div>
+    <!-- Stories strip — compact horizontal (preserves heroStories id) -->
+    <section id="storiesStrip" class="nkm-stories-strip" aria-label="Stories">
+      <div id="heroStories" style="display:flex; gap:10px; align-items:center;"></div>
+      <div id="heroStoriesEmpty" class="nkm-pulse-card--empty" style="display:none; padding:10px 14px; font-size:12px; border:1px dashed rgba(148,163,184,.12); border-radius:12px; color:#64748b">No stories yet</div>
+    </section>
+
+    <!-- Feed — 12px gaps, 16:9 compact cards -->
+    <section id="feedSection">
+      <div id="feedLoading" class="skeleton-stack">
+        <div class="skeleton-card"></div>
+        <div class="skeleton-card"></div>
+      </div>
+      <div id="feed" class="feed" aria-live="polite"></div>
+      <div id="feedEmpty" class="empty-state" hidden>
+        <div class="empty-chakra">☸</div>
+        <h3>Nothing here yet</h3>
+        <p>Start the conversation — share a thought, Shayari or moment.</p>
+        <button class="nkm-btn nkm-btn--primary" type="button" data-open-post style="margin-top:8px">Create Something</button>
+      </div>
+      <div id="feedError" class="banner-error" hidden></div>
+    </section>
+    <!-- APK secondary (kept but de-emphasized below feed) -->
+    <div style="display:flex; justify-content:center; padding:8px 0 4px">
+      <a id="apkDownloadBtn" href="https://github.com/nikhilkumar210h-debug/trio-day-releases/releases/download/v1.1/Trio.Day.apk" target="_blank" rel="noopener" style="font-size:12px; color:#64748b; text-decoration:underline">Download APK</a>
+      <button id="installBtn" hidden style="margin-left:12px; font-size:12px; background:none; border:0; color:#6366f1; cursor:pointer">Install app</button>
     </div>
-    <div id="feed" class="feed" aria-live="polite"></div>
-    <div id="feedEmpty" class="empty-state" hidden>
-      <div class="empty-chakra">☸</div>
-      <h3>No posts yet</h3>
-      <p>Be the first person to share something.</p><button class="hero-btn small" type="button" data-open-post>Create a
-        post</button>
-    </div>
-    <div id="feedError" class="banner-error" hidden></div>
   </main>
-
-  <button id="fabBtn" class="fab" type="button" aria-label="Create post">+</button>
 
   <nav class="bottom-nav" aria-label="Primary navigation">
     <div class="nav-row">

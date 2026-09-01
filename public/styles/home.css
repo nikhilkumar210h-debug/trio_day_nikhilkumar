@@ -1,0 +1,79 @@
+/* Home / Feed — NKM Phase 2A (16:9 compact, pulse → create → feed) */
+.nkm-home { max-width: 680px; margin: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+@media (min-width: 1024px) {
+  .nkm-home { max-width: 680px; padding: 20px 16px; }
+  /* Optional contextual rail on desktop — 280px right, only if needed; keep feed centered */
+  .nkm-home.has-rail { max-width: 980px; display: grid; grid-template-columns: 680px 280px; gap: 16px; align-items: start; }
+  .nkm-home.has-rail > #communityPulse { grid-column: 1 / -1; }
+  .nkm-home.has-rail > #nkmCreateBar { grid-column: 1 / 2; }
+  .nkm-home.has-rail > #feedSection { grid-column: 1 / 2; }
+  .nkm-rail-context { display: block; }
+}
+@media (max-width: 1023px) { .nkm-rail-context { display: none; } }
+
+/* ── Pulse ── */
+.nkm-pulse { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+@media (max-width: 600px) { .nkm-pulse { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 4px; scrollbar-width: none; } .nkm-pulse::-webkit-scrollbar { display:none; } .nkm-pulse > .nkm-pulse-card { flex: 0 0 160px; scroll-snap-align: start; } }
+.nkm-pulse-card { background: var(--nkm-surface, #141b2e); border: 1px solid var(--nkm-border, rgba(148,163,184,.12)); border-radius: var(--nkm-radius-md, 16px); padding: 12px; min-height: 88px; display: flex; flex-direction: column; gap: 6px; }
+.nkm-pulse-card h3 { font-size: 13px; font-weight: 700; margin: 0; line-height: 1.2; }
+.nkm-pulse-card p { font-size: 11px; color: #94a3b8; margin: 0; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.nkm-pulse-card .nkm-badge { align-self: flex-start; }
+.nkm-pulse-card--empty { border-style: dashed; justify-content: center; align-items: center; text-align: center; color: #64748b; font-size: 12px; }
+
+/* ── Stories strip (compact horizontal) ── */
+.nkm-stories-strip { display: flex; gap: 10px; overflow-x: auto; padding: 8px 2px; scroll-snap-type: x proximity; scrollbar-width: none; }
+.nkm-stories-strip::-webkit-scrollbar { display:none; }
+.nkm-stories-strip .hero-story-circle { width: 56px; height: 56px; flex: 0 0 56px; border-radius: 50%; padding: 2px; background: linear-gradient(45deg,#feda75,#fa7e1e,#d62976,#962fbf,#4f5bd5); scroll-snap-align: start; cursor: pointer; border:0; }
+.nkm-stories-strip .hero-story-circle-inner { width: 100%; height: 100%; border-radius: 50%; background: #1e293b; display:grid; place-items:center; overflow:hidden; border:2px solid #141b2e; font-weight: 700; color:#fff; font-size:16px; }
+.nkm-stories-strip .hero-story-circle-inner img { width:100%; height:100%; object-fit:cover; display:block; }
+.nkm-stories-strip .hero-story-circle.viewed { opacity:.6; background: rgba(148,163,184,.2); }
+
+/* ── Create Something bar (single entry) ── */
+.nkm-create-bar { display: flex; align-items: center; gap: 10px; background: var(--nkm-surface, #141b2e); border: 1px solid var(--nkm-border, rgba(148,163,184,.12)); border-radius: var(--nkm-radius-md, 16px); padding: 10px 12px; }
+.nkm-create-avatar { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg,#6366f1,#4f46e5); display:grid; place-items:center; color:#fff; font-weight:700; flex:none; font-size:14px; overflow:hidden; }
+.nkm-create-avatar img { width:100%; height:100%; object-fit:cover; display:block; }
+.nkm-create-trigger { flex:1; text-align:left; border:1px solid var(--nkm-border, rgba(148,163,184,.12)); background: rgba(255,255,255,.03); border-radius: 999px; padding: 10px 14px; color:#64748b; font-size:13px; cursor:pointer; }
+.nkm-create-trigger:hover { background: rgba(255,255,255,.06); color:#94a3b8; }
+.nkm-create-actions { display:flex; gap:6px; }
+.nkm-create-actions button { width:36px; height:36px; border-radius:10px; border:1px solid var(--nkm-border, rgba(148,163,184,.12)); background: rgba(255,255,255,.03); color:#94a3b8; display:grid; place-items:center; cursor:pointer; font-size:16px; }
+.nkm-create-actions button:hover { background: rgba(99,102,241,.12); color:#a5b4fc; border-color: rgba(99,102,241,.2); }
+
+/* Hide legacy competing create buttons (consolidated to single bar) */
+#heroPostBtn, #storyPostBtn, #headerPlus, #fabBtn { display: none !important; }
+
+/* ── Feed (12px gaps, 16:9 media) ── */
+#feedSection { display:flex; flex-direction:column; gap:12px; }
+.feed { display:flex; flex-direction:column; gap:12px; }
+.nkm-post { background: var(--nkm-surface, #141b2e); border:1px solid var(--nkm-border, rgba(148,163,184,.12)); border-radius: var(--nkm-radius-md, 16px); overflow:hidden; display:flex; flex-direction:column; }
+.nkm-post-head { display:flex; gap:10px; align-items:center; padding:12px 12px 8px; }
+.nkm-post-avatar { width:36px; height:36px; border-radius:50%; display:grid; place-items:center; overflow:hidden; background: linear-gradient(135deg,#6366f1,#4f46e5); color:#fff; font-weight:700; font-size:14px; flex:none; }
+.nkm-post-avatar img { width:100%; height:100%; object-fit:cover; display:block; }
+.nkm-post-meta { min-width:0; flex:1; }
+.nkm-post-name { font-weight:700; font-size:13px; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.nkm-post-id { font-size:10px; color:#64748b; letter-spacing:.04em; text-transform:uppercase; }
+.nkm-post-time { font-size:10px; color:#475569; }
+.nkm-post-media { background:#0b1220; aspect-ratio: 16 / 9; max-height: 420px; overflow:hidden; position:relative; }
+.nkm-post-media img.media { width:100%; height:100%; object-fit:cover; display:block; aspect-ratio: 16 / 9; }
+.nkm-post-media.text-only { display:grid; place-items:center; padding:20px; aspect-ratio: 16 / 9; }
+.nkm-post-media.text-only .text-only-copy { font-size:16px; line-height:1.4; text-align:center; color:#c7d2fe; background: rgba(99,102,241,.08); border:1px solid rgba(148,163,184,.08); border-radius:12px; padding:14px; max-width:90%; }
+.nkm-post-caption { padding:10px 12px 0; font-size:13px; line-height:1.55; color:#e2e8f0; white-space:pre-wrap; overflow-wrap:anywhere; }
+.nkm-post-actions { display:flex; gap:6px; align-items:center; padding:8px 12px 10px; border-top:1px solid rgba(148,163,184,.08); flex-wrap:wrap; margin-top:8px; }
+.nkm-post-actions .action-btn { min-height:32px; padding:6px 10px; border-radius:999px; border:1px solid rgba(148,163,184,.12); background: rgba(255,255,255,.03); color:#94a3b8; font-size:12px; font-weight:600; gap:6px; }
+.nkm-post-actions .action-btn.liked { background: rgba(236,72,153,.12); color:#f472b6; border-color: rgba(236,72,153,.18); }
+.nkm-post-actions .action-btn:hover { background: rgba(255,255,255,.06); transform:none; }
+.nkm-post-actions .danger-action { margin-left:auto; color:#f87171 !important; border-color: rgba(248,113,113,.18) !important; }
+
+/* Reactions picker re-styled compact */
+.nkm-post .reaction-picker { bottom: calc(100% + 6px); right: 12px; border-radius:12px; padding:6px; gap:4px; display:flex; flex-wrap:wrap; min-width: 200px; max-width: 260px; }
+.nkm-post .reaction-picker[hidden] { display:none !important; }
+
+/* Comments preview compact */
+.nkm-post .comments-preview { margin:0 12px 8px; padding:0; }
+
+/* Skeleton 16:9 reserved */
+.skeleton-stack { display:flex; flex-direction:column; gap:12px; }
+.skeleton-card { height:auto; aspect-ratio:16/9; max-height:220px; border-radius:16px; }
+
+/* Empty state compact */
+.empty-state { padding:24px 16px; text-align:center; }
+.empty-state .empty-chakra { font-size:32px; margin-bottom:8px; }

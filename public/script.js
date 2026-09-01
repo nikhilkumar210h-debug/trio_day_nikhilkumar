@@ -28,9 +28,66 @@ onAuthStateChanged(auth, async user => {
     import('./gamification/reminders.js')
       .then(m => m.runAppOpenReminders(user.uid))
       .catch(() => { });
+    updateCreateAvatar();
+    updateCommunityPulse();
+  } else {
+    updateCreateAvatar();
+    updateCommunityPulse();
   }
   if (feed && cachedPosts.length) render(cachedPosts);
 });
+
+function updateCreateAvatar() {
+  const av = $('nkmCreateAvatar');
+  if (!av) return;
+  const u = currentUser;
+  const name = u?.displayName || u?.email?.split('@')[0] || '+';
+  const photo = u?.photoURL || null;
+  if (photo) av.innerHTML = `<img src="${escapeHtml(photo)}" alt="" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%">`;
+  else av.textContent = initials(name);
+}
+
+async function updateCommunityPulse() {
+  const challengeEl = $('pulseChallengeText');
+  const buzzEl = $('pulseBuzzText');
+  const creatorEl = $('pulseCreatorText');
+  if (!challengeEl && !buzzEl && !creatorEl) return;
+  // Challenge: try cache from communityTasks (no new listener, cache-first)
+  try {
+    const cached = trioCache.get('communityTasks_active');
+    if (challengeEl) {
+      if (cached && cached.length) {
+        const c = cached[0];
+        challengeEl.textContent = `${c.title || 'Community challenge'} · +${c.xpReward||0} XP`;
+        const card = $('pulseChallenge'); if (card) card.style.cursor = 'pointer', card.onclick = () => location.href = `tasks.html`;
+      } else {
+        // Check feed cache for buzz before network
+        challengeEl.textContent = 'No active challenge — create one in Tasks.';
+      }
+    }
+  } catch {}
+  // Buzz: from feed_recent cache (real, no fake)
+  try {
+    if (buzzEl) {
+      const feed = trioCache.get('feed_recent');
+      if (feed && feed.length) buzzEl.textContent = `${feed.length} posts today · ${feed[0]?.message?.slice(0,40) || 'Join the conversation'}${feed.length>1?'…':''}`;
+      else buzzEl.textContent = 'No buzz yet — be first to post.';
+    }
+  } catch {}
+  // Rising creator: from leaderboard cache if available
+  try {
+    if (creatorEl) {
+      const lb = trioCache.get('lb_global') || trioCache.get('leaderboard_global');
+      if (lb && lb.entries && lb.entries[0]) {
+        const top = lb.entries[0];
+        creatorEl.textContent = `🌟 ${top.name || 'Creator'} · Lv ${top.level||1}`;
+        const card = $('pulseCreator'); if (card) card.style.cursor='pointer', card.onclick=()=>location.href=`profile.html?uid=${encodeURIComponent(top.uid)}`;
+      } else {
+        creatorEl.textContent = 'Discover creators in Community.';
+      }
+    }
+  } catch {}
+}
 
 async function ensureUserProfile(user) {
   const ref = doc(db, 'users', user.uid);
@@ -149,6 +206,13 @@ document.addEventListener('keydown', e=>{ if(e.key==='Escape' && !$('createChoos
     if (b.id === 'storyPostBtn') openStoryModal();
     else openCreateChooser();
   }));
+// NKM Create Something — single entry consolidates headerPlus/fab/hero (Phase 2A)
+['nkmCreateTrigger','nkmCreatePhoto','nkmCreateAvatar'].forEach(id => {
+  const el = $(id);
+  if (el) el.addEventListener('click', () => { SoundManager.click(); openCreateChooser(); });
+});
+$('nkmCreateStory')?.addEventListener('click', () => { SoundManager.click(); openStoryModal(); });
+document.querySelectorAll('[data-open-post]').forEach(b => b?.addEventListener('click', () => { SoundManager.click(); openCreateChooser(); }));
 $('modalClose')?.addEventListener('click', closeModal);
 $('cancelBtn')?.addEventListener('click', closeModal);
 overlay?.addEventListener('click', e => { if (e.target === overlay) closeModal(); });
@@ -548,15 +612,15 @@ storyForm?.addEventListener('submit', async e => {
 
 function buildFeedItem(data) {
   const postId = data._id;
-  const item = document.createElement('article'); item.className = 'feed-item'; item.dataset.postId = postId;
-  const head = document.createElement('div'); head.className = 'feed-post-head';
-  const av = document.createElement('div'); av.className = 'feed-avatar';
-  if (data.photoURL) { const img = document.createElement('img'); img.src = data.photoURL; img.alt = ''; img.width = 44; img.height = 44; img.decoding = 'async'; img.loading = 'lazy'; av.appendChild(img); } else av.textContent = initials(data.name);
-  const identity = document.createElement('div'); identity.className = 'feed-identity';
-  const name = document.createElement('div'); name.className = 'pname'; name.textContent = data.name || 'User'; name.title = 'Open profile';
+  const item = document.createElement('article'); item.className = 'feed-item nkm-post'; item.dataset.postId = postId;
+  const head = document.createElement('div'); head.className = 'feed-post-head nkm-post-head';
+  const av = document.createElement('div'); av.className = 'feed-avatar nkm-post-avatar';
+  if (data.photoURL) { const img = document.createElement('img'); img.src = data.photoURL; img.alt = ''; img.width = 36; img.height = 36; img.decoding = 'async'; img.loading = 'lazy'; av.appendChild(img); } else av.textContent = initials(data.name);
+  const identity = document.createElement('div'); identity.className = 'feed-identity nkm-post-meta';
+  const name = document.createElement('div'); name.className = 'pname nkm-post-name'; name.textContent = data.name || 'User'; name.title = 'Open profile';
   name.addEventListener('click', () => data.uid && (location.href = `profile.html?uid=${encodeURIComponent(data.uid)}`));
-  const uid = document.createElement('div'); uid.className = 'puid'; uid.textContent = data.userId || '';
-  const time = document.createElement('div'); time.className = 'ptime'; time.textContent = formatTime(data);
+  const uid = document.createElement('div'); uid.className = 'puid nkm-post-id'; uid.textContent = data.userId || '';
+  const time = document.createElement('div'); time.className = 'ptime nkm-post-time'; time.textContent = formatTime(data);
   identity.append(name, uid, time); head.append(av, identity);
 
   if (data.uid) {
@@ -572,11 +636,10 @@ function buildFeedItem(data) {
     }).catch(() => { });
   }
 
-  const mediaWrap = document.createElement('div'); mediaWrap.className = 'feed-media';
+  const mediaWrap = document.createElement('div'); mediaWrap.className = 'feed-media nkm-post-media';
   if (data.mediaUrl) {
-    const img = document.createElement('img'); img.className = 'media'; img.loading = 'lazy'; img.decoding = 'async'; img.src = data.mediaUrl; img.alt = `Photo from ${data.name || 'User'}`; img.width = 800; img.height = 600;
-    // CLS FIX: explicit width/height + aspect-ratio via CSS prevents layout shift before image loads
-    img.style.aspectRatio = '4 / 3';
+    const img = document.createElement('img'); img.className = 'media'; img.loading = 'lazy'; img.decoding = 'async'; img.src = data.mediaUrl; img.alt = `Photo from ${data.name || 'User'}`; img.width = 800; img.height = 450;
+    img.style.aspectRatio = '16 / 9';
     mediaWrap.appendChild(img);
   } else {
     mediaWrap.classList.add('text-only-media');
@@ -584,8 +647,8 @@ function buildFeedItem(data) {
     mediaWrap.appendChild(quote);
   }
 
-  const content = document.createElement('div'); content.className = 'feed-content-panel'; content.appendChild(head);
-  if (data.message) { const cap = document.createElement('p'); cap.className = 'feed-caption'; cap.textContent = data.message; content.appendChild(cap); }
+  const content = document.createElement('div'); content.className = 'feed-content-panel nkm-post-content'; content.appendChild(head);
+  if (data.message) { const cap = document.createElement('p'); cap.className = 'feed-caption nkm-post-caption'; cap.textContent = data.message; content.appendChild(cap); }
 
   const commentsPreview = document.createElement('div'); commentsPreview.className = 'comments-preview';
   content.appendChild(commentsPreview);
@@ -605,7 +668,7 @@ function buildFeedItem(data) {
       () => { commentsPreview.innerHTML = ''; });
   } catch (e) { }
 
-  const actions = document.createElement('div'); actions.className = 'post-actions';
+  const actions = document.createElement('div'); actions.className = 'post-actions nkm-post-actions';
   const reacts = ['❤️', '😂', '😍', '🔥', '💯', '🎉'];
   const reactWrap = document.createElement('div'); reactWrap.className = 'react-wrap'; reactWrap.style.position='relative';
   const reactBtn = document.createElement('button'); reactBtn.className='action-btn react-btn'; reactBtn.type='button';
@@ -1004,6 +1067,7 @@ function render(posts) {
   if (!postsToRender.length && stories.length === 0) { if (feedEmpty) feedEmpty.hidden = false; return; }
   if (feedEmpty) feedEmpty.hidden = true;
   postsToRender.forEach(p => feed.appendChild(buildFeedItem(p)));
+  try { updateCommunityPulse(); } catch {}
 }
 
 if (feed) {
