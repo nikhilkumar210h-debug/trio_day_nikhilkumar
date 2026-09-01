@@ -12,6 +12,13 @@
   <link rel="preload" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
   <noscript><link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
   <style>:root{--primary:#6366f1;--primary-strong:#4f46e5;--bg:#0a0f1a;--surface:#141b2e;--surface-strong:#1e293b;--ink:#f1f5f9;--ink-muted:#94a3b8;--border:rgba(148,163,184,.12);--r-md:14px;--r-lg:18px}*{box-sizing:border-box}html{scroll-behavior:smooth}body.auth-body{margin:0;min-height:100vh;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;padding:32px 16px 40px}.tricolor-strip{height:3px;display:flex;position:fixed;inset:0 0 auto;z-index:200;width:100%}.tricolor-strip span{flex:1}.tricolor-strip span:nth-child(1){background:linear-gradient(90deg,#ff9933,#ff7700)}.tricolor-strip span:nth-child(2){background:#fff}.tricolor-strip span:nth-child(3){background:linear-gradient(90deg,#128807,#0a6305)}.auth-wrap{width:min(420px,100%);margin-top:48px;display:flex;flex-direction:column;gap:20px}.auth-brand{display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit}.brand-chakra{width:40px;height:40px;display:grid;place-items:center;border-radius:10px;background:rgba(99,102,241,.12);color:#6366f1;border:1px solid var(--border)}.brand-copy strong{font-family:'Baloo 2',sans-serif;font-size:1.25rem}.auth-card{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:24px;box-shadow:0 8px 24px rgba(0,0,0,.3);width:100%}.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid var(--border);border-radius:12px;padding:10px 16px;font-weight:600;background:rgba(255,255,255,.04);color:var(--ink);cursor:pointer}.btn.primary{background:linear-gradient(135deg,var(--primary),var(--primary-strong));border:0;color:#fff;box-shadow:0 4px 16px rgba(99,102,241,.35);width:100%}.google-btn{width:100%;background:#fff;color:#111;border:0}.field{display:block;margin-top:16px}.label-text{display:block;font-size:.7rem;color:var(--ink-muted);margin-bottom:6px;font-weight:600;letter-spacing:.05em;text-transform:uppercase}.field input{width:100%;border:1px solid var(--border);background:rgba(255,255,255,.04);border-radius:12px;color:var(--ink);padding:12px;outline:0}.auth-divider{display:flex;align-items:center;gap:12px;margin:16px 0;color:var(--ink-muted);font-size:.8rem}.auth-divider::before,.auth-divider::after{content:'';flex:1;height:1px;background:var(--border)}.link-btn{border:0;background:none;color:var(--ink-muted);font-size:.85rem;margin:12px auto 0;display:block;cursor:pointer}</style>
+  <link rel="preload" href="styles/tokens.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="styles/tokens.css"></noscript>
+  <link rel="preload" href="styles/skeleton.css" as="style" onload="this.onload=null;this.rel='stylesheet'"><noscript><link rel="stylesheet" href="styles/skeleton.css"></noscript>
+  <link rel="preload" href="styles/sheet.css" as="style" onload="this.onload=null;this.rel='stylesheet'"><noscript><link rel="stylesheet" href="styles/sheet.css"></noscript>
+  <link rel="preload" href="styles/nav.css" as="style" onload="this.onload=null;this.rel='stylesheet'"><noscript><link rel="stylesheet" href="styles/nav.css"></noscript>
+  <link rel="preload" href="styles/header.css" as="style" onload="this.onload=null;this.rel='stylesheet'"><noscript><link rel="stylesheet" href="styles/header.css"></noscript>
+  <link rel="preload" href="styles/components.css" as="style" onload="this.onload=null;this.rel='stylesheet'"><noscript><link rel="stylesheet" href="styles/components.css"></noscript>
   <link rel="preload" href="style.css?v=32da237f" as="style" onload="this.onload=null;this.rel='stylesheet'">
   <noscript><link rel="stylesheet" href="style.css?v=32da237f"></noscript>
   <link rel="icon"
@@ -63,6 +70,9 @@
   </main>
 
   <script type="module" src="auth.js"></script>
+  <script type="module" src="ui/header.js"></script>
+  <script type="module" src="ui/nav.js"></script>
+  <script type="module" src="ui/sheet.js"></script>
 </body>
 
 </html>

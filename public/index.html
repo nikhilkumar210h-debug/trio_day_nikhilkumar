@@ -23,6 +23,13 @@
   <link rel="preload" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
   <noscript><link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet"></noscript>
   <style>:root{--primary:#6366f1;--primary-strong:#4f46e5;--bg:#0a0f1a;--surface:#141b2e;--ink:#f1f5f9;--ink-muted:#94a3b8;--border:rgba(148,163,184,.12);--r-lg:18px;--r-xl:24px}*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif}.tricolor-strip{height:3px;display:flex;position:fixed;inset:0 0 auto;z-index:200}.tricolor-strip span{flex:1}.tricolor-strip span:nth-child(1){background:linear-gradient(90deg,#ff9933,#ff7700)}.tricolor-strip span:nth-child(2){background:#fff}.tricolor-strip span:nth-child(3){background:linear-gradient(90deg,#128807,#0a6305)}.topbar{position:sticky;top:3px;z-index:100;background:rgba(17,24,39,.9);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}.topbar-inner{max-width:1200px;margin:auto;min-height:64px;padding:0 16px;display:flex;align-items:center;justify-content:space-between}.app-main{width:min(1000px,100%);margin:auto;padding:20px 16px}.home-hero{display:grid;grid-template-columns:1.3fr .7fr;gap:20px;background:linear-gradient(135deg,rgba(99,102,241,.12),#111827);border:1px solid var(--border);border-radius:24px;padding:24px}.skeleton-card{height:180px;border:1px solid var(--border);border-radius:18px;background:linear-gradient(90deg,rgba(255,255,255,.04) 0%,rgba(255,255,255,.08) 50%,rgba(255,255,255,.04) 100%);background-size:200% 100%}</style>
+  <link rel="preload" href="styles/tokens.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="styles/tokens.css"></noscript>
+  <link rel="preload" href="styles/skeleton.css" as="style" onload="this.onload=null;this.rel='stylesheet'"><noscript><link rel="stylesheet" href="styles/skeleton.css"></noscript>
+  <link rel="preload" href="styles/sheet.css" as="style" onload="this.onload=null;this.rel='stylesheet'"><noscript><link rel="stylesheet" href="styles/sheet.css"></noscript>
+  <link rel="preload" href="styles/nav.css" as="style" onload="this.onload=null;this.rel='stylesheet'"><noscript><link rel="stylesheet" href="styles/nav.css"></noscript>
+  <link rel="preload" href="styles/header.css" as="style" onload="this.onload=null;this.rel='stylesheet'"><noscript><link rel="stylesheet" href="styles/header.css"></noscript>
+  <link rel="preload" href="styles/components.css" as="style" onload="this.onload=null;this.rel='stylesheet'"><noscript><link rel="stylesheet" href="styles/components.css"></noscript>
   <link rel="preload" href="style.css?v=32da237f" as="style" onload="this.onload=null;this.rel='stylesheet'">
   <noscript><link rel="stylesheet" href="style.css?v=32da237f"></noscript>
   <link rel="manifest" href="manifest.json">
@@ -292,6 +299,9 @@
       });
     }
   </script>
+  <script type="module" src="ui/header.js"></script>
+  <script type="module" src="ui/nav.js"></script>
+  <script type="module" src="ui/sheet.js"></script>
 </body>
 
 </html>

@@ -1,0 +1,27 @@
+/* NKM Header — 48-56px compact, responsive (Phase 1 foundation)
+   Works with existing .topbar markup — only adjusts sizing/spacing.
+   Desktop: branding + search + notification + account
+   Mobile: branding + search-icon + notification + account
+*/
+.topbar { min-height: 48px; height: 48px; }
+.topbar-inner { min-height: 48px; height: 48px; padding: 0 12px; gap: 12px; }
+@media (min-width: 840px) {
+  .topbar { height: 56px; min-height: 56px; }
+  .topbar-inner { height: 56px; min-height: 56px; padding: 0 16px; gap: 16px; max-width: 1280px; }
+}
+.brand-chakra { width: 32px; height: 32px; border-radius: 10px; font-size: 16px; }
+@media (min-width: 840px) { .brand-chakra { width: 36px; height: 36px; } }
+.brand strong { font-size: 15px; }
+.brand small { font-size: 10px; letter-spacing: .08em; }
+.topbar-actions { gap: 8px; min-width: 0; }
+.auth-status { min-width: 44px; }
+.header-plus { width: 36px; height: 36px; border-radius: 10px; font-size: 18px; }
+/* Search slot in header — hidden on mobile until sheet */
+.nkm-header-search { flex: 1; max-width: 420px; min-width: 0; display: none; }
+@media (min-width: 840px) { .nkm-header-search { display: block; } }
+.nkm-header-search .nkm-search { height: 36px; font-size: 13px; }
+.nkm-header-search-btn { width: 36px; height: 36px; border: 1px solid var(--nkm-border, rgba(148,163,184,.12)); background: rgba(255,255,255,.04); border-radius: 10px; color: #94a3b8; display: grid; place-items: center; cursor: pointer; }
+@media (min-width: 840px) { .nkm-header-search-btn { display: none; } }
+/* Keep header above content but below sheets (200+ ) */
+.topbar { z-index: 60; }
+.tricolor-strip { z-index: 61; }

@@ -1,0 +1,8 @@
+/* NKM Skeleton — compact reusable (Phase 1) */
+.nkm-skeleton-stack { display: flex; flex-direction: column; gap: 12px; }
+.nkm-skeleton-card { height: 88px; border: 1px solid rgba(148,163,184,.10); border-radius: 16px; background: rgba(255,255,255,.03); position: relative; overflow: hidden; }
+.nkm-skeleton-card--sm { height: 56px; border-radius: 12px; }
+.nkm-skeleton-card::after { content:""; position:absolute; inset:0; background: linear-gradient(90deg,transparent 0%,rgba(255,255,255,.06) 50%,transparent 100%); transform: translateX(-100%); animation: nkm-shimmer 1.6s infinite; }
+.nkm-empty { text-align: center; padding: 32px 16px; color: #94a3b8; }
+.nkm-empty h3 { font-size: 15px; color: #f1f5f9; margin: 0 0 6px; }
+.nkm-empty p { font-size: 13px; margin: 0 0 12px; }
