@@ -10,7 +10,7 @@ import {
   doc, getDoc, setDoc, deleteDoc, query, orderBy,
   getDocs, limit
 } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
-import { makeUserId, escapeHtml, initials, formatTime } from './utils.js';
+import { makeUserId, escapeHtml, initials, formatTime, getFilterCSS } from './utils.js';
 
 const $ = id => document.getElementById(id);
 let currentUser = null;
@@ -158,18 +158,7 @@ $('storyCancelBtn')?.addEventListener('click', closeStoryModal);
 storyOverlay?.addEventListener('click', e => { if (e.target === storyOverlay) closeStoryModal(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && !storyOverlay.hidden) closeStoryModal(); });
 
-// Post photo filters
-function getFilterCSS(filter, intensity) {
-  switch (filter) {
-    case 'vivid': return `saturate(${(1 + intensity) * 100}%) contrast(${(1 + intensity * 0.2) * 100}%)`;
-    case 'warm': return `sepia(${(0.3 + intensity * 0.3) * 100}%) saturate(${(1 + intensity * 0.5) * 100}%)`;
-    case 'cool': return `saturate(${(1 - intensity * 0.3) * 100}%) hue-rotate(${-10 * intensity}deg) contrast(${(1 + intensity * 0.1) * 100}%)`;
-    case 'bw': return `grayscale(${(0.8 + intensity * 0.2) * 100}%) brightness(${(1 - intensity * 0.2) * 100}%) contrast(${(1 + intensity * 0.3) * 100}%)`;
-    case 'retro': return `sepia(${(0.4 + intensity * 0.3) * 100}%) saturate(${(1 + intensity * 0.3) * 100}%) brightness(${(1 - intensity * 0.1) * 100}%) contrast(${(1 + intensity * 0.2) * 100}%)`;
-    case 'cinematic': return `saturate(${(1 - intensity * 0.3) * 100}%) contrast(${(1 + intensity * 0.4) * 100}%) brightness(${(1 - intensity * 0.1) * 100}%) hue-rotate(${-5 * intensity}deg)`;
-    default: return 'none';
-  }
-}
+
 function applyPostFilter() {
   const img = preview?.querySelector('img');
   if (img) img.style.filter = getFilterCSS(postFilter, postFilterIntensity);
@@ -1018,9 +1007,15 @@ function render(posts) {
 }
 
 if (feed) {
-  onSnapshot(collection(db, 'posts'), snap => {
+  // Phase 0: limit + orderBy to cut reads (was full collection scan). Cache-first render uses trio-cache feed_recent if available.
+  const cachedFeed = trioCache.get('feed_recent');
+  if (cachedFeed && cachedFeed.length) render(cachedFeed);
+  const feedQuery = query(collection(db, 'posts'), orderBy('createdAtMs', 'desc'), limit(20));
+  onSnapshot(feedQuery, snap => {
     const posts = [];
-    snap.forEach(d => { const p = d.data(); if (p.type !== 'reel') posts.push({ ...p, _id: d.id }); });
+    snap.forEach(d => { const p = d.data(); posts.push({ ...p, _id: d.id }); });
+    // Keep client filter for isStory/stories separation already in render()
+    trioCache.set('feed_recent', posts, trioCache.TTL.SHORT);
     if (feedError) feedError.hidden = true;
     render(posts);
   }, err => {

@@ -10,7 +10,6 @@ onAuthStateChanged(auth,async user=>{
     const snap=await getDoc(doc(db,'posts',postId));
     if(!snap.exists()){box.textContent='Post not found.';return}
     const item={...snap.data(),_id:snap.id};
-    if(item.type==='reel'){box.textContent='This post type is no longer supported.';return}
     if(window.buildFeedItem)box.appendChild(window.buildFeedItem(item));else box.textContent=item.message||'';
   }catch(err){console.error(err);box.textContent='Could not load this post.'}
 });

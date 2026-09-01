@@ -8,6 +8,7 @@ import {
 } from './gamification/community-tasks.js';
 import { isAdmin } from './gamification/templates.js';
 import { trioCache } from './trio-cache.js';
+import { escapeHtml as esc } from './utils.js';
 
 const $ = id => document.getElementById(id);
 const params = new URLSearchParams(location.search);
@@ -16,10 +17,6 @@ let me = null;
 let profile = null;
 let task = null;
 let admin = false;
-
-function esc(s) {
-  return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-}
 
 async function followCreator(creatorUid) {
   if (!me || !creatorUid || me.uid === creatorUid) return;

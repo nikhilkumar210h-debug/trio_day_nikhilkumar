@@ -1,5 +1,7 @@
 import { auth, db } from './firebase-init.js';
 import { trioCache } from './trio-cache.js';
+import { chatId } from './utils.js';
+import { notificationText } from './services/notificationHelpers.js';
 import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
 import {
   collection, doc, getDoc, onSnapshot,
@@ -23,26 +25,7 @@ function showAlert(title, body) {
     new Notification(title, { body });
 }
 
-function chatId(a, b) { return [a, b].sort().join('_'); }
 
-function notificationText(notification) {
-  const who = notification.actorName || 'Someone';
-  if (notification.title && ['badge_earned', 'task_reminder', 'challenge_reminder', 'streak_warning', 'task_complete'].includes(notification.type)) {
-    return notification.title + (notification.text ? ` — ${notification.text}` : '');
-  }
-  return {
-    like: `${who} liked your post`,
-    comment: `${who} commented on your post`,
-    share: `${who} shared your post`,
-    connect: `${who} connected with you`,
-    message: `${who}: ${notification.text || 'New message'}`,
-    badge_earned: notification.title || 'New badge unlocked!',
-    task_reminder: notification.title || 'Daily tasks waiting',
-    challenge_reminder: notification.title || 'Challenge reminder',
-    streak_warning: notification.title || 'Streak at risk!',
-    task_complete: notification.title || 'Task completed'
-  }[notification.type] || `${who} sent you an update`;
-}
 
 function renderNotificationRows(container, alerts, user) {
   container.innerHTML = '';

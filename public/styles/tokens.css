@@ -1,0 +1,105 @@
+/* NKM India — Design Tokens (Phase 0 Foundation)
+   Establishes spacing, typography, radii, surfaces, control heights,
+   breakpoints, and base patterns for later redesign.
+   No page layouts are changed here — only variables + base classes.
+   Reuses existing palette; no new brand colors yet.
+*/
+:root {
+  /* ── Spacing (8px scale, per master plan §5/E) ── */
+  --nkm-space-1: 4px;
+  --nkm-space-2: 8px;
+  --nkm-space-3: 12px;
+  --nkm-space-4: 16px;
+  --nkm-space-5: 20px;
+  --nkm-space-6: 24px;
+  --nkm-space-8: 32px;
+  --nkm-space-10: 40px;
+  --nkm-space-12: 48px;
+  --nkm-gutter-mobile: 16px;
+  --nkm-gutter-desktop: 24px;
+  --nkm-content-max: 1024px;
+
+  /* ── Typography (Inter + Space Grotesk + Baloo 2 festive) ── */
+  --nkm-font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --nkm-font-display: 'Space Grotesk', Inter, system-ui, sans-serif;
+  --nkm-text-xs: 11px;
+  --nkm-text-sm: 13px;
+  --nkm-text-base: 15px;
+  --nkm-text-lg: 17px;
+  --nkm-text-xl: 20px;
+  --nkm-text-2xl: 24px;
+  --nkm-text-3xl: 30px;
+  --nkm-leading-body: 1.5;
+  --nkm-leading-heading: 1.15;
+
+  /* ── Radii ── */
+  --nkm-radius-xs: 8px;
+  --nkm-radius-sm: 12px;
+  --nkm-radius-md: 16px;
+  --nkm-radius-lg: 20px;
+  --nkm-radius-xl: 24px;
+  --nkm-radius-pill: 9999px;
+
+  /* ── Control heights ── */
+  --nkm-control-sm: 36px;
+  --nkm-control-md: 44px;
+  --nkm-control-lg: 52px;
+  --nkm-input-h: 44px;
+  --nkm-search-h: 40px;
+  --nkm-tab-h: 32px;
+  --nkm-chip-h: 28px;
+
+  /* ── Avatar sizes ── */
+  --nkm-avatar-xs: 24px;
+  --nkm-avatar-sm: 32px;
+  --nkm-avatar-md: 40px;
+  --nkm-avatar-lg: 48px;
+  --nkm-avatar-xl: 72px;
+
+  /* ── Surfaces (reuse current dark palette — no new colors) ── */
+  --nkm-bg: #0a0f1a;
+  --nkm-elevated: #111827;
+  --nkm-surface: #141b2e;
+  --nkm-strong: #1e293b;
+  --nkm-border: rgba(148,163,184,0.12);
+  --nkm-border-strong: rgba(148,163,184,0.2);
+
+  /* ── Breakpoints (for reference in JS matchMedia) ── */
+  --nkm-bp-sm: 360px;
+  --nkm-bp-md: 600px;
+  --nkm-bp-lg: 840px;
+  --nkm-bp-xl: 1024px;
+  --nkm-bp-2xl: 1280px;
+}
+
+/* ── Base button pattern (compact) — .nkm-btn ── */
+.nkm-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: var(--nkm-control-md);
+  padding: 0 16px;
+  border-radius: var(--nkm-radius-sm);
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 1;
+  border: 1px solid var(--nkm-border);
+  background: rgba(255,255,255,0.04);
+  color: var(--ink, #f1f5f9);
+  cursor: pointer;
+}
+.nkm-btn--primary {
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  border: 0;
+  color: #fff;
+}
+.nkm-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+/* ── Base card pattern — .nkm-card ── */
+.nkm-card {
+  background: var(--nkm-surface);
+  border: 1px solid var(--nkm-border);
+  border-radius: var(--nkm-radius-md);
+  padding: 16px;
+}

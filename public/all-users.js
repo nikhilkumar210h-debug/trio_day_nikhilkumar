@@ -1,6 +1,7 @@
 import { auth, db } from './firebase-init.js';
 import { notifyUser } from './notifications.js';
 import { trioCache } from './trio-cache.js';
+import { escapeHtml as esc, avatarHtml } from './utils.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
 import {
   collection, getDocs, doc, getDoc,
@@ -10,15 +11,7 @@ import {
 const $ = id => document.getElementById(id);
 let me = null, users = [];
 
-const esc = s => String(s ?? '').replace(/[&<>"']/g, c =>
-  ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-const avatarHtml = u => {
-  const photo = u.photoURL || u.photoUrl || u.avatarURL || u.avatarUrl;
-  return photo
-    ? `<img src="${esc(photo)}" alt="${esc(u.name || 'User')}'s profile photo" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null;this.style.display='none';this.parentElement.textContent=(this.alt||'U').charAt(0).toUpperCase();this.parentElement.style.display='grid';this.parentElement.style.placeItems='center';">`
-    : (u.name || 'U').charAt(0).toUpperCase();
-};
 
 // ── Cached connection state ──────────────────────────────────────────────────
 async function getConnState(theirUid) {

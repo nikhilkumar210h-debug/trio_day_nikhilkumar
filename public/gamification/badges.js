@@ -5,6 +5,7 @@ import { SYSTEM_BADGES } from './constants.js';
 import { trioCache } from '../trio-cache.js';
 import { pushSelfNotification } from './notify-self.js';
 import { workerPost } from './worker-config.js';
+import { escapeHtml as escapeAttr } from '../utils.js';
 
 /**
  * Ensure the badge catalog exists in Firestore (read-only seeding, client-safe).
@@ -92,8 +93,4 @@ export function renderBadgesHtml(badges = []) {
   ).join('')}</div>`;
 }
 
-function escapeAttr(s) {
-  return String(s ?? '').replace(/[&<>"']/g, c => (
-    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
-  ));
-}
+

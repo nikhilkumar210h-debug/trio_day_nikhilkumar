@@ -9,6 +9,7 @@ import { progressRingHtml } from './ui/achievements.js';
 import { runAppOpenReminders } from './gamification/reminders.js';
 import { ensureBadgeCatalog } from './gamification/badges.js';
 import { listActiveTemplates } from './gamification/templates.js';
+import { escapeHtml as esc } from './utils.js';
 
 const $ = id => document.getElementById(id);
 const listEl = $('taskList');
@@ -20,10 +21,6 @@ function setStatus(t = '', err = false) {
   if (!statusEl) return;
   statusEl.textContent = t || 'Keep at it! You got this! 💪';
   statusEl.classList.toggle('error', err);
-}
-
-function esc(s) {
-  return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
 function applyThemeToggle() {

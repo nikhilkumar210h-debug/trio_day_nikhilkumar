@@ -7,36 +7,12 @@ import {
   setChallengeFeatured, setChallengeHidden, removeChallenge
 } from './gamification/community-tasks.js';
 import { trioCache } from './trio-cache.js';
+import { escapeHtml as esc } from './utils.js';
+import { showToast } from './ui/toast.js';
 
 const $ = id => document.getElementById(id);
 
-function esc(s) {
-  return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-}
 
-// ── Toast ────────────────────────────────────────────────────────────────────
-function showToast(message, type = 'success') {
-  document.getElementById('trioToast')?.remove();
-  const toast = document.createElement('div');
-  toast.id = 'trioToast';
-  toast.setAttribute('role', 'status');
-  toast.style.cssText = `
-    position:fixed;bottom:calc(env(safe-area-inset-bottom,0px) + 5rem);
-    left:50%;transform:translateX(-50%);
-    background:${type === 'error' ? '#c0392b' : type === 'warn' ? '#d4821a' : '#138843'};
-    color:#fff;padding:0.75rem 1.35rem;border-radius:2rem;font-size:0.95rem;
-    font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,0.4);z-index:9999;
-    white-space:nowrap;max-width:calc(100vw - 2rem);text-align:center;
-    animation:trioToastIn 0.25s ease;`;
-  toast.textContent = message;
-  if (!document.getElementById('trioToastStyle')) {
-    const s = document.createElement('style'); s.id = 'trioToastStyle';
-    s.textContent = '@keyframes trioToastIn{from{opacity:0;transform:translateX(-50%) translateY(12px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}';
-    document.head.appendChild(s);
-  }
-  document.body.appendChild(toast);
-  setTimeout(() => toast?.remove(), type === 'success' ? 2800 : 5000);
-}
 
 async function loadList() {
   // Admins see hidden challenges too

@@ -48,30 +48,8 @@ const SYSTEM_BADGES = [
   { id: 'badge_engager',        name: 'Community Voice',  icon: '🗣️' }
 ];
 
-// ─── CORS ─────────────────────────────────────────────────────────────────────
-
-function isAllowedOrigin(origin) {
-  if (!origin) return false;
-  return ALLOWED_ORIGINS.some(o => origin === o || origin.startsWith(o + ':'));
-}
-
-function corsHeaders(origin) {
-  const allow = isAllowedOrigin(origin) ? origin : ALLOWED_ORIGINS[0];
-  return {
-    'Access-Control-Allow-Origin': allow,
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    'Access-Control-Max-Age': '86400',
-    Vary: 'Origin'
-  };
-}
-
-function json(data, status, origin) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: { 'Content-Type': 'application/json; charset=utf-8', ...corsHeaders(origin || '') }
-  });
-}
+// ─── CORS (shared — see workers/shared/cors.js for single source)
+import { corsHeaders, json, isAllowedOrigin } from "./shared/cors.js";
 
 // ─── Period key helpers (matches gamification/constants.js) ───────────────────
 

@@ -2,14 +2,11 @@ import { auth, db } from './firebase-init.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
 import { collection, getDocs } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 import { getLeaderboard, currentBoardIds, friendsLeaderboard } from './gamification/leaderboards.js';
+import { escapeHtml as esc } from './utils.js';
 
 const $ = id => document.getElementById(id);
 let me = null;
 let board = 'global';
-
-function esc(s) {
-  return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-}
 
 function renderRows(entries, unit = 'XP') {
   const list = $('lbList');

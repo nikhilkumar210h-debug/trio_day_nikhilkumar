@@ -1,10 +1,11 @@
 import { auth, db } from './firebase-init.js';
 import { trioCache } from './trio-cache.js';
 import { SoundManager } from './sound-manager.js';
+import { escapeHtml as esc, avatarHtml, nameOf, timeOf, chatId } from './utils.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
 import {
   collection, addDoc, onSnapshot, query, orderBy,
-  getDocs, doc, deleteDoc
+  getDocs, doc, deleteDoc, limit
 } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 
 const $ = id => document.getElementById(id);
@@ -15,12 +16,6 @@ let groupUnsub = null;
 const conversations = new Map();
 const params = new URLSearchParams(location.search);
 
-const esc = s => String(s ?? '').replace(/[&<>"']/g, c =>
-  ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const nameOf = u => u?.name || u?.email?.split('@')[0] || 'User';
-const timeOf = ms => ms ? new Date(ms).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }) : '';
-function avatarHtml(u) { return u?.photoURL ? `<img src="${esc(u.photoURL)}" alt="">` : esc(nameOf(u).charAt(0).toUpperCase()); }
-function chatId(a, b) { return [a, b].sort().join('_'); }
 function previewText(m) { if (!m) return ''; if (m.replyToStoryId) return '↩️ Story reply: ' + String(m.text || '').replace(/\s+/g,' ').slice(0,40); if (m.sharedPostId) return '📎 Shared a post'; return String(m.text || '').replace(/\s+/g, ' ').trim(); }
 function chatSeenKey(uid) { return `trio_chat_seen_${uid}`; }
 function getChatSeenMap(uid) { try { return JSON.parse(localStorage.getItem(chatSeenKey(uid)) || '{}'); } catch { return {}; } }
@@ -75,7 +70,7 @@ function watchInbox() {
   clearInboxListeners(); conversations.clear();
   renderInbox($('userSearch')?.value || '');
   users.filter(u => u.uid && u.uid !== currentUser.uid).forEach(peer => {
-    const messages = query(collection(db, 'privateChats', chatId(currentUser.uid, peer.uid), 'messages'), orderBy('createdAtMs', 'desc'));
+    const messages = query(collection(db, 'privateChats', chatId(currentUser.uid, peer.uid), 'messages'), orderBy('createdAtMs', 'desc'), limit(1));
     const unsub = onSnapshot(messages, snap => {
       const latestDoc = snap.docs[0];
       if (!latestDoc) { conversations.delete(peer.uid); renderInbox($('userSearch')?.value || ''); return; }

@@ -1,6 +1,6 @@
 /* Offline cache + efficient cache lifetimes (95 KiB savings fix). OneSignal SW lives under push/onesignal/. */
-const CACHE_NAME = "trio-day-cache-v15";
-const STATIC_CACHE = "trio-static-v15";
+const CACHE_NAME = "trio-day-cache-v16";
+const STATIC_CACHE = "trio-static-v16";
 const BASE = "/";
 const FILES_TO_CACHE = [
   BASE,
@@ -11,10 +11,13 @@ const FILES_TO_CACHE = [
   BASE + "all-users.html",
   BASE + "private-chat.html",
   BASE + "view_post.html",
+  BASE + "tasks.html",
+  BASE + "leaderboard.html",
   BASE + "style.css",
   BASE + "chat.css",
   BASE + "private-chat.css",
   BASE + "ui/tasks.css",
+  BASE + "styles/tokens.css",
   BASE + "script.js",
   BASE + "profile.js",
   BASE + "chat.js",
@@ -24,12 +27,17 @@ const FILES_TO_CACHE = [
   BASE + "auth-guard.js",
   BASE + "all-users.js",
   BASE + "utils.js",
+  BASE + "trio-cache.js",
   BASE + "install-prompt.js",
   BASE + "firebase-init.js",
+  BASE + "firebase-config.js",
   BASE + "image-upload.js",
   BASE + "onesignal.js",
   BASE + "notifications.js",
   BASE + "view_post.js",
+  BASE + "ui/toast.js",
+  BASE + "services/userCache.js",
+  BASE + "services/notificationHelpers.js",
   BASE + "manifest.json",
   BASE + "icons/icon-192.png",
   BASE + "icons/icon-512.png"

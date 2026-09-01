@@ -1,6 +1,7 @@
 import { auth, db } from './firebase-init.js';
 import { notifyUser } from './notifications.js';
 import { SoundManager } from './sound-manager.js';
+import { escapeHtml as esc, avatarHtml, nameOf, timeOf, chatId } from './utils.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
 import {
   collection, addDoc, onSnapshot, query, orderBy,
@@ -14,18 +15,7 @@ let privateUnsub = null;
 const params = new URLSearchParams(location.search);
 const peerUid = params.get('uid');
 
-const esc = s => String(s ?? '').replace(/[&<>"']/g, c =>
-  ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const nameOf = u => u?.name || u?.email?.split('@')[0] || 'User';
-const timeOf = ms => ms ? new Date(ms).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }) : '';
 
-function avatarHtml(u) {
-  return u?.photoURL
-    ? `<img src="${esc(u.photoURL)}" alt="${esc(nameOf(u))}">`
-    : esc(nameOf(u).charAt(0).toUpperCase());
-}
-
-function chatId(a, b) { return [a, b].sort().join('_'); }
 
 function messageHtml(m) {
   if (m?.replyToStoryId) {
