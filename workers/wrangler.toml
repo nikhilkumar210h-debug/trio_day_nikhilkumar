@@ -1,0 +1,10 @@
+# OneSignal push proxy Worker
+# Deploy: npx wrangler deploy --config wrangler.toml
+#
+# Secrets:
+#   npx wrangler secret put ONESIGNAL_APP_ID
+#   npx wrangler secret put ONESIGNAL_REST_API_KEY
+
+name               = "trio-onesignal-push"
+main               = "send-push.js"
+compatibility_date = "2024-11-01"

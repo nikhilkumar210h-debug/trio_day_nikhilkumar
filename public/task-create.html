@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#081018">
+  <title>Create challenge — Trio Day</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
+  <style>:root{--primary:#6366f1;--bg:#0a0f1a;--surface:#141b2e;--ink:#f1f5f9;--border:rgba(148,163,184,.12)}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif}.tricolor-strip{height:3px;display:flex;position:fixed;inset:0 0 auto;z-index:200}.tasks-main{width:min(1000px,100%);margin:auto;padding:20px 16px}</style>
+  <link rel="preload" href="style.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="style.css"></noscript>
+  <link rel="preload" href="ui/tasks.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="ui/tasks.css"></noscript>
+</head>
+<body class="app-page">
+  <div class="tricolor-strip"><span></span><span></span><span></span></div>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="tasks.html"><span class="brand-chakra">☸</span><span class="brand-copy"><strong>trio_day</strong><small>CREATE CHALLENGE</small></span></a>
+      <div id="authStatus" class="auth-status"></div>
+    </div>
+  </header>
+  <main class="tasks-main">
+    <a class="btn secondary" href="tasks.html" style="display:inline-flex;align-items:center;gap:0.4rem;margin-bottom:0.75rem">← Back</a>
+    <span class="eyebrow">Open to everyone</span>
+    <h1>Create a challenge</h1>
+    <p class="muted">Any logged-in user can pick a template, customize it, and publish a community challenge. Admins only moderate (feature / hide / remove).</p>
+
+    <div class="form-card" style="margin-top:1rem">
+      <label class="field"><span class="label-text">Start from template</span></label>
+      <div id="templatePicker" class="template-picker"></div>
+
+      <label class="field"><span class="label-text">Kind</span>
+        <select id="kind">
+          <option value="challenge" selected>Challenge</option>
+          <option value="community">Community</option>
+          <option value="seasonal">Seasonal</option>
+        </select>
+      </label>
+      <label class="field"><span class="label-text">Title</span><input id="title" maxlength="100" required></label>
+      <label class="field"><span class="label-text">Description</span><textarea id="description" rows="3" maxlength="500"></textarea></label>
+      <label class="field"><span class="label-text">Icon</span><input id="icon" maxlength="8" value="🏁"></label>
+      <label class="field"><span class="label-text">Metric</span>
+        <select id="metric">
+          <option value="manual">Manual complete</option>
+          <option value="drink_water">Drink water</option>
+          <option value="read_minutes">Read minutes</option>
+          <option value="comment_posts">Comment posts</option>
+          <option value="give_likes">Give likes</option>
+          <option value="get_likes">Get likes</option>
+          <option value="create_post">Create post</option>
+          <option value="custom">Custom</option>
+        </select>
+      </label>
+      <label class="field"><span class="label-text">Target</span><input id="target" type="number" min="1" max="999" value="1"></label>
+      <label class="field"><span class="label-text">XP reward</span><input id="xpReward" type="number" min="1" max="500" value="50"></label>
+      <label class="field"><span class="label-text">Ends in (days)</span><input id="days" type="number" min="1" max="90" value="7"></label>
+
+      <label class="field" id="alsoTemplateWrap" hidden>
+        <span class="label-text"><input type="checkbox" id="alsoTemplate"> Also save as personal template</span>
+      </label>
+
+      <p id="formStatus" class="status"></p>
+      <div class="modal-actions">
+        <a class="btn secondary" href="tasks.html">Cancel</a>
+        <button type="button" class="btn primary" id="submitBtn">Publish challenge</button>
+      </div>
+    </div>
+  </main>
+  <nav class="bottom-nav" aria-label="Primary navigation">
+    <div class="nav-row">
+      <a class="nav-btn" href="index.html"><span class="nav-icon">⌂</span><span>Posts</span></a>
+      <a class="nav-btn" href="all-users.html"><span class="nav-icon">👥</span><span>Users</span></a>
+      <a class="nav-btn active" href="tasks.html"><span class="nav-icon">⚡</span><span>Tasks</span></a>
+      <a class="nav-btn" href="chat.html"><span class="nav-icon">✉</span><span>Chat</span></a>
+      <a class="nav-btn" href="profile.html"><span class="nav-icon">◉</span><span>Profile</span></a>
+    </div>
+  </nav>
+  <script type="module" src="auth-guard.js"></script>
+  <script type="module" src="auth-ui.js"></script>
+  <script type="module" src="task-create.js"></script>
+</body>
+</html>

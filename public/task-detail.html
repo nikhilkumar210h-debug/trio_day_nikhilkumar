@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#081018">
+  <title>Task — Trio Day</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
+  <style>:root{--primary:#6366f1;--bg:#0a0f1a;--surface:#141b2e;--ink:#f1f5f9;--border:rgba(148,163,184,.12)}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif}.tricolor-strip{height:3px;display:flex;position:fixed;inset:0 0 auto;z-index:200}.tasks-main{width:min(1000px,100%);margin:auto;padding:20px 16px}</style>
+  <link rel="preload" href="style.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="style.css"></noscript>
+  <link rel="preload" href="ui/tasks.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="ui/tasks.css"></noscript>
+</head>
+<body class="app-page">
+  <div class="tricolor-strip"><span></span><span></span><span></span></div>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="tasks.html"><span class="brand-chakra">☸</span><span class="brand-copy"><strong>trio_day</strong><small>TASK</small></span></a>
+      <div id="authStatus" class="auth-status"></div>
+    </div>
+  </header>
+  <main class="tasks-main">
+    <div id="detail" class="form-card">
+      <p>Loading…</p>
+    </div>
+    <div class="detail-actions" id="actions"></div>
+    <section class="comments-box">
+      <h3>Comments</h3>
+      <ul id="commentsList"></ul>
+      <div class="comment-form" style="display:grid;gap:0.5rem">
+        <textarea id="commentInput" maxlength="199" rows="2" placeholder="Write a comment…"></textarea>
+        <button type="button" class="btn primary" id="commentBtn">Post comment</button>
+      </div>
+    </section>
+  </main>
+  <nav class="bottom-nav" aria-label="Primary navigation">
+    <div class="nav-row">
+      <a class="nav-btn" href="index.html"><span class="nav-icon">⌂</span><span>Posts</span></a>
+      <a class="nav-btn" href="all-users.html"><span class="nav-icon">👥</span><span>Users</span></a>
+      <a class="nav-btn active" href="tasks.html"><span class="nav-icon">⚡</span><span>Tasks</span></a>
+      <a class="nav-btn" href="chat.html"><span class="nav-icon">✉</span><span>Chat</span></a>
+      <a class="nav-btn" href="profile.html"><span class="nav-icon">◉</span><span>Profile</span></a>
+    </div>
+  </nav>
+  <script type="module" src="auth-guard.js"></script>
+  <script type="module" src="auth-ui.js"></script>
+  <script type="module" src="task-detail.js"></script>
+</body>
+</html>

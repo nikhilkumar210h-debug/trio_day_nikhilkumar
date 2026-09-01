@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#081018">
+  <title>Tasks — Trio Day</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
+  <style>:root{--primary:#6366f1;--bg:#0a0f1a;--surface:#141b2e;--ink:#f1f5f9;--border:rgba(148,163,184,.12)}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif}.tricolor-strip{height:3px;display:flex;position:fixed;inset:0 0 auto;z-index:200}.tricolor-strip span{flex:1}.tricolor-strip span:nth-child(1){background:linear-gradient(90deg,#ff9933,#ff7700)}.tricolor-strip span:nth-child(2){background:#fff}.tricolor-strip span:nth-child(3){background:linear-gradient(90deg,#128807,#0a6305)}.tasks-main{width:min(1000px,100%);margin:auto;padding:20px 16px}.tasks-hero{background:linear-gradient(135deg,rgba(99,102,241,.12),#111827);border:1px solid var(--border);border-radius:24px;padding:24px}</style>
+  <link rel="preload" href="style.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="style.css"></noscript>
+  <link rel="preload" href="ui/tasks.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="ui/tasks.css"></noscript>
+  <link rel="manifest" href="manifest.json">
+</head>
+
+<body class="app-page">
+  <div class="tricolor-strip"><span></span><span></span><span></span></div>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="index.html"><span class="brand-chakra">☸</span><span class="brand-copy"><strong>trio_day</strong><small>TASKS</small></span></a>
+      <div class="topbar-actions">
+        <div id="authStatus" class="auth-status"></div>
+        <button type="button" class="icon-btn" id="themeToggle" aria-label="Toggle theme" title="Theme">◐</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="tasks-main">
+    <section class="tasks-hero">
+      <div class="tasks-hero-top">
+        <div>
+          <span class="eyebrow">Daily retention</span>
+          <h1>Complete today’s set</h1>
+          <p id="heroSub">Earn XP, keep your streak, climb the boards.</p>
+        </div>
+        <div id="heroRing"></div>
+      </div>
+      <div class="tasks-stats">
+        <div class="stat-pill"><strong id="statXp">0</strong><span>XP</span></div>
+        <div class="stat-pill"><strong id="statLevel">1</strong><span>Level</span></div>
+        <div class="stat-pill"><strong id="statStreak">0</strong><span>Streak</span></div>
+      </div>
+      <div>
+        <div style="display:flex;justify-content:space-between;font-size:0.75rem;opacity:0.7">
+          <span>Level progress</span><span id="xpLabel">0 / 100</span>
+        </div>
+        <div class="xp-bar"><i id="xpFill" style="width:0%"></i></div>
+      </div>
+    </section>
+
+    <div class="tasks-toolbar">
+      <a class="btn primary" href="task-create.html">+ Create challenge</a>
+      <a class="btn secondary" href="leaderboard.html">Leaderboard</a>
+      <a class="btn secondary" href="admin-tasks.html" id="adminLink" hidden>Admin</a>
+    </div>
+
+    <div class="tasks-tabs" role="tablist">
+      <button type="button" class="tasks-tab active" data-tab="daily">Today</button>
+      <button type="button" class="tasks-tab" data-tab="weekly">Weekly</button>
+      <button type="button" class="tasks-tab" data-tab="monthly">Monthly</button>
+      <button type="button" class="tasks-tab" data-tab="community">Community</button>
+      <button type="button" class="tasks-tab" data-tab="challenge">Challenges</button>
+      <button type="button" class="tasks-tab" data-tab="fun">Fun</button>
+    </div>
+
+    <div id="tasksStatus" class="status" aria-live="polite"></div>
+    <div id="taskList" class="task-list"></div>
+  </main>
+
+  <nav class="bottom-nav" aria-label="Primary navigation">
+    <div class="nav-row">
+      <a class="nav-btn" href="index.html"><span class="nav-icon">⌂</span><span>Posts</span></a>
+      <a class="nav-btn" href="all-users.html"><span class="nav-icon">👥</span><span>Users</span></a>
+      <a class="nav-btn active" href="tasks.html"><span class="nav-icon">⚡</span><span>Tasks</span></a>
+      <a class="nav-btn" href="chat.html"><span class="nav-icon">✉</span><span>Chat</span></a>
+      <a class="nav-btn" href="profile.html"><span class="nav-icon">◉</span><span>Profile</span></a>
+    </div>
+  </nav>
+
+  <script type="module" src="auth-guard.js"></script>
+  <script type="module" src="auth-ui.js"></script>
+  <script type="module" src="tasks.js"></script>
+</body>
+
+</html>

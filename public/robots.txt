@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+Sitemap: https://nkm-ind.web.app/sitemap.xml
+# If you later restrict crawlers, update this file. Place additional rules above the Sitemap line.

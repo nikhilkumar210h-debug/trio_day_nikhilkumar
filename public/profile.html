@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+    <meta name="theme-color" content="#081018">
+    <title>Profile — Trio Day</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
+    <style>:root{--primary:#6366f1;--bg:#0a0f1a;--surface:#141b2e;--ink:#f1f5f9;--border:rgba(148,163,184,.12)}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif}.tricolor-strip{height:3px;display:flex;position:fixed;inset:0 0 auto;z-index:200}.tricolor-strip span{flex:1}.tricolor-strip span:nth-child(1){background:linear-gradient(90deg,#ff9933,#ff7700)}.tricolor-strip span:nth-child(2){background:#fff}.tricolor-strip span:nth-child(3){background:linear-gradient(90deg,#128807,#0a6305)}.topbar{position:sticky;top:3px;z-index:100;background:rgba(17,24,39,.9);border-bottom:1px solid var(--border)}.profile-main{width:min(1000px,100%);margin:auto;padding:20px 16px}.profile-card{background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:24px}</style>
+    <link rel="preload" href="style.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="style.css"></noscript>
+    <link rel="preload" href="ui/tasks.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="ui/tasks.css"></noscript>
+    <link rel="manifest" href="manifest.json">
+</head>
+
+<body>
+    <div class="tricolor-strip"><span></span><span></span><span></span></div>
+    <header class="topbar">
+        <div class="topbar-inner"><a class="brand" href="index.html"><span class="brand-chakra">☸</span><span
+                    class="brand-copy"><strong>trio_day</strong><small>PROFILE</small></span></a>
+            <div id="authStatus" class="auth-status"></div>
+        </div>
+    </header>
+    <main class="profile-main">
+        <section class="profile-card">
+            <div class="profile-head">
+                <div id="profileAvatar" class="profile-avatar">U</div>
+                <div class="profile-copy">
+                    <h2 id="profileName">User</h2>
+                    <div id="profileUserId" class="user-id">TRIO-</div>
+                    <p id="profileEmail" class="profile-email"></p>
+                    <p id="profileBio" class="profile-bio">No bio yet.</p>
+                    <div class="profile-stats"><span id="followersCount">0 Followers</span><span id="followingCount">0
+                            Following</span></div>
+                </div>
+            </div>
+            <div id="profileActions" class="profile-actions"></div>
+            <div id="profileGame" class="profile-game" hidden>
+                <div style="display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;align-items:flex-end">
+                    <div>
+                        <span class="eyebrow">Progress</span>
+                        <h3 style="margin:0.2rem 0">Level <span id="pgLevel">1</span> · <span id="pgXp">0</span> XP</h3>
+                        <p style="margin:0;font-size:0.85rem;opacity:0.75">🔥 Streak <strong id="pgStreak">0</strong> · Best <strong id="pgBest">0</strong></p>
+                    </div>
+                    <a class="btn secondary" href="leaderboard.html">Ranks</a>
+                </div>
+                <div class="xp-bar" style="margin-top:0.75rem"><i id="pgXpFill" style="width:0%"></i></div>
+                <h4 style="margin:1rem 0 0.35rem;font-size:0.85rem;opacity:0.8">Badges</h4>
+                <div id="pgBadges"></div>
+            </div>
+        </section>
+        <div class="profile-grid">
+            <section class="profile-section">
+                <h3>Posts</h3>
+                <div id="postsList" class="feed"></div>
+            </section>
+            <section class="profile-section">
+                <h3>Connections</h3>
+                <div id="connectionsList" class="connections-list">
+                    <div class="connections-empty">Loading…</div>
+                </div>
+            </section>
+        </div>
+        <section class="profile-section" id="settingsSection">
+            <h3>Settings</h3>
+            <div class="check-row">
+                <input type="checkbox" id="soundToggle" checked>
+                <strong>Sound effects</strong>
+            </div>
+        </section>
+    </main>
+    <nav class="bottom-nav">
+        <div class="nav-row">
+            <a class="nav-btn" href="index.html"><span class="nav-icon">⌂</span><span>Posts</span></a>
+            <a class="nav-btn" href="all-users.html"><span class="nav-icon">👥</span><span>Users</span></a>
+            <a class="nav-btn" href="tasks.html"><span class="nav-icon">⚡</span><span>Tasks</span></a>
+            <a class="nav-btn" href="chat.html"><span class="nav-icon">✉</span><span>Chat</span></a>
+            <a class="nav-btn active" href="profile.html"><span class="nav-icon">◉</span><span>Profile</span></a>
+        </div>
+    </nav>
+    <script type="module" src="script.js"></script>
+    <script type="module" src="auth-ui.js"></script>
+    <script type="module" src="profile.js"></script>
+</body>
+
+</html>

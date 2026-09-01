@@ -1,0 +1,15 @@
+# Gamification secure backend Worker
+# Deploy: npx wrangler deploy --config wrangler.gamification.toml
+#
+# Secrets (run once, each requires --config flag to target this Worker):
+#   npx wrangler secret put FIREBASE_PROJECT_ID      --config wrangler.gamification.toml
+#   npx wrangler secret put FIREBASE_SA_CLIENT_EMAIL --config wrangler.gamification.toml
+#   npx wrangler secret put FIREBASE_SA_PRIVATE_KEY  --config wrangler.gamification.toml
+#
+# FIREBASE_PROJECT_ID    = nkm-ind
+# FIREBASE_SA_CLIENT_EMAIL = <name>@nkm-ind.iam.gserviceaccount.com
+# FIREBASE_SA_PRIVATE_KEY  = -----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----
+
+name               = "trio-gamification"
+main               = "gamification.js"
+compatibility_date = "2024-11-01"

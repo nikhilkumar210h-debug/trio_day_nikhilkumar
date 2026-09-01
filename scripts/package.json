@@ -1,0 +1,13 @@
+{
+  "name": "trio-migrate-base64-to-cloudinary",
+  "private": true,
+  "type": "module",
+  "description": "Move base64 images from Firestore into Cloudinary",
+  "scripts": {
+    "migrate": "node migrate-base64-to-storage.mjs",
+    "migrate:dry": "node migrate-base64-to-storage.mjs --dry-run"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.7.0"
+  }
+}

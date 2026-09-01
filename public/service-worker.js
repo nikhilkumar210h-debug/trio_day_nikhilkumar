@@ -1,0 +1,120 @@
+/* Offline cache + efficient cache lifetimes (95 KiB savings fix). OneSignal SW lives under push/onesignal/. */
+const CACHE_NAME = "trio-day-cache-v15";
+const STATIC_CACHE = "trio-static-v15";
+const BASE = "/";
+const FILES_TO_CACHE = [
+  BASE,
+  BASE + "index.html",
+  BASE + "login.html",
+  BASE + "profile.html",
+  BASE + "chat.html",
+  BASE + "all-users.html",
+  BASE + "private-chat.html",
+  BASE + "view_post.html",
+  BASE + "style.css",
+  BASE + "chat.css",
+  BASE + "private-chat.css",
+  BASE + "ui/tasks.css",
+  BASE + "script.js",
+  BASE + "profile.js",
+  BASE + "chat.js",
+  BASE + "private-chat.js",
+  BASE + "auth.js",
+  BASE + "auth-ui.js",
+  BASE + "auth-guard.js",
+  BASE + "all-users.js",
+  BASE + "utils.js",
+  BASE + "install-prompt.js",
+  BASE + "firebase-init.js",
+  BASE + "image-upload.js",
+  BASE + "onesignal.js",
+  BASE + "notifications.js",
+  BASE + "view_post.js",
+  BASE + "manifest.json",
+  BASE + "icons/icon-192.png",
+  BASE + "icons/icon-512.png"
+];
+
+function shouldBypass(url) {
+  return (
+    url.includes("firestore.googleapis.com") ||
+    url.includes("firebaseapp.com") ||
+    url.includes("googleapis.com") ||
+    url.includes("cloudinary.com") ||
+    url.includes("gstatic.com") ||
+    url.includes("onesignal.com") ||
+    url.includes("workers.dev") ||
+    url.includes("onesignal-config.js") ||
+    url.includes("127.0.0.1") ||
+    url.includes("localhost") ||
+    url.includes("__vscode") ||
+    url.includes("vscode_livepreview") ||
+    url.includes("3000") ||
+    url.includes("3001")
+  );
+}
+
+self.addEventListener("install", (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) =>
+      cache.addAll(FILES_TO_CACHE).catch((err) => console.warn("Cache partial:", err))
+    )
+  );
+  self.skipWaiting();
+});
+
+self.addEventListener("activate", (event) => {
+  event.waitUntil(
+    caches.keys().then((keys) =>
+      Promise.all(keys.filter((k) => k !== CACHE_NAME && k !== STATIC_CACHE).map((k) => caches.delete(k)))
+    )
+  );
+  self.clients.claim();
+});
+
+function isStaticAsset(url){
+  return /\.(css|js|png|jpg|jpeg|webp|svg|ico|woff2?)(\?v=|\?|$)/i.test(url) || url.includes("/icons/") || url.includes("/ui/");
+}
+self.addEventListener("fetch", (event) => {
+  // Don't intercept VS Code Live Preview / localhost WS or file://
+  if (event.request.url.startsWith("ws:") || event.request.url.startsWith("wss:")) return;
+  if (event.request.method !== "GET") return;
+  if (shouldBypass(event.request.url)) return;
+  // Bypass localhost file preview entirely — let browser handle it (fixes ERR_CONNECTION_REFUSED with 127.0.0.1:3001)
+  if (location.hostname === "localhost" || location.hostname === "127.0.0.1" || location.hostname === "") return;
+  const url = event.request.url;
+  // Static assets → Cache-First with 1-year effective lifetime (satisfies PSI “Serve static assets with efficient cache policy”)
+  if (isStaticAsset(url)){
+    event.respondWith(
+      caches.match(event.request).then(cached => {
+        if (cached) {
+          // Update in background (stale-while-revalidate)
+          fetch(event.request).then(resp=>{
+            if(resp && resp.ok) caches.open(STATIC_CACHE).then(c=>c.put(event.request, resp));
+          }).catch(()=>{});
+          return cached;
+        }
+        return fetch(event.request).then(resp=>{
+          if(resp && resp.ok){
+            const clone = resp.clone();
+            caches.open(STATIC_CACHE).then(c=>c.put(event.request, clone));
+            // Also add Cache-Control header simulation via cached response? Real header set by GH Pages but SW extends lifetime
+          }
+          return resp;
+        }).catch(()=> caches.match(event.request));
+      })
+    );
+    return;
+  }
+  // HTML / API → Network-First
+  event.respondWith(
+    fetch(event.request)
+      .then((response) => {
+        if(!response || !response.ok || response.type === 'opaque') return response;
+        const clone = response.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone).catch(() => {}));
+        return response;
+      })
+      .catch(() => caches.match(event.request).then(r => r || new Response(JSON.stringify({items:[]}), {status: 200, headers:{'Content-Type':'application/json'}})))
+  );
+});

@@ -1,0 +1,386 @@
+/* ═══════════════════════════════════════════════════════════════
+   TRIO DAY — Private Chat (1-on-1)
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Page shell ─────────────────────────────────────────────── */
+.private-chat-page { padding-bottom: 88px; }
+
+/* ── Sticky top bar ─────────────────────────────────────────── */
+.private-topbar {
+  position: sticky;
+  top: 3px;
+  z-index: 90;
+  background: rgba(8, 14, 24, 0.92);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  border-bottom: 1px solid var(--line);
+}
+.private-topbar .topbar-inner {
+  max-width: 1200px;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+/* Back button */
+.back-chat {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--r-sm);
+  display: grid;
+  place-items: center;
+  text-decoration: none;
+  color: var(--ink);
+  background: var(--glass);
+  border: 1px solid var(--line);
+  font-size: 28px;
+  line-height: 1;
+  flex: 0 0 40px;
+  transition: background 0.15s;
+}
+.back-chat:hover { background: var(--glass-hover); }
+
+/* Peer info in topbar */
+.peer-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  flex: 1;
+  text-decoration: none;
+  color: var(--ink);
+  padding: 6px 10px;
+  border-radius: var(--r-md);
+  transition: background 0.15s;
+}
+.peer-top:hover { background: var(--glass); }
+
+.peer-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  flex: 0 0 42px;
+  background: linear-gradient(135deg, var(--accent-strong), #0369a1);
+  font-weight: 800;
+  font-size: 16px;
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(14, 165, 233, 0.25);
+  border: 2px solid rgba(56, 189, 248, 0.2);
+}
+.peer-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+/* Online indicator ring (optional future use) */
+.peer-avatar-wrap { position: relative; }
+
+.peer-copy { min-width: 0; }
+.peer-copy strong {
+  display: block;
+  font-size: 16px;
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: -0.2px;
+}
+.peer-copy small {
+  display: block;
+  color: var(--accent);
+  font-size: 10px;
+  font-weight: 700;
+  margin-top: 2px;
+  letter-spacing: 0.4px;
+}
+
+/* Top-right action icons */
+.private-top-actions {
+  display: flex;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+.private-top-actions .icon-link {
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  display: grid;
+  place-items: center;
+  text-decoration: none;
+  color: var(--ink);
+  background: var(--glass);
+  border: 1px solid var(--line);
+  font-size: 16px;
+  transition: background 0.15s, border-color 0.15s;
+}
+.private-top-actions .icon-link:hover {
+  background: var(--glass-hover);
+  border-color: var(--line-hover);
+}
+
+/* ── Main container ─────────────────────────────────────────── */
+.private-main {
+  width: min(1100px, 100%);
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+/* ── Chat card ──────────────────────────────────────────────── */
+.private-chat-card {
+  height: calc(100vh - 152px);
+  min-height: 520px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-top: 0;
+  border-radius: 0 0 var(--r-xl) var(--r-xl);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-sm);
+}
+
+/* ── Messages scroll area ───────────────────────────────────── */
+.private-messages {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 24px 24px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  scroll-behavior: smooth;
+}
+.private-messages::-webkit-scrollbar { width: 4px; }
+.private-messages::-webkit-scrollbar-track { background: transparent; }
+.private-messages::-webkit-scrollbar-thumb {
+  background: var(--line-hover);
+  border-radius: 4px;
+}
+
+/* ── Message rows ───────────────────────────────────────────── */
+.private-msg-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  width: 100%;
+  animation: msg-slide-in 0.2s ease-out;
+}
+@keyframes msg-slide-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.private-msg-row.mine    { justify-content: flex-end; }
+.private-msg-row.theirs  { justify-content: flex-start; }
+
+/* Avatar for theirs */
+.message-avatar {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, var(--accent-strong), #0369a1);
+  text-decoration: none;
+  color: #fff;
+  font-weight: 800;
+  font-size: 12px;
+  box-shadow: 0 4px 10px rgba(14, 165, 233, 0.2);
+  border: 1.5px solid rgba(56, 189, 248, 0.2);
+  transition: transform 0.15s;
+}
+.message-avatar:hover { transform: scale(1.06); }
+.message-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+/* Stack: author + bubble */
+.message-stack {
+  max-width: min(70%, 640px);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.private-msg-row.mine .message-stack  { align-items: flex-end; }
+.private-msg-row.theirs .message-stack { align-items: flex-start; }
+
+/* Author name link */
+.message-author {
+  font-size: 11px;
+  color: var(--accent);
+  font-weight: 800;
+  text-decoration: none;
+  padding: 0 4px;
+  letter-spacing: 0.2px;
+}
+.message-author:hover { text-decoration: underline; }
+
+/* ── Message bubble ─────────────────────────────────────────── */
+.message-bubble {
+  padding: 12px 14px;
+  border-radius: 18px;
+  background: var(--glass);
+  border: 1px solid var(--line);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  font-size: 14px;
+  color: var(--ink2);
+  position: relative;
+  transition: border-color 0.15s;
+}
+.message-bubble:hover { border-color: var(--line-hover); }
+
+/* Tail for theirs */
+.private-msg-row.theirs .message-bubble {
+  border-radius: 18px 18px 18px 4px;
+}
+
+/* Tail for mine */
+.private-msg-row.mine .message-bubble {
+  border-radius: 18px 18px 4px 18px;
+  background: linear-gradient(135deg,
+    rgba(245, 158, 11, 0.2),
+    rgba(234, 88, 12, 0.14));
+  border-color: rgba(245, 158, 11, 0.25);
+}
+
+/* Message text */
+.msg-text-content { display: block; }
+
+/* Time + delete row inside bubble */
+.message-time {
+  margin-top: 6px;
+  font-size: 10px;
+  color: var(--muted2);
+  text-align: right;
+}
+.msg-seen { color: var(--accent); font-size: 11px; margin-left: 3px; }
+
+/* ── Delete button ──────────────────────────────────────────── */
+/* (Base styles shared from chat.css .msg-delete-btn,
+    but scoped here too for the private chat page) */
+.private-msg-row .msg-delete-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: 0;
+  background: transparent;
+  color: var(--muted2);
+  border-radius: 6px;
+  opacity: 0;
+  cursor: pointer;
+  padding: 0;
+  transition: opacity 0.15s, color 0.15s, background 0.15s;
+  margin-left: auto;
+  flex: 0 0 22px;
+
+  /* Placed inside the bubble, bottom-right */
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+}
+.message-bubble:hover .msg-delete-btn { opacity: 1; }
+.private-msg-row .msg-delete-btn:hover {
+  color: var(--danger);
+  background: var(--danger-glow);
+  opacity: 1;
+}
+.private-msg-row .msg-delete-btn svg { pointer-events: none; }
+
+/* Give bubble extra right padding when delete btn present */
+.private-msg-row.mine .message-bubble { padding-bottom: 30px; }
+
+/* ── Shared post card in bubble ─────────────────────────────── */
+.shared-post-label {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+.shared-post-link {
+  display: inline-flex;
+  margin-top: 5px;
+  padding: 8px 12px;
+  border-radius: var(--r-xs);
+  background: rgba(56, 189, 248, 0.1);
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  transition: background 0.15s;
+}
+.shared-post-link:hover { background: rgba(56, 189, 248, 0.2); }
+
+/* ── Chat input ─────────────────────────────────────────────── */
+.chat-input-row {
+  display: flex;
+  gap: 10px;
+  padding: 14px 18px;
+  border-top: 1px solid var(--line);
+  background: rgba(8, 14, 24, 0.7);
+  flex: 0 0 auto;
+  align-items: center;
+}
+.chat-input-row input {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid var(--line);
+  background: var(--glass);
+  border-radius: var(--r-md);
+  padding: 14px 18px;
+  color: var(--ink);
+  outline: none;
+  font-size: 14px;
+  transition: border-color 0.18s;
+}
+.chat-input-row input:focus { border-color: var(--accent); }
+.chat-input-row input::placeholder { color: var(--muted2); }
+
+.btn.primary {
+  border: 0;
+  border-radius: var(--r-md);
+  padding: 14px 22px;
+  background: linear-gradient(135deg, var(--saffron), #ea580c);
+  color: #fff;
+  font-weight: 800;
+  font-size: 14px;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 4px 16px rgba(245, 158, 11, 0.25);
+  transition: opacity 0.15s, transform 0.1s;
+}
+.btn.primary:hover  { opacity: 0.9; }
+.btn.primary:active { transform: scale(0.97); }
+.btn.primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ── Responsive ─────────────────────────────────────────────── */
+@media (max-width: 760px) {
+  .private-topbar .topbar-inner { padding: 0 12px; gap: 10px; }
+  .back-chat { width: 36px; height: 36px; font-size: 24px; }
+  .peer-avatar { width: 38px; height: 38px; flex-basis: 38px; font-size: 14px; }
+  .peer-copy strong { font-size: 15px; }
+  .private-top-actions .icon-link { width: 34px; height: 34px; }
+
+  .private-main { padding: 0 8px; }
+  .private-chat-card {
+    height: calc(100vh - 134px);
+    min-height: 440px;
+    border-radius: 0 0 var(--r-lg) var(--r-lg);
+  }
+  .private-messages { padding: 16px 14px 14px; gap: 10px; }
+  .message-stack { max-width: 84%; }
+  .message-bubble { font-size: 13px; padding: 11px 12px; }
+  .private-msg-row.mine .message-bubble { padding-bottom: 28px; }
+
+  .chat-input-row { padding: 10px 12px; gap: 8px; }
+  .chat-input-row input { padding: 12px 14px; font-size: 13px; }
+  .btn.primary { padding: 12px 16px; font-size: 13px; }
+}
