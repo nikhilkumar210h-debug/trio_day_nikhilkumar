@@ -8,11 +8,11 @@ export const ALLOWED_ORIGINS = [
 
 export function isAllowedOrigin(origin) {
   if (!origin) return false;
-  return ALLOWED_ORIGINS.some((o) => origin === o || origin.startsWith(o + ":"));
+  return ALLOWED_ORIGINS.includes(origin);
 }
 
 export function corsHeaders(origin) {
-  const allow = isAllowedOrigin(origin) ? origin : ALLOWED_ORIGINS[0];
+  const allow = isAllowedOrigin(origin) ? origin : "";
   return {
     "Access-Control-Allow-Origin": allow,
     "Access-Control-Allow-Methods": "POST, OPTIONS",

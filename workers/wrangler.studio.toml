@@ -1,0 +1,16 @@
+name = "nkm-studio-ai"
+main = "studio-ai.js"
+compatibility_date = "2024-12-01"
+
+# PRIMARY live provider: NVIDIA NIM (https://integrate.api.nvidia.com/v1)
+# Endpoint: POST <worker-url>/ai/generate  (handled in studio-ai.js)
+# Configure secrets (server-side only, never in public/):
+#   wrangler secret put NVIDIA_API_KEY --config wrangler.studio.toml
+#   # optional Firebase Admin for token verification:
+#   wrangler secret put FIREBASE_SERVICE_ACCOUNT --config wrangler.studio.toml  (JSON string of service account)
+# Or set via env binding: FIREBASE_PROJECT_ID + GOOGLE_APPLICATION_CREDENTIALS_JSON
+#
+# Optional vars:
+# [vars]
+# FIREBASE_PROJECT_ID = "nkm-ind"
+# NVIDIA_MODEL = "deepseek-ai/deepseek-v4-flash-0731"

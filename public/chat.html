@@ -9,18 +9,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preload" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
 <noscript><link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
-<style>:root{--primary:#6366f1;--bg:#0a0f1a;--surface:#141b2e;--ink:#f1f5f9;--border:rgba(148,163,184,.12)}*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif}.tricolor-strip{height:3px;display:flex;position:fixed;inset:0 0 auto;z-index:200}.tricolor-strip span{flex:1}.tricolor-strip span:nth-child(1){background:linear-gradient(90deg,#ff9933,#ff7700)}.tricolor-strip span:nth-child(2){background:#fff}.tricolor-strip span:nth-child(3){background:linear-gradient(90deg,#128807,#0a6305)}.topbar{position:sticky;top:3px;z-index:100;background:rgba(17,24,39,.9);border-bottom:1px solid var(--border)}.chat-main{width:min(1200px,100%);margin:auto;padding:20px 20px 0}.inbox-panel{background:var(--surface);border:1px solid var(--border);border-radius:24px;min-height:calc(100vh - 280px)}</style>
-<link rel="preload" href="styles/tokens.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
-<noscript><link rel="stylesheet" href="styles/tokens.css"></noscript>
-  <link rel="preload" href="styles/skeleton.css" as="style" onload="this.onload=null;this.rel='stylesheet'"><noscript><link rel="stylesheet" href="styles/skeleton.css"></noscript>
-  <link rel="preload" href="styles/sheet.css" as="style" onload="this.onload=null;this.rel='stylesheet'"><noscript><link rel="stylesheet" href="styles/sheet.css"></noscript>
-  <link rel="preload" href="styles/nav.css" as="style" onload="this.onload=null;this.rel='stylesheet'"><noscript><link rel="stylesheet" href="styles/nav.css"></noscript>
-  <link rel="preload" href="styles/header.css" as="style" onload="this.onload=null;this.rel='stylesheet'"><noscript><link rel="stylesheet" href="styles/header.css"></noscript>
-  <link rel="preload" href="styles/components.css" as="style" onload="this.onload=null;this.rel='stylesheet'"><noscript><link rel="stylesheet" href="styles/components.css"></noscript>
-<link rel="preload" href="style.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
-<noscript><link rel="stylesheet" href="style.css"></noscript>
-<link rel="preload" href="chat.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
-<noscript><link rel="stylesheet" href="chat.css"></noscript>
+ <style>:root{--primary:#6366f1;--bg:#0a0f1a;--surface:#141b2e;--ink:#f1f5f9;--border:rgba(148,163,184,.12)}*{box-sizing:border-box}html{scroll-behavior:smooth;background:#0a0f1a}body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif;background:#0a0f1a}.tricolor-strip{height:3px;display:flex;position:fixed;inset:0 0 auto;z-index:200}.tricolor-strip span{flex:1}.tricolor-strip span:nth-child(1){background:linear-gradient(90deg,#ff9933,#ff7700)}.tricolor-strip span:nth-child(2){background:#fff}.tricolor-strip span:nth-child(3){background:linear-gradient(90deg,#128807,#0a6305)}.topbar{position:sticky;top:3px;z-index:100;background:rgba(17,24,39,.9);border-bottom:1px solid var(--border)}.chat-main{width:min(720px,100%);margin:auto;padding:16px}.nkm-chat-head{margin-bottom:14px}.nkm-chat-head h1{font-size:22px;font-weight:800;letter-spacing:-.02em;margin:0}.nkm-chat-head p{font-size:12px;color:#94a3b8;margin:2px 0 0}.bottom-nav{position:fixed;left:0;right:0;bottom:0;background:rgba(10,15,26,.96);backdrop-filter:blur(18px);border-top:1px solid rgba(148,163,184,.12);z-index:55;padding-bottom:env(safe-area-inset-bottom)}.nav-row{width:min(520px,100%);margin:auto;display:grid;grid-template-columns:1fr 1fr 72px 1fr 1fr;gap:2px;padding:6px 6px 4px;align-items:end}.nav-btn{padding:6px 2px 4px;border-radius:12px;color:#64748b;font-size:10px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;gap:2px;min-height:44px;display:flex;flex-direction:column;align-items:center;justify-content:center}.nav-btn.active{color:#a5b4fc;background:rgba(99,102,241,.10)}.nav-btn--create{background:linear-gradient(135deg,#4f46e5 0%,#4338ca 100%);color:#fff;border:1px solid rgba(255,255,255,.08);border-radius:16px;height:48px;margin-bottom:4px;box-shadow:0 4px 12px rgba(67,56,202,.28);gap:0}.nav-btn--create .nav-icon svg{stroke:#fff}</style>  <link rel="stylesheet" href="styles/tokens.css">  <link rel="stylesheet" href="styles/skeleton.css">  <link rel="stylesheet" href="styles/sheet.css">  <link rel="stylesheet" href="styles/nav.css">  <link rel="stylesheet" href="styles/header.css">  <link rel="stylesheet" href="styles/components.css">  <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="chat.css?v=33">
 <link rel="manifest" href="manifest.json">
 </head>
 <body class="chat-page">
@@ -28,39 +18,35 @@
 <header class="topbar chat-topbar">
   <div class="topbar-inner">
     <a class="brand" href="index.html"><span class="brand-chakra">☸</span><span class="brand-copy"><strong>trio_day</strong><small>CHAT</small></span></a>
-    <div class="chat-top-user">
-      <div class="chat-user-pill"><span id="chatPillAvatar" class="chat-pill-avatar">N</span><span id="chatPillName" class="chat-pill-name">Loading...</span></div>
-      <div class="chat-top-icons"><button class="icon-link" type="button" aria-label="Notifications">◌</button><button id="chatMenuBtn" class="icon-link" type="button" aria-label="Chat menu">⋮</button></div>
-    </div>
   </div>
 </header>
 
-<main class="chat-main">
-  <div class="chat-header-row">
-    <div><div class="eyebrow small-eyebrow">MESSAGES</div><h1>Chat</h1></div>
-    <div class="chat-mode-switch" role="tablist" aria-label="Chat mode">
-      <button class="chat-mode-btn active" type="button" data-mode="private">Private</button>
-      <button class="chat-mode-btn" type="button" data-mode="group">Group</button>
-    </div>
+<main class="chat-main nkm-chat">
+  <div class="nkm-chat-head">
+    <h1>Messages</h1>
+    <p>Recent conversations — fast, original NKM</p>
+  </div>
+  <div class="chat-mode-switch nkm-tabs" role="tablist" aria-label="Chat mode">
+    <button class="chat-mode-btn nkm-tab is-active" type="button" data-mode="private">Private</button>
+    <button class="chat-mode-btn nkm-tab" type="button" data-mode="group">Communities</button>
   </div>
 
-  <section id="privateInbox" class="inbox-panel">
-    <div class="inbox-head">
-      <div><strong>Messages</strong><span>Your private conversations</span></div>
-      <div class="inbox-count" id="conversationCount">0</div>
+  <section id="privateInbox" class="nkm-inbox-panel">
+    <div class="nkm-inbox-head">
+      <strong>Messages</strong><span id="conversationCount" class="nkm-badge">0</span>
     </div>
-    <div class="inbox-tools"><input id="userSearch" class="chat-search" type="search" placeholder="Search conversations or user ID"></div>
-    <div id="userList" class="chat-user-list inbox-list"></div>
+    <div class="nkm-inbox-search"><input id="userSearch" class="nkm-search" type="search" placeholder="Search name, TRIO-ID…"></div>
+    <div id="userList" class="nkm-inbox-list"></div>
   </section>
 
-  <section id="groupPanel" class="chat-panel" hidden>
-    <div class="chat-panel-head"><div><strong>Community group</strong><span>Everyone can join</span></div></div>
-    <div id="groupMessages" class="messages"></div>
-    <form id="groupForm" class="chat-input-row"><input id="groupInput" maxlength="500" autocomplete="off" placeholder="Message the group…"><button class="btn primary" type="submit">Send</button></form>
+  <section id="groupPanel" class="nkm-group-panel" hidden>
+    <div class="nkm-group-head"><strong>Communities</strong><span>Everyone can join</span></div>
+    <div id="groupMessages" class="nkm-messages"></div>
+    <form id="groupForm" class="nkm-input-row"><input id="groupInput" class="nkm-input" maxlength="500" autocomplete="off" placeholder="Message the group…"><button class="nkm-btn nkm-btn--primary" type="submit">Send</button></form>
   </section>
 </main>
 
-<nav class="bottom-nav"><div class="nav-row"><a class="nav-btn" href="index.html"><span class="nav-icon">⌂</span><span>Posts</span></a><a class="nav-btn" href="all-users.html"><span class="nav-icon">👥</span><span>Users</span></a><a class="nav-btn" href="tasks.html"><span class="nav-icon">⚡</span><span>Tasks</span></a><a class="nav-btn active" href="chat.html"><span class="nav-icon">✉</span><span>Chat</span></a><a class="nav-btn" href="profile.html"><span class="nav-icon">◉</span><span>Profile</span></a></div></nav>
+<nav class="bottom-nav" aria-label="Primary navigation"><div class="nav-row"><a class="nav-btn" href="index.html" data-nav="home" aria-label="Home"><span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg></span><span>Home</span></a><a class="nav-btn" href="all-users.html" data-nav="community" aria-label="Community"><span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="9" cy="8" r="4"/><path d="M15 10a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7z"/><path d="M3 19a6 6 0 0 1 12 0"/><path d="M15 19a5 5 0 0 1 5 0"/></svg></span><span>Community</span></a><a class="nav-btn nav-btn--create" href="#" data-nav="create" aria-label="Create"><span class="nav-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></span><span></span></a><a class="nav-btn" href="tasks.html" data-nav="activity" aria-label="Activity"><span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z"/></svg></span><span>Activity</span></a><a class="nav-btn" href="profile.html" data-nav="you" aria-label="You"><span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="12" cy="8" r="4"/><path d="M4 19a8 8 0 0 1 16 0"/></svg></span><span>You</span></a></div></nav>
 <script type="module" src="auth-guard.js"></script>
 <script type="module" src="chat.js"></script>
 <script type="module" src="auth-ui.js"></script>

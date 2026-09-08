@@ -67,10 +67,19 @@ service cloud.firestore {
         ]);
     }
 
+    // Allow userId change only if current value is missing (first-time set).
+    function canChangeUserId() {
+      return !('userId' in resource.data)
+        || resource.data.userId == null
+        || resource.data.userId == '';
+    }
+
     match /users/{userId} {
       allow read: if signedIn();
       allow create: if owner(userId);
-      allow update: if owner(userId) && noGamificationWrite();
+      allow update: if owner(userId)
+      && noGamificationWrite()
+      && (!request.resource.data.diff(resource.data).affectedKeys().hasAll(['userId']) || canChangeUserId());
       allow delete: if false;
       match /followers/{followerId} {
         allow read: if signedIn();
@@ -124,17 +133,24 @@ service cloud.firestore {
     }
 
     match /privateChats/{chatId}/messages/{messageId} {
-      allow read: if signedIn() && chatId.matches('.*' + request.auth.uid + '.*');
-      allow create: if signedIn() && chatId.matches('.*' + request.auth.uid + '.*')
+      // chatId format: uid1_uid2 where uid1 < uid2 lexicographically
+      // Allow access only if current user is one of the two participants
+      allow read: if signedIn() && (chatId == request.auth.uid + '_' + request.auth.uid
+        || (chatId.matches('^' + request.auth.uid + '_[^_]+$')
+          || chatId.matches('^[^_]+_' + request.auth.uid + '$')));
+      allow create: if signedIn() && (chatId.matches('^' + request.auth.uid + '_[^_]+$')
+          || chatId.matches('^[^_]+_' + request.auth.uid + '$'))
         && request.resource.data.uid == request.auth.uid && request.resource.data.text is string
         && request.resource.data.text.size() > 0 && request.resource.data.text.size() <= 500;
       allow update: if signedIn()
-        && chatId.matches('.*' + request.auth.uid + '.*')
+        && (chatId.matches('^' + request.auth.uid + '_[^_]+$')
+          || chatId.matches('^[^_]+_' + request.auth.uid + '$'))
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['seen'])
         && request.resource.data.seen is number;
       allow delete: if signedIn()
-        && resource.data.uid == request.auth.uid
-        && chatId.matches('.*' + request.auth.uid + '.*');
+        && (chatId.matches('^' + request.auth.uid + '_[^_]+$')
+          || chatId.matches('^[^_]+_' + request.auth.uid + '$'))
+        && resource.data.uid == request.auth.uid;
     }
 
     // ── Gamification ──────────────────────────────────────────────
@@ -172,7 +188,7 @@ service cloud.firestore {
 
     match /badges/{badgeId} {
       allow read: if signedIn();
-      allow create, update: if isAdmin() || signedIn(); // seed on first load; tighten later if abused
+      allow create, update: if isAdmin();
       allow delete: if isAdmin();
     }
 

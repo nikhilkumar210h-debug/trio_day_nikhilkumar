@@ -137,6 +137,7 @@ export async function createCommunityTask(uid, profile, data) {
 export async function setChallengeFeature(taskId, featured) {
   await updateDoc(doc(db, 'communityTasks', taskId), { featured: !!featured });
   trioCache.invalidatePrefix('ctasks_');
+  trioCache.invalidatePrefix('communityTasks_');
 }
 // Alias: admin-tasks.js and task-detail.js import this name
 export const setChallengeFeatured = setChallengeFeature;
@@ -144,16 +145,19 @@ export const setChallengeFeatured = setChallengeFeature;
 export async function setChallengeHidden(taskId, hidden) {
   await updateDoc(doc(db, 'communityTasks', taskId), { hidden: !!hidden });
   trioCache.invalidatePrefix('ctasks_');
+  trioCache.invalidatePrefix('communityTasks_');
 }
 
 export async function removeChallenge(taskId) {
   await deleteDoc(doc(db, 'communityTasks', taskId));
   trioCache.invalidatePrefix('ctasks_');
+  trioCache.invalidatePrefix('communityTasks_');
 }
 
 export async function archiveTask(taskId) {
   await updateDoc(doc(db, 'communityTasks', taskId), { status: 'archived' });
   trioCache.invalidatePrefix('ctasks_');
+  trioCache.invalidatePrefix('communityTasks_');
 }
 
 export async function expireOldTasks() {
@@ -195,6 +199,7 @@ export async function joinTask(taskId, uid, profile) {
   await bumpCounter(taskId, 'join');
 
   trioCache.invalidatePrefix('ctasks_');
+  trioCache.invalidatePrefix('communityTasks_');
   return true;
 }
 
@@ -293,5 +298,8 @@ export async function completeTask(taskId, uid, profile) {
   } catch (_) { /* ignore */ }
 
   trioCache.invalidatePrefix('ctasks_');
+  trioCache.invalidatePrefix('communityTasks_');
+  trioCache.invalidatePrefix('tasks_');
+  trioCache.invalidate(`communityTask_${taskId}`);
   return { already: false, award };
 }

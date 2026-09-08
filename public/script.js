@@ -1,14 +1,15 @@
 import { auth, db } from './firebase-init.js';
-import { notifyUser } from './notifications.js';
+import { notifyUser } from './services/notificationHelpers.js';
 import { uploadPostImage, uploadStoryMedia } from './image-upload.js';
 import { trioCache } from './trio-cache.js';
+import { getCachedUserProfile, getMyProfile } from './services/userCache.js';
 import { SoundManager } from './sound-manager.js';
 import { onPostCreated, onLikeGiven, onLikeReceived, onCommentCreated } from './gamification/auto-metrics.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
 import {
   collection, addDoc, onSnapshot, serverTimestamp,
   doc, getDoc, setDoc, deleteDoc, query, orderBy,
-  getDocs, limit
+  getDocs, limit, where
 } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 import { makeUserId, escapeHtml, initials, formatTime, getFilterCSS } from './utils.js';
 
@@ -28,24 +29,12 @@ onAuthStateChanged(auth, async user => {
     import('./gamification/reminders.js')
       .then(m => m.runAppOpenReminders(user.uid))
       .catch(() => { });
-    updateCreateAvatar();
     updateCommunityPulse();
   } else {
-    updateCreateAvatar();
     updateCommunityPulse();
   }
   if (feed && cachedPosts.length) render(cachedPosts);
 });
-
-function updateCreateAvatar() {
-  const av = $('nkmCreateAvatar');
-  if (!av) return;
-  const u = currentUser;
-  const name = u?.displayName || u?.email?.split('@')[0] || '+';
-  const photo = u?.photoURL || null;
-  if (photo) av.innerHTML = `<img src="${escapeHtml(photo)}" alt="" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%">`;
-  else av.textContent = initials(name);
-}
 
 async function updateCommunityPulse() {
   const challengeEl = $('pulseChallengeText');
@@ -107,33 +96,8 @@ async function ensureUserProfile(user) {
   trioCache.set(`user_${user.uid}`, { ...existing, ...profileData, updatedAt: Date.now() });
 }
 
-async function getCachedUserProfile(uid) {
-  const key = `user_${uid}`;
-  const cached = trioCache.get(key);
-  if (cached) return cached;
-  try {
-    const snap = await getDoc(doc(db, 'users', uid));
-    if (!snap.exists()) return null;
-    const data = snap.data();
-    trioCache.set(key, data, trioCache.TTL.DEFAULT);
-    return data;
-  } catch { return null; }
-}
-
-async function getMyProfile() {
-  if (!currentUser) return null;
-  const key = `user_${currentUser.uid}`;
-  const cached = trioCache.get(key);
-  if (cached) return cached;
-  await ensureUserProfile(currentUser);
-  const snap = await getDoc(doc(db, 'users', currentUser.uid));
-  const data = snap.exists() ? snap.data() : null;
-  if (data) trioCache.set(key, data, trioCache.TTL.DEFAULT);
-  return data;
-}
-
 async function notifyPostOwner(post, type) {
-  const me = await getMyProfile();
+  const me = await getMyProfile(currentUser.uid);
   return notifyUser(post.uid, {
     type,
     actorUid: currentUser?.uid,
@@ -196,6 +160,10 @@ function openCreateChooser(){ const c=$('createChooser'); if(!c) return; c.hidde
 function closeCreateChooser(){ const c=$('createChooser'); if(!c) return; c.hidden=true; if($('storyOverlay')?.hidden && $('modalOverlay')?.hidden) document.body.style.overflow=''; }
 $('chooserStory')?.addEventListener('click', ()=>{ closeCreateChooser(); openStoryModal(); });
 $('chooserPost')?.addEventListener('click', ()=>{ closeCreateChooser(); openModal(); });
+$('chooserVoice')?.addEventListener('click', () => {
+  closeCreateChooser();
+  location.href = 'voice-status.html';
+});
 $('chooserCancel')?.addEventListener('click', closeCreateChooser);
 $('createChooser')?.addEventListener('click', e=>{ if(e.target===$('createChooser')) closeCreateChooser(); });
 document.addEventListener('keydown', e=>{ if(e.key==='Escape' && !$('createChooser')?.hidden) closeCreateChooser(); });
@@ -206,12 +174,6 @@ document.addEventListener('keydown', e=>{ if(e.key==='Escape' && !$('createChoos
     if (b.id === 'storyPostBtn') openStoryModal();
     else openCreateChooser();
   }));
-// NKM Create Something — single entry consolidates headerPlus/fab/hero (Phase 2A)
-['nkmCreateTrigger','nkmCreatePhoto','nkmCreateAvatar'].forEach(id => {
-  const el = $(id);
-  if (el) el.addEventListener('click', () => { SoundManager.click(); openCreateChooser(); });
-});
-$('nkmCreateStory')?.addEventListener('click', () => { SoundManager.click(); openStoryModal(); });
 document.querySelectorAll('[data-open-post]').forEach(b => b?.addEventListener('click', () => { SoundManager.click(); openCreateChooser(); }));
 $('modalClose')?.addEventListener('click', closeModal);
 $('cancelBtn')?.addEventListener('click', closeModal);
@@ -227,6 +189,7 @@ function applyPostFilter() {
   const img = preview?.querySelector('img');
   if (img) img.style.filter = getFilterCSS(postFilter, postFilterIntensity);
 }
+// Studio engine reuse — no duplicate filter logic (imports engine only when needed elsewhere)
 document.querySelectorAll('#postFilterPanel .filter-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     SoundManager.click();
@@ -413,6 +376,16 @@ function editorDragStart(e) {
   }
 }
 
+let editorRenderFrame = null;
+function scheduleEditorRender() {
+  if (editorRenderFrame === null) {
+    editorRenderFrame = requestAnimationFrame(() => {
+      editorRenderFrame = null;
+      renderStoryEditor();
+    });
+  }
+}
+
 function editorDrag(e) {
   if (editorState.isDraggingText !== null) {
     const rect = editorCanvas.getBoundingClientRect();
@@ -420,14 +393,14 @@ function editorDrag(e) {
     const y = (e.clientY - rect.top) * (editorCanvas.height / rect.height);
     editorState.textOverlays[editorState.isDraggingText].x = x - editorState.dragOffset.x;
     editorState.textOverlays[editorState.isDraggingText].y = y - editorState.dragOffset.y;
-    renderStoryEditor();
+    scheduleEditorRender();
   } else if (editorState.isDraggingSticker !== null) {
     const rect = editorCanvas.getBoundingClientRect();
     const x = (e.clientX - rect.left) * (editorCanvas.width / rect.width);
     const y = (e.clientY - rect.top) * (editorCanvas.height / rect.height);
     editorState.stickers[editorState.isDraggingSticker].x = x - editorState.dragOffset.x;
     editorState.stickers[editorState.isDraggingSticker].y = y - editorState.dragOffset.y;
-    renderStoryEditor();
+    scheduleEditorRender();
   }
 }
 
@@ -522,7 +495,8 @@ function loadEditorFromPreview() {
 }
 
 const storyPreviewObserver = new MutationObserver(loadEditorFromPreview);
-storyPreviewObserver.observe($('storyPreview') || document.body, { childList: true, subtree: true });
+const sp = $('storyPreview');
+if (sp) storyPreviewObserver.observe(sp, { childList: true });
 setTimeout(loadEditorFromPreview, 100);
 
 form?.addEventListener('submit', async e => {
@@ -532,7 +506,7 @@ form?.addEventListener('submit', async e => {
   if (!text && !selectedFile) return setStatus('Add a caption or photo.', true);
   submit.disabled = true; submit.textContent = 'Posting…';
   try {
-    const me = await getMyProfile();
+    const me = await getMyProfile(currentUser.uid);
     let mediaUrl = null;
     if (selectedFile) {
       setStatus('Compressing photo…');
@@ -566,7 +540,7 @@ storyForm?.addEventListener('submit', async e => {
     if (!text && !selectedFile) return setStoryStatus('Write something or add a photo/video.', true);
     storySubmit.disabled = true; storySubmit.textContent = 'Sharing…';
     try {
-      const me = await getMyProfile();
+      const me = await getMyProfile(currentUser.uid);
       let mediaUrl = null;
       const hasEditorEffects = editorState.filter !== 'none' || editorState.textOverlays.length > 0 || editorState.stickers.length > 0;
       if (selectedFile) {
@@ -772,7 +746,7 @@ function buildFeedItem(data) {
         b.onclick = async () => {
           b.disabled = true; b.lastElementChild.textContent = '…';
           try {
-            const me = await getMyProfile();
+            const me = await getMyProfile(currentUser.uid);
             const cid = [currentUser.uid, u.uid].sort().join('_');
             await addDoc(collection(db, 'privateChats', cid, 'messages'), { uid: currentUser.uid, name: me?.name || currentUser.displayName || 'User', userId: me?.userId || makeUserId(currentUser.uid), text: `📎 Shared a post: ${postUrl}`, createdAt: Date.now(), createdAtMs: Date.now(), sharedPostId: postId });
             await Promise.all([notifyPostOwner(data, 'share'), notifyUser(u.uid, { type: 'share', actorUid: currentUser.uid, actorName: me?.name || currentUser.displayName || 'Someone', postId })]);
@@ -833,7 +807,23 @@ function buildStoryCard(data) {
   identity.append(name, uid, time); head.append(av, identity);
 
   const mediaWrap = document.createElement('div'); mediaWrap.className = 'feed-media';
-  if (data.mediaUrl) {
+  if (data.type === 'voice' || data.isVoice) {
+    const voicePlayer = document.createElement('div'); voicePlayer.className = 'voice-post-player';
+    const playBtn = document.createElement('button'); playBtn.className = 'voice-play-btn'; playBtn.type = 'button'; playBtn.setAttribute('aria-label', 'Play voice status'); playBtn.textContent = '▶';
+    const audio = document.createElement('audio'); audio.src = data.mediaUrl || ''; audio.preload = 'none';
+    const info = document.createElement('div'); info.className = 'voice-post-info';
+    const dur = document.createElement('span'); dur.className = 'voice-duration'; dur.textContent = `🎙️ ${Number(data.duration) || 0}s voice status`;
+    info.appendChild(dur);
+    voicePlayer.append(playBtn, audio, info);
+    playBtn.addEventListener('click', () => {
+      if (audio.paused) { audio.play().then(()=>{ playBtn.textContent='⏸'; }).catch(()=>{}); }
+      else { audio.pause(); playBtn.textContent='▶'; }
+    });
+    audio.addEventListener('ended', () => { playBtn.textContent='▶'; });
+    audio.addEventListener('pause', () => { playBtn.textContent='▶'; });
+    audio.addEventListener('play', () => { playBtn.textContent='⏸'; });
+    mediaWrap.appendChild(voicePlayer);
+  } else if (data.mediaUrl) {
     const img = document.createElement('img'); img.className = 'media'; img.loading = 'lazy'; img.decoding = 'async'; img.src = data.mediaUrl; img.alt = `Story from ${data.name || 'User'}`; img.width = 800; img.height = 600; img.style.aspectRatio = '4 / 3';
     mediaWrap.appendChild(img);
   } else {
@@ -914,7 +904,7 @@ function buildStoryCard(data) {
         else{
           await setDoc(moodRef,{uid:currentUser.uid, mood, createdAt: serverTimestamp()});
           if(!s.exists()){
-            const me=await getMyProfile();
+            const me=await getMyProfile(currentUser.uid);
             await notifyUser(data.uid, {type:'like', actorUid:currentUser.uid, actorName: me?.name||currentUser.displayName||'Someone', postId}).catch(()=>{});
             onLikeGiven(currentUser.uid); if(data.uid && data.uid!==currentUser.uid) onLikeReceived(data.uid);
           }
@@ -943,7 +933,7 @@ function buildStoryCard(data) {
     if(text.length>200) return alert('Reply 200 characters se kam rakho.');
     replySend.disabled=true; replySend.textContent='Sending…';
     try{
-      const me=await getMyProfile();
+      const me=await getMyProfile(currentUser.uid);
       const chatId=[currentUser.uid, data.uid].sort().join('_');
       const storyUrl = new URL(`view_post.html?postId=${encodeURIComponent(postId)}`, location.href).href;
       const msgText = `↩️ Replied to your story: "${text}"`;
@@ -972,7 +962,7 @@ function buildStoryCard(data) {
     e.stopPropagation();
     const storyUrl = new URL(`view_post.html?postId=${encodeURIComponent(postId)}`, location.href).href;
     if(navigator.share){
-      try{ await navigator.share({title: `${data.name||'Story'} on Trio Day`, url: storyUrl}); await notifyUser(data.uid, {type:'share', actorUid: currentUser?.uid, actorName: (await getMyProfile())?.name||'Someone', postId}).catch(()=>{}); }catch{}
+      try{ await navigator.share({title: `${data.name||'Story'} on Trio Day`, url: storyUrl}); await notifyUser(data.uid, {type:'share', actorUid: currentUser?.uid, actorName: (await getMyProfile(currentUser.uid))?.name||'Someone', postId}).catch(()=>{}); }catch{}
     } else {
       try{ await navigator.clipboard.writeText(storyUrl); alert('Story link copied ✅'); }catch{ prompt('Copy link', storyUrl); }
     }
@@ -996,7 +986,7 @@ function renderHeroStories(stories){
   addBtn.addEventListener('click', ()=>{ SoundManager.click(); openStoryModal(); });
   wrap.appendChild(addBtn);
   if(!stories.length){
-    if(empty) { empty.style.display='block'; wrap.appendChild(empty); }
+    if(empty) empty.style.display='block';
     return;
   }
   if(empty) empty.style.display='none';
@@ -1025,11 +1015,12 @@ function renderHeroStories(stories){
       if(card) card.scrollIntoView({behavior:'smooth', block:'center'});
       else {
         if(s.mediaUrl){
-          const ov=document.createElement('div'); ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:500;display:grid;place-items:center;padding:20px;overflow:auto;';
+          const ov=document.createElement('div'); ov.className='story-viewer-overlay';
           const safeN=(s.name||'Story').replace(/</g,'&lt;'); const safeM=(s.message||'').slice(0,120).replace(/</g,'&lt;');
           const isOwn = s.uid && currentUser && s.uid===currentUser.uid;
-          const mediaTag = s.mediaUrl.match(/\.mp4|\.webm|\.mov/i) ? `<video src="${s.mediaUrl}" controls autoplay playsinline style="width:100%;max-height:55vh;object-fit:contain;background:#000;display:block"></video>` : `<img src="${s.mediaUrl}" style="width:100%;max-height:55vh;object-fit:contain;background:#000;display:block;image-rendering:auto" loading="eager" alt="Story">`;
-          ov.innerHTML='<div style="max-width:420px;width:100%;background:#1e293b;border-radius:16px;overflow:hidden;display:flex;flex-direction:column;max-height:90vh"><div style="overflow:auto">'+mediaTag+'<div style="padding:12px"><strong>'+safeN+'</strong><p style="margin:6px 0;color:#94a3b8;font-size:13px">'+safeM+'</p><div class="story-viewer-reactions" style="display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 8px"><button type="button" class="action-btn mood-btn" data-mood="❤️">❤️</button><button type="button" class="action-btn mood-btn" data-mood="😂">😂</button><button type="button" class="action-btn mood-btn" data-mood="😍">😍</button><button type="button" class="action-btn mood-btn" data-mood="🔥">🔥</button><button type="button" class="action-btn mood-btn" data-mood="💯">💯</button><button type="button" class="action-btn mood-btn" data-mood="🎉">🎉</button></div><div class="story-viewer-reply" style="display:flex;gap:8px;align-items:center;margin-top:8px"><input type="text" maxlength="200" placeholder="Reply to '+safeN+'…" style="flex:1;min-width:0;padding:10px 14px;border-radius:999px;border:1px solid #334155;background:#0f172a;color:#fff;outline:none"><button type="button" class="btn primary sm" data-send>Send</button></div><div style="display:flex;gap:8px;margin-top:12px"><button type="button" class="btn secondary" style="flex:1" data-close>Close</button>'+(isOwn?'<button type="button" class="btn" style="flex:1;background:#ef4444;color:#fff;border:0" data-del>Delete Story</button>':'<button type="button" class="btn ghost" style="flex:1" data-share>↗ Share</button>')+'</div></div></div></div>';
+          const isVoice = s.isVoice || s.type==='voice';
+          const mediaTag = isVoice ? `<div class="voice-post-player" style="margin:0;border-radius:0"><audio src="${s.mediaUrl}" autoplay controls class="story-viewer-media" style="width:100%;max-height:none"></audio><span class="voice-duration">🎙️ ${Number(s.duration)||0}s voice</span></div>` : s.mediaUrl.match(/\.mp4|\.webm|\.mov/i) ? `<video src="${s.mediaUrl}" controls autoplay playsinline class="story-viewer-media"></video>` : `<img src="${s.mediaUrl}" class="story-viewer-media" loading="eager" alt="Story">`;
+          ov.innerHTML='<div class="story-viewer-card"><div style="overflow:auto">'+mediaTag+'<div class="story-viewer-body"><strong>'+safeN+'</strong><p style="margin:6px 0;color:#94a3b8;font-size:13px">'+safeM+'</p><div class="story-viewer-reactions"><button type="button" class="action-btn mood-btn" data-mood="❤️">❤️</button><button type="button" class="action-btn mood-btn" data-mood="😂">😂</button><button type="button" class="action-btn mood-btn" data-mood="😍">😍</button><button type="button" class="action-btn mood-btn" data-mood="🔥">🔥</button><button type="button" class="action-btn mood-btn" data-mood="💯">💯</button><button type="button" class="action-btn mood-btn" data-mood="🎉">🎉</button></div><div class="story-viewer-reply"><input type="text" maxlength="200" placeholder="Reply to '+safeN+'…"><button type="button" class="btn primary sm" data-send>Send</button></div><div class="story-viewer-actions"><button type="button" class="btn secondary" style="flex:1" data-close>Close</button>'+(isOwn?'<button type="button" class="btn" style="flex:1;background:#ef4444;color:#fff;border:0" data-del>Delete Story</button>':'<button type="button" class="btn ghost" style="flex:1" data-share>↗ Share</button>')+'</div></div></div></div>';
           // Close
           ov.querySelector('[data-close]').addEventListener('click',()=>ov.remove());
           ov.addEventListener('click',e=>{ if(e.target===ov) ov.remove(); });
@@ -1039,10 +1030,10 @@ function renderHeroStories(stories){
           const reacts=ov.querySelectorAll('.mood-btn');
           // Live counts
           try{ onSnapshot(collection(db,'posts',s._id,'moods'), snap=>{ const counts={}; let my=null; snap.forEach(d=>{ const m=d.data()?.mood; if(m) counts[m]=(counts[m]||0)+1; if(d.id===currentUser?.uid) my=m; }); reacts.forEach(b=>{ const mm=b.dataset.mood; const c=counts[mm]||0; b.innerHTML= mm + (c?` <span style="font-size:10px;background:#6366f1;color:#fff;border-radius:999px;padding:0 4px;margin-left:2px">${c}</span>`:''); b.classList.toggle('liked', my===mm); if(my===mm) b.style.background='rgba(99,102,241,.18)'; else b.style.background=''; }); }, ()=>{}); }catch{}
-          reacts.forEach(b=>{ b.addEventListener('click', async ()=>{ if(!currentUser) return alert('Login karke react karo.'); const mood=b.dataset.mood; const ref=doc(db,'posts',s._id,'moods',currentUser.uid); try{ const snap=await getDoc(ref); if(snap.exists() && snap.data()?.mood===mood) await deleteDoc(ref); else { await setDoc(ref,{uid:currentUser.uid, mood, createdAt: serverTimestamp()}); if(!snap.exists()){ const me=await getMyProfile(); await notifyUser(s.uid,{type:'like',actorUid:currentUser.uid,actorName: me?.name||currentUser.displayName||'Someone', postId:s._id}).catch(()=>{}); } } SoundManager.moodSelect(); }catch(e){ alert(e.message||'React failed'); } }); });
+          reacts.forEach(b=>{ b.addEventListener('click', async ()=>{ if(!currentUser) return alert('Login karke react karo.'); const mood=b.dataset.mood; const ref=doc(db,'posts',s._id,'moods',currentUser.uid); try{ const snap=await getDoc(ref); if(snap.exists() && snap.data()?.mood===mood) await deleteDoc(ref); else { await setDoc(ref,{uid:currentUser.uid, mood, createdAt: serverTimestamp()}); if(!snap.exists()){ const me=await getMyProfile(currentUser.uid); await notifyUser(s.uid,{type:'like',actorUid:currentUser.uid,actorName: me?.name||currentUser.displayName||'Someone', postId:s._id}).catch(()=>{}); } } SoundManager.moodSelect(); }catch(e){ alert(e.message||'React failed'); } }); });
           // Reply logic — direct chat
           const replyInput=ov.querySelector('.story-viewer-reply input'); const sendBtn=ov.querySelector('[data-send]');
-          const doReply=async()=>{ const text=replyInput.value.trim(); if(!text) return; if(!currentUser) return alert('Login karke reply karo.'); if(s.uid===currentUser.uid) return alert('Apni story pe reply nahi kar sakte.'); if(text.length>200) return alert('200 chars max'); sendBtn.disabled=true; sendBtn.textContent='…'; try{ const me=await getMyProfile(); const chatId=[currentUser.uid,s.uid].sort().join('_'); await addDoc(collection(db,'privateChats',chatId,'messages'),{uid:currentUser.uid, name:me?.name||currentUser.displayName||'User', userId:me?.userId||makeUserId(currentUser.uid), text:`↩️ Replied to your story: "${text}"`, replyToStoryId:s._id, storyPreview:s.mediaUrl||null, originalStoryText:s.message||'', createdAt:Date.now(), createdAtMs:Date.now()}); await notifyUser(s.uid,{type:'message',actorUid:currentUser.uid,actorName: me?.name||'Someone', text, postId:s._id}).catch(()=>{}); SoundManager.send(); replyInput.value=''; if(confirm('Reply sent! Chat me dikhega — chat kholo?')) location.href=`private-chat.html?uid=${encodeURIComponent(s.uid)}`; else { ov.remove(); } }catch(e){ alert(e.message||'Reply failed'); } finally{ sendBtn.disabled=false; sendBtn.textContent='Send'; } };
+          const doReply=async()=>{ const text=replyInput.value.trim(); if(!text) return; if(!currentUser) return alert('Login karke reply karo.'); if(s.uid===currentUser.uid) return alert('Apni story pe reply nahi kar sakte.'); if(text.length>200) return alert('200 chars max'); sendBtn.disabled=true; sendBtn.textContent='…'; try{ const me=await getMyProfile(currentUser.uid); const chatId=[currentUser.uid,s.uid].sort().join('_'); await addDoc(collection(db,'privateChats',chatId,'messages'),{uid:currentUser.uid, name:me?.name||currentUser.displayName||'User', userId:me?.userId||makeUserId(currentUser.uid), text:`↩️ Replied to your story: "${text}"`, replyToStoryId:s._id, storyPreview:s.mediaUrl||null, originalStoryText:s.message||'', createdAt:Date.now(), createdAtMs:Date.now()}); await notifyUser(s.uid,{type:'message',actorUid:currentUser.uid,actorName: me?.name||'Someone', text, postId:s._id}).catch(()=>{}); SoundManager.send(); replyInput.value=''; if(confirm('Reply sent! Chat me dikhega — chat kholo?')) location.href=`private-chat.html?uid=${encodeURIComponent(s.uid)}`; else { ov.remove(); } }catch(e){ alert(e.message||'Reply failed'); } finally{ sendBtn.disabled=false; sendBtn.textContent='Send'; } };
           sendBtn.addEventListener('click', doReply); replyInput.addEventListener('keydown', e=>{ if(e.key==='Enter') doReply(); });
           document.body.appendChild(ov);
         }
@@ -1134,7 +1125,7 @@ document.addEventListener('click', e => {
     const txt = input.value.trim(); if (!txt) return; if (txt.length >= 200) return alert('Comment 199 characters se chhota rakho.');
     submitBtn.disabled = true;
     try {
-      const me = await getMyProfile();
+      const me = await getMyProfile(currentUser.uid);
       await addDoc(collection(db, 'posts', active, 'comments'), { txt, name: me?.name || currentUser.displayName || 'User', uid: currentUser.uid, userId: me?.userId || makeUserId(currentUser.uid), createdAt: serverTimestamp(), createdAtMs: Date.now() });
       await notifyUser(activeOwnerUid, { type: 'comment', actorUid: currentUser.uid, actorName: me?.name || currentUser.displayName || 'Someone', postId: active });
       onCommentCreated(currentUser.uid);
@@ -1146,15 +1137,14 @@ document.addEventListener('click', e => {
 })();
 
 if ('serviceWorker' in navigator) {
-  const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.hostname === '';
-  // Skip SW on local file:// and Live Preview to avoid ERR_CONNECTION_REFUSED + WS interference
-  if (!isLocal && !location.href.includes('__vscode')) {
-    const swPath = '/service-worker.js';
-    navigator.serviceWorker.register(swPath, { scope: '/' })
-      .then(() => console.log('Service worker registered'))
-      .catch(err => console.error('SW registration failed', err));
-  } else {
-    // Clean up any previous SW when developing locally
-    navigator.serviceWorker.getRegistrations?.().then(rs=>rs.forEach(r=>r.unregister()));
-  }
+  // Production and correct local serve (public/ as root) — /service-worker.js should be at site root.
+  // VS Code Live Preview serves project root, so /service-worker.js 404s — handle gracefully, no console error.
+  // Correct local command: `npx serve public -p 3000` or `firebase emulators:start --only hosting`
+  const swPath = '/service-worker.js';
+  navigator.serviceWorker.register(swPath, { scope: '/' })
+    .then(() => console.log('Service worker registered'))
+    .catch(() => {
+      // No SW at this path (likely serving project root locally) — clean up stale registrations
+      navigator.serviceWorker.getRegistrations?.().then(rs => rs.forEach(r => r.unregister()));
+    });
 }

@@ -3,11 +3,18 @@
    Desktop: branding + search + notification + account
    Mobile: branding + search-icon + notification + account
 */
-.topbar { min-height: 48px; height: 48px; }
-.topbar-inner { min-height: 48px; height: 48px; padding: 0 12px; gap: 12px; }
+.topbar { min-height: 52px; height: 52px; top: 3px; }
+.topbar-inner { min-height: 52px; height: 52px; padding: 4px 12px; gap: 12px; }
 @media (min-width: 840px) {
-  .topbar { height: 56px; min-height: 56px; }
-  .topbar-inner { height: 56px; min-height: 56px; padding: 0 16px; gap: 16px; max-width: 1280px; }
+  .topbar { height: 60px; min-height: 60px; top: 3px; }
+  .topbar-inner { height: 60px; min-height: 60px; padding: 6px 16px; gap: 16px; max-width: 1280px; }
+}
+/* Ensure content never hidden behind sticky header: app-main already flows after header (sticky), no extra padding needed.
+   Bottom nav covers content on mobile: body padding-bottom via style.css 96px already; keep. */
+@media (max-width: 839px) {
+  .app-main, .profile-main, .users-main, .chat-main { padding-bottom: 84px; }
+  .tasks-main { padding-bottom: 96px; }
+  .task-list { padding-bottom: 12px; }
 }
 .brand-chakra { width: 32px; height: 32px; border-radius: 10px; font-size: 16px; }
 @media (min-width: 840px) { .brand-chakra { width: 36px; height: 36px; } }
@@ -22,6 +29,39 @@
 .nkm-header-search .nkm-search { height: 36px; font-size: 13px; }
 .nkm-header-search-btn { width: 36px; height: 36px; border: 1px solid var(--nkm-border, rgba(148,163,184,.12)); background: rgba(255,255,255,.04); border-radius: 10px; color: #94a3b8; display: grid; place-items: center; cursor: pointer; }
 @media (min-width: 840px) { .nkm-header-search-btn { display: none; } }
+/* Chat — visible in all sections at top, near Notification */
+.nkm-header-chat { width: 36px; height: 36px; border: 1px solid var(--nkm-border, rgba(148,163,184,.12)); background: rgba(255,255,255,.04); border-radius: 10px; color: #94a3b8; display: grid; place-items: center; cursor: pointer; position: relative; text-decoration: none; flex: 0 0 36px; }
+.nkm-header-chat:hover { background: rgba(255,255,255,.08); color: #e2e8f0; }
+.nkm-header-chat .nav-chat-dot { position: absolute; top: 3px; right: 3px; width: 8px; height: 8px; border-radius: 50%; background: #ef4444; border: 2px solid #0a0f1a; box-shadow: 0 0 0 1px rgba(239,68,68,.4); }
+.nkm-header-chat .nav-chat-dot[hidden] { display: none !important; }
 /* Keep header above content but below sheets (200+ ) */
 .topbar { z-index: 60; }
 .tricolor-strip { z-index: 61; }
+/* Vertical centering — all header controls centered in 48px bar */
+.topbar-inner, .topbar-actions, #authStatus, .notification-wrap, .auth-chip { display: flex; align-items: center; }
+.auth-chip { align-items: center; line-height: 1; }
+.auth-name { line-height: 1; display: inline-flex; align-items: center; }
+.notification-btn { display: grid; place-items: center; line-height: 1; }
+.nkm-header-chat svg { display: block; }
+
+/* ── Mobile header compact — 52px hierarchy: NKM branding → flexible middle → Chat → notification → compact user ── */
+@media (max-width: 839px) {
+  header.topbar { height:52px !important; min-height:52px !important; }
+  header.topbar .topbar-inner { height:52px !important; min-height:52px !important; gap:8px; padding:4px 10px; }
+  .brand { flex:0 0 auto; min-width:0; }
+  .brand-copy { min-width:0; }
+  .brand strong { font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:28vw; }
+  .brand small { display:none; }
+  .topbar-actions { flex:1 1 auto; justify-content:flex-end; min-width:0; gap:6px; }
+  #authStatus { flex:1 1 auto; min-width:0; display:flex; justify-content:flex-end; align-items:center; gap:6px; }
+  .notification-wrap { flex:0 0 auto; }
+  .notification-btn { width:36px; height:36px; flex:0 0 36px; }
+  .auth-chip { max-width:42vw; min-width:0; padding:4px 8px 4px 4px; gap:6px; flex:0 1 auto; }
+  .auth-avatar, .auth-avatar-fallback { width:28px; height:28px; flex:0 0 28px; font-size:12px; }
+  .auth-name { max-width:18vw; font-size:12px; display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .auth-logout { width:32px; height:32px; flex:0 0 32px; font-size:14px; display:grid; place-items:center; }
+}
+@media (max-width: 360px) {
+  .auth-name { display:none; }
+  .auth-chip { padding:4px; max-width:none; }
+}

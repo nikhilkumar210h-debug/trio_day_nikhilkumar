@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preload" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <noscript><link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
-    <style>:root{--primary:#6366f1;--bg:#0a0f1a;--surface:#141b2e;--ink:#f1f5f9;--border:rgba(148,163,184,.12)}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif}.tricolor-strip{height:3px;display:flex;position:fixed;inset:0 0 auto;z-index:200}.tricolor-strip span{flex:1}.tricolor-strip span:nth-child(1){background:linear-gradient(90deg,#ff9933,#ff7700)}.tricolor-strip span:nth-child(2){background:#fff}.tricolor-strip span:nth-child(3){background:linear-gradient(90deg,#128807,#0a6305)}.topbar{position:sticky;top:3px;z-index:100;background:rgba(17,24,39,.9);border-bottom:1px solid var(--border)}.profile-main{width:min(1000px,100%);margin:auto;padding:20px 16px}.profile-card{background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:24px}</style>
+    <style>:root{--primary:#6366f1;--bg:#0a0f1a;--surface:#141b2e;--ink:#f1f5f9;--border:rgba(148,163,184,.12)}*{box-sizing:border-box}html{background:#0a0f1a}body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif;background:#0a0f1a}.tricolor-strip{height:3px;display:flex;position:fixed;inset:0 0 auto;z-index:200}.tricolor-strip span{flex:1}.tricolor-strip span:nth-child(1){background:linear-gradient(90deg,#ff9933,#ff7700)}.tricolor-strip span:nth-child(2){background:#fff}.tricolor-strip span:nth-child(3){background:linear-gradient(90deg,#128807,#0a6305)}.topbar{position:sticky;top:3px;z-index:100;background:rgba(17,24,39,.9);border-bottom:1px solid var(--border)}.profile-main{width:min(1000px,100%);margin:auto;padding:20px 16px}.profile-card{background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:24px}.bottom-nav{position:fixed;left:0;right:0;bottom:0;background:rgba(10,15,26,.96);backdrop-filter:blur(18px);border-top:1px solid rgba(148,163,184,.12);z-index:55;padding-bottom:env(safe-area-inset-bottom)}.nav-row{width:min(520px,100%);margin:auto;display:grid;grid-template-columns:1fr 1fr 72px 1fr 1fr;gap:2px;padding:6px 6px 4px;align-items:end}.nav-btn{padding:6px 2px 4px;border-radius:12px;color:#64748b;font-size:10px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;gap:2px;min-height:44px;display:flex;flex-direction:column;align-items:center;justify-content:center}.nav-btn.active{color:#a5b4fc;background:rgba(99,102,241,.10)}.nav-btn--create{background:linear-gradient(135deg,#4f46e5 0%,#4338ca 100%);color:#fff;border:1px solid rgba(255,255,255,.08);border-radius:16px;height:48px;margin-bottom:4px;box-shadow:0 4px 12px rgba(67,56,202,.28);gap:0}.nav-btn--create .nav-icon svg{stroke:#fff}</style>
     <link rel="preload" href="styles/tokens.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <noscript><link rel="stylesheet" href="styles/tokens.css"></noscript>
   <link rel="preload" href="styles/skeleton.css" as="style" onload="this.onload=null;this.rel='stylesheet'"><noscript><link rel="stylesheet" href="styles/skeleton.css"></noscript>
@@ -22,6 +22,8 @@
     <noscript><link rel="stylesheet" href="style.css"></noscript>
     <link rel="preload" href="ui/tasks.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <noscript><link rel="stylesheet" href="ui/tasks.css"></noscript>
+    <link rel="icon" href="icons/icon-192.png" type="image/png">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
     <link rel="manifest" href="manifest.json">
 </head>
 
@@ -42,23 +44,32 @@
                     <div id="profileUserId" class="user-id">TRIO-</div>
                     <p id="profileEmail" class="profile-email"></p>
                     <p id="profileBio" class="profile-bio">No bio yet.</p>
-                    <div class="profile-stats"><span id="followersCount">0 Followers</span><span id="followingCount">0
-                            Following</span></div>
+                    <div class="profile-stats"><button type="button" id="followersCount" class="profile-stat-btn" style="background:none;border:0;padding:0;cursor:pointer;color:inherit;font:inherit">0 Followers</button><button type="button" id="followingCount" class="profile-stat-btn" style="background:none;border:0;padding:0;cursor:pointer;color:inherit;font:inherit">0 Following</button></div>
                 </div>
+                <button id="profileMenuBtn" class="profile-menu-btn" type="button" aria-label="Profile menu" hidden>⋯</button>
             </div>
             <div id="profileActions" class="profile-actions"></div>
             <div id="profileGame" class="profile-game" hidden>
-                <div style="display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;align-items:flex-end">
-                    <div>
-                        <span class="eyebrow">Progress</span>
-                        <h3 style="margin:0.2rem 0">Level <span id="pgLevel">1</span> · <span id="pgXp">0</span> XP</h3>
-                        <p style="margin:0;font-size:0.85rem;opacity:0.75">🔥 Streak <strong id="pgStreak">0</strong> · Best <strong id="pgBest">0</strong></p>
+                <div class="profile-game-row">
+                    <div class="profile-game-stat">
+                        <div class="profile-game-value" id="pgLevel">1</div>
+                        <div class="profile-game-label">Level</div>
                     </div>
-                    <a class="btn secondary" href="leaderboard.html">Ranks</a>
+                    <div class="profile-game-stat">
+                        <div class="profile-game-value" id="pgXp">0</div>
+                        <div class="profile-game-label">XP</div>
+                    </div>
+                    <div class="profile-game-stat">
+                        <div class="profile-game-value" id="pgStreak">0</div>
+                        <div class="profile-game-label">Streak</div>
+                    </div>
                 </div>
-                <div class="xp-bar" style="margin-top:0.75rem"><i id="pgXpFill" style="width:0%"></i></div>
-                <h4 style="margin:1rem 0 0.35rem;font-size:0.85rem;opacity:0.8">Badges</h4>
-                <div id="pgBadges"></div>
+                <div class="xp-bar" style="margin-top:12px"><i id="pgXpFill" style="width:0%"></i></div>
+                <div class="profile-game-badges">
+                    <h4 style="margin:12px 0 8px;font-size:0.85rem;opacity:0.8">Badges</h4>
+                    <div id="pgBadges"></div>
+                </div>
+                <a class="btn secondary" href="leaderboard.html" style="margin-top:12px;align-self:flex-start">View Leaderboard</a>
             </div>
         </section>
         <div class="profile-grid">
@@ -73,26 +84,20 @@
                 </div>
             </section>
         </div>
-        <section class="profile-section" id="settingsSection">
-            <h3>Settings</h3>
-            <div class="check-row">
-                <input type="checkbox" id="soundToggle" checked>
-                <strong>Sound effects</strong>
-            </div>
-        </section>
     </main>
-    <nav class="bottom-nav">
+    <nav class="bottom-nav" aria-label="Primary navigation">
         <div class="nav-row">
-            <a class="nav-btn" href="index.html"><span class="nav-icon">⌂</span><span>Posts</span></a>
-            <a class="nav-btn" href="all-users.html"><span class="nav-icon">👥</span><span>Users</span></a>
-            <a class="nav-btn" href="tasks.html"><span class="nav-icon">⚡</span><span>Tasks</span></a>
-            <a class="nav-btn" href="chat.html"><span class="nav-icon">✉</span><span>Chat</span></a>
-            <a class="nav-btn active" href="profile.html"><span class="nav-icon">◉</span><span>Profile</span></a>
+            <a class="nav-btn" href="index.html" data-nav="home" aria-label="Home"><span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg></span><span>Home</span></a>
+            <a class="nav-btn" href="all-users.html" data-nav="community" aria-label="Community"><span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="9" cy="8" r="4"/><path d="M15 10a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7z"/><path d="M3 19a6 6 0 0 1 12 0"/><path d="M15 19a5 5 0 0 1 5 0"/></svg></span><span>Community</span></a>
+            <a class="nav-btn nav-btn--create" href="#" data-nav="create" aria-label="Create"><span class="nav-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></span><span></span></a>
+            <a class="nav-btn" href="tasks.html" data-nav="activity" aria-label="Activity"><span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z"/></svg></span><span>Activity</span></a>
+            <a class="nav-btn active" href="profile.html" data-nav="you" aria-label="You"><span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="12" cy="8" r="4"/><path d="M4 19a8 8 0 0 1 16 0"/></svg></span><span>You</span></a>
         </div>
     </nav>
     <script type="module" src="script.js"></script>
     <script type="module" src="auth-ui.js"></script>
     <script type="module" src="profile.js"></script>
+    <script src="install-prompt.js" defer></script>
   <script type="module" src="ui/header.js"></script>
   <script type="module" src="ui/nav.js"></script>
   <script type="module" src="ui/sheet.js"></script>

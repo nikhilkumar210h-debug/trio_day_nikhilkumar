@@ -1,11 +1,11 @@
 import { auth, db } from './firebase-init.js';
-import { notifyUser } from './notifications.js';
+import { notifyUser } from './services/notificationHelpers.js';
 import { SoundManager } from './sound-manager.js';
 import { escapeHtml as esc, avatarHtml, nameOf, timeOf, chatId } from './utils.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
 import {
   collection, addDoc, onSnapshot, query, orderBy,
-  getDoc, doc, getDocs, where, deleteDoc, writeBatch
+  getDoc, doc, getDocs, where, deleteDoc, writeBatch, limit
 } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 
 const $ = id => document.getElementById(id);
@@ -15,21 +15,26 @@ let privateUnsub = null;
 const params = new URLSearchParams(location.search);
 const peerUid = params.get('uid');
 
-
+import { createSheet } from './ui/sheet.js';
 
 function messageHtml(m) {
+  const text = m?.text ?? m?.message ?? '';
   if (m?.replyToStoryId) {
     const storyUrl = `view_post.html?postId=${encodeURIComponent(m.replyToStoryId)}`;
-    const preview = m.storyPreview ? `<img src="${esc(m.storyPreview)}" alt="Story preview" style="width:100%;border-radius:10px;margin:6px 0;max-height:180px;object-fit:cover;display:block;border:1px solid var(--border)">` : '';
+    const preview = m.storyPreview ? `<img src="${esc(m.storyPreview)}" alt="Story preview" style="width:100%;border-radius:10px;margin:6px 0;max-height:180px;object-fit:cover;display:block;border:1px solid var(--nkm-border,rgba(148,163,184,.12))">` : '';
     const orig = m.originalStoryText ? `<span class="shared-post-label" style="opacity:.8">Original: ${esc(String(m.originalStoryText).slice(0,60))}</span>` : '';
-    return `${orig}${preview}<span class="msg-text-content">${esc(m?.text)}</span><a class="shared-post-link" href="${storyUrl}">View story →</a>`;
+    return `${orig}${preview}<span class="msg-text-content">${esc(text)}</span><a class="shared-post-link" href="${storyUrl}">View story →</a>`;
   }
-  if (!m?.sharedPostId) return `<span class="msg-text-content">${esc(m?.text)}</span>`;
+  if (!m?.sharedPostId) return `<span class="msg-text-content">${esc(text)}</span>`;
   const postUrl = `view_post.html?postId=${encodeURIComponent(m.sharedPostId)}`;
-  return `<span class="shared-post-label">📎 Shared a post</span><a class="shared-post-link" href="${postUrl}">Open post →</a>`;
+  // Show text even for shared posts (was hiding message)
+  return `<span class="msg-text-content">${esc(text)}</span><span class="shared-post-label">📎 Shared a post</span><a class="shared-post-link" href="${postUrl}">Open post →</a>`;
 }
 
 async function findUser(uid) {
+  const { getCachedUser } = await import('./services/userCache.js');
+  const cached = await getCachedUser(uid);
+  if (cached) return { ...cached, uid: cached.uid || uid };
   const direct = await getDoc(doc(db, 'users', uid));
   if (direct.exists()) return { ...direct.data(), uid: direct.data().uid || direct.id };
   const q = query(collection(db, 'users'), where('uid', '==', uid));
@@ -47,7 +52,6 @@ function setPeerHeader() {
   $('peerAvatar').innerHTML = avatarHtml(activePeer);
 }
 
-// ── Delete message ──────────────────────────────────────────────────────────
 async function deletePrivateMessage(msgDocId) {
   if (!currentUser || !activePeer) return;
   const confirmed = window.confirm('Yeh message delete karna chahte ho? Dono sides se hata diya jayega.');
@@ -62,7 +66,6 @@ async function deletePrivateMessage(msgDocId) {
   }
 }
 
-// ── Mark messages as seen ─────────────────────────────────────────
 async function markMessagesAsSeen() {
   if (!currentUser || !activePeer) return;
   try {
@@ -86,47 +89,74 @@ function debouncedMarkAsSeen() {
   seenDebounce = setTimeout(markMessagesAsSeen, 1000);
 }
 
-// ── Render messages ─────────────────────────────────────────────────────────
+function openMsgMenu(msgDocId, isMine) {
+  const { open, close } = createSheet({ title: isMine ? 'Message' : 'Message', content: `
+    <div style="display:grid;gap:8px">
+      <button class="nkm-btn" type="button" data-copy>Copy text</button>
+      ${isMine ? '<button class="nkm-btn" type="button" data-del style="color:#ef4444;border-color:rgba(239,68,68,.2)">Delete</button>' : ''}
+    </div>
+  `});
+  open();
+  const copyBtn = document.querySelector('[data-copy]');
+  const delBtn = document.querySelector('[data-del]');
+  // copy handled via delegation to row's data
+  if (copyBtn) copyBtn.addEventListener('click', async ()=>{
+    const txt = document.querySelector(`[data-msg-id="${msgDocId}"] .msg-text-content`)?.textContent || '';
+    try{ await navigator.clipboard.writeText(txt); copyBtn.textContent='Copied!'; setTimeout(close,700);}catch{ prompt('Copy', txt); }
+  });
+  if (delBtn) delBtn.addEventListener('click', ()=>{ close(); deletePrivateMessage(msgDocId); });
+}
+
 function renderMessages(snap) {
   const box = $('privateMessages');
   box.innerHTML = '';
   let lastMs = 0;
+  if(snap.empty){
+    box.innerHTML='<div class="nkm-chat-empty"><p>No messages yet.</p><p>Say hi to start the conversation.</p></div>';
+    return;
+  }
 
+  let prevUid = null;
   snap.forEach(d => {
     const m = d.data();
     const msgDocId = d.id;
     lastMs = Math.max(lastMs, Number(m.createdAtMs || m.createdAt) || 0);
     const mine = m.uid === currentUser.uid;
-
+    const isGrouped = prevUid === m.uid;
     const row = document.createElement('div');
-    row.className = `private-msg-row ${mine ? 'mine' : 'theirs'}`;
+    row.className = `private-msg-row ${mine ? 'mine' : 'theirs'} ${isGrouped ? 'grouped' : 'group-break'}`;
     row.dataset.msgId = msgDocId;
 
     row.innerHTML = `
-      ${!mine ? `<a class="message-avatar" href="profile.html?uid=${encodeURIComponent(m.uid || activePeer.uid)}">${avatarHtml(activePeer)}</a>` : ''}
+      ${!mine && !isGrouped ? `<a class="message-avatar" href="profile.html?uid=${encodeURIComponent(m.uid || activePeer.uid)}">${avatarHtml(activePeer)}</a>` : (!mine && isGrouped ? '<span style="width:28px;flex:none"></span>' : '')}
       <div class="message-stack">
-        ${!mine ? `<a class="message-author" href="profile.html?uid=${encodeURIComponent(m.uid || activePeer.uid)}">${esc(m.name || nameOf(activePeer))}</a>` : ''}
-        <div class="message-bubble">
+        ${!mine && !isGrouped ? `<a class="message-author" href="profile.html?uid=${encodeURIComponent(m.uid || activePeer.uid)}">${esc(m.name || nameOf(activePeer))}</a>` : ''}
+        <div class="message-bubble" data-bubble>
           ${messageHtml(m)}
-          <div class="message-time">${esc(timeOf(m.createdAtMs || m.createdAt))} ${mine && m.seen ? '<span class="msg-seen" title="Seen">✓</span>' : ''}</div>
-          ${mine ? `<button class="msg-delete-btn" data-id="${esc(msgDocId)}" title="Delete message" aria-label="Delete message">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
-          </button>` : ''}
+          <div class="message-time">${esc(timeOf(m.createdAtMs || m.createdAt))} ${mine && m.seen ? '<span class="msg-seen" title="Seen">✓ seen</span>' : ''}</div>
         </div>
-      </div>`;
+      </div>
+      <button class="nkm-msg-menu" type="button" aria-label="More" data-menu>⋯</button>`;
 
     box.appendChild(row);
+    const menuBtn = row.querySelector('[data-menu]');
+    if(menuBtn) menuBtn.addEventListener('click', (e)=>{ e.stopPropagation(); openMsgMenu(msgDocId, mine); });
+    const bubble = row.querySelector('[data-bubble]');
+    if(bubble){
+      let pressTimer = null;
+      const open = ()=> openMsgMenu(msgDocId, mine);
+      bubble.addEventListener('click', (e)=>{
+        // mobile tap or desktop selection: open sheet when not hovering delete button
+        if (window.matchMedia('(hover:none)').matches || window.innerWidth <= 839) open();
+      });
+      bubble.addEventListener('contextmenu', (e)=>{ e.preventDefault(); open(); });
+      bubble.addEventListener('touchstart', ()=>{ pressTimer = setTimeout(open, 480); }, {passive:true});
+      bubble.addEventListener('touchend', ()=>{ clearTimeout(pressTimer); });
+      bubble.addEventListener('touchmove', ()=>{ clearTimeout(pressTimer); });
+    }
+    prevUid = m.uid;
   });
 
-  // Attach delete listeners
-  box.querySelectorAll('.msg-delete-btn').forEach(btn => {
-    btn.addEventListener('click', e => {
-      e.stopPropagation();
-      deletePrivateMessage(btn.dataset.id);
-    });
-  });
-
-  // Mark chat as seen
   if (currentUser && activePeer) {
     const mark = window.TrioChatUnread?.markChatSeen;
     if (mark) mark(currentUser.uid, activePeer.uid, lastMs || Date.now());
@@ -145,17 +175,16 @@ function renderMessages(snap) {
   requestAnimationFrame(() => { box.scrollTop = box.scrollHeight; });
 }
 
-// ── Watch messages ───────────────────────────────────────────────────────────
 function watchMessages() {
   privateUnsub?.();
   const q = query(
     collection(db, 'privateChats', chatId(currentUser.uid, activePeer.uid), 'messages'),
-    orderBy('createdAtMs', 'asc')
+    orderBy('createdAtMs', 'asc'),
+    limit(50)
   );
   privateUnsub = onSnapshot(q, renderMessages, err => console.error('Private chat listener:', err));
 }
 
-// ── Send message ─────────────────────────────────────────────────────────────
 $('privateForm').addEventListener('submit', async e => {
   e.preventDefault();
   if (!activePeer || !currentUser) return;
@@ -194,7 +223,6 @@ $('privateForm').addEventListener('submit', async e => {
   }
 });
 
-// ── Auth ─────────────────────────────────────────────────────────────────────
 onAuthStateChanged(auth, async u => {
   if (!u) {
     const back = `private-chat.html?uid=${encodeURIComponent(peerUid || '')}`;
@@ -208,5 +236,4 @@ onAuthStateChanged(auth, async u => {
   if (!activePeer) { alert('User nahi mila.'); location.href = 'chat.html'; return; }
   setPeerHeader();
   watchMessages();
-  setTimeout(() => $('privateInput')?.focus(), 120);
 });

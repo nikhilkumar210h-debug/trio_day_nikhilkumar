@@ -1,6 +1,18 @@
 // services/notificationHelpers.js — Phase 0 dedupe: single source for pushCopy/pushUrl helpers
 // Replaces 3 copies: notifications.js pushCopy/pushUrl + notify-self.js fetch block + auth-ui.js notificationText
+import { db } from '../firebase-init.js';
 import { APP_BASE } from '../onesignal-config.js';
+import { doc, collection, setDoc } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
+
+// notifyUser — creates a notification in target user's notifications subcollection
+export async function notifyUser(targetUid, data) {
+  const notifRef = doc(collection(db, 'users', targetUid, 'notifications'));
+  await setDoc(notifRef, {
+    ...data,
+    createdAtMs: Date.now(),
+    read: false
+  });
+}
 
 export function pushCopy({ type, actorName, text, title }) {
   const who = actorName || 'Someone';

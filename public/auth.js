@@ -7,7 +7,8 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   updateProfile,
-  onAuthStateChanged
+  onAuthStateChanged,
+  sendPasswordResetEmail
 } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
 import { makeUserId } from './utils.js';
 
@@ -15,6 +16,8 @@ const $ = id => document.getElementById(id);
 const statusEl = $('authFormStatus');
 const params = new URLSearchParams(location.search);
 const redirectTo = params.get('redirect') || 'index.html';
+const urlMode = params.get('mode');
+const isResetMode = urlMode === 'reset';
 
 function status(t = '', err = false) {
   if (!statusEl) return;
@@ -64,6 +67,24 @@ getRedirectResult(auth)
 
 onAuthStateChanged(auth, u => { if (u) location.href = redirectTo; });
 
+// Reset password mode UI
+if (isResetMode) {
+  const googleBtn = $('googleBtn');
+  const modeToggle = $('modeToggle');
+  const nameField = $('nameField');
+  const submitBtn = $('emailSubmitBtn');
+  const pwd = $('password');
+  if (googleBtn) googleBtn.hidden = true;
+  if (modeToggle) modeToggle.hidden = true;
+  if (nameField) nameField.hidden = true;
+  if (pwd) { pwd.placeholder = 'Not needed'; pwd.disabled = true; pwd.style.opacity = '0.5'; }
+  if (submitBtn) submitBtn.textContent = 'Send Reset Link';
+  const h1 = document.querySelector('.auth-card h1');
+  if (h1) h1.textContent = 'Reset Password';
+  const sub = document.querySelector('.auth-sub');
+  if (sub) sub.textContent = 'Enter your email to receive a reset link';
+}
+
 const googleBtn = $('googleBtn');
 if (googleBtn) {
   googleBtn.addEventListener('click', async () => {
@@ -111,10 +132,41 @@ if (modeToggle) {
   });
 }
 
+// Forgot password handler
+const forgotBtn = $('forgotPasswordBtn');
+if (forgotBtn) {
+  forgotBtn.addEventListener('click', async () => {
+    const email = $('email').value.trim();
+    if (!email) return status('Email daalo pehle', true);
+    try {
+      await sendPasswordResetEmail(auth, email);
+      status('Reset link bhej diya! Email check karo ✉️');
+    } catch (err) {
+      console.error(err);
+      status(err.message || 'Reset link bhejne me dikkat aayi', true);
+    }
+  });
+}
+
 const emailForm = $('emailForm');
 if (emailForm) {
   emailForm.addEventListener('submit', async e => {
     e.preventDefault();
+    
+    // Handle reset password mode
+    if (isResetMode) {
+      const email = $('email').value.trim();
+      if (!email) return status('Email daalo pehle', true);
+      try {
+        await sendPasswordResetEmail(auth, email);
+        status('Reset link bhej diya! Email check karo ✉️');
+      } catch (err) {
+        console.error(err);
+        status(err.message || 'Reset link bhejne me dikkat aayi', true);
+      }
+      return;
+    }
+    
     const email = $('email').value.trim();
     const password = $('password').value;
     const name = $('fullName').value.trim();

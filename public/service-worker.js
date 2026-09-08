@@ -1,6 +1,6 @@
 /* Offline cache + efficient cache lifetimes (95 KiB savings fix). OneSignal SW lives under push/onesignal/. */
-const CACHE_NAME = "trio-day-cache-v18";
-const STATIC_CACHE = "trio-static-v18";
+const CACHE_NAME = "trio-day-cache-v34";
+const STATIC_CACHE = "trio-static-v34";
 const BASE = "/";
 const FILES_TO_CACHE = [
   BASE,
@@ -32,7 +32,7 @@ const FILES_TO_CACHE = [
   BASE + "firebase-init.js",
   BASE + "firebase-config.js",
   BASE + "image-upload.js",
-  BASE + "onesignal.js",
+  BASE + "onesignal.js?v=34",
   BASE + "notifications.js",
   BASE + "view_post.js",
   BASE + "ui/toast.js",
@@ -49,6 +49,10 @@ const FILES_TO_CACHE = [
   BASE + "ui/search.js",
   BASE + "ui/skeleton.js",
   BASE + "styles/home.css",
+  BASE + "styles/voice-status.css",
+  BASE + "voice-status.html",
+  BASE + "voice-status.js",
+  BASE + "offline.html",
   BASE + "manifest.json",
   BASE + "icons/icon-192.png",
   BASE + "icons/icon-512.png"
@@ -62,6 +66,8 @@ function shouldBypass(url) {
     url.includes("cloudinary.com") ||
     url.includes("gstatic.com") ||
     url.includes("onesignal.com") ||
+    url.includes("OneSignalSDKWorker") ||
+    url.includes("/push/onesignal/") ||
     url.includes("workers.dev") ||
     url.includes("onesignal-config.js") ||
     url.includes("127.0.0.1") ||
@@ -76,7 +82,9 @@ function shouldBypass(url) {
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) =>
-      cache.addAll(FILES_TO_CACHE).catch((err) => console.warn("Cache partial:", err))
+      Promise.all(
+        FILES_TO_CACHE.map((url) => cache.add(new Request(url, { cache: "reload" })).catch((err) => console.warn("Cache skip:", url, err)))
+      )
     )
   );
   self.skipWaiting();
@@ -107,13 +115,13 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(
       caches.match(event.request).then(cached => {
         if (cached) {
-          // Update in background (stale-while-revalidate)
-          fetch(event.request).then(resp=>{
+          // Update in background (stale-while-revalidate) — bypass HTTP immutable cache
+          fetch(new Request(event.request, { cache: "reload" })).then(resp=>{
             if(resp && resp.ok) caches.open(STATIC_CACHE).then(c=>c.put(event.request, resp));
           }).catch(()=>{});
           return cached;
         }
-        return fetch(event.request).then(resp=>{
+        return fetch(new Request(event.request, { cache: "reload" })).then(resp=>{
           if(resp && resp.ok){
             const clone = resp.clone();
             caches.open(STATIC_CACHE).then(c=>c.put(event.request, clone));
@@ -134,6 +142,15 @@ self.addEventListener("fetch", (event) => {
         caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone).catch(() => {}));
         return response;
       })
-      .catch(() => caches.match(event.request).then(r => r || new Response(JSON.stringify({items:[]}), {status: 200, headers:{'Content-Type':'application/json'}})))
+      .catch(() => {
+        // For navigation/HTML requests, try cached page then offline.html
+        const accept = event.request.headers.get('accept') || '';
+        const isNavigation = event.request.mode === 'navigate' || accept.includes('text/html');
+        if (isNavigation) {
+          return caches.match(event.request).then(cached => cached || caches.match(BASE + 'offline.html'));
+        }
+        // API/JSON: return empty array fallback (legacy behavior for feed APIs)
+        return caches.match(event.request).then(r => r || new Response(JSON.stringify({items:[]}), {status: 200, headers:{'Content-Type':'application/json'}}));
+      })
   );
 });

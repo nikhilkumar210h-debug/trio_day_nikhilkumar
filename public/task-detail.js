@@ -87,11 +87,29 @@ async function render() {
   };
   $('completeBtn').onclick = async () => {
     if (!me) return alert('Login first');
+    const btn = $('completeBtn');
+    const prevText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Completing…';
     try {
       const r = await completeTask(taskId, me.uid, profile);
-      if (r.already) alert('Already completed');
+      if (r.already) {
+        alert('Already completed');
+        btn.textContent = 'Done';
+        btn.disabled = true;
+        return;
+      }
+      // Optimistic: bump local count immediately before re-render
+      if (task) task.completions = (Number(task.completions) || 0) + 1;
       await render();
-    } catch (err) { alert(err.message || 'Failed'); }
+      // Ensure button reflects done state after render
+      const newBtn = $('completeBtn');
+      if (newBtn) { newBtn.textContent = 'Done'; newBtn.disabled = true; }
+    } catch (err) {
+      alert(err.message || 'Failed');
+      btn.textContent = prevText;
+      btn.disabled = false;
+    }
   };
   $('followBtn').onclick = () => followCreator(task.creatorUid);
 

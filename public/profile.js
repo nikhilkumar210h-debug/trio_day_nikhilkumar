@@ -1,14 +1,16 @@
 import { auth, db } from './firebase-init.js';
-import { notifyUser } from './notifications.js';
+import { notifyUser } from './services/notificationHelpers.js';
 import { uploadProfileImage } from './image-upload.js';
 import { trioCache } from './trio-cache.js';
 import { renderBadgesHtml } from './gamification/badges.js';
 import { xpIntoLevel, XP_PER_LEVEL, levelFromXp } from './gamification/constants.js';
 import { SoundManager } from './sound-manager.js';
-import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
+import { createSheet } from './ui/sheet.js';
+import { getCachedUser } from './services/userCache.js';
+import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
 import {
   doc, getDoc, collection, getDocs, query, where,
-  setDoc, deleteDoc, serverTimestamp, updateDoc
+  setDoc, deleteDoc, serverTimestamp, updateDoc, limit
 } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 import { makeUserId, escapeHtml as esc } from './utils.js';
 
@@ -21,25 +23,14 @@ function avatar(el, u) {
   else el.textContent = (u?.name || 'U').charAt(0).toUpperCase();
 }
 
-// ── Cached single-user fetch ─────────────────────────────────────────────────
-async function getCachedUser(uid) {
-  const key = `user_${uid}`;
-  const cached = trioCache.get(key);
-  if (cached) return cached;
-  const snap = await getDoc(doc(db, 'users', uid)).catch(() => null);
-  if (!snap?.exists()) return null;
-  const data = snap.data();
-  trioCache.set(key, data, trioCache.TTL.DEFAULT);
-  return data;
-}
-
 // ── Cached connections list ─────────────────────────────────────────────────
 // followers/following counts don't change often — cache 2 min
 async function getCachedFollowers(uid) {
   const key = `followers_${uid}`;
   const cached = trioCache.get(key);
   if (cached !== null) return cached;
-  const snap = await getDocs(collection(db, 'users', uid, 'followers')).catch(() => ({ size: 0, docs: [] }));
+  // Bound to 500 max (counts don't need exact beyond that for UI)
+  const snap = await getDocs(query(collection(db, 'users', uid, 'followers'), limit(500))).catch(() => ({ size: 0, docs: [] }));
   trioCache.set(key, snap.size, trioCache.TTL.SHORT);
   return snap.size;
 }
@@ -48,7 +39,8 @@ async function getCachedFollowing(uid) {
   const key = `following_${uid}`;
   const cached = trioCache.get(key);
   if (cached !== null) return cached;
-  const snap = await getDocs(collection(db, 'users', uid, 'following')).catch(() => ({ size: 0, docs: [] }));
+  // Bound to 500 max
+  const snap = await getDocs(query(collection(db, 'users', uid, 'following'), limit(500))).catch(() => ({ size: 0, docs: [] }));
   // Also cache the list of IDs (used by connections panel)
   trioCache.set(key, snap.size, trioCache.TTL.SHORT);
   trioCache.set(`following_ids_${uid}`, snap.docs.map(d => d.id), trioCache.TTL.SHORT);
@@ -59,7 +51,8 @@ async function getCachedFollowingIds(uid) {
   const key = `following_ids_${uid}`;
   const cached = trioCache.get(key);
   if (cached) return cached;
-  const snap = await getDocs(collection(db, 'users', uid, 'following')).catch(() => ({ docs: [] }));
+  // Bound to 500 max
+  const snap = await getDocs(query(collection(db, 'users', uid, 'following'), limit(500))).catch(() => ({ docs: [] }));
   const ids = snap.docs.map(d => d.id);
   trioCache.set(key, ids, trioCache.TTL.SHORT);
   trioCache.set(`following_${uid}`, ids.length, trioCache.TTL.SHORT);
@@ -83,10 +76,11 @@ async function getCachedUserPosts(uid) {
   const key = `posts_${uid}`;
   const cached = trioCache.get(key);
   if (cached) return cached;
-  const snap = await getDocs(query(collection(db, 'posts'), where('uid', '==', uid)))
-    .catch(() => ({ empty: true, docs: [] }));
-  // Don't show stories (short-term 24h) in profile — only permanent posts
-  const posts = snap.docs.map(d => ({ ...d.data(), _id: d.id })).filter(p => !p.isStory && p.type !== 'story');
+  // Bound query: limit to 50 most recent, filter server-side where possible
+  const snap = await getDocs(
+    query(collection(db, 'posts'), where('uid', '==', uid), where('isStory', '==', false), orderBy('createdAtMs', 'desc'), limit(50))
+  ).catch(() => ({ empty: true, docs: [] }));
+  const posts = snap.docs.map(d => ({ ...d.data(), _id: d.id })).filter(p => p.type !== 'story');
   trioCache.set(key, posts, trioCache.TTL.SHORT);
   return posts;
 }
@@ -177,6 +171,107 @@ async function connect(uid) {
   } catch (err) { console.error(err); alert(err.message || 'Connection update failed.'); }
 }
 
+// ── Profile menu (three-dot) ───────────────────────────────────────────────────
+async function openProfileMenu(userData) {
+  const { sheet, open, close } = createSheet({
+    title: 'Account',
+    content: `
+      <div class="profile-menu-list">
+        <button type="button" class="profile-menu-item" data-action="edit">
+          <span>✏️</span> Edit Profile
+        </button>
+        <button type="button" class="profile-menu-item" data-action="password">
+          <span>🔐</span> Change Password
+        </button>
+        <button type="button" class="profile-menu-item" data-action="privacy">
+          <span>🔒</span> Privacy Settings
+        </button>
+        <label class="profile-menu-item profile-menu-toggle" style="cursor:pointer">
+          <span>🔊</span> Sound Effects
+          <input type="checkbox" id="sheetSoundToggle" ${SoundManager.isEnabled() ? 'checked' : ''} style="margin-left:auto">
+        </label>
+        <button type="button" class="profile-menu-item" data-action="install">
+          <span>📲</span> Install App
+        </button>
+        <button type="button" class="profile-menu-item profile-menu-danger" data-action="logout">
+          <span>🚪</span> Logout
+        </button>
+      </div>
+    `,
+    actions: ''
+  });
+
+  const body = sheet.querySelector('.nkm-sheet-body');
+  
+  // Sound toggle handler
+  const soundToggle = body.querySelector('#sheetSoundToggle');
+  if (soundToggle) {
+    soundToggle.addEventListener('change', e => {
+      SoundManager.toggle(e.target.checked);
+      if (e.target.checked) SoundManager.click();
+    });
+  }
+
+  // Menu item handlers
+  body.querySelectorAll('.profile-menu-item[data-action]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const action = btn.dataset.action;
+      close();
+      
+      if (action === 'edit') {
+        await openEdit(userData);
+      } else if (action === 'password') {
+        // Inline forgot password flow
+        try {
+          const { sendPasswordResetEmail } = await import('https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js');
+          const userEmail = userData.email;
+          if (!userEmail) {
+            const { showToast } = await import('./ui/toast.js');
+            showToast('Google account me password change Google se karo', 'error');
+            return;
+          }
+          await sendPasswordResetEmail(auth, userEmail);
+          const { showToast } = await import('./ui/toast.js');
+          showToast('Reset link bhej diya! Email check karo ✉️');
+        } catch (err) {
+          console.error(err);
+          const { showToast } = await import('./ui/toast.js');
+          showToast(err.message, 'error');
+        }
+      } else if (action === 'privacy') {
+        // Toggle emailHidden
+        const newEmailHidden = !userData.emailHidden;
+        try {
+          await updateDoc(doc(db, 'users', me.uid), { emailHidden: newEmailHidden, updatedAt: serverTimestamp() });
+          trioCache.invalidate(`user_${me.uid}`);
+          const { showToast } = await import('./ui/toast.js');
+          showToast(newEmailHidden ? 'Email hidden kar diya' : 'Email visible kar diya');
+          await new Promise(r => setTimeout(r, 300));
+          await loadProfile(me.uid);
+        } catch (err) {
+          console.error(err);
+          const { showToast } = await import('./ui/toast.js');
+          showToast('Failed to update privacy setting', 'error');
+        }
+      } else if (action === 'install') {
+        // Trigger install prompt
+        const event = new CustomEvent('app-install-prompt');
+        window.dispatchEvent(event);
+      } else if (action === 'logout') {
+        try {
+          await signOut(auth);
+          location.href = 'login.html';
+        } catch (err) {
+          console.error(err);
+          alert('Logout failed');
+        }
+      }
+    });
+  });
+
+  open();
+}
+
 // ── Main profile loader ──────────────────────────────────────────────────────
 async function loadProfile(uid) {
   // 1. User document — cache first
@@ -189,8 +284,12 @@ async function loadProfile(uid) {
   $('profileName').textContent = current.name || 'User';
   $('profileUserId').textContent = current.userId || makeUserId(uid);
   const isOwnProfile = me && me.uid === uid;
-  const emailVisible = Boolean(current.email) && (!current.emailHidden || isOwnProfile);
-  $('profileEmail').textContent = emailVisible ? current.email : (isOwnProfile ? 'Email hidden from public view' : 'Email hidden');
+  const emailVisible = Boolean(current.email) && !current.emailHidden;
+  if (isOwnProfile) {
+    $('profileEmail').textContent = emailVisible ? current.email : 'Email hidden from public view';
+  } else {
+    $('profileEmail').textContent = emailVisible ? current.email : 'Email hidden';
+  }
   $('profileBio').textContent = current.bio || 'No bio yet.';
 
   // 2. Follower / following counts — cached
@@ -200,28 +299,38 @@ async function loadProfile(uid) {
   ]);
   $('followersCount').textContent = `${follCount} Followers`;
   $('followingCount').textContent = `${followingCount} Following`;
+  // Direct redirect on click — scroll to Connections
+  ['followersCount','followingCount'].forEach(id=>{
+    const e=$(id); if(e){ e.style.cursor='pointer'; e.title='View connections'; e.onclick=()=>document.getElementById('connectionsList')?.scrollIntoView({behavior:'smooth', block:'center'}); }
+  });
 
-  // Gamification panel
-  const game = $('profileGame');
-  if (game) {
-    game.hidden = false;
-    const xp = Number(current.xp) || 0;
-    const level = current.level || levelFromXp(xp);
-    const into = xpIntoLevel(xp);
-    if ($('pgLevel')) $('pgLevel').textContent = level;
-    if ($('pgXp')) $('pgXp').textContent = xp;
-    if ($('pgStreak')) $('pgStreak').textContent = Number(current.streakCurrent) || 0;
-    if ($('pgBest')) $('pgBest').textContent = Number(current.streakBest) || 0;
-    if ($('pgXpFill')) $('pgXpFill').style.width = `${(into / XP_PER_LEVEL) * 100}%`;
-    if ($('pgBadges')) $('pgBadges').innerHTML = renderBadgesHtml(current.badges || []);
+  // Profile menu button — show only on own profile
+  const menuBtn = $('profileMenuBtn');
+  if (menuBtn) menuBtn.hidden = !isOwnProfile;
+  if (menuBtn && isOwnProfile) {
+    menuBtn.onclick = () => openProfileMenu(current);
   }
 
-  // 3. Action buttons
+  // Gamification panel — show only on own profile
+  const game = $('profileGame');
+  if (game) {
+    game.hidden = !isOwnProfile;
+    if (isOwnProfile) {
+      const xp = Number(current.xp) || 0;
+      const level = current.level || levelFromXp(xp);
+      const into = xpIntoLevel(xp);
+      if ($('pgLevel')) $('pgLevel').textContent = level;
+      if ($('pgXp')) $('pgXp').textContent = xp;
+      if ($('pgStreak')) $('pgStreak').textContent = Number(current.streakCurrent) || 0;
+      if ($('pgBest')) $('pgBest').textContent = Number(current.streakBest) || 0;
+      if ($('pgXpFill')) $('pgXpFill').style.width = `${(into / XP_PER_LEVEL) * 100}%`;
+      if ($('pgBadges')) $('pgBadges').innerHTML = renderBadgesHtml(current.badges || []);
+    }
+  }
+
+  // 3. Action buttons (only for other profiles)
   const actions = $('profileActions'); actions.innerHTML = '';
-  if (me.uid === uid) {
-    const b = document.createElement('button'); b.className = 'btn primary'; b.type = 'button'; b.textContent = 'Edit profile';
-    b.onclick = () => openEdit(current); actions.appendChild(b);
-  } else {
+  if (!isOwnProfile) {
     const connected = await isConnected(me.uid, uid);
     const b = document.createElement('button'); b.className = 'btn primary'; b.type = 'button'; b.textContent = connected ? 'Connected' : 'Connect';
     b.onclick = () => connect(uid);

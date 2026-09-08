@@ -40,6 +40,11 @@ Thumbs.db
 !.vscode/settings.json
 .idea/
 
+# Wrangler local secrets (never commit keys)
+.dev.vars
+workers/.dev.vars
+wrangler/.dev.vars
+
 # Temporary files
 *.tmp
 *.temp

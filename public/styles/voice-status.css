@@ -1,0 +1,147 @@
+/* Voice Status — mobile-first, tokens-based */
+.nkm-voice {
+  max-width: 680px;
+  margin: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.voice-header h1 {
+  font-family: var(--nkm-font-display, 'Space Grotesk', Inter, sans-serif);
+  font-size: 22px;
+  font-weight: 800;
+  margin: 0 0 4px;
+  letter-spacing: -0.02em;
+}
+.voice-header p {
+  font-size: 13px;
+  color: var(--ink-muted, #94a3b8);
+  margin: 0;
+  line-height: 1.4;
+}
+.voice-card {
+  background: var(--nkm-surface, #141b2e);
+  border: 1px solid var(--nkm-border, rgba(148,163,184,.12));
+  border-radius: var(--nkm-radius-md, 16px);
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.voice-record-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0 4px;
+}
+.voice-record-btn {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  border: 0;
+  background: var(--surface, #1e293b);
+  border: 2px solid var(--border, rgba(148,163,184,.12));
+  color: #fff;
+  font-size: 32px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: transform 0.15s, background 0.2s, box-shadow 0.2s;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+}
+.voice-record-btn:hover { transform: scale(1.03); }
+.voice-record-btn.recording {
+  background: #ef4444;
+  border-color: #ef4444;
+  color: #fff;
+  animation: voice-pulse 1.2s infinite;
+  box-shadow: 0 0 0 0 rgba(239,68,68,0.45);
+}
+@keyframes voice-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(239,68,68,0.6); transform: scale(1); }
+  50% { box-shadow: 0 0 0 12px rgba(239,68,68,0); transform: scale(1.04); }
+  100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); transform: scale(1); }
+}
+.voice-timer {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--ink, #f1f5f9);
+  font-variant-numeric: tabular-nums;
+}
+.voice-timer.recording { color: #ef4444; }
+.voice-waveform {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 32px;
+  min-height: 32px;
+}
+.voice-bar {
+  width: 4px;
+  height: 8px;
+  background: var(--primary, #6366f1);
+  border-radius: 999px;
+  transition: height 0.12s ease;
+  opacity: 0.85;
+}
+.voice-waveform.recording .voice-bar {
+  animation: voice-bar-pulse 0.6s ease-in-out infinite;
+}
+.voice-waveform.recording .voice-bar:nth-child(1) { animation-delay: 0s; }
+.voice-waveform.recording .voice-bar:nth-child(2) { animation-delay: 0.12s; }
+.voice-waveform.recording .voice-bar:nth-child(3) { animation-delay: 0.24s; }
+.voice-waveform.recording .voice-bar:nth-child(4) { animation-delay: 0.12s; }
+.voice-waveform.recording .voice-bar:nth-child(5) { animation-delay: 0s; }
+@keyframes voice-bar-pulse {
+  0%, 100% { height: 8px; opacity: 0.85; }
+  50% { height: 28px; opacity: 1; }
+}
+.voice-hint {
+  font-size: 12px;
+  color: var(--ink-muted, #94a3b8);
+  text-align: center;
+  min-height: 16px;
+}
+.voice-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.voice-fields .field { display: flex; flex-direction: column; gap: 6px; }
+.voice-fields .label-text {
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-muted, #94a3b8);
+  font-weight: 700;
+}
+.voice-fields textarea {
+  border: 1px solid var(--nkm-border, rgba(148,163,184,.12));
+  background: rgba(255,255,255,.04);
+  color: var(--ink, #f1f5f9);
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 13px;
+  outline: 0;
+  resize: vertical;
+  font-family: inherit;
+}
+.voice-fields textarea:focus {
+  border-color: var(--primary, #6366f1);
+  box-shadow: 0 0 0 3px rgba(99,102,241,.18);
+}
+.field-help { font-size: 11px; color: var(--ink-dim, #64748b); }
+.voice-privacy { display: flex; gap: 8px; }
+.voice-share-btn { width: 100%; justify-content: center; margin-top: 4px; }
+.voice-share-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.voice-card .status { min-height: 18px; font-size: 13px; }
+.voice-card .status.error { color: #f87171; }
+@media (min-width: 600px) {
+  .nkm-voice { padding: 20px 16px; }
+  .voice-card { padding: 24px 20px; }
+}

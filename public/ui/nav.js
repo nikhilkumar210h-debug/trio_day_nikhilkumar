@@ -37,28 +37,37 @@ export function renderNav() {
   if (AUTH_PAGES.has(p)) return;
   const active = pathKey();
   const bottom = document.querySelector('.bottom-nav');
-  // Patch bottom nav to 4+1 if exists
+  // Patch bottom nav to 4+1 if exists — avoid full innerHTML swap flash if already correct
   if (bottom) {
     const row = bottom.querySelector('.nav-row') || bottom;
-    row.style.gridTemplateColumns = '1fr 1fr 72px 1fr 1fr';
-    row.innerHTML = ITEMS.map(i => {
-      const isActive = i.key === active ? ' active' : '';
-      const cls = i.isCreate ? 'nav-btn nav-btn--create' + isActive : 'nav-btn' + isActive;
-      return `<a class="${cls}" href="${i.href}" data-nav="${i.key}" aria-label="${i.label}"><span class="nav-icon">${i.icon}</span><span>${i.isCreate ? '' : i.label}</span></a>`;
-    }).join('');
-    // Handle Create action — open existing chooser if present, else sheet placeholder
+    const existing = row.querySelectorAll('[data-nav]');
+    const hasCorrectStructure = existing.length === ITEMS.length && [...existing].every((el, idx) => el.dataset.nav === ITEMS[idx].key);
+    if (!hasCorrectStructure) {
+      row.innerHTML = ITEMS.map(i => {
+        const isActive = i.key === active ? ' active' : '';
+        const cls = i.isCreate ? 'nav-btn nav-btn--create' + isActive : 'nav-btn' + isActive;
+        return `<a class="${cls}" href="${i.href}" data-nav="${i.key}" aria-label="${i.label}"><span class="nav-icon">${i.icon}</span><span>${i.isCreate ? '' : i.label}</span></a>`;
+      }).join('');
+    } else {
+      row.querySelectorAll('.nav-btn').forEach(el => {
+        el.classList.toggle('active', el.dataset.nav === active);
+      });
+    }
+    // Ensure single handler for Create (avoid duplicates on re-render)
     const createBtn = row.querySelector('[data-nav="create"]');
-    createBtn?.addEventListener('click', e => {
-      e.preventDefault();
-      const chooser = document.getElementById('createChooser');
-      const fab = document.getElementById('fabBtn');
-      const headerPlus = document.getElementById('headerPlus');
-      if (chooser && !chooser.hidden) return;
-      // Trigger existing create flow (script.js openCreateChooser) via fab/headerPlus if available
-      if (fab) fab.click();
-      else if (headerPlus) headerPlus.click();
-      else if (chooser) { chooser.hidden = false; document.body.style.overflow = 'hidden'; }
-    });
+    if (createBtn && !createBtn.dataset.bound) {
+      createBtn.dataset.bound = '1';
+      createBtn.addEventListener('click', e => {
+        e.preventDefault();
+        const chooser = document.getElementById('createChooser');
+        const fab = document.getElementById('fabBtn');
+        const headerPlus = document.getElementById('headerPlus');
+        if (chooser && !chooser.hidden) return;
+        if (fab) fab.click();
+        else if (headerPlus) headerPlus.click();
+        else if (chooser) { chooser.hidden = false; document.body.style.overflow = 'hidden'; }
+      });
+    }
   }
 
   // Create desktop rail if not exists

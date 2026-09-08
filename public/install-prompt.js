@@ -41,6 +41,8 @@ const initInstallPrompt = () => {
     if (!installBtn) return;
     installBtn.textContent = '📲 Install app';
     installBtn.setAttribute('aria-label', 'Install Trio Day');
+    installBtn.removeAttribute('hidden');
+    installBtn.hidden = false;
   };
 
   window.addEventListener('beforeinstallprompt', (e) => {

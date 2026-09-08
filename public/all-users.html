@@ -10,15 +10,34 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preload" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <noscript><link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
-    <style>:root{--primary:#6366f1;--bg:#0a0f1a;--surface:#141b2e;--ink:#f1f5f9;--border:rgba(148,163,184,.12)}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif}.tricolor-strip{height:3px;display:flex;position:fixed;inset:0 0 auto;z-index:200}.tricolor-strip span{flex:1}.tricolor-strip span:nth-child(1){background:linear-gradient(90deg,#ff9933,#ff7700)}.tricolor-strip span:nth-child(2){background:#fff}.tricolor-strip span:nth-child(3){background:linear-gradient(90deg,#128807,#0a6305)}.users-main{width:min(1000px,100%);margin:auto;padding:20px 16px}.users-card{background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:24px}</style>
-    <link rel="preload" href="styles/tokens.css" as="style" onload="this.onload=null;this.rel='stylesheet'"><noscript><link rel="stylesheet" href="styles/tokens.css"></noscript>
-  <link rel="preload" href="styles/skeleton.css" as="style" onload="this.onload=null;this.rel='stylesheet'"><noscript><link rel="stylesheet" href="styles/skeleton.css"></noscript>
-  <link rel="preload" href="styles/sheet.css" as="style" onload="this.onload=null;this.rel='stylesheet'"><noscript><link rel="stylesheet" href="styles/sheet.css"></noscript>
-  <link rel="preload" href="styles/nav.css" as="style" onload="this.onload=null;this.rel='stylesheet'"><noscript><link rel="stylesheet" href="styles/nav.css"></noscript>
-  <link rel="preload" href="styles/header.css" as="style" onload="this.onload=null;this.rel='stylesheet'"><noscript><link rel="stylesheet" href="styles/header.css"></noscript>
-  <link rel="preload" href="styles/components.css" as="style" onload="this.onload=null;this.rel='stylesheet'"><noscript><link rel="stylesheet" href="styles/components.css"></noscript>
-    <link rel="preload" href="style.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
-    <noscript><link rel="stylesheet" href="style.css"></noscript>
+    <style>:root{--primary:#6366f1;--bg:#0a0f1a;--surface:#141b2e;--ink:#f1f5f9;--border:rgba(148,163,184,.12)}*{box-sizing:border-box}html{background:#0a0f1a}body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif;background:#0a0f1a}.tricolor-strip{height:3px;display:flex;position:fixed;inset:0 0 auto;z-index:200}.tricolor-strip span{flex:1}.tricolor-strip span:nth-child(1){background:linear-gradient(90deg,#ff9933,#ff7700)}.tricolor-strip span:nth-child(2){background:#fff}.tricolor-strip span:nth-child(3){background:linear-gradient(90deg,#128807,#0a6305)}.users-main{width:min(1000px,100%);margin:auto;padding:20px 16px}.bottom-nav{position:fixed;left:0;right:0;bottom:0;background:rgba(10,15,26,.96);backdrop-filter:blur(18px);border-top:1px solid rgba(148,163,184,.12);z-index:55;padding-bottom:env(safe-area-inset-bottom)}.nav-row{width:min(520px,100%);margin:auto;display:grid;grid-template-columns:1fr 1fr 72px 1fr 1fr;gap:2px;padding:6px 6px 4px;align-items:end}.nav-btn{padding:6px 2px 4px;border-radius:12px;color:#64748b;font-size:10px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;gap:2px;min-height:44px;display:flex;flex-direction:column;align-items:center;justify-content:center}.nav-btn.active{color:#a5b4fc;background:rgba(99,102,241,.10)}.nav-btn--create{background:linear-gradient(135deg,#4f46e5 0%,#4338ca 100%);color:#fff;border:1px solid rgba(255,255,255,.08);border-radius:16px;height:48px;margin-bottom:4px;box-shadow:0 4px 12px rgba(67,56,202,.28);gap:0}.nav-btn--create .nav-icon svg{stroke:#fff}
+    /* NKM People & Communities — compact, original */
+    .nkm-people{max-width:680px;margin:auto;padding:16px;display:flex;flex-direction:column;gap:14px}
+    .nkm-people-head{padding:2px 2px 0}
+    .nkm-people-head h1{font-family:var(--font-display,Space Grotesk,Inter,sans-serif);font-size:22px;font-weight:800;letter-spacing:-.02em;margin:0 0 4px}
+    .nkm-people-head p{font-size:12px;color:#94a3b8;margin:0;line-height:1.4}
+    .nkm-people-search{position:relative}
+    .nkm-people-search .nkm-search{height:40px}
+    .nkm-people-section{background:var(--nkm-surface,#141b2e);border:1px solid var(--nkm-border,rgba(148,163,184,.12));border-radius:16px;padding:14px}
+    .nkm-people-section h2{font-size:13px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:#c7d2fe;margin:0 0 10px;display:flex;align-items:center;gap:8px}
+    .nkm-people-section h2 small{font-size:11px;color:#64748b;text-transform:none;letter-spacing:0;font-weight:500}
+    .nkm-user-row{height:72px;display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid transparent;border-radius:14px;transition:background .12s,border-color .12s}
+    .nkm-user-row:hover{background:rgba(255,255,255,.03);border-color:rgba(148,163,184,.08)}
+    .nkm-user-avatar{width:40px;height:40px;border-radius:50%;flex:none;display:grid;place-items:center;overflow:hidden;background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;font-weight:700;font-size:15px}
+    .nkm-user-avatar img{width:100%;height:100%;object-fit:cover;display:block}
+    .nkm-user-meta{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+    .nkm-user-name{font-size:13px;font-weight:700;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .nkm-user-id{font-size:10px;color:#64748b;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .nkm-user-badge{font-size:10px;font-weight:700;padding:2px 6px;border-radius:999px;background:rgba(99,102,241,.14);color:#a5b4fc;align-self:flex-start}
+    .nkm-user-actions{display:flex;align-items:center;gap:6px;flex:none}
+    .nkm-user-actions .nkm-btn--sm{height:32px;padding:0 12px;font-size:12px;border-radius:999px}
+    .nkm-user-menu{width:32px;height:32px;border-radius:10px;border:1px solid var(--nkm-border,rgba(148,163,184,.12));background:rgba(255,255,255,.03);color:#94a3b8;display:grid;place-items:center;cursor:pointer}
+    .nkm-user-list{display:flex;flex-direction:column;gap:6px}
+    .nkm-empty{padding:18px 14px;text-align:center;color:#64748b;font-size:12px;border:1px dashed rgba(148,163,184,.12);border-radius:12px}
+    .nkm-skel-row{height:72px;border-radius:14px}
+    @media(min-width:1024px){.nkm-people{max-width:980px;display:grid;grid-template-columns:680px 280px;gap:16px;align-items:start}.nkm-people-head{grid-column:1/-1}.nkm-people-search{grid-column:1/2}.nkm-people-section{grid-column:1/2}.nkm-rail-context{grid-column:2;grid-row:3/span 4;background:var(--nkm-surface,#141b2e);border:1px solid var(--nkm-border,rgba(148,163,184,.12));border-radius:16px;padding:14px;position:sticky;top:72px}}
+    @media(max-width:1023px){.nkm-rail-context{display:none}}
+    </style>  <link rel="stylesheet" href="styles/tokens.css">  <link rel="stylesheet" href="styles/skeleton.css">  <link rel="stylesheet" href="styles/sheet.css">  <link rel="stylesheet" href="styles/nav.css">  <link rel="stylesheet" href="styles/header.css">  <link rel="stylesheet" href="styles/components.css">  <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
 </head>
 
@@ -30,22 +49,28 @@
             <div id="authStatus" class="auth-status"></div>
         </div>
     </header>
-    <main class="users-main">
-        <section class="users-card"><span class="eyebrow">Community</span>
-            <h1>All users</h1>
-            <p class="muted">Search by name or user ID and open a profile or start a chat.</p>
-            <div class="search-box"><input id="usersSearch" type="search"
-                    placeholder="Search name, TRIO ID or Firebase UID…"></div>
-            <div id="usersList" class="users-list"></div>
-        </section>
+    <main class="users-main nkm-people">
+        <div class="nkm-people-head">
+            <h1>People & Communities</h1>
+            <p>Discover creators, connect with peers — build your NKM circle.</p>
+        </div>
+        <div class="nkm-people-search nkm-search-wrap"><input id="usersSearch" class="nkm-search" type="search" placeholder="Search name, TRIO-ID…"></div>
+        <div id="peopleStatus" class="nkm-empty" hidden></div>
+        <section class="nkm-people-section" id="suggestedSection"><h2>Suggested People <small>for you</small></h2><div id="suggestedList" class="nkm-user-list"></div><div id="suggestedEmpty" class="nkm-empty" hidden>Discover people and start building your NKM circle.</div><div id="suggestedSkel" class="nkm-skeleton-stack"><div class="nkm-skeleton nkm-skel-row"></div><div class="nkm-skeleton nkm-skel-row"></div><div class="nkm-skeleton nkm-skel-row"></div></div></section>
+        <section class="nkm-people-section" id="risingSection"><h2>Rising Creators <small>active & helpful</small></h2><div id="risingList" class="nkm-user-list"></div><div id="risingEmpty" class="nkm-empty" hidden>No rising creators yet — activity will appear here.</div><div id="risingSkel" class="nkm-skeleton-stack"><div class="nkm-skeleton nkm-skel-row"></div><div class="nkm-skeleton nkm-skel-row"></div></div></section>
+        <section class="nkm-people-section" id="activeSection"><h2>Active Today</h2><div id="activeList" class="nkm-user-list"></div><div id="activeEmpty" class="nkm-empty" hidden>No recent activity signals available.</div><div id="activeSkel" class="nkm-skeleton-stack"><div class="nkm-skeleton nkm-skel-row"></div></div></section>
+        <section class="nkm-people-section" id="voicesSection"><h2>Community Voices <small>achievements</small></h2><div id="voicesList" class="nkm-user-list"></div><div id="voicesEmpty" class="nkm-empty" hidden>Community achievements will appear here.</div><div id="voicesSkel" class="nkm-skeleton-stack"><div class="nkm-skeleton nkm-skel-row"></div></div></section>
+        <div id="usersList" hidden></div>
+        <div id="nkmLoadMoreWrap" style="display:flex;justify-content:center;padding:4px"><button id="nkmLoadMore" class="nkm-btn nkm-btn--sm" type="button" hidden>Load more</button></div>
+        <aside class="nkm-rail-context" id="peopleRail"><h3 style="font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#94a3b8;margin:0 0 8px">Community</h3><p style="font-size:12px;color:#64748b;margin:0">People you may know and rising voices appear in the sections on the left. No filler — only real community data.</p><div id="peopleRailExtra" style="margin-top:12px"></div></aside>
     </main>
-    <nav class="bottom-nav">
+    <nav class="bottom-nav" aria-label="Primary navigation">
         <div class="nav-row">
-            <a class="nav-btn" href="index.html"><span class="nav-icon">⌂</span><span>Posts</span></a>
-            <a class="nav-btn active" href="all-users.html"><span class="nav-icon">👥</span><span>Users</span></a>
-            <a class="nav-btn" href="tasks.html"><span class="nav-icon">⚡</span><span>Tasks</span></a>
-            <a class="nav-btn" href="chat.html"><span class="nav-icon">✉</span><span>Chat</span></a>
-            <a class="nav-btn" href="profile.html"><span class="nav-icon">◉</span><span>Profile</span></a>
+            <a class="nav-btn" href="index.html" data-nav="home" aria-label="Home"><span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg></span><span>Home</span></a>
+            <a class="nav-btn active" href="all-users.html" data-nav="community" aria-label="Community"><span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="9" cy="8" r="4"/><path d="M15 10a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7z"/><path d="M3 19a6 6 0 0 1 12 0"/><path d="M15 19a5 5 0 0 1 5 0"/></svg></span><span>Community</span></a>
+            <a class="nav-btn nav-btn--create" href="#" data-nav="create" aria-label="Create"><span class="nav-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></span><span></span></a>
+            <a class="nav-btn" href="tasks.html" data-nav="activity" aria-label="Activity"><span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z"/></svg></span><span>Activity</span></a>
+            <a class="nav-btn" href="profile.html" data-nav="you" aria-label="You"><span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="12" cy="8" r="4"/><path d="M4 19a8 8 0 0 1 16 0"/></svg></span><span>You</span></a>
         </div>
     </nav>
     <script type="module" src="auth-guard.js"></script>

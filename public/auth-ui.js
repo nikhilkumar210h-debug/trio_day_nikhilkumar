@@ -7,7 +7,7 @@ import {
   collection, doc, getDoc, onSnapshot,
   orderBy, query, limit, updateDoc
 } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
-import { enableOneSignalPush } from './onesignal.js';
+import { enableOneSignalPush } from './onesignal.js?v=23';
 import { getMyGlobalRank } from './gamification/leaderboards.js';
 
 const el = document.getElementById('authStatus');
@@ -19,7 +19,11 @@ function showAlert(title, body) {
   let stack = document.getElementById('appAlertStack');
   if (!stack) { stack = document.createElement('div'); stack.id = 'appAlertStack'; stack.className = 'app-alert-stack'; document.body.appendChild(stack); }
   const toast = document.createElement('div'); toast.className = 'app-alert';
-  toast.innerHTML = `<strong>${title}</strong><span>${body}</span>`;
+  const strong = document.createElement('strong');
+  strong.textContent = title;
+  const span = document.createElement('span');
+  span.textContent = body;
+  toast.append(strong, span);
   stack.appendChild(toast); setTimeout(() => toast.remove(), 5000);
   if ('Notification' in window && Notification.permission === 'granted' && document.hidden)
     new Notification(title, { body });
@@ -49,23 +53,6 @@ function renderNotificationRows(container, alerts, user) {
   });
 }
 
-function openNotificationOverlay(user) {
-  document.getElementById('notificationOverlay')?.remove();
-  const overlay = document.createElement('div'); overlay.id = 'notificationOverlay'; overlay.className = 'notification-overlay active';
-  const panel = document.createElement('div'); panel.className = 'notification-modal'; panel.setAttribute('role', 'dialog'); panel.setAttribute('aria-modal', 'true');
-  panel.innerHTML = `<div class="notification-modal-head"><div><span class="eyebrow">Alerts</span><h2>Notifications</h2></div><button class="icon-btn notification-close" type="button" aria-label="Close notifications">×</button></div><div id="notificationModalList" class="notification-list"></div>`;
-  overlay.appendChild(panel); document.body.appendChild(overlay);
-  const close = () => overlay.remove();
-  panel.querySelector('.notification-close').addEventListener('click', close);
-  overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
-  const modalList = document.getElementById('notificationModalList');
-  notificationUnsubs.push(onSnapshot(
-    query(collection(db, 'users', user.uid, 'notifications'), orderBy('createdAtMs', 'desc'), limit(30)),
-    snap => { const alerts = snap.docs.map(d => ({ id: d.id, ...d.data() })); renderNotificationRows(modalList, alerts, user); },
-    () => { renderNotificationRows(modalList, [], user); }
-  ));
-}
-
 function listenForNotifications(user) {
   let initial = true;
   const button = document.getElementById('notificationButton'), badge = document.getElementById('notificationBadge'), menu = document.getElementById('notificationMenu');
@@ -81,7 +68,7 @@ function listenForNotifications(user) {
       initial = false;
     }, () => { }
   ));
-  button.addEventListener('click', async e => { e.preventDefault(); e.stopPropagation(); openNotificationOverlay(user); });
+  button.addEventListener('click', () => { location.href = 'notifications.html'; });
 }
 
 // ── Chat unread helpers ──────────────────────────────────────────────────────
@@ -111,7 +98,17 @@ function ensureChatNavDot() {
   if (!dot) { link.classList.add('nav-btn-chat'); dot = document.createElement('span'); dot.className = 'nav-chat-dot'; dot.hidden = true; dot.title = 'Unread chats'; dot.setAttribute('aria-hidden', 'true'); link.appendChild(dot); }
   return dot;
 }
-function setChatNavUnread(hasUnread) { const dot = ensureChatNavDot(); if (dot) dot.hidden = !hasUnread; }
+function ensureHeaderChatDot() {
+  const btn = document.getElementById('headerChatBtn');
+  if (!btn) return null;
+  let dot = document.getElementById('headerChatDot');
+  if (!dot) { dot = document.createElement('span'); dot.id = 'headerChatDot'; dot.className = 'nav-chat-dot'; dot.hidden = true; dot.title = 'Unread chats'; dot.setAttribute('aria-hidden','true'); btn.appendChild(dot); }
+  return dot;
+}
+function setChatNavUnread(hasUnread) {
+  const dot = ensureChatNavDot(); if (dot) dot.hidden = !hasUnread;
+  const hDot = ensureHeaderChatDot(); if (hDot) hDot.hidden = !hasUnread;
+}
 window.TrioChatUnread = { getChatSeenMap, markChatSeen, isChatUnread, setChatNavUnread };
 
 function listenForAlerts(user) {
@@ -196,40 +193,24 @@ onAuthStateChanged(auth, async user => {
   clearNotificationListeners();
   if (!el) return;
   if (user) {
-    // ── Cached profile fetch for header chip ──
-    // Without cache: every page load → getDoc(users/uid) just to show name + photo in header.
-    // With cache: first page sets it, every other page in same session hits memory instantly.
-    const key = `user_${user.uid}`;
-    let profileData = trioCache.get(key);
-    if (!profileData) {
-      const profile = await getDoc(doc(db, 'users', user.uid)).catch(() => null);
-      profileData = profile?.exists() ? profile.data() : null;
-      if (profileData) trioCache.set(key, profileData, trioCache.TTL.DEFAULT);
-    }
-
-    const name = profileData?.name || user.displayName || user.email?.split('@')[0] || 'User';
-    const photo = profileData?.photoURL || user.photoURL || '';
-    const initial = name.trim().charAt(0).toUpperCase() || 'U';
-
     el.innerHTML = `
       <div class="notification-wrap">
         <button id="notificationButton" class="notification-btn" type="button" aria-label="Notifications" aria-haspopup="true">🔔<span id="notificationBadge" class="notification-badge" hidden></span></button>
         <div id="notificationMenu" class="notification-menu" hidden></div>
-      </div>
-      <a class="auth-chip" href="profile.html">
-        <img class="auth-avatar" src="${photo}" alt="" onerror="this.style.display='none'">
-        <span class="auth-avatar-fallback" style="${photo ? 'display:none' : ''}">${initial}</span>
-        <span class="auth-name">${name}</span>
-      </a>
-      <button class="auth-logout" id="logoutBtn" title="Logout">⏻</button>`;
+      </div>`;
 
-    document.getElementById('logoutBtn').onclick = async () => {
-      trioCache.clear();   // wipe all cached data on explicit logout
+    // Header logout removed — now only in Profile section. Keep handler for profile page.
+    const profileLogout = document.getElementById('profileLogoutBtn');
+    if (profileLogout) profileLogout.onclick = async () => {
+      trioCache.clear();
       await signOut(auth);
       location.href = 'login.html';
     };
 
-    listenForNotifications(user);
+    // Skip notification listener on notifications.html (notifications.js handles it)
+    if (!location.pathname.endsWith('notifications.html')) {
+      listenForNotifications(user);
+    }
     listenForAlerts(user);
     enableOneSignalPush(user).catch(err => console.warn('OneSignal enable failed', err));
 

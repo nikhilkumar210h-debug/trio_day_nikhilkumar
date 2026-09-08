@@ -1,9 +1,14 @@
 import { db } from "./firebase-init.js";
 import { doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
-import { ONESIGNAL_APP_ID, siteBasePath } from "./onesignal-config.js";
+import { ONESIGNAL_APP_ID } from "./onesignal-config.js";
 
 let sdkLoadPromise = null;
 let initPromise = null;
+
+function isLocalHost() {
+  const h = location.hostname;
+  return h === 'localhost' || h === '127.0.0.1' || h === '' || location.protocol === 'file:' || h.endsWith('.local');
+}
 
 function loadSdk() {
   if (sdkLoadPromise) return sdkLoadPromise;
@@ -41,17 +46,17 @@ function withOneSignal(fn) {
 }
 
 function ensureInit() {
+  if (isLocalHost()) return Promise.resolve(null);
   if (initPromise) return initPromise;
   initPromise = (async () => {
     const sdkLoaded = await loadSdk();
     if (!sdkLoaded) return null; // SDK blocked — skip init silently
     return withOneSignal(async (OneSignal) => {
-      const base = siteBasePath().replace(/^\//, "");
       await OneSignal.init({
         appId: ONESIGNAL_APP_ID,
         allowLocalhostAsSecureOrigin: true,
-        serviceWorkerPath: `${base}push/onesignal/OneSignalSDKWorker.js`,
-        serviceWorkerParam: { scope: `/${base}push/onesignal/` }
+        serviceWorkerPath: "/push/onesignal/OneSignalSDKWorker.js?v=23",
+        serviceWorkerParam: { scope: "/" }
       });
       // Prefer in-app toasts while the tab is open (auth-ui Firestore listener).
       OneSignal.Notifications.addEventListener("foregroundWillDisplay", (event) => {
@@ -102,6 +107,7 @@ export async function saveOneSignalId(uid, oneSignalId) {
 
 /** Init SDK, ask permission, link Firebase uid, save subscription id. */
 export async function enableOneSignalPush(user) {
+  if (isLocalHost()) return null;
   if (!user?.uid || !("Notification" in window)) return null;
 
   const OneSignal = await ensureInit();

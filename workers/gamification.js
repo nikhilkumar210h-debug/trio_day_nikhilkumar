@@ -37,6 +37,23 @@ const ALLOWED_ORIGINS = [
   'http://127.0.0.1'
 ];
 
+// ─── Per-UID rate limiting (10 requests/minute) ───────────────────────────────
+const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
+const RATE_LIMIT_MAX_REQUESTS = 10;
+const rateLimitMap = new Map(); // uid -> [timestamps]
+
+function checkRateLimit(uid) {
+  const now = Date.now();
+  const timestamps = rateLimitMap.get(uid) || [];
+  const recent = timestamps.filter(ts => now - ts < RATE_LIMIT_WINDOW_MS);
+  if (recent.length >= RATE_LIMIT_MAX_REQUESTS) {
+    return { allowed: false, retryAfter: Math.ceil((recent[0] + RATE_LIMIT_WINDOW_MS - Date.now()) / 1000) };
+  }
+  recent.push(now);
+  rateLimitMap.set(uid, recent);
+  return { allowed: true };
+}
+
 const SYSTEM_BADGES = [
   { id: 'badge_first_complete', name: 'First Win',        icon: '🏅' },
   { id: 'badge_first_post',     name: 'Storyteller',      icon: '📝' },
@@ -796,6 +813,12 @@ export default {
 
     const uid = tokenPayload.sub;
     if (!uid) return json({ error: 'Invalid token: no uid' }, 401, origin);
+
+    // Rate limit: ~10 requests/minute per UID
+    const rateLimit = checkRateLimit(uid);
+    if (!rateLimit.allowed) {
+      return json({ error: 'Rate limit exceeded', retryAfter: rateLimit.retryAfter }, 429, origin);
+    }
 
     // Parse body
     let body = {};

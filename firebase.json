@@ -12,6 +12,10 @@
       ]
     }
   ],
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
   "hosting": {
     "public": "public",
     "ignore": [
@@ -28,6 +32,16 @@
             "value": "public, max-age=31536000, immutable"
           }
         ]
+      },
+      {
+        "source": "style.css?v=*",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=31536000, immutable"
+          }
+        ],
+        "_comment": "style.css uses versioned query string (?v=32da237f) for long-term caching. Cache-Control: max-age=31536000, immutable ensures 1-year browser cache with immutable hint."
       },
       {
         "source": "**/*.js",
@@ -55,6 +69,55 @@
             "value": "no-cache, no-store, must-revalidate"
           }
         ]
+      },
+      {
+        "source": "/push/onesignal/OneSignalSDKWorker.js",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=0, must-revalidate"
+          },
+          {
+            "key": "Service-Worker-Allowed",
+            "value": "/"
+          }
+        ]
+      },
+      {
+        "source": "/OneSignalSDKWorker.js",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=0, must-revalidate"
+          },
+          {
+            "key": "Service-Worker-Allowed",
+            "value": "/"
+          }
+        ]
+      },
+      {
+        "source": "/OneSignalSDKUpdaterWorker.js",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=0, must-revalidate"
+          },
+          {
+            "key": "Service-Worker-Allowed",
+            "value": "/"
+          }
+        ]
+      },
+      {
+        "source": "/auth/iframe.js",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=31536000, immutable"
+          }
+        ],
+        "_comment": "NOTE: This rule only applies if iframe.js is served from our Firebase Hosting. The actual file at nkm-ind.firebaseapp.com/auth/iframe.js is served by Firebase Auth (external domain) and its cache headers cannot be controlled via firebase.json. Consider using Firebase Auth emulator for local dev or accept upstream defaults."
       }
     ]
   }

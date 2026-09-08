@@ -49,7 +49,7 @@ export function createSheet({ title = '', content = '', actions = '' } = {}) {
 export function openSearchSheet() {
   const { open, body } = createSheet({
     title: 'Search',
-    content: `<div class="nkm-search-wrap"><input class="nkm-search" id="nkmGlobalSearch" placeholder="Search name, NKM ID or post…" autocomplete="off"><div id="nkmSearchResults" style="margin-top:12px"></div></div>`
+    content: `<div class="nkm-search-wrap"><input class="nkm-search" id="nkmGlobalSearch" placeholder="Search name, TRIO-ID or post…" autocomplete="off"><div id="nkmSearchResults" style="margin-top:12px"></div></div>`
   });
   open();
   const input = body.querySelector('#nkmGlobalSearch');

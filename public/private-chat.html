@@ -9,17 +9,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preload" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
 <noscript><link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
-<style>:root{--primary:#6366f1;--bg:#0a0f1a;--surface:#141b2e;--ink:#f1f5f9;--border:rgba(148,163,184,.12)}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif}.tricolor-strip{height:3px;display:flex;position:fixed;inset:0 0 auto;z-index:200}.tricolor-strip span{flex:1}.tricolor-strip span:nth-child(1){background:linear-gradient(90deg,#ff9933,#ff7700)}.tricolor-strip span:nth-child(2){background:#fff}.tricolor-strip span:nth-child(3){background:linear-gradient(90deg,#128807,#0a6305)}.private-main{width:min(1000px,100%);margin:auto;padding:16px}</style>
-<link rel="preload" href="styles/tokens.css" as="style" onload="this.onload=null;this.rel='stylesheet'"><noscript><link rel="stylesheet" href="styles/tokens.css"></noscript>
-  <link rel="preload" href="styles/skeleton.css" as="style" onload="this.onload=null;this.rel='stylesheet'"><noscript><link rel="stylesheet" href="styles/skeleton.css"></noscript>
-  <link rel="preload" href="styles/sheet.css" as="style" onload="this.onload=null;this.rel='stylesheet'"><noscript><link rel="stylesheet" href="styles/sheet.css"></noscript>
-  <link rel="preload" href="styles/nav.css" as="style" onload="this.onload=null;this.rel='stylesheet'"><noscript><link rel="stylesheet" href="styles/nav.css"></noscript>
-  <link rel="preload" href="styles/header.css" as="style" onload="this.onload=null;this.rel='stylesheet'"><noscript><link rel="stylesheet" href="styles/header.css"></noscript>
-  <link rel="preload" href="styles/components.css" as="style" onload="this.onload=null;this.rel='stylesheet'"><noscript><link rel="stylesheet" href="styles/components.css"></noscript>
-    <link rel="preload" href="style.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
-<noscript><link rel="stylesheet" href="style.css"></noscript>
-<link rel="preload" href="private-chat.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
-<noscript><link rel="stylesheet" href="private-chat.css"></noscript>
+   <style>:root{--primary:#6366f1;--bg:#0a0f1a;--surface:#141b2e;--ink:#f1f5f9;--border:rgba(148,163,184,.12)}*{box-sizing:border-box}html{background:#0a0f1a}body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif;background:#0a0f1a}.tricolor-strip{height:3px;display:flex;position:fixed;inset:0 0 auto;z-index:200}.tricolor-strip span{flex:1}.tricolor-strip span:nth-child(1){background:linear-gradient(90deg,#ff9933,#ff7700)}.tricolor-strip span:nth-child(2){background:#fff}.tricolor-strip span:nth-child(3){background:linear-gradient(90deg,#128807,#0a6305)}.private-main{width:min(680px,100%);margin:auto;padding:12px;padding-bottom:24px}.private-chat-card{height:calc(100dvh - 112px);min-height:420px;margin-bottom:12px}</style>  <link rel="stylesheet" href="styles/tokens.css">  <link rel="stylesheet" href="styles/skeleton.css">  <link rel="stylesheet" href="styles/sheet.css">  <link rel="stylesheet" href="styles/nav.css">  <link rel="stylesheet" href="styles/header.css">  <link rel="stylesheet" href="styles/components.css">
+    <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="private-chat.css?v=33">
 <link rel="manifest" href="manifest.json">
 </head>
 <body class="private-chat-page">
@@ -45,7 +37,15 @@
   </section>
 </main>
 
-<nav class="bottom-nav"><div class="nav-row"><a class="nav-btn" href="index.html"><span class="nav-icon">⌂</span><span>Posts</span></a><a class="nav-btn" href="all-users.html"><span class="nav-icon">👥</span><span>Users</span></a><a class="nav-btn" href="tasks.html"><span class="nav-icon">⚡</span><span>Tasks</span></a><a class="nav-btn active" href="chat.html"><span class="nav-icon">✉</span><span>Chat</span></a><a class="nav-btn" href="profile.html"><span class="nav-icon">◉</span><span>Profile</span></a></div></nav>
+<nav class="bottom-nav" aria-label="Primary navigation">
+    <div class="nav-row">
+      <a class="nav-btn" href="index.html" data-nav="home" aria-label="Home"><span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg></span><span>Home</span></a>
+      <a class="nav-btn active" href="all-users.html" data-nav="community" aria-label="Community"><span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="9" cy="8" r="4"/><path d="M15 10a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7z"/><path d="M3 19a6 6 0 0 1 12 0"/><path d="M15 19a5 5 0 0 1 5 0"/></svg></span><span>Community</span></a>
+      <a class="nav-btn nav-btn--create" href="#" data-nav="create" aria-label="Create"><span class="nav-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></span><span></span></a>
+      <a class="nav-btn" href="tasks.html" data-nav="activity" aria-label="Activity"><span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z"/></svg></span><span>Activity</span></a>
+      <a class="nav-btn" href="profile.html" data-nav="you" aria-label="You"><span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="12" cy="8" r="4"/><path d="M4 19a8 8 0 0 1 16 0"/></svg></span><span>You</span></a>
+    </div>
+  </nav>
 <script type="module" src="auth-guard.js"></script>
 <script type="module" src="private-chat.js"></script>
 <script type="module" src="auth-ui.js"></script>

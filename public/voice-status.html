@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#081018">
+  <title>Voice Status — Trio Day</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet"></noscript>
+  <style>:root{--primary:#6366f1;--bg:#0a0f1a;--surface:#141b2e;--ink:#f1f5f9;--border:rgba(148,163,184,.12)}*{box-sizing:border-box}html{background:#0a0f1a}body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif;background:#0a0f1a}.tricolor-strip{height:3px;display:flex;position:fixed;inset:0 0 auto;z-index:200}.tricolor-strip span{flex:1}.tricolor-strip span:nth-child(1){background:linear-gradient(90deg,#ff9933,#ff7700)}.tricolor-strip span:nth-child(2){background:#fff}.tricolor-strip span:nth-child(3){background:linear-gradient(90deg,#128807,#0a6305)}.topbar{position:sticky;top:3px;z-index:100;background:rgba(17,24,39,.9);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}.topbar-inner{max-width:1280px;margin:auto;min-height:48px;padding:0 12px;display:flex;align-items:center;justify-content:space-between}.app-main{width:min(1000px,100%);margin:auto;padding:20px 16px}.bottom-nav{position:fixed;left:0;right:0;bottom:0;background:rgba(10,15,26,.96);backdrop-filter:blur(18px);border-top:1px solid rgba(148,163,184,.12);z-index:55;padding-bottom:env(safe-area-inset-bottom)}.nav-row{width:min(520px,100%);margin:auto;display:grid;grid-template-columns:1fr 1fr 72px 1fr 1fr;gap:2px;padding:6px 6px 4px;align-items:end}.nav-btn{padding:6px 2px 4px;border-radius:12px;color:#64748b;font-size:10px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;gap:2px;min-height:44px;display:flex;flex-direction:column;align-items:center;justify-content:center}.nav-btn.active{color:#a5b4fc;background:rgba(99,102,241,.10)}.nav-btn--create{background:linear-gradient(135deg,#4f46e5 0%,#4338ca 100%);color:#fff;border:1px solid rgba(255,255,255,.08);border-radius:16px;height:48px;margin-bottom:4px;box-shadow:0 4px 12px rgba(67,56,202,.28);gap:0}.nav-btn--create .nav-icon svg{stroke:#fff}</style>
+  <link rel="preload" href="styles/tokens.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="styles/tokens.css"></noscript>
+  <link rel="preload" href="styles/components.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="styles/components.css"></noscript>
+  <link rel="preload" href="styles/header.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="styles/header.css"></noscript>
+  <link rel="preload" href="styles/nav.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="styles/nav.css"></noscript>
+  <link rel="preload" href="style.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="style.css"></noscript>
+  <link rel="stylesheet" href="styles/voice-status.css">
+  <link rel="icon" href="icons/icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="manifest" href="manifest.json">
+</head>
+<body>
+  <div class="tricolor-strip"><span></span><span></span><span></span></div>
+  <header class="topbar">
+    <div class="topbar-inner"><a class="brand" href="index.html"><span class="brand-chakra">☸</span><span class="brand-copy"><strong>trio_day</strong><small>VOICE STATUS</small></span></a>
+      <div id="authStatus" class="auth-status"></div>
+    </div>
+  </header>
+  <main class="app-main nkm-voice">
+    <div class="voice-header">
+      <h1>Voice Status</h1>
+      <p>Record up to 60 seconds — share your voice with the community</p>
+    </div>
+
+    <div class="voice-card">
+      <div class="voice-record-area">
+        <button id="recordBtn" class="voice-record-btn" type="button" aria-label="Start recording">🎙️</button>
+        <div id="timerDisplay" class="voice-timer">00:00 / 01:00</div>
+        <div id="waveform" class="voice-waveform" aria-hidden="true">
+          <span class="voice-bar"></span>
+          <span class="voice-bar"></span>
+          <span class="voice-bar"></span>
+          <span class="voice-bar"></span>
+          <span class="voice-bar"></span>
+        </div>
+        <div id="voiceHint" class="voice-hint">Tap to start recording</div>
+      </div>
+
+      <div class="voice-fields">
+        <label class="field">
+          <span class="label-text">Caption (optional)</span>
+          <textarea id="voiceCaption" maxlength="200" rows="2" placeholder="Add a caption…"></textarea>
+          <small class="field-help"><span id="captionCount">0</span> / 200</small>
+        </label>
+
+        <div class="field">
+          <span class="label-text">Privacy</span>
+          <div class="voice-privacy">
+            <button type="button" id="privacyPublic" class="story-privacy-btn active" data-privacy="public">Public</button>
+            <button type="button" id="privacyFriends" class="story-privacy-btn" data-privacy="friends">Friends Only</button>
+          </div>
+        </div>
+
+        <button id="shareVoiceBtn" class="btn primary voice-share-btn" type="button" disabled>Share Voice Status</button>
+        <p id="voiceStatusMsg" class="status" aria-live="polite"></p>
+      </div>
+    </div>
+  </main>
+  <nav class="bottom-nav" aria-label="Primary navigation">
+    <div class="nav-row">
+      <a class="nav-btn" href="index.html" data-nav="home" aria-label="Home"><span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg></span><span>Home</span></a>
+      <a class="nav-btn" href="all-users.html" data-nav="community" aria-label="Community"><span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="9" cy="8" r="4"/><path d="M15 10a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7z"/><path d="M3 19a6 6 0 0 1 12 0"/><path d="M15 19a5 5 0 0 1 5 0"/></svg></span><span>Community</span></a>
+      <a class="nav-btn nav-btn--create" href="#" data-nav="create" aria-label="Create"><span class="nav-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></span><span></span></a>
+      <a class="nav-btn" href="tasks.html" data-nav="activity" aria-label="Activity"><span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z"/></svg></span><span>Activity</span></a>
+      <a class="nav-btn" href="profile.html" data-nav="you" aria-label="You"><span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="12" cy="8" r="4"/><path d="M4 19a8 8 0 0 1 16 0"/></svg></span><span>You</span></a>
+    </div>
+  </nav>
+
+  <script type="module" src="auth-guard.js"></script>
+  <script type="module" src="voice-status.js"></script>
+  <script type="module" src="auth-ui.js"></script>
+  <script type="module" src="ui/header.js"></script>
+  <script type="module" src="ui/nav.js"></script>
+  <script type="module" src="ui/sheet.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/service-worker.js', { scope: '/' })
+          .then(reg => console.log('SW registered:', reg.scope))
+          .catch(() => {
+            navigator.serviceWorker.getRegistrations?.().then(rs => rs.forEach(r => r.unregister()));
+          });
+      });
+    }
+  </script>
+</body>
+</html>
