@@ -1,105 +1,320 @@
-/* NKM India — Design Tokens (Phase 0 Foundation)
-   Establishes spacing, typography, radii, surfaces, control heights,
-   breakpoints, and base patterns for later redesign.
-   No page layouts are changed here — only variables + base classes.
-   Reuses existing palette; no new brand colors yet.
-*/
+/* ═══════════════════════════════════════════════════════════════════
+   TRIO DAY 2.0 — Semantic Design Token System (Phase 2)
+   ──────────────────────────────────────────────────────────────────
+   Single source of truth for all design decisions.
+   Supports both Dark & Light themes as first-class citizens.
+   No page layouts changed here — only variables + base primitives.
+   ═══════════════════════════════════════════════════════════════════ */
+
 :root {
-  /* ── Spacing (8px scale, per master plan §5/E) ── */
-  --nkm-space-1: 4px;
-  --nkm-space-2: 8px;
-  --nkm-space-3: 12px;
-  --nkm-space-4: 16px;
-  --nkm-space-5: 20px;
-  --nkm-space-6: 24px;
-  --nkm-space-8: 32px;
-  --nkm-space-10: 40px;
-  --nkm-space-12: 48px;
-  --nkm-gutter-mobile: 16px;
-  --nkm-gutter-desktop: 24px;
-  --nkm-content-max: 1024px;
+  /* ═══════════════════════════════════════════════════════════════════
+     COLOR — Semantic tokens (reference primitive palette below)
+     ───────────────────────────────────────────────────────────────── */
+  /* Surfaces */
+  --color-bg: var(--color-bg-dark);
+  --color-bg-elevated: var(--color-bg-elevated-dark);
+  --color-bg-hover: var(--color-bg-hover-dark);
+  --color-surface: var(--color-surface-dark);
+  --color-surface-strong: var(--color-surface-strong-dark);
+  --color-surface-hover: var(--color-surface-hover-dark);
 
-  /* ── Typography (Inter + Space Grotesk + Baloo 2 festive) ── */
-  --nkm-font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --nkm-font-display: 'Space Grotesk', Inter, system-ui, sans-serif;
-  --nkm-text-xs: 11px;
-  --nkm-text-sm: 13px;
-  --nkm-text-base: 15px;
-  --nkm-text-lg: 17px;
-  --nkm-text-xl: 20px;
-  --nkm-text-2xl: 24px;
-  --nkm-text-3xl: 30px;
-  --nkm-leading-body: 1.5;
-  --nkm-leading-heading: 1.15;
+  /* Glass / overlay layers */
+  --color-glass: var(--color-glass-dark);
+  --color-glass-strong: var(--color-glass-strong-dark);
+  --color-glass-hover: var(--color-glass-hover-dark);
 
-  /* ── Radii ── */
-  --nkm-radius-xs: 8px;
-  --nkm-radius-sm: 12px;
-  --nkm-radius-md: 16px;
-  --nkm-radius-lg: 20px;
-  --nkm-radius-xl: 24px;
-  --nkm-radius-pill: 9999px;
+  /* Text / Ink */
+  --color-ink: var(--color-ink-dark);
+  --color-ink-muted: var(--color-ink-muted-dark);
+  --color-ink-dim: var(--color-ink-dim-dark);
+  --color-ink-on-primary: var(--color-ink-on-primary-dark);
 
-  /* ── Control heights ── */
-  --nkm-control-sm: 36px;
-  --nkm-control-md: 44px;
-  --nkm-control-lg: 52px;
-  --nkm-input-h: 44px;
-  --nkm-search-h: 40px;
-  --nkm-tab-h: 32px;
-  --nkm-chip-h: 28px;
+  /* Borders */
+  --color-border: var(--color-border-dark);
+  --color-border-strong: var(--color-border-strong-dark);
+  --color-border-focus: var(--color-border-focus-dark);
 
-  /* ── Avatar sizes ── */
-  --nkm-avatar-xs: 24px;
-  --nkm-avatar-sm: 32px;
-  --nkm-avatar-md: 40px;
-  --nkm-avatar-lg: 48px;
-  --nkm-avatar-xl: 72px;
+  /* Brand primitives (used by semantic tokens above) */
+  --color-primary: #6366f1;
+  --color-primary-strong: #4f46e5;
+  --color-primary-soft: rgba(99, 102, 241, 0.12);
+  --color-primary-glow: rgba(99, 102, 241, 0.35);
+  --color-primary-ink: #ffffff;
 
-  /* ── Surfaces (reuse current dark palette — no new colors) ── */
-  --nkm-bg: #0a0f1a;
-  --nkm-elevated: #111827;
-  --nkm-surface: #141b2e;
-  --nkm-strong: #1e293b;
-  --nkm-border: rgba(148,163,184,0.12);
-  --nkm-border-strong: rgba(148,163,184,0.2);
+  --color-secondary: #ec4899;
+  --color-secondary-strong: #db2777;
+  --color-secondary-soft: rgba(236, 72, 153, 0.12);
+  --color-secondary-ink: #ffffff;
 
-  /* ── Breakpoints (for reference in JS matchMedia) ── */
-  --nkm-bp-sm: 360px;
-  --nkm-bp-md: 600px;
-  --nkm-bp-lg: 840px;
-  --nkm-bp-xl: 1024px;
-  --nkm-bp-2xl: 1280px;
+  --color-accent: #10b981;
+  --color-accent-strong: #059669;
+  --color-accent-soft: rgba(16, 185, 129, 0.12);
+  --color-accent-ink: #ffffff;
+
+  --color-warm: #f59e0b;
+  --color-warm-strong: #d97706;
+  --color-warm-soft: rgba(245, 158, 11, 0.12);
+  --color-warm-ink: #0f172a;
+
+  --color-danger: #ef4444;
+  --color-danger-strong: #dc2626;
+  --color-danger-soft: rgba(239, 68, 68, 0.12);
+  --color-danger-glow: rgba(239, 68, 68, 0.35);
+  --color-danger-ink: #ffffff;
+
+  /* ═══════════════════════════════════════════════════════════════════
+     DARK THEME PRIMITIVES (default)
+     ───────────────────────────────────────────────────────────────── */
+  --color-bg-dark: #0a0f1a;
+  --color-bg-elevated-dark: #111827;
+  --color-bg-hover-dark: #1a2234;
+  --color-surface-dark: #141b2e;
+  --color-surface-strong-dark: #1e293b;
+  --color-surface-hover-dark: #243049;
+
+  --color-glass-dark: rgba(255, 255, 255, 0.04);
+  --color-glass-strong-dark: rgba(255, 255, 255, 0.08);
+  --color-glass-hover-dark: rgba(255, 255, 255, 0.12);
+
+  --color-ink-dark: #f1f5f9;
+  --color-ink-muted-dark: #94a3b8;
+  --color-ink-dim-dark: #64748b;
+  --color-ink-on-primary-dark: #ffffff;
+
+  --color-border-dark: rgba(148, 163, 184, 0.12);
+  --color-border-strong-dark: rgba(148, 163, 184, 0.20);
+  --color-border-focus-dark: #6366f1;
+
+  /* ═══════════════════════════════════════════════════════════════════
+     SPACING — 4px base scale
+     ───────────────────────────────────────────────────────────────── */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* Layout gutters */
+  --gutter-mobile: 16px;
+  --gutter-desktop: 24px;
+  --content-max: 720px;
+  --content-max-wide: 1024px;
+
+  /* ═══════════════════════════════════════════════════════════════════
+     TYPOGRAPHY
+     ───────────────────────────────────────────────────────────────── */
+  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+  --font-brand: 'Baloo 2', 'Inter', system-ui, sans-serif;
+
+  --text-xs: 0.7rem;       /* 11.2px */
+  --text-sm: 0.8125rem;    /* 13px */
+  --text-base: 0.9375rem;  /* 15px */
+  --text-lg: 1.0625rem;    /* 17px */
+  --text-xl: 1.25rem;      /* 20px */
+  --text-2xl: 1.5rem;      /* 24px */
+  --text-3xl: 1.875rem;    /* 30px */
+  --text-4xl: 2.25rem;     /* 36px */
+
+  --leading-tight: 1.15;
+  --leading-body: 1.5;
+  --leading-relaxed: 1.6;
+
+  --font-normal: 400;
+  --font-medium: 500;
+  --font-semibold: 600;
+  --font-bold: 700;
+  --font-extrabold: 800;
+
+  /* ═══════════════════════════════════════════════════════════════════
+     BORDER RADIUS
+     ───────────────────────────────────────────────────────────────── */
+  --radius-xs: 6px;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
+  --radius-2xl: 32px;
+  --radius-full: 9999px;
+
+  /* ═══════════════════════════════════════════════════════════════════
+     SHADOWS
+     ───────────────────────────────────────────────────────────────── */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.25);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.35);
+  --shadow-glow: 0 0 32px var(--color-primary-glow);
+  --shadow-inner: inset 0 1px 2px rgba(255, 255, 255, 0.05);
+
+  /* ═══════════════════════════════════════════════════════════════════
+     CONTROL HEIGHTS
+     ───────────────────────────────────────────────────────────────── */
+  --control-sm: 32px;
+  --control-md: 40px;
+  --control-lg: 48px;
+  --control-xl: 56px;
+
+  --input-h: 44px;
+  --search-h: 40px;
+  --tab-h: 32px;
+  --chip-h: 28px;
+
+  /* ═══════════════════════════════════════════════════════════════════
+     AVATAR SIZES
+     ───────────────────────────────────────────────────────────────── */
+  --avatar-xs: 24px;
+  --avatar-sm: 32px;
+  --avatar-md: 40px;
+  --avatar-lg: 48px;
+  --avatar-xl: 72px;
+  --avatar-2xl: 96px;
+
+  /* ═══════════════════════════════════════════════════════════════════
+     TRANSITIONS / MOTION
+     ───────────────────────────────────────────────────────────────── */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --duration-fast: 120ms;
+  --duration-base: 200ms;
+  --duration-slow: 300ms;
+
+  /* ═══════════════════════════════════════════════════════════════════
+     Z-INDEX SCALE
+     ───────────────────────────────────────────────────────────────── */
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-modal: 300;
+  --z-toast: 400;
+  --z-tooltip: 500;
+
+  /* ═══════════════════════════════════════════════════════════════════
+     BREAKPOINTS (for reference in JS via matchMedia)
+     ───────────────────────────────────────────────────────────────── */
+  --bp-sm: 360px;
+  --bp-md: 600px;
+  --bp-lg: 840px;
+  --bp-xl: 1024px;
+  --bp-2xl: 1280px;
+
+  /* ═══════════════════════════════════════════════════════════════════
+     COLOR SCHEME (browser UI chrome)
+     ───────────────────────────────────────────────────────────────── */
+  color-scheme: dark;
 }
 
-/* ── Base button pattern (compact) — .nkm-btn ── */
-.nkm-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  height: var(--nkm-control-md);
-  padding: 0 16px;
-  border-radius: var(--nkm-radius-sm);
-  font-weight: 600;
-  font-size: 14px;
-  line-height: 1;
-  border: 1px solid var(--nkm-border);
-  background: rgba(255,255,255,0.04);
-  color: var(--ink, #f1f5f9);
-  cursor: pointer;
-}
-.nkm-btn--primary {
-  background: linear-gradient(135deg, #6366f1, #4f46e5);
-  border: 0;
-  color: #fff;
-}
-.nkm-btn:disabled { opacity: .5; cursor: not-allowed; }
+/* ═══════════════════════════════════════════════════════════════════
+   LIGHT THEME — First-class, intentionally designed (not inverted)
+   ────────────────────────────────────────────────────────────────── */
+[data-theme="light"] {
+  /* Surfaces */
+  --color-bg: var(--color-bg-light);
+  --color-bg-elevated: var(--color-bg-elevated-light);
+  --color-bg-hover: var(--color-bg-hover-light);
+  --color-surface: var(--color-surface-light);
+  --color-surface-strong: var(--color-surface-strong-light);
+  --color-surface-hover: var(--color-surface-hover-light);
 
-/* ── Base card pattern — .nkm-card ── */
-.nkm-card {
-  background: var(--nkm-surface);
-  border: 1px solid var(--nkm-border);
-  border-radius: var(--nkm-radius-md);
-  padding: 16px;
+  /* Glass / overlay layers */
+  --color-glass: var(--color-glass-light);
+  --color-glass-strong: var(--color-glass-strong-light);
+  --color-glass-hover: var(--color-glass-hover-light);
+
+  /* Text / Ink */
+  --color-ink: var(--color-ink-light);
+  --color-ink-muted: var(--color-ink-muted-light);
+  --color-ink-dim: var(--color-ink-dim-light);
+  --color-ink-on-primary: var(--color-ink-on-primary-light);
+
+  /* Borders */
+  --color-border: var(--color-border-light);
+  --color-border-strong: var(--color-border-strong-light);
+  --color-border-focus: var(--color-border-focus-light);
+
+  /* Light primitives */
+  --color-bg-light: #f8fafc;
+  --color-bg-elevated-light: #ffffff;
+  --color-bg-hover-light: #f1f5f9;
+  --color-surface-light: #ffffff;
+  --color-surface-strong-light: #f8fafc;
+  --color-surface-hover-light: #f1f5f9;
+
+  --color-glass-light: rgba(15, 23, 42, 0.04);
+  --color-glass-strong-light: rgba(15, 23, 42, 0.08);
+  --color-glass-hover-light: rgba(15, 23, 42, 0.12);
+
+  --color-ink-light: #0f172a;
+  --color-ink-muted-light: #475569;
+  --color-ink-dim-light: #94a3b8;
+  --color-ink-on-primary-light: #ffffff;
+
+  --color-border-light: rgba(15, 23, 42, 0.08);
+  --color-border-strong-light: rgba(15, 23, 42, 0.14);
+  --color-border-focus-light: #4f46e5;
+
+  /* Shadows — softer for light theme */
+  --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.06);
+  --shadow-sm: 0 2px 8px rgba(15, 23, 42, 0.08);
+  --shadow-md: 0 8px 24px rgba(15, 23, 42, 0.10);
+  --shadow-lg: 0 16px 48px rgba(15, 23, 42, 0.12);
+  --shadow-glow: 0 0 32px var(--color-primary-glow);
+  --shadow-inner: inset 0 1px 2px rgba(15, 23, 42, 0.04);
+
+  color-scheme: light;
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   SYSTEM PREFERS REDUCED MOTION
+   ────────────────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast: 0.01ms;
+    --duration-base: 0.01ms;
+    --duration-slow: 0.01ms;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   BASE RESET (minimal, only what tokens need)
+   ────────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  line-height: var(--leading-body);
+  letter-spacing: -0.01em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  padding-bottom: 96px; /* bottom nav space */
+}
+button, input, textarea, select { font: inherit; }
+button { cursor: pointer; }
+a { color: inherit; text-decoration: none; }
+img { max-width: 100%; display: block; height: auto; }
+h1, h2, h3, h4, .brand strong {
+  font-family: var(--font-display);
+  margin: 0;
+  line-height: var(--leading-tight);
+}
+h1 { font-size: var(--text-4xl); font-weight: var(--font-extrabold); }
+h2 { font-size: var(--text-3xl); font-weight: var(--font-extrabold); }
+h3 { font-size: var(--text-2xl); font-weight: var(--font-bold); }
+h4 { font-size: var(--text-xl); font-weight: var(--font-semibold); }

@@ -1,78 +1,80 @@
-/* Voice Status — mobile-first, tokens-based */
+/* Voice Status — mobile-first, tokens-based (Phase 2)
+   Uses semantic tokens from tokens.css.
+   ════════════════════════════════════════════════════════════════ */
 .nkm-voice {
   max-width: 680px;
   margin: auto;
-  padding: 16px;
+  padding: var(--space-4);
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--space-4);
 }
 .voice-header h1 {
-  font-family: var(--nkm-font-display, 'Space Grotesk', Inter, sans-serif);
-  font-size: 22px;
-  font-weight: 800;
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-weight: var(--font-extrabold);
   margin: 0 0 4px;
   letter-spacing: -0.02em;
 }
 .voice-header p {
-  font-size: 13px;
-  color: var(--ink-muted, #94a3b8);
+  font-size: var(--text-sm);
+  color: var(--color-ink-muted);
   margin: 0;
   line-height: 1.4;
 }
 .voice-card {
-  background: var(--nkm-surface, #141b2e);
-  border: 1px solid var(--nkm-border, rgba(148,163,184,.12));
-  border-radius: var(--nkm-radius-md, 16px);
-  padding: 20px 16px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-5) var(--space-4);
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--space-4);
 }
 .voice-record-area {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
-  padding: 12px 0 4px;
+  gap: var(--space-3);
+  padding: var(--space-3) 0 var(--space-1);
 }
 .voice-record-btn {
   width: 80px;
   height: 80px;
   border-radius: 50%;
   border: 0;
-  background: var(--surface, #1e293b);
-  border: 2px solid var(--border, rgba(148,163,184,.12));
-  color: #fff;
+  background: var(--color-surface-strong);
+  border: 2px solid var(--color-border);
+  color: var(--color-ink);
   font-size: 32px;
   display: grid;
   place-items: center;
   cursor: pointer;
-  transition: transform 0.15s, background 0.2s, box-shadow 0.2s;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+  transition: transform var(--duration-fast) var(--ease-out), background var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
+  box-shadow: var(--shadow-sm);
 }
 .voice-record-btn:hover { transform: scale(1.03); }
 .voice-record-btn.recording {
-  background: #ef4444;
-  border-color: #ef4444;
-  color: #fff;
+  background: var(--color-danger);
+  border-color: var(--color-danger);
+  color: var(--color-danger-ink);
   animation: voice-pulse 1.2s infinite;
-  box-shadow: 0 0 0 0 rgba(239,68,68,0.45);
+  box-shadow: 0 0 0 0 var(--color-danger-glow);
 }
 @keyframes voice-pulse {
-  0% { box-shadow: 0 0 0 0 rgba(239,68,68,0.6); transform: scale(1); }
-  50% { box-shadow: 0 0 0 12px rgba(239,68,68,0); transform: scale(1.04); }
-  100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); transform: scale(1); }
+  0% { box-shadow: 0 0 0 0 var(--color-danger-glow); transform: scale(1); }
+  50% { box-shadow: 0 0 0 12px transparent; transform: scale(1.04); }
+  100% { box-shadow: 0 0 0 0 transparent; transform: scale(1); }
 }
 .voice-timer {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 22px;
-  font-weight: 700;
+  font-weight: var(--font-bold);
   letter-spacing: 0.04em;
-  color: var(--ink, #f1f5f9);
+  color: var(--color-ink);
   font-variant-numeric: tabular-nums;
 }
-.voice-timer.recording { color: #ef4444; }
+.voice-timer.recording { color: var(--color-danger); }
 .voice-waveform {
   display: flex;
   align-items: center;
@@ -84,14 +86,12 @@
 .voice-bar {
   width: 4px;
   height: 8px;
-  background: var(--primary, #6366f1);
-  border-radius: 999px;
+  background: var(--color-primary);
+  border-radius: var(--radius-full);
   transition: height 0.12s ease;
   opacity: 0.85;
 }
-.voice-waveform.recording .voice-bar {
-  animation: voice-bar-pulse 0.6s ease-in-out infinite;
-}
+.voice-waveform.recording .voice-bar { animation: voice-bar-pulse 0.6s ease-in-out infinite; }
 .voice-waveform.recording .voice-bar:nth-child(1) { animation-delay: 0s; }
 .voice-waveform.recording .voice-bar:nth-child(2) { animation-delay: 0.12s; }
 .voice-waveform.recording .voice-bar:nth-child(3) { animation-delay: 0.24s; }
@@ -102,46 +102,46 @@
   50% { height: 28px; opacity: 1; }
 }
 .voice-hint {
-  font-size: 12px;
-  color: var(--ink-muted, #94a3b8);
+  font-size: var(--text-xs);
+  color: var(--color-ink-muted);
   text-align: center;
   min-height: 16px;
 }
 .voice-fields {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--space-3);
 }
 .voice-fields .field { display: flex; flex-direction: column; gap: 6px; }
 .voice-fields .label-text {
-  font-size: 11px;
+  font-size: var(--text-xs);
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--ink-muted, #94a3b8);
-  font-weight: 700;
+  color: var(--color-ink-muted);
+  font-weight: var(--font-bold);
 }
 .voice-fields textarea {
-  border: 1px solid var(--nkm-border, rgba(148,163,184,.12));
-  background: rgba(255,255,255,.04);
-  color: var(--ink, #f1f5f9);
-  border-radius: 12px;
+  border: 1px solid var(--color-border);
+  background: var(--color-glass);
+  color: var(--color-ink);
+  border-radius: var(--radius-sm);
   padding: 10px 12px;
-  font-size: 13px;
+  font-size: var(--text-sm);
   outline: 0;
   resize: vertical;
   font-family: inherit;
 }
 .voice-fields textarea:focus {
-  border-color: var(--primary, #6366f1);
-  box-shadow: 0 0 0 3px rgba(99,102,241,.18);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-soft);
 }
-.field-help { font-size: 11px; color: var(--ink-dim, #64748b); }
-.voice-privacy { display: flex; gap: 8px; }
+.field-help { font-size: var(--text-xs); color: var(--color-ink-dim); }
+.voice-privacy { display: flex; gap: var(--space-2); }
 .voice-share-btn { width: 100%; justify-content: center; margin-top: 4px; }
 .voice-share-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-.voice-card .status { min-height: 18px; font-size: 13px; }
-.voice-card .status.error { color: #f87171; }
+.voice-card .status { min-height: 18px; font-size: var(--text-sm); }
+.voice-card .status.error { color: var(--color-danger); }
 @media (min-width: 600px) {
-  .nkm-voice { padding: 20px 16px; }
-  .voice-card { padding: 24px 20px; }
+  .nkm-voice { padding: var(--space-5) var(--space-4); }
+  .voice-card { padding: var(--space-6) var(--space-5); }
 }

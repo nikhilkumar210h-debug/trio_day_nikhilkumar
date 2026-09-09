@@ -1,17 +1,61 @@
-/* NKM Navigation — Mobile 4+1 bottom + Desktop left rail (Phase 1)
-   Uses existing .bottom-nav markup; adds desktop rail without breaking.
-   Icon strategy: outline SVG (no emoji) — fallback keeps emoji but hides at 840+.
-*/
+/* NKM Navigation — Mobile 4+1 bottom + Desktop left rail (Phase 2)
+   Uses semantic tokens from tokens.css.
+   ═══════════════════════════════════════════════════════════════ */
 /* ── Bottom nav (mobile) — 4+1 with center Create FAB ── */
-.bottom-nav { position: fixed; left: 0; right: 0; bottom: 0; background: rgba(10,15,26,.96); backdrop-filter: blur(18px); border-top: 1px solid var(--nkm-border, rgba(148,163,184,.12)); z-index: 55; padding-bottom: env(safe-area-inset-bottom); }
-.nav-row { width: min(520px,100%); margin: auto; display: grid; grid-template-columns: 1fr 1fr 72px 1fr 1fr; gap: 2px; padding: 6px 6px 4px; align-items: end; }
-.nav-btn { padding: 6px 2px 4px; border-radius: 12px; color: #64748b; font-size: 10px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; gap: 2px; min-height: 44px; }
-.nav-btn.active { color: #a5b4fc; background: rgba(99,102,241,.10); }
-.nav-icon { font-size: 18px; line-height: 1; }
-.nav-btn--create { background: linear-gradient(135deg,#4f46e5 0%, #4338ca 100%); color: #fff; border: 1px solid rgba(255,255,255,.08); border-radius: 16px; height: 48px; margin-bottom: 4px; box-shadow: 0 4px 12px rgba(67,56,202,.28); gap: 0; }
-.nav-btn--create .nav-icon { font-size: 20px; display: grid; place-items: center; color: #fff; }
-.nav-btn--create .nav-icon svg { display: block; stroke: #fff; stroke-width: 2.2; width: 20px; height: 20px; }
-.nav-btn--create.active { background: linear-gradient(135deg,#4f46e5 0%, #4338ca 100%); color: #fff; border-color: rgba(255,255,255,.10); }
+.bottom-nav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(var(--color-bg-elevated), 0.95);
+  backdrop-filter: blur(18px) saturate(180%);
+  -webkit-backdrop-filter: blur(18px) saturate(180%);
+  border-top: 1px solid var(--color-border);
+  z-index: 80;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.nav-row {
+  width: min(520px, 100%);
+  margin: auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr 72px 1fr 1fr;
+  gap: 2px;
+  padding: 6px 6px 4px;
+  align-items: end;
+}
+.nav-btn {
+  padding: 6px 2px 4px;
+  border-radius: var(--radius-sm);
+  color: var(--color-ink-dim);
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  gap: 2px;
+  min-height: 44px;
+}
+.nav-btn.active {
+  color: var(--color-primary);
+  background: var(--color-primary-soft);
+}
+.nav-icon { font-size: 22px; line-height: 1; }
+.nav-btn--create {
+  background: linear-gradient(135deg, var(--color-primary-strong), var(--color-primary));
+  color: var(--color-primary-ink);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: var(--radius-md);
+  height: 48px;
+  margin-bottom: 4px;
+  box-shadow: 0 4px 12px var(--color-primary-glow);
+  gap: 0;
+}
+.nav-btn--create .nav-icon { font-size: 20px; display: grid; place-items: center; color: var(--color-primary-ink); }
+.nav-btn--create .nav-icon svg { display: block; stroke: var(--color-primary-ink); stroke-width: 2.2; width: 20px; height: 20px; }
+.nav-btn--create.active {
+  background: linear-gradient(135deg, var(--color-primary-strong), var(--color-primary));
+  color: var(--color-primary-ink);
+  border-color: rgba(255,255,255,.10);
+}
 
 /* ── Desktop left rail (hidden on mobile) ── */
 .nkm-rail { display: none; }
@@ -21,16 +65,19 @@
     display: flex;
     flex-direction: column;
     position: fixed;
-    left: 0; top: 55px; /* below tricolor 3 + header 52 mobile */
-    bottom: 0; width: 72px;
-    background: rgba(10,15,26,.98);
-    border-right: 1px solid var(--nkm-border, rgba(148,163,184,.12));
+    left: 0;
+    top: 55px; /* below tricolor 3 + header 52 mobile */
+    bottom: 0;
+    width: 72px;
+    background: rgba(var(--color-bg-elevated), 0.98);
+    backdrop-filter: blur(18px);
+    border-right: 1px solid var(--color-border);
     padding: 12px 8px;
     gap: 6px;
     z-index: 54;
     overflow-y: auto;
   }
-  .nkm-rail .nav-btn { flex-direction: column; min-height: 56px; font-size: 10px; }
+  .nkm-rail .nav-btn { flex-direction: column; min-height: 56px; font-size: var(--text-xs); }
   .nkm-rail .nav-btn--create { margin: 4px 0 8px; height: 52px; }
   /* Push main content aside — account for rail width, keep content centered in remaining space */
   .app-main, .profile-main, .users-main, .chat-main, .tasks-main, .private-main {
@@ -49,7 +96,16 @@
 }
 @media (min-width: 1280px) {
   .nkm-rail { width: 240px; padding: 16px 10px; top: 63px; /* 3 + 60 desktop header */ }
-  .nkm-rail .nav-btn { flex-direction: row; justify-content: flex-start; padding: 10px 12px; gap: 10px; font-size: 13px; text-transform: none; letter-spacing: 0; min-height: 44px; }
+  .nkm-rail .nav-btn {
+    flex-direction: row;
+    justify-content: flex-start;
+    padding: 10px 12px;
+    gap: 10px;
+    font-size: var(--text-sm);
+    text-transform: none;
+    letter-spacing: 0;
+    min-height: 44px;
+  }
   .nkm-rail .nav-btn--create { justify-content: center; }
   .app-main, .profile-main, .users-main, .chat-main, .tasks-main, .private-main {
     margin-left: 240px;
@@ -65,8 +121,8 @@
   .nkm-rail { top: 63px; }
 }
 /* Prevent white flash on navigation — keep html dark before paint */
-html { background: #0a0f1a; }
-body { background: #0a0f1a; }
+html { background: var(--color-bg); }
+body { background: var(--color-bg); }
 /* ── Mobile Chat overlap fix — hide legacy floating chat/create that overlaps new 4+1 nav ── */
 @media (max-width: 839px) {
   .fab { display: none !important; }
@@ -76,6 +132,6 @@ body { background: #0a0f1a; }
 html, body { overflow-x: hidden; }
 /* Ensure nav icon SVGs render crisply and stay visible */
 .nav-icon svg { display: block; }
-.nav-btn--create .nav-icon svg path { stroke: #fff; }
+.nav-btn--create .nav-icon svg path { stroke: var(--color-primary-ink); }
 /* Hide skeleton correctly even with flex display */
 .skeleton-stack[hidden], #feedLoading[hidden] { display: none !important; }
