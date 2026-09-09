@@ -9,7 +9,7 @@ import { createSheet } from './ui/sheet.js';
 import { getCachedUser } from './services/userCache.js';
 import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
 import {
-  doc, getDoc, collection, getDocs, query, where,
+  doc, getDoc, collection, getDocs, query, where, orderBy,
   setDoc, deleteDoc, serverTimestamp, updateDoc, limit
 } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 import { makeUserId, escapeHtml as esc } from './utils.js';
@@ -77,12 +77,25 @@ async function getCachedUserPosts(uid) {
   const cached = trioCache.get(key);
   if (cached) return cached;
   // Bound query: limit to 50 most recent, filter server-side where possible
-  const snap = await getDocs(
-    query(collection(db, 'posts'), where('uid', '==', uid), where('isStory', '==', false), orderBy('createdAtMs', 'desc'), limit(50))
-  ).catch(() => ({ empty: true, docs: [] }));
-  const posts = snap.docs.map(d => ({ ...d.data(), _id: d.id })).filter(p => p.type !== 'story');
-  trioCache.set(key, posts, trioCache.TTL.SHORT);
-  return posts;
+  try {
+    // First, let's check what fields exist in posts collection
+    const testSnap = await getDocs(query(collection(db, 'posts'), limit(5)));
+    const samples = testSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    console.log('[Profile] Sample posts:', samples);
+    console.log('[Profile] Sample post keys:', samples.map(s => Object.keys(s)));
+    
+    const snap = await getDocs(
+      query(collection(db, 'posts'), where('uid', '==', uid), where('isStory', '==', false), orderBy('createdAtMs', 'desc'), limit(50))
+    );
+    console.log('[Profile] Raw docs:', snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    const posts = snap.docs.map(d => ({ ...d.data(), _id: d.id })).filter(p => p.type !== 'story');
+    console.log('[Profile] Fetched posts:', posts.length, posts);
+    trioCache.set(key, posts, trioCache.TTL.SHORT);
+    return posts;
+  } catch (err) {
+    console.error('[Profile] Error fetching posts:', err);
+    return [];
+  }
 }
 
 // ── Load connections panel ───────────────────────────────────────────────────
@@ -343,7 +356,8 @@ async function loadProfile(uid) {
 
   // 5. Posts list — cached (story short-term, don't show in profile)
   const posts = $('postsList'); posts.innerHTML = '<div class="connections-empty">Loading posts…</div>';
-  const userPosts = (await getCachedUserPosts(uid)).filter(p => !p.isStory && p.type !== 'story');
+  const userPosts = await getCachedUserPosts(uid);
+  console.log('[Profile] User posts after fetch:', userPosts);
   posts.innerHTML = '';
   if (!userPosts.length) {
     posts.innerHTML = '<div class="connections-empty">No posts yet.</div>';
