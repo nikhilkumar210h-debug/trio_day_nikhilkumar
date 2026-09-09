@@ -1,0 +1,10 @@
+name = "trio-notifications"
+main = "send-notification.js"
+compatibility_date = "2024-12-01"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+FIREBASE_PROJECT_ID = "nkm-ind"
+
+[triggers]
+# No cron - this is an HTTP endpoint Worker
