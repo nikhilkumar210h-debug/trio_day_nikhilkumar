@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0-phase3-remediation] - 2026-09-10
+
+### Fixed
+- **Dark Flash / FOUC (Light Theme)**: Root `html` element was permanently dark (`html{background:#0a0f1a}` + duplicate `body{...#0a0f1a}` literals in every page's inline `<style>`). Migrated `html`/`body` backgrounds to `var(--color-bg)` and added `html` background to `tokens.css` — light theme no longer flashes dark on reload/navigation.
+- **Invalid `rgba(var(--color-bg-elevated), …)`**: topbar/`.bottom-nav`/`.private-topbar`/chat-input backgrounds used `rgba()` on a hex custom property (a no-op that dropped the header background entirely). Replaced with `var(--color-bg-elevated)`.
+- **Light Theme Readability**: Migrated hardcoded light-on-dark text/surfaces in `ui/tasks.css`, `styles/studio.css`, and per-page inline styles (`#f1f5f9`, `#e2e8f0`, `#cbd5e1`, `#94a3b8`, `#64748b`, `#141b2e`, `rgba(255,255,255,.0X)`) to semantic tokens.
+- **Accent Text Contrast (Dark + Light)**: Added `--color-primary-text` token (`#a5b4fc` on dark / `#4f46e5` on light) so accent labels remain readable in both themes instead of collapsing to `--color-primary` (`#6366f1`, unreadable on dark).
+- **Broken `<script>` tags**: Removed literal `` `n `` ("backtick-n") corruption between `theme.js`/`ui/header.js` script tags present on 16 pages (Phase 3 tooling artifact).
+- **Nav Flash/Duplication**: Canonicalized static bottom-nav markup to the 5 canonical items (Today/Discover/Do/Chat/You, `data-nav` keys matching `nav.js`) and removed the inline 4+1 dark nav CSS duplication.
+- **Desktop Rail Overlap**: Extended `nav.css` rail offset selectors to `notifications-main`, `search-main`, `policy-main`, `view-post-main` so the 72px/240px rail no longer obscures those pages' content.
+- **Missing tokens.css**: Added to `404.html` and `sitemap.html` (they referenced `var(--color-*)` without the token source, leaving them unstyled/undefined).
+- **story-viewer reply input + nav-chat-dot**: Mapped remaining hardcoded colors to tokens.
+
+### Changed
+- `tokens.css`: added `html{background}` + `--color-primary-text`
+- `style.css`, `private-chat.css`: fixed invalid rgba() usage, `.nav-chat-dot` border → `var(--color-bg)`
+
+### Verification
+- Real browser (Chromium/Playwright): light/dark backgrounds correct, no dark flash, 5-item nav uncut at 320–414px, FAB present, desktop rail no overlap at 840/1280px, text contrast ≥ AA in both themes.
+
+---
+
 ## [2.0.0-phase3] - 2026-09-10
 
 ### Added

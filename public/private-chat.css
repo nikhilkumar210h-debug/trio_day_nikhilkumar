@@ -6,7 +6,7 @@
   position: sticky;
   top: 3px;
   z-index: 90;
-  background: rgba(var(--color-bg-elevated), 0.92);
+  background: var(--color-bg-elevated);
   backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--color-border);
 }
@@ -102,7 +102,7 @@
     box-shadow: var(--shadow-md);
     position: sticky;
     bottom: calc(10px + env(safe-area-inset-bottom));
-    background: rgba(var(--color-bg-elevated), 0.92);
+    background: var(--color-bg-elevated);
     backdrop-filter: blur(12px);
   }
 }

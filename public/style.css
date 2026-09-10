@@ -57,7 +57,7 @@ h1, h2, h3, .brand strong {
   position: sticky;
   top: 3px;
   z-index: 100;
-  background: rgba(var(--color-bg-elevated), 0.9);
+  background: var(--color-bg-elevated);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   border-bottom: 1px solid var(--color-border);
@@ -561,7 +561,7 @@ h1, h2, h3, .brand strong {
 .bottom-nav {
   position: fixed;
   left: 0; right: 0; bottom: 0;
-  background: rgba(var(--color-bg-elevated), 0.95);
+  background: var(--color-bg-elevated);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   border-top: 1px solid var(--color-border);
@@ -610,7 +610,7 @@ h1, h2, h3, .brand strong {
   height: 8px;
   border-radius: 50%;
   background: #ef4444;
-  border: 2px solid #080e18;
+  border: 2px solid var(--color-bg);
   box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.4);
 }
 .nav-chat-dot[hidden] { display: none !important; }
@@ -1512,9 +1512,9 @@ h1, h2, h3, .brand strong {
   flex: 1; min-width: 0;
   padding: 10px 14px;
   border-radius: 999px;
-  border: 1px solid #334155;
-  background: #0f172a;
-  color: #fff;
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-bg-elevated);
+  color: var(--color-ink);
   outline: none;
 }
 .story-viewer-reply input:focus {

@@ -144,6 +144,16 @@ PHASE 3 — APP SHELL + NAVIGATION — COMPLETE
 - WCAG AA contrast verified for both themes
 - Touch targets ≥44px
 
+### 10. Phase 3 Remediation (real-browser fixes)
+- **FOUC/root background:** Migrated inline `html{background:#0a0f1a}` literals to `var(--color-bg)`; added `html` background + `--color-primary-text` token to tokens.css
+- **Invalid `rgba(var(--color-bg-elevated),…)`** in topbar/nav/chat backgrounds replaced with `var(--color-bg-elevated)`
+- **Light readability:** `ui/tasks.css`, `styles/studio.css`, and page inline styles migrated to semantic tokens
+- **Accent text:** `--color-primary-text` (`#a5b4fc` dark / `#4f46e5` light) keeps accent labels readable in both themes
+- **Nav canonicalization:** Static 5-item markup matches nav.js; inline 4+1 nav CSS removed
+- **Rail overlap:** `notifications-main`/`search-main`/`policy-main`/`view-post-main` added to rail offset
+- **Broken script tags:** literal `` `n `` corruption removed from 16 pages
+- **tokens.css** added to 404.html and sitemap.html
+
 ---
 
 TECH STACK

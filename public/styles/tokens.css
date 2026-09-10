@@ -40,6 +40,8 @@
   --color-primary-soft: rgba(99, 102, 241, 0.12);
   --color-primary-glow: rgba(99, 102, 241, 0.35);
   --color-primary-ink: #ffffff;
+  /* Accent text: readable brand color used as foreground on both themes */
+  --color-primary-text: #a5b4fc; /* light indigo — readable on dark surfaces */
 
   --color-secondary: #ec4899;
   --color-secondary-strong: #db2777;
@@ -268,6 +270,9 @@
   --color-ink-dim-light: #64748b;      /* Was #94a3b8 — much darker for "dim" text */
   --color-ink-on-primary-light: #ffffff;
 
+  /* Accent text — darker indigo for light surfaces */
+  --color-primary-text: #4f46e5;
+
   /* Borders — stronger opacity for light mode visibility */
   --color-border-light: rgba(15, 23, 42, 0.12);
   --color-border-strong-light: rgba(15, 23, 42, 0.20);
@@ -321,7 +326,8 @@
    BASE RESET (minimal, only what tokens need)
    ────────────────────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; background: var(--color-bg); }
+html[data-theme="light"] { background: var(--color-bg-light); }
 body {
   margin: 0;
   min-height: 100vh;
