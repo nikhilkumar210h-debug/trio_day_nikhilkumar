@@ -206,6 +206,19 @@
      COLOR SCHEME (browser UI chrome)
      ───────────────────────────────────────────────────────────────── */
   color-scheme: dark;
+
+  /* ── Legacy variable aliases (Phase 3) ───────────────────────────
+     Kept so per-page inline <style> blocks referencing the legacy
+     --bg / --surface / --ink names have valid defaults in dark mode.
+     ──────────────────────────────────────────────────────────────── */
+  --bg: var(--color-bg-dark);
+  --surface: var(--color-surface-dark);
+  --surface-strong: var(--color-surface-strong-dark);
+  --elevated: var(--color-bg-elevated-dark);
+  --ink: var(--color-ink-dark);
+  --ink-muted: var(--color-ink-muted-dark);
+  --ink-dim: var(--color-ink-dim-dark);
+  --border: var(--color-border-dark);
 }
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -220,18 +233,18 @@
   --color-surface-strong: var(--color-surface-strong-light);
   --color-surface-hover: var(--color-surface-hover-light);
 
-  /* Glass / overlay layers */
+  /* Glass / overlay layers — stronger opacity for light mode readability */
   --color-glass: var(--color-glass-light);
   --color-glass-strong: var(--color-glass-strong-light);
   --color-glass-hover: var(--color-glass-hover-light);
 
-  /* Text / Ink */
+  /* Text / Ink — darker values for better contrast on light backgrounds */
   --color-ink: var(--color-ink-light);
   --color-ink-muted: var(--color-ink-muted-light);
   --color-ink-dim: var(--color-ink-dim-light);
   --color-ink-on-primary: var(--color-ink-on-primary-light);
 
-  /* Borders */
+  /* Borders — stronger for visibility on light backgrounds */
   --color-border: var(--color-border-light);
   --color-border-strong: var(--color-border-strong-light);
   --color-border-focus: var(--color-border-focus-light);
@@ -244,28 +257,45 @@
   --color-surface-strong-light: #f8fafc;
   --color-surface-hover-light: #f1f5f9;
 
-  --color-glass-light: rgba(15, 23, 42, 0.04);
-  --color-glass-strong-light: rgba(15, 23, 42, 0.08);
-  --color-glass-hover-light: rgba(15, 23, 42, 0.12);
+  /* Glass / overlay — increased opacity for light mode */
+  --color-glass-light: rgba(15, 23, 42, 0.08);
+  --color-glass-strong-light: rgba(15, 23, 42, 0.12);
+  --color-glass-hover-light: rgba(15, 23, 42, 0.16);
 
+  /* Text / Ink — darker for WCAG AA contrast on light backgrounds */
   --color-ink-light: #0f172a;
-  --color-ink-muted-light: #475569;
-  --color-ink-dim-light: #94a3b8;
+  --color-ink-muted-light: #334155;   /* Was #475569 — darker for readability */
+  --color-ink-dim-light: #64748b;      /* Was #94a3b8 — much darker for "dim" text */
   --color-ink-on-primary-light: #ffffff;
 
-  --color-border-light: rgba(15, 23, 42, 0.08);
-  --color-border-strong-light: rgba(15, 23, 42, 0.14);
+  /* Borders — stronger opacity for light mode visibility */
+  --color-border-light: rgba(15, 23, 42, 0.12);
+  --color-border-strong-light: rgba(15, 23, 42, 0.20);
   --color-border-focus-light: #4f46e5;
 
-  /* Shadows — softer for light theme */
-  --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.06);
-  --shadow-sm: 0 2px 8px rgba(15, 23, 42, 0.08);
-  --shadow-md: 0 8px 24px rgba(15, 23, 42, 0.10);
-  --shadow-lg: 0 16px 48px rgba(15, 23, 42, 0.12);
+  /* Shadows — slightly stronger for light theme depth */
+  --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.08);
+  --shadow-sm: 0 2px 8px rgba(15, 23, 42, 0.10);
+  --shadow-md: 0 8px 24px rgba(15, 23, 42, 0.12);
+  --shadow-lg: 0 16px 48px rgba(15, 23, 42, 0.15);
   --shadow-glow: 0 0 32px var(--color-primary-glow);
-  --shadow-inner: inset 0 1px 2px rgba(15, 23, 42, 0.04);
+  --shadow-inner: inset 0 1px 2px rgba(15, 23, 42, 0.06);
 
   color-scheme: light;
+
+  /* ── Legacy variable remap (Phase 3) ─────────────────────────────
+     Older per-page inline <style> blocks still reference the legacy
+     --bg / --surface / --ink / --border names. Remap them to the
+     light semantic values so every page follows the global theme
+     without needing a per-page rewrite. ──────────────────────────── */
+  --bg: var(--color-bg-light);
+  --surface: var(--color-surface-light);
+  --surface-strong: var(--color-surface-strong-light);
+  --elevated: var(--color-bg-elevated-light);
+  --ink: var(--color-ink-light);
+  --ink-muted: var(--color-ink-muted-light);
+  --ink-dim: var(--color-ink-dim-light);
+  --border: var(--color-border-light);
 }
 
 /* ═══════════════════════════════════════════════════════════════════

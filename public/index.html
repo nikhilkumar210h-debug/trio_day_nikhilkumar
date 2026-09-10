@@ -6,6 +6,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#081018">
+  <script>!function(){try{var k='trio-theme',t=localStorage.getItem(k);if(t!=='light'&&t!=='dark'){t=localStorage.getItem('trio_theme');t=(t==='light'||t==='dark')?t:null;}if(!t){t=matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';}document.documentElement.setAttribute('data-theme',t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',t==='light'?'#f8fafc':'#0a0f1a');}catch(e){}}</script>
   <meta name="description" content="Trio Day - Share your stories, meet new people, and connect with the community. Post updates, photos, and ideas with friends.">
   <meta name="keywords" content="social network, community, stories, posts, friends, India">
   <meta property="og:title" content="Trio Day — Community">
@@ -282,6 +283,7 @@
   <script type="module" src="script.js"></script>
   <script type="module" src="auth-ui.js"></script>
   <script type="module" src="theme.js"></script>
+  <script type="module" src="ui/header.js"></script>
   <script src="install-prompt.js" defer></script>
   <script>
     // Production: Firebase Hosting serves public/ at / — /service-worker.js is valid.
@@ -298,7 +300,6 @@
       });
     }
   </script>
-  <script type="module" src="ui/header.js"></script>
   <script type="module" src="ui/nav.js"></script>
   <script type="module" src="ui/sheet.js"></script>
 </body>

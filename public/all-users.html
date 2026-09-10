@@ -1,10 +1,11 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="en">
 
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
     <meta name="theme-color" content="#081018">
+    <script>!function(){try{var k='trio-theme',t=localStorage.getItem(k);if(t!=='light'&&t!=='dark'){t=localStorage.getItem('trio_theme');t=(t==='light'||t==='dark')?t:null;}if(!t){t=matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';}document.documentElement.setAttribute('data-theme',t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',t==='light'?'#f8fafc':'#0a0f1a');}catch(e){}}</script>
     <title>All Users — Trio Day</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,7 +19,7 @@
     .nkm-people-head p{font-size:12px;color:#94a3b8;margin:0;line-height:1.4}
     .nkm-people-search{position:relative}
     .nkm-people-search .nkm-search{height:40px}
-    .nkm-people-section{background:var(--nkm-surface,#141b2e);border:1px solid var(--nkm-border,rgba(148,163,184,.12));border-radius:16px;padding:14px}
+    .nkm-people-section{background:var(--color-surface);border:1px solid var(--color-border);border-radius:16px;padding:14px}
     .nkm-people-section h2{font-size:13px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:#c7d2fe;margin:0 0 10px;display:flex;align-items:center;gap:8px}
     .nkm-people-section h2 small{font-size:11px;color:#64748b;text-transform:none;letter-spacing:0;font-weight:500}
     .nkm-user-row{height:72px;display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid transparent;border-radius:14px;transition:background .12s,border-color .12s}
@@ -31,12 +32,12 @@
     .nkm-user-badge{font-size:10px;font-weight:700;padding:2px 6px;border-radius:999px;background:rgba(99,102,241,.14);color:#a5b4fc;align-self:flex-start}
     .nkm-user-actions{display:flex;align-items:center;gap:6px;flex:none}
     .nkm-user-actions .nkm-btn--sm{height:32px;padding:0 12px;font-size:12px;border-radius:999px}
-    .nkm-user-menu{width:32px;height:32px;border-radius:10px;border:1px solid var(--nkm-border,rgba(148,163,184,.12));background:rgba(255,255,255,.03);color:#94a3b8;display:grid;place-items:center;cursor:pointer}
+    .nkm-user-menu{width:32px;height:32px;border-radius:10px;border:1px solid var(--color-border);background:rgba(255,255,255,.03);color:#94a3b8;display:grid;place-items:center;cursor:pointer}
     .nkm-user-list{display:flex;flex-direction:column;gap:6px}
     .nkm-empty{padding:18px 14px;text-align:center;color:#64748b;font-size:12px;border:1px dashed rgba(148,163,184,.12);border-radius:12px}
     .nkm-skel-row{height:72px;border-radius:14px}
-    @media(min-width:1024px){.nkm-people{max-width:980px;display:grid;grid-template-columns:680px 280px;gap:16px;align-items:start}.nkm-people-head{grid-column:1/-1}.nkm-people-search{grid-column:1/2}.nkm-people-section{grid-column:1/2}.nkm-rail-context{grid-column:2;grid-row:3/span 4;background:var(--nkm-surface,#141b2e);border:1px solid var(--nkm-border,rgba(148,163,184,.12));border-radius:16px;padding:14px;position:sticky;top:72px}}
-    @media(max-width:1023px){.nkm-rail-context{display:none}}
+    @media(min-width:1280px){.nkm-people{max-width:980px;display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:16px;align-items:start}.nkm-people-head{grid-column:1/-1}.nkm-people-search{grid-column:1/2}.nkm-people-section{grid-column:1/2;min-width:0}.nkm-rail-context{grid-column:2;grid-row:3/span 4;background:var(--color-surface);border:1px solid var(--color-border);border-radius:16px;padding:14px;position:sticky;top:72px}}
+    @media(max-width:1279px){.nkm-rail-context{display:none}}
     </style>  <link rel="stylesheet" href="styles/tokens.css">  <link rel="stylesheet" href="styles/skeleton.css">  <link rel="stylesheet" href="styles/sheet.css">  <link rel="stylesheet" href="styles/nav.css">  <link rel="stylesheet" href="styles/header.css">  <link rel="stylesheet" href="styles/components.css">  <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
 </head>
@@ -76,7 +77,7 @@
     <script type="module" src="auth-guard.js"></script>
     <script type="module" src="all-users.js"></script>
     <script type="module" src="auth-ui.js"></script>
-  <script type="module" src="ui/header.js"></script>
+  <script type="module" src="theme.js"></script>`n<script type="module" src="ui/header.js"></script>
   <script type="module" src="ui/nav.js"></script>
   <script type="module" src="ui/sheet.js"></script>
 </body>

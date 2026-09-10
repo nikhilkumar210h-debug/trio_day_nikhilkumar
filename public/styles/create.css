@@ -3,7 +3,7 @@
   height:100dvh;
   max-height:100dvh;
   overflow:hidden;
-  background:var(--nkm-bg,#0a0f1a);
+  background:var(--color-bg);
   color:#f1f5f9;
   padding-top:3px;
 }
@@ -22,7 +22,7 @@
   min-height:48px;
   padding:8px 12px;
   padding-top:max(8px, env(safe-area-inset-top));
-  border-bottom:1px solid var(--nkm-border,rgba(148,163,184,.12));
+  border-bottom:1px solid var(--color-border);
   background:rgba(10,15,26,.92);
   backdrop-filter:blur(16px);
   z-index:20;
@@ -35,7 +35,7 @@
   gap:8px;
 }
 .nkm-create-bar-title strong{
-  font-family:var(--nkm-font-display,'Space Grotesk',Inter,sans-serif);
+  font-family:var(--font-display);
   font-size:16px;
   font-weight:700;
   letter-spacing:-.02em;
@@ -94,7 +94,7 @@
 }
 .nkm-create-mode h1{
   margin:0;
-  font-family:var(--nkm-font-display,'Space Grotesk',Inter,sans-serif);
+  font-family:var(--font-display);
   font-size:24px;
   font-weight:700;
   letter-spacing:-.03em;
@@ -119,8 +119,8 @@
   gap:6px;
   padding:16px;
   border-radius:14px;
-  border:1px solid var(--nkm-border,rgba(148,163,184,.12));
-  background:var(--nkm-surface,#141b2e);
+  border:1px solid var(--color-border);
+  background:var(--color-surface);
   color:inherit;
   text-align:left;
   cursor:pointer;
@@ -181,7 +181,7 @@
 }
 .nkm-create-source h2{
   margin:0;
-  font-family:var(--nkm-font-display,'Space Grotesk',Inter,sans-serif);
+  font-family:var(--font-display);
   font-size:20px;
   font-weight:700;
 }
@@ -314,13 +314,13 @@
   display:grid;
   place-items:center;
   text-align:center;
-  font-family:var(--nkm-font-display,'Space Grotesk',Inter,sans-serif);
+  font-family:var(--font-display);
   font-size:22px;
   font-weight:600;
   line-height:1.35;
   color:#e2e8f0;
-  background:linear-gradient(160deg,#141b2e,#1e293b);
-  border:1px solid var(--nkm-border,rgba(148,163,184,.12));
+  background:linear-gradient(160deg,var(--color-surface),var(--color-surface-strong));
+  border:1px solid var(--color-border);
   border-radius:14px;
 }
 .nkm-create-toolrail{
@@ -330,7 +330,7 @@
   overflow-x:auto;
   scrollbar-width:none;
   padding:8px 10px;
-  border-top:1px solid var(--nkm-border,rgba(148,163,184,.12));
+  border-top:1px solid var(--color-border);
   background:rgba(10,15,26,.96);
 }
 .nkm-create-toolrail::-webkit-scrollbar{display:none}
@@ -356,8 +356,8 @@
   flex:0 0 auto;
   max-height:46vh;
   overflow:auto;
-  border-top:1px solid var(--nkm-border,rgba(148,163,184,.12));
-  background:var(--nkm-elevated,#111827);
+  border-top:1px solid var(--color-border);
+  background:var(--color-bg-elevated);
   padding:10px 12px max(12px, env(safe-area-inset-bottom));
   display:flex;
   flex-direction:column;
@@ -377,7 +377,7 @@
   height:32px;
   padding:0 10px;
   border-radius:8px;
-  border:1px solid var(--nkm-border,rgba(148,163,184,.12));
+  border:1px solid var(--color-border);
   background:transparent;
   color:#94a3b8;
   font-size:12px;
@@ -408,7 +408,7 @@
 }
 .nkm-field textarea{
   resize:none;
-  border:1px solid var(--nkm-border,rgba(148,163,184,.12));
+  border:1px solid var(--color-border);
   background:rgba(255,255,255,.04);
   color:#f1f5f9;
   border-radius:10px;
@@ -441,7 +441,7 @@
   height:30px;
   padding:0 10px;
   border-radius:8px;
-  border:1px solid var(--nkm-border,rgba(148,163,184,.12));
+  border:1px solid var(--color-border);
   background:transparent;
   color:#94a3b8;
   font-size:12px;
@@ -468,7 +468,7 @@
 .nkm-panel > input[type=text],
 .nkm-text-opts select{
   height:40px;
-  border:1px solid var(--nkm-border,rgba(148,163,184,.12));
+  border:1px solid var(--color-border);
   background:rgba(255,255,255,.04);
   color:#f1f5f9;
   border-radius:10px;
@@ -502,7 +502,7 @@
 .nkm-gif-ready{
   padding:12px;
   border-radius:10px;
-  border:1px dashed var(--nkm-border,rgba(148,163,184,.2));
+  border:1px dashed var(--color-border-strong);
   background:rgba(255,255,255,.02);
 }
 .nkm-gif-ready strong{display:block;font-size:13px;margin-bottom:6px}
@@ -554,7 +554,7 @@
 .nkm-create-page .nkm-btn{
   display:inline-flex;align-items:center;justify-content:center;gap:8px;
   height:40px;padding:0 14px;border-radius:10px;font-size:13px;font-weight:600;
-  border:1px solid var(--nkm-border,rgba(148,163,184,.12));
+  border:1px solid var(--color-border);
   background:rgba(255,255,255,.04);color:#e2e8f0;cursor:pointer;
 }
 .nkm-create-page .nkm-btn.primary{
@@ -578,8 +578,8 @@
 }
 .nkm-sheet-card{
   width:min(400px,100%);
-  background:var(--nkm-surface,#141b2e);
-  border:1px solid var(--nkm-border,rgba(148,163,184,.12));
+  background:var(--color-surface);
+  border:1px solid var(--color-border);
   border-radius:16px;
   padding:18px;
 }
@@ -599,7 +599,7 @@
   border-radius:10px;
   background:rgba(10,15,26,.96);
   backdrop-filter:blur(16px);
-  border:1px solid var(--nkm-border,rgba(148,163,184,.12));
+  border:1px solid var(--color-border);
   color:#f1f5f9;
   font-size:13px;
   font-weight:500;
@@ -639,7 +639,7 @@
     max-height:none;
     height:100%;
     border-top:0;
-    border-left:1px solid var(--nkm-border,rgba(148,163,184,.12));
+    border-left:1px solid var(--color-border);
     overflow:auto;
   }
   .nkm-create-mode,

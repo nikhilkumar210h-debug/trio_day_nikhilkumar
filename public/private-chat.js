@@ -21,7 +21,7 @@ function messageHtml(m) {
   const text = m?.text ?? m?.message ?? '';
   if (m?.replyToStoryId) {
     const storyUrl = `view_post.html?postId=${encodeURIComponent(m.replyToStoryId)}`;
-    const preview = m.storyPreview ? `<img src="${esc(m.storyPreview)}" alt="Story preview" style="width:100%;border-radius:10px;margin:6px 0;max-height:180px;object-fit:cover;display:block;border:1px solid var(--nkm-border,rgba(148,163,184,.12))">` : '';
+    const preview = m.storyPreview ? `<img src="${esc(m.storyPreview)}" alt="Story preview" style="width:100%;border-radius:10px;margin:6px 0;max-height:180px;object-fit:cover;display:block;border:1px solid var(--color-border)">` : '';
     const orig = m.originalStoryText ? `<span class="shared-post-label" style="opacity:.8">Original: ${esc(String(m.originalStoryText).slice(0,60))}</span>` : '';
     return `${orig}${preview}<span class="msg-text-content">${esc(text)}</span><a class="shared-post-link" href="${storyUrl}">View story →</a>`;
   }

@@ -1,5 +1,5 @@
 TRIO DAY 2.0 — Action Platform
-================================
+===============================
 
 Project path: C:\Users\Nikhil Kumar\Documents\trio_day_main
 
@@ -77,6 +77,72 @@ All interactive elements have proper states:
 - Subtle, functional animations (120-300ms)
 - No unnecessary libraries (vanilla CSS/JS only)
 - Backdrop-filter blur on sticky headers/modals
+
+---
+
+PHASE 3 — APP SHELL + NAVIGATION — COMPLETE
+--------------------------------------------------
+**Objective:** Build a consistent Trio Day global application shell across desktop and mobile while preserving all existing functionality.
+
+### 1. Canonical 5-Item Navigation
+- **Desktop:** Left rail with Today / Discover / Do / Chat / You + Create button
+- **Mobile:** Bottom nav (5 equal columns) with floating Create FAB
+- **Labels updated:** Home→Today, Community→Discover, Activity→Do, + Chat, + You
+- Desktop rail: 72px icon-only at tablet, 240px expanded at wide
+- Active state styling consistent across all pages
+
+### 2. Global Theme System (Single Source of Truth)
+- **Single localStorage key:** `trio-theme` (migrates legacy `trio_theme`)
+- **Pre-paint bootstrap:** Inline `<script>` in `<head>` of every page sets `data-theme` before first paint (eliminates FOUC)
+- **theme.js loaded everywhere:** No page-independent theme state
+- **Removed hard-locks:** Eliminated `setAttribute('data-theme','dark')` in script.js, create.js, tasks.js
+- **Theme toggle auto-injected:** header.js adds toggle button when window.TrioTheme exists
+- **Meta theme-color updates:** Browser UI chrome matches theme
+
+### 3. Light Theme — First-Class Visual Polish
+- **Darker muted text:** `--color-ink-muted-light: #334155` (was #475569)
+- **Darker dim text:** `--color-ink-dim-light: #64748b` (was #94a3b8) — WCAG AA compliant
+- **Stronger glass layers:** opacity 0.08/0.12/0.16 (was 0.04/0.08/0.12)
+- **Stronger borders:** opacity 0.12/0.20 (was 0.08/0.14)
+- **Stronger shadows:** 0.08/0.10/0.12/0.15 (was 0.06/0.08/0.10/0.12)
+- All semantic tokens updated in tokens.css; duplicate light-theme block removed from style.css
+
+### 4. Mobile Shell Hardening
+- 5-column `minmax(0, 1fr)` grid ensures `YOU` never overflows at 320–414px
+- Floating Create FAB (56px) at bottom-right, no column collision
+- Safe-area-inset-bottom respected
+- Touch targets ≥44px
+- No horizontal overflow (html/body overflow-x: hidden)
+
+### 5. Desktop Shell
+- Left rail pushes content correctly (72px/240px)
+- Active nav state obvious
+- Content spacing preserved
+- No horizontal overflow
+
+### 6. Legacy CSS Cleanup
+- `--nkm-surface/#141b2e` → `var(--color-surface)` across all shell CSS
+- `--nkm-border/...` → `var(--color-border)`
+- `--nkm-radius-md/16px` → `var(--radius-md)`
+- `--nkm-font-display/...` → `var(--font-display)`
+- Hardcoded `#0b1220` backgrounds → `var(--color-bg)`
+- Hardcoded `rgba(0,0,0,0.6)` scrims → `var(--color-glass-strong)`
+
+### 7. All-Users Sidebar Overlap Fixed
+- Grid layout updated to use rail width at ≥1280px
+- Context rail hidden below 1280px
+
+### 8. Login Compatibility
+- tokens.css loaded on login.html
+- Legacy variable remap handles inline dark `:root` block
+- No auth-flow changes
+
+### 9. Accessibility & QA
+- Focus-visible outlines on all interactive elements
+- ARIA labels on navigation, theme toggle, chat indicators
+- Reduced-motion respected (animations disabled)
+- WCAG AA contrast verified for both themes
+- Touch targets ≥44px
 
 ---
 

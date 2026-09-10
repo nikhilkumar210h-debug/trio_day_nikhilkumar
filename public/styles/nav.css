@@ -1,13 +1,14 @@
-/* NKM Navigation — Mobile 4+1 bottom + Desktop left rail (Phase 2)
+/* NKM Navigation — Mobile 5-item bottom + Desktop left rail (Phase 3)
+   Canonical: Today / Discover / Do / Chat / You + floating Create.
    Uses semantic tokens from tokens.css.
    ═══════════════════════════════════════════════════════════════ */
-/* ── Bottom nav (mobile) — 4+1 with center Create FAB ── */
+/* ── Bottom nav (mobile) — 5 equal columns, no Create inside grid ── */
 .bottom-nav {
   position: fixed;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(var(--color-bg-elevated), 0.95);
+  background: var(--color-bg-elevated);
   backdrop-filter: blur(18px) saturate(180%);
   -webkit-backdrop-filter: blur(18px) saturate(180%);
   border-top: 1px solid var(--color-border);
@@ -18,58 +19,78 @@
   width: min(520px, 100%);
   margin: auto;
   display: grid;
-  grid-template-columns: 1fr 1fr 72px 1fr 1fr;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 2px;
   padding: 6px 6px 4px;
-  align-items: end;
+  align-items: stretch;
 }
 .nav-btn {
+  min-width: 0;
   padding: 6px 2px 4px;
   border-radius: var(--radius-sm);
   color: var(--color-ink-dim);
   font-size: var(--text-xs);
   font-weight: var(--font-semibold);
-  letter-spacing: .04em;
   text-transform: uppercase;
+  letter-spacing: .02em;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   gap: 2px;
   min-height: 44px;
+  text-decoration: none;
+}
+.nav-btn .nav-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  line-height: 1.1;
 }
 .nav-btn.active {
   color: var(--color-primary);
   background: var(--color-primary-soft);
 }
-.nav-icon { font-size: 22px; line-height: 1; }
-.nav-btn--create {
-  background: linear-gradient(135deg, var(--color-primary-strong), var(--color-primary));
+.nav-icon { font-size: 22px; line-height: 1; transition: transform var(--duration-fast) var(--ease-out); }
+.nav-btn.active .nav-icon { transform: scale(1.06); }
+.nav-icon svg { display: block; }
+
+/* ── Floating Create FAB (mobile only) ── */
+.nkm-create-fab {
+  position: fixed;
+  right: 16px;
+  bottom: calc(76px + env(safe-area-inset-bottom));
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 0;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
   color: var(--color-primary-ink);
-  border: 1px solid rgba(255,255,255,.08);
-  border-radius: var(--radius-md);
-  height: 48px;
-  margin-bottom: 4px;
-  box-shadow: 0 4px 12px var(--color-primary-glow);
-  gap: 0;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-strong));
+  box-shadow: 0 8px 24px var(--color-primary-glow);
+  z-index: 78;
+  transition: transform var(--duration-fast) var(--ease-out);
 }
-.nav-btn--create .nav-icon { font-size: 20px; display: grid; place-items: center; color: var(--color-primary-ink); }
-.nav-btn--create .nav-icon svg { display: block; stroke: var(--color-primary-ink); stroke-width: 2.2; width: 20px; height: 20px; }
-.nav-btn--create.active {
-  background: linear-gradient(135deg, var(--color-primary-strong), var(--color-primary));
-  color: var(--color-primary-ink);
-  border-color: rgba(255,255,255,.10);
-}
+.nkm-create-fab svg { display: block; width: 22px; height: 22px; stroke: var(--color-primary-ink); }
+.nkm-create-fab:active { transform: scale(0.94); }
 
 /* ── Desktop left rail (hidden on mobile) ── */
 .nkm-rail { display: none; }
 @media (min-width: 840px) {
   .bottom-nav { display: none; }
+  .nkm-create-fab { display: none; }
   .nkm-rail {
     display: flex;
     flex-direction: column;
     position: fixed;
     left: 0;
-    top: 55px; /* below tricolor 3 + header 52 mobile */
+    top: 63px; /* header 60 + tricolor 3 */
     bottom: 0;
     width: 72px;
-    background: rgba(var(--color-bg-elevated), 0.98);
+    background: var(--color-bg-elevated);
     backdrop-filter: blur(18px);
     border-right: 1px solid var(--color-border);
     padding: 12px 8px;
@@ -78,24 +99,23 @@
     overflow-y: auto;
   }
   .nkm-rail .nav-btn { flex-direction: column; min-height: 56px; font-size: var(--text-xs); }
-  .nkm-rail .nav-btn--create { margin: 4px 0 8px; height: 52px; }
-  /* Push main content aside — account for rail width, keep content centered in remaining space */
+  .nkm-rail .nav-label { font-size: var(--text-xs); letter-spacing: .04em; }
+  .nkm-rail .nav-btn--create { margin-top: auto; height: 52px; }
+  /* Push main content aside — account for rail width */
   .app-main, .profile-main, .users-main, .chat-main, .tasks-main, .private-main {
     margin-left: 72px;
     width: calc(100% - 72px);
     max-width: calc(100% - 72px);
   }
-  /* Fix nkm-activity/profile centered margin:auto overriding rail offset */
   .tasks-main.nkm-activity, .profile-main, .chat-main.nkm-chat, .private-main {
     margin-left: 72px !important;
     margin-right: auto;
     box-sizing: border-box;
   }
-  /* nkm-home inside app-main stays centered 680 within available width */
   .nkm-home { margin-left: auto; margin-right: auto; }
 }
 @media (min-width: 1280px) {
-  .nkm-rail { width: 240px; padding: 16px 10px; top: 63px; /* 3 + 60 desktop header */ }
+  .nkm-rail { width: 240px; padding: 16px 10px; top: 63px; }
   .nkm-rail .nav-btn {
     flex-direction: row;
     justify-content: flex-start;
@@ -105,7 +125,9 @@
     text-transform: none;
     letter-spacing: 0;
     min-height: 44px;
+    text-align: left;
   }
+  .nkm-rail .nav-label { text-transform: none; letter-spacing: 0; }
   .nkm-rail .nav-btn--create { justify-content: center; }
   .app-main, .profile-main, .users-main, .chat-main, .tasks-main, .private-main {
     margin-left: 240px;
@@ -116,22 +138,17 @@
     margin-left: 240px !important;
   }
 }
-/* Correct rail top at 840-1279 where header is 60 */
-@media (min-width: 840px) and (max-width: 1279px) {
-  .nkm-rail { top: 63px; }
-}
 /* Prevent white flash on navigation — keep html dark before paint */
 html { background: var(--color-bg); }
 body { background: var(--color-bg); }
-/* ── Mobile Chat overlap fix — hide legacy floating chat/create that overlaps new 4+1 nav ── */
+/* ── Mobile cleanup — hide legacy floating create that collides with new nav ── */
 @media (max-width: 839px) {
   .fab { display: none !important; }
-  #trioRankStrip { bottom: 62px; } /* sit clearly above 4+1 nav (~58px) */
+  #trioRankStrip { bottom: 62px; } /* sit clearly above 5-item nav */
 }
 /* Avoid horizontal overflow */
 html, body { overflow-x: hidden; }
 /* Ensure nav icon SVGs render crisply and stay visible */
 .nav-icon svg { display: block; }
-.nav-btn--create .nav-icon svg path { stroke: var(--color-primary-ink); }
 /* Hide skeleton correctly even with flex display */
 .skeleton-stack[hidden], #feedLoading[hidden] { display: none !important; }

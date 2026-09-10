@@ -5,6 +5,53 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0-phase3] - 2026-09-10
+
+### Added
+- **Canonical 5-Item Navigation** (`public/ui/nav.js`, `public/styles/nav.css`): Today / Discover / Do / Chat / You across desktop (left rail) and mobile (bottom nav + floating Create FAB)
+- **Global Theme Bootstrap** (inline `<script>` in all 20 HTML pages): Pre-paint `data-theme` resolution from localStorage/system preference — eliminates FOUC
+- **Theme System Unification** (`public/theme.js`): Single `trio-theme` key (migrates legacy `trio_theme`), loaded on every shell page, auto-injects toggle via header.js
+- **Light Theme Visual Polish** (`public/styles/tokens.css`): Darker muted text (#334155), darker dim text (#64748b), stronger glass (0.08/0.12/0.16), borders (0.12/0.20), shadows (0.08-0.15) — WCAG AA compliant
+- **Mobile Shell Hardening**: 5-column `minmax(0,1fr)` grid, floating Create FAB, safe-area insets, touch targets ≥44px, no `YOU` overflow at 320–414px
+- **Desktop Rail**: 72px→240px responsive rail with content push, active state styling
+- **Legacy CSS Cleanup**: `--nkm-surface/#141b2e` → `var(--color-surface)`, `--nkm-border` → `var(--color-border)`, `--nkm-radius-md` → `var(--radius-md)`, `--nkm-font-display` → `var(--font-display)` across shell CSS
+- **All-Users Sidebar Fix** (`public/all-users.html`): Grid layout updated for ≥1280px rail width
+- **Login Compatibility**: tokens.css loaded, legacy variable remap handles inline dark styles
+
+### Changed
+- **nav.js**: Complete rewrite for 5-item canonical nav + floating Create FAB + desktop rail
+- **nav.css**: 5-col mobile grid, floating FAB, desktop rail responsive (72px/240px)
+- **header.css**: Compact icon buttons on mobile, theme/chat/search integration
+- **tokens.css**: Light theme primitives strengthened for contrast; legacy variable remap for `--bg/--surface/--ink/--border`
+- **style.css**: Removed duplicate `[data-theme="light"]` block; hardcoded `#0b1220`/`rgba(0,0,0,0.6)` → semantic tokens
+- **sheet.css**: Scrim background → `var(--color-glass-strong)`
+- **ui/nav.js**: New canonical nav rendering, unified Create handler
+- **tasks.js**: Removed independent `applyThemeToggle()` page theme state
+- **script.js**: Removed hard-lock `setAttribute('data-theme','dark')`
+- **create.js**: Removed hard-lock `setAttribute('data-theme','dark')`
+- **All 20 HTML pages**: Added pre-paint theme bootstrap + theme.js module load
+
+### Fixed
+- **FOUC Prevention**: Inline bootstrap in `<head>` sets theme before paint
+- **Theme Consistency**: Single global preference across all pages; no page-independent theme state
+- **Mobile Nav Overflow**: `YOU` label never clips at 320–414px via `minmax(0,1fr)` grid
+- **Mixed Dark/Light Sections**: Legacy inline `:root` blocks remapped via tokens.css light theme
+- **All-Users Sidebar Overlap**: Grid uses rail width at ≥1280px, hidden below
+- **Login Light Mode**: tokens.css loaded, legacy remap enables light theme
+- **Hardcoded Dark Locks**: Removed from script.js, create.js, tasks.js
+
+### Removed
+- Duplicate `[data-theme="light"]` block from style.css (single source in tokens.css)
+- Per-page theme toggles and hardcoded dark locks
+- Legacy `--nkm-*` fallback patterns in shell CSS
+
+### Security
+- No changes to Firebase Auth, Firestore rules, or Cloudflare Workers
+- No data migrations or deletions
+- No Firestore schema changes
+
+---
+
 ## [2.0.0-phase2] - 2026-09-09
 
 ### Added

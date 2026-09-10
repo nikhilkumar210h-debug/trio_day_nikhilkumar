@@ -112,3 +112,15 @@
   .auth-name { display: none; }
   .auth-chip { padding: 4px; max-width: none; }
 }
+/* Theme + search + chat icon buttons in header stay compact on mobile */
+@media (max-width: 839px) {
+  .topbar-actions .icon-btn,
+  .topbar-actions #headerThemeBtn,
+  .topbar-actions .nkm-header-search-btn,
+  .topbar-actions .nkm-header-chat {
+    width: 36px;
+    height: 36px;
+    flex: 0 0 36px;
+    font-size: 15px;
+  }
+}

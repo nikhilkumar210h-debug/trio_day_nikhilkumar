@@ -17,9 +17,7 @@ const $ = id => document.getElementById(id);
 let currentUser = null;
 let storyPrivacy = 'public';
 
-// Theme — locked to dark
-document.documentElement.setAttribute('data-theme', 'dark');
-localStorage.setItem('trio_theme', 'dark');
+// Theme is global (theme.js); no per-page lock here.
 SoundManager.init();
 
 onAuthStateChanged(auth, async user => {

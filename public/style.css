@@ -1,46 +1,10 @@
 /* ═══════════════════════════════════════════════════════════════
    TRIO DAY 2.0 — Component Styles
    Uses semantic tokens from tokens.css. No token definitions here.
+   Light theme tokens are defined in tokens.css only.
    ═══════════════════════════════════════════════════════════════ */
 
-/* ── Light Theme Overrides ────────────────────────────────────
-   Overrides semantic tokens from tokens.css for light mode
-   ═══════════════════════════════════════════════════════════════ */
-[data-theme="light"] {
-  /* Surfaces */
-  --color-bg: var(--color-bg-light);
-  --color-bg-elevated: var(--color-bg-elevated-light);
-  --color-bg-hover: var(--color-bg-hover-light);
-  --color-surface: var(--color-surface-light);
-  --color-surface-strong: var(--color-surface-strong-light);
-  --color-surface-hover: var(--color-surface-hover-light);
-
-  /* Glass / overlay layers */
-  --color-glass: var(--color-glass-light);
-  --color-glass-strong: var(--color-glass-strong-light);
-  --color-glass-hover: var(--color-glass-hover-light);
-
-  /* Text / Ink */
-  --color-ink: var(--color-ink-light);
-  --color-ink-muted: var(--color-ink-muted-light);
-  --color-ink-dim: var(--color-ink-dim-light);
-
-  /* Borders */
-  --color-border: var(--color-border-light);
-  --color-border-strong: var(--color-border-strong-light);
-  --color-border-focus: var(--color-border-focus-light);
-
-  /* Shadows — softer for light theme */
-  --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.06);
-  --shadow-sm: 0 2px 8px rgba(15, 23, 42, 0.08);
-  --shadow-md: 0 8px 24px rgba(15, 23, 42, 0.10);
-  --shadow-lg: 0 16px 48px rgba(15, 23, 42, 0.12);
-  --shadow-inner: inset 0 1px 2px rgba(15, 23, 42, 0.04);
-
-  color-scheme: light;
-}
-
-/* ── Reset + Base ─────────────────────────────────────────── */
+ /* ── Reset + Base ─────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 @media (prefers-reduced-motion: reduce) {
@@ -405,7 +369,7 @@ h1, h2, h3, .brand strong {
 /* CLS FIX: reserve space before image loads to prevent layout shift (Pagespeed CLS) */
 .feed-media { background: var(--color-bg); min-height: 180px; position: relative; overflow: hidden; }
 .feed-media.text-only-media { padding: var(--space-4); min-height: auto; }
-.feed-media .media { width: 100%; height: auto; aspect-ratio: 4 / 3; max-height: 500px; object-fit: cover; display: block; background: #0b1220; }
+.feed-media .media { width: 100%; height: auto; aspect-ratio: 4 / 3; max-height: 500px; object-fit: cover; display: block; background: var(--color-bg); }
 .feed-media:has(.media) { aspect-ratio: 4 / 3; max-height: 500px; }
 /* Fallback for browsers without :has */
 @supports not selector(:has(*)) {
@@ -655,7 +619,7 @@ h1, h2, h3, .brand strong {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: var(--color-glass-strong);
   backdrop-filter: blur(8px);
   display: flex;
   justify-content: center;
@@ -782,7 +746,7 @@ h1, h2, h3, .brand strong {
   border-radius: var(--radius-md);
   overflow: hidden;
   border: 1px solid var(--color-border);
-  background: #0b1220;
+  background: var(--color-bg);
   display: block;
   max-height: min(62vh, 560px);
   max-height: min(62dvh, 560px);
@@ -796,7 +760,7 @@ h1, h2, h3, .brand strong {
   min-height: 220px;
   object-fit: contain;
   display: block;
-  background: #0b1220;
+  background: var(--color-bg);
   border: 0;
   margin: 0;
   border-radius: 0;
@@ -1291,7 +1255,7 @@ h1, h2, h3, .brand strong {
   transform: translateY(100%);
   transition: transform var(--duration-slow) var(--ease-out), opacity var(--duration-fast);
   z-index: 140;
-  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 -8px 32px rgba(15, 23, 42, 0.15);
   border-radius: var(--radius-xl) var(--radius-xl) 0 0;
   overflow: hidden;
   border-top: 1px solid var(--color-border);
@@ -1613,7 +1577,7 @@ h1, h2, h3, .brand strong {
   min-height: 260px;
   max-height: min(58vh, 560px);
   max-height: min(58dvh, 560px);
-  background: #0b1220;
+  background: var(--color-bg);
   overflow: hidden;
   border-radius: var(--radius-md);
   border: 1px solid var(--color-border);

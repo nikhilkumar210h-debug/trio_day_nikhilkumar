@@ -71,7 +71,7 @@ export function renderNotificationSettings(container, settings, onChange) {
   const pushRow = document.createElement("div");
   pushRow.className = "nkm-setting-row";
   pushRow.style.cssText =
-    "display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--nkm-border,rgba(148,163,184,.1))";
+    "display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--color-border)";
   pushRow.innerHTML = `
     <div>
       <div style="font-weight:500">Push Notifications</div>
@@ -88,7 +88,7 @@ export function renderNotificationSettings(container, settings, onChange) {
     const row = document.createElement("div");
     row.className = "nkm-setting-row";
     row.style.cssText =
-      "display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--nkm-border,rgba(148,163,184,.1))";
+      "display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--color-border)";
     const enabled = settings[setting.key] !== false;
     row.innerHTML = `
       <div>

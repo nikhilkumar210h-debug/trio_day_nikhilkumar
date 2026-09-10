@@ -25,16 +25,8 @@ function setStatus(t = '', err = false) {
   statusEl.classList.toggle('error', err);
 }
 
-function applyThemeToggle() {
-  const btn = $('themeToggle');
-  const saved = localStorage.getItem('trio_theme') || 'dark';
-  document.documentElement.setAttribute('data-theme', saved);
-  btn?.addEventListener('click', () => {
-    const next = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
-    document.documentElement.setAttribute('data-theme', next);
-    localStorage.setItem('trio_theme', next);
-  });
-}
+// Theme is managed globally by theme.js (loaded on every shell page).
+// No independent page theme state here.
 
 function renderHero(user) {
   const xp = Number(user?.xp) || 0;
@@ -273,7 +265,6 @@ function initTabs() {
   $('activityMoreBtn')?.addEventListener('click', e=>{ e.stopPropagation(); openSecondarySheet(); });
 }
 
-applyThemeToggle();
 initTabs();
 
 onAuthStateChanged(auth, async user => {

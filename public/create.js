@@ -37,7 +37,7 @@ const STICKERS = [
   '🤷‍♂️','🕺','💃','🌈','⚡','❤️','💜','🇮🇳'
 ];
 
-document.documentElement.setAttribute('data-theme', 'dark');
+// Theme is global (theme.js); no per-page lock here.
 try { SoundManager.init(); } catch {}
 
 /** Strict mode state — never share media between post/story */
