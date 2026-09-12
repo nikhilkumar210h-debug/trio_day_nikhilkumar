@@ -2,7 +2,7 @@ import { auth, db } from './firebase-init.js';
 import { notifyUser } from './services/notificationHelpers.js';
 import { uploadPostImage, uploadStoryMedia } from './image-upload.js';
 import { trioCache } from './trio-cache.js';
-import { getCachedUserProfile, getMyProfile } from './services/userCache.js';
+import { getCachedUserProfile, getMyProfile, getCachedUser } from './services/userCache.js';
 import { SoundManager } from './sound-manager.js';
 import { onPostCreated, onLikeGiven, onLikeReceived, onCommentCreated } from './gamification/auto-metrics.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
@@ -12,6 +12,9 @@ import {
   getDocs, limit, where
 } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 import { makeUserId, escapeHtml, initials, formatTime, getFilterCSS } from './utils.js';
+import { getMergedTasks, manualBump } from './gamification/progress.js';
+import { listCommunityTasks, isMember } from './gamification/community-tasks.js';
+import { SYSTEM_BADGES } from './gamification/constants.js';
 
 const $ = id => document.getElementById(id);
 let currentUser = null;
@@ -27,53 +30,477 @@ onAuthStateChanged(auth, async user => {
     import('./gamification/reminders.js')
       .then(m => m.runAppOpenReminders(user.uid))
       .catch(() => { });
-    updateCommunityPulse();
+    initTodayScreen(user.uid);
+    startNotificationDot(user.uid);
   } else {
-    updateCommunityPulse();
+    initTodayScreen(null);
   }
   if (feed && cachedPosts.length) render(cachedPosts);
 });
 
-async function updateCommunityPulse() {
-  const challengeEl = $('pulseChallengeText');
-  const buzzEl = $('pulseBuzzText');
-  const creatorEl = $('pulseCreatorText');
-  if (!challengeEl && !buzzEl && !creatorEl) return;
-  // Challenge: try cache from communityTasks (no new listener, cache-first)
+async function initTodayScreen(uid) {
+  renderGreeting();
+  await renderStoryStrip();
+  if (uid) {
+    await Promise.all([
+      renderFocusAndContinue(uid),
+      renderActiveChallenges(uid),
+      renderPeople(uid),
+    ]);
+  }
+  initHighlightsFeed();
+}
+
+function renderGreeting() {
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  const nameEl = $('greetingName');
+  const subEl = $('greetingSub');
+  if (nameEl) {
+    const userName = currentUser?.displayName || 'Friend';
+    nameEl.textContent = userName.split(' ')[0];
+  }
+  if (subEl) {
+    const messages = [
+      'Small steps create big results.',
+      'Every day is a fresh start.',
+      'Progress over perfection.',
+      'You\'re doing better than you think.',
+      'Keep going — you\'ve got this.',
+    ];
+    subEl.textContent = messages[Math.floor(Math.random() * messages.length)];
+  }
+}
+
+async function renderStoryStrip() {
+  const wrap = $('heroStories');
+  const empty = $('heroStoriesEmpty');
+  if (!wrap) return;
+  wrap.innerHTML = '';
+
+  const addBtn = document.createElement('button');
+  addBtn.className = 'hero-story-circle add-story';
+  addBtn.title = 'Add story';
+  addBtn.setAttribute('aria-label', 'Add story');
+  addBtn.innerHTML = '<span class="hero-story-circle-inner" style="background:var(--primary-soft); color:var(--primary); font-size:28px;">+</span>';
+  addBtn.addEventListener('click', () => { SoundManager.click(); openStoryModal(); });
+  wrap.appendChild(addBtn);
+
   try {
-    const cached = trioCache.get('communityTasks_active');
-    if (challengeEl) {
-      if (cached && cached.length) {
-        const c = cached[0];
-        challengeEl.textContent = `${c.title || 'Community challenge'} · +${c.xpReward||0} XP`;
-        const card = $('pulseChallenge'); if (card) card.style.cursor = 'pointer', card.onclick = () => location.href = `tasks.html`;
-      } else {
-        // Check feed cache for buzz before network
-        challengeEl.textContent = 'No active challenge — create one in Tasks.';
+    const cachedFeed = trioCache.get('feed_recent');
+    if (cachedFeed && cachedFeed.length) {
+      const now = Date.now();
+      const stories = cachedFeed
+        .filter(p => p.isStory && p.createdAtMs && (now - p.createdAtMs) < 24 * 60 * 60 * 1000)
+        .slice(0, 20);
+
+      if (!stories.length) {
+        if (empty) empty.style.display = 'block';
+        return;
       }
+      if (empty) empty.style.display = 'none';
+
+      stories.forEach(s => {
+        const btn = document.createElement('button');
+        btn.className = 'hero-story-circle';
+        btn.title = s.name || 'Story';
+        btn.setAttribute('aria-label', `Story from ${s.name || 'User'}`);
+        const seenKey = 'seenStories';
+        const seenList = JSON.parse(localStorage.getItem(seenKey) || '[]');
+        if (seenList.includes(s._id)) btn.classList.add('viewed');
+        const inner = document.createElement('span');
+        inner.className = 'hero-story-circle-inner';
+        if (s.photoURL) {
+          const img = document.createElement('img');
+          img.src = s.photoURL;
+          img.alt = '';
+          img.loading = 'lazy';
+          inner.appendChild(img);
+        } else {
+          inner.textContent = (s.name || 'U').charAt(0).toUpperCase();
+          inner.style.background = 'linear-gradient(135deg, var(--primary), var(--primary-strong))';
+        }
+        btn.appendChild(inner);
+        btn.addEventListener('click', () => {
+          SoundManager.storyTap();
+          const cur = JSON.parse(localStorage.getItem(seenKey) || '[]');
+          if (!cur.includes(s._id)) {
+            cur.push(s._id);
+            localStorage.setItem(seenKey, JSON.stringify(cur));
+            btn.classList.add('viewed');
+          }
+          const card = document.querySelector(`[data-postId="${s._id}"]`);
+          if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          else openStoryViewer(s);
+        });
+        wrap.appendChild(btn);
+      });
+    } else {
+      if (empty) empty.style.display = 'block';
     }
-  } catch {}
-  // Buzz: from feed_recent cache (real, no fake)
+  } catch {
+    if (empty) empty.style.display = 'block';
+  }
+  setTimeout(() => { wrap.scrollLeft = 0; }, 50);
+}
+
+function openStoryViewer(s) {
+  const ov = document.createElement('div');
+  ov.className = 'story-viewer-overlay';
+  const safeN = (s.name || 'Story').replace(/</g, '<');
+  const safeM = (s.message || '').slice(0, 120).replace(/</g, '<');
+  const isOwn = s.uid && currentUser && s.uid === currentUser.uid;
+  const isVoice = s.isVoice || s.type === 'voice';
+  const mediaTag = isVoice
+    ? `<div class="voice-post-player" style="margin:0;border-radius:0"><audio src="${s.mediaUrl}" autoplay controls class="story-viewer-media" style="width:100%;max-height:none"></audio><span class="voice-duration">🎙️ ${Number(s.duration) || 0}s voice</span></div>`
+    : s.mediaUrl?.match(/\.mp4|\.webm|\.mov/i)
+      ? `<video src="${s.mediaUrl}" controls autoplay playsinline class="story-viewer-media"></video>`
+      : s.mediaUrl
+        ? `<img src="${s.mediaUrl}" class="story-viewer-media" loading="eager" alt="Story">`
+        : '';
+  ov.innerHTML = `<div class="story-viewer-card"><div style="overflow:auto">${mediaTag}<div class="story-viewer-body"><strong>${safeN}</strong><p style="margin:6px 0;color:#94a3b8;font-size:13px">${safeM}</p><div class="story-viewer-reactions"><button type="button" class="action-btn mood-btn" data-mood="❤️">❤️</button><button type="button" class="action-btn mood-btn" data-mood="😂">😂</button><button type="button" class="action-btn mood-btn" data-mood="😍">😍</button><button type="button" class="action-btn mood-btn" data-mood="🔥">🔥</button><button type="button" class="action-btn mood-btn" data-mood="💯">💯</button><button type="button" class="action-btn mood-btn" data-mood="🎉">🎉</button></div><div class="story-viewer-reply"><input type="text" maxlength="200" placeholder="Reply to ${safeN}…"><button type="button" class="btn primary sm" data-send>Send</button></div><div class="story-viewer-actions"><button type="button" class="btn secondary" style="flex:1" data-close>Close</button>${isOwn ? '<button type="button" class="btn" style="flex:1;background:#ef4444;color:#fff;border:0" data-del>Delete Story</button>' : '<button type="button" class="btn ghost" style="flex:1" data-share>↗ Share</button>'}</div></div></div></div>`;
+
+  ov.querySelector('[data-close]')?.addEventListener('click', () => ov.remove());
+  ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
+
+  const delBtn = ov.querySelector('[data-del]');
+  if (delBtn) {
+    delBtn.addEventListener('click', async () => {
+      if (!confirm('Delete this story?')) return;
+      try {
+        await deleteDoc(doc(db, 'posts', s._id));
+        ov.remove();
+      } catch (err) { alert(err.message || 'Delete failed'); }
+    });
+  }
+
+  const shareBtn = ov.querySelector('[data-share]');
+  if (shareBtn) {
+    shareBtn.addEventListener('click', async () => {
+      const url = new URL(`view_post.html?postId=${encodeURIComponent(s._id)}`, location.href).href;
+      try {
+        if (navigator.share) await navigator.share({ title: s.name || 'Story', url });
+        else { await navigator.clipboard.writeText(url); alert('Link copied ✅'); }
+      } catch {}
+    });
+  }
+
+  const reacts = ov.querySelectorAll('.mood-btn');
   try {
-    if (buzzEl) {
-      const feed = trioCache.get('feed_recent');
-      if (feed && feed.length) buzzEl.textContent = `${feed.length} posts today · ${feed[0]?.message?.slice(0,40) || 'Join the conversation'}${feed.length>1?'…':''}`;
-      else buzzEl.textContent = 'No buzz yet — be first to post.';
-    }
+    onSnapshot(collection(db, 'posts', s._id, 'moods'), snap => {
+      const counts = {}; let my = null;
+      snap.forEach(d => { const m = d.data()?.mood; if (m) counts[m] = (counts[m] || 0) + 1; if (d.id === currentUser?.uid) my = m; });
+      reacts.forEach(b => {
+        const mm = b.dataset.mood;
+        const c = counts[mm] || 0;
+        b.innerHTML = mm + (c ? ` <span style="font-size:10px;background:#6366f1;color:#fff;border-radius:999px;padding:0 4px;margin-left:2px">${c}</span>` : '');
+        b.classList.toggle('liked', my === mm);
+        if (my === mm) b.style.background = 'rgba(99,102,241,.18)'; else b.style.background = '';
+      });
+    }, () => {});
   } catch {}
-  // Rising creator: from leaderboard cache if available
+
+  reacts.forEach(b => {
+    b.addEventListener('click', async () => {
+      if (!currentUser) return alert('Login karke react karo.');
+      const mood = b.dataset.mood;
+      const ref = doc(db, 'posts', s._id, 'moods', currentUser.uid);
+      try {
+        const snap = await getDoc(ref);
+        if (snap.exists() && snap.data()?.mood === mood) await deleteDoc(ref);
+        else {
+          await setDoc(ref, { uid: currentUser.uid, mood, createdAt: serverTimestamp() });
+          if (!snap.exists()) {
+            getMyProfile(currentUser.uid).then(me => notifyUser(s.uid, { type: 'like', actorUid: currentUser.uid, actorName: me?.name || currentUser.displayName || 'Someone', postId: s._id }).catch(() => {})).catch(() => {});
+            onLikeGiven(currentUser.uid);
+            if (s.uid && s.uid !== currentUser.uid) onLikeReceived(s.uid);
+          }
+        }
+        SoundManager.moodSelect();
+      } catch (e) { alert(e.message || 'React failed'); }
+    });
+  });
+
+  const replyInput = ov.querySelector('.story-viewer-reply input');
+  const sendBtn = ov.querySelector('[data-send]');
+  const doReply = async () => {
+    const text = replyInput.value.trim();
+    if (!text) return;
+    if (!currentUser) return alert('Login karke reply karo.');
+    if (s.uid === currentUser.uid) return alert('Apni story pe reply nahi kar sakte.');
+    if (text.length > 200) return alert('200 chars max');
+    sendBtn.disabled = true; sendBtn.textContent = '…';
+    try {
+      const me = await getMyProfile(currentUser.uid);
+      const chatId = [currentUser.uid, s.uid].sort().join('_');
+      await addDoc(collection(db, 'privateChats', chatId, 'messages'), {
+        uid: currentUser.uid,
+        name: me?.name || currentUser.displayName || 'User',
+        userId: me?.userId || makeUserId(currentUser.uid),
+        text: `↩️ Replied to your story: "${text}"`,
+        replyToStoryId: s._id,
+        storyPreview: s.mediaUrl || null,
+        originalStoryText: s.message || '',
+        createdAt: Date.now(),
+        createdAtMs: Date.now()
+      });
+      await notifyUser(s.uid, { type: 'message', actorUid: currentUser.uid, actorName: me?.name || 'Someone', text, postId: s._id }).catch(() => {});
+      SoundManager.send();
+      replyInput.value = '';
+      if (confirm('Reply sent! Chat me dikhega — chat kholo?')) location.href = `private-chat.html?uid=${encodeURIComponent(s.uid)}`;
+      else ov.remove();
+    } catch (e) { alert(e.message || 'Reply failed'); }
+    finally { sendBtn.disabled = false; sendBtn.textContent = 'Send'; }
+  };
+  sendBtn?.addEventListener('click', doReply);
+  replyInput?.addEventListener('keydown', e => { if (e.key === 'Enter') doReply(); });
+
+  document.body.appendChild(ov);
+}
+
+async function renderFocusAndContinue(uid) {
+  const focusPrimary = $('focusPrimary');
+  const focusSecondary = $('focusSecondary');
+  const continueList = $('continueList');
+  const continueEmpty = $('continueEmpty');
+  const continueSection = $('continueSection');
+
+  if (!focusPrimary || !focusSecondary) return;
+
+  focusPrimary.innerHTML = '<div class="focus-skeleton" style="display:flex; gap:12px; align-items:center; padding:16px; background:var(--color-surface); border:1px solid var(--color-border); border-radius:var(--radius-lg);"><div class="nkm-skeleton" style="width:48px; height:48px; border-radius:var(--radius-md); flex:none"></div><div style="flex:1; display:grid; gap:8px"><div class="nkm-skeleton" style="height:18px; width:60%"></div><div class="nkm-skeleton" style="height:14px; width:80%"></div><div class="nkm-skeleton" style="height:14px; width:40%"></div></div><div class="nkm-skeleton" style="width:100px; height:40px; border-radius:var(--radius-md); flex:none"></div></div>';
+  focusSecondary.innerHTML = '';
+
   try {
-    if (creatorEl) {
-      const lb = trioCache.get('lb_global') || trioCache.get('leaderboard_global');
-      if (lb && lb.entries && lb.entries[0]) {
-        const top = lb.entries[0];
-        creatorEl.textContent = `🌟 ${top.name || 'Creator'} · Lv ${top.level||1}`;
-        const card = $('pulseCreator'); if (card) card.style.cursor='pointer', card.onclick=()=>location.href=`profile.html?uid=${encodeURIComponent(top.uid)}`;
-      } else {
-        creatorEl.textContent = 'Discover creators in Community.';
-      }
+    const [dailyTasks, weeklyTasks] = await Promise.all([
+      getMergedTasks(uid, 'daily'),
+      getMergedTasks(uid, 'weekly'),
+    ]);
+
+    const allTasks = [...dailyTasks, ...weeklyTasks];
+    const incomplete = allTasks.filter(t => !t.done);
+    const completed = allTasks.filter(t => t.done);
+
+    // Primary: first incomplete daily task, or first incomplete weekly
+    const primaryTask = incomplete.find(t => t.cadence === 'daily') || incomplete[0];
+
+    if (primaryTask) {
+      focusPrimary.innerHTML = buildFocusCard(primaryTask, true);
+      attachFocusCTA(primaryTask, uid, focusPrimary.querySelector('.focus-cta'));
+    } else if (completed.length) {
+      focusPrimary.innerHTML = buildFocusCard(completed[0], true);
+      const cta = focusPrimary.querySelector('.focus-cta');
+      if (cta) { cta.classList.add('completed'); cta.textContent = 'Done ✓'; cta.disabled = true; }
+    } else {
+      focusPrimary.innerHTML = '<div style="padding:16px; text-align:center; color:var(--color-ink-muted);">No tasks today — create one in <a href="tasks.html" style="color:var(--primary);">Do</a></div>';
     }
+
+    // Secondary: up to 3 other incomplete tasks
+    const secondaryTasks = incomplete.filter(t => t !== primaryTask).slice(0, 3);
+    if (secondaryTasks.length) {
+      focusSecondary.innerHTML = secondaryTasks.map(t => buildFocusCard(t, false)).join('');
+      focusSecondary.querySelectorAll('.focus-cta').forEach((btn, i) => {
+        attachFocusCTA(secondaryTasks[i], uid, btn);
+      });
+    }
+
+    // Continue: incomplete tasks with progress > 0
+    const inProgress = allTasks.filter(t => !t.done && (t.count || 0) > 0);
+    if (continueList && inProgress.length) {
+      continueSection.hidden = false;
+      if (continueEmpty) continueEmpty.hidden = true;
+      continueList.innerHTML = inProgress.slice(0, 6).map(t => buildContinueCard(t)).join('');
+    } else if (continueList) {
+      continueSection.hidden = false;
+      if (continueEmpty) continueEmpty.hidden = false;
+      continueList.innerHTML = '';
+    }
+  } catch (err) {
+    console.error('renderFocusAndContinue failed', err);
+    focusPrimary.innerHTML = '<div style="padding:16px; text-align:center; color:var(--color-ink-muted);">Could not load focus</div>';
+  }
+}
+
+function buildFocusCard(task, isPrimary) {
+  const progress = Math.min(100, Math.round(((task.count || 0) / Math.max(1, task.target || 1)) * 100));
+  const badge = SYSTEM_BADGES.find(b => b.id === task.badgeId);
+  const icon = task.icon || '🎯';
+  const xp = task.xpReward || 0;
+  const cardClass = isPrimary ? 'focus-card' : 'focus-card';
+  return `
+    <article class="${cardClass}" data-task-id="${task.id}">
+      <div class="focus-icon">${icon}</div>
+      <div class="focus-content">
+        <div class="focus-title">${escapeHtml(task.title || 'Task')}</div>
+        <div class="focus-meta">
+          <span class="metric">${task.count || 0} / ${task.target || 1}</span>
+          ${xp ? `<span class="xp">+${xp} XP</span>` : ''}
+          ${badge ? `<span class="badge">${badge.icon} ${badge.name}</span>` : ''}
+        </div>
+        <div class="focus-progress"><div class="focus-progress-bar" style="width:${progress}%"></div></div>
+      </div>
+      <button type="button" class="focus-cta nkm-btn nkm-btn--primary" ${task.done ? 'disabled' : ''}>${task.done ? 'Done ✓' : 'Start'}</button>
+    </article>
+  `;
+}
+
+function attachFocusCTA(task, uid, btn) {
+  if (!btn || task.done) return;
+  btn.addEventListener('click', async () => {
+    btn.disabled = true;
+    btn.textContent = '…';
+    try {
+      await manualBump(uid, task.id, 1);
+      await renderFocusAndContinue(uid);
+    } catch (e) {
+      btn.disabled = false;
+      btn.textContent = 'Start';
+      alert(e.message || 'Failed to update');
+    }
+  });
+}
+
+function buildContinueCard(task) {
+  const progress = Math.min(100, Math.round(((task.count || 0) / Math.max(1, task.target || 1)) * 100));
+  const icon = task.icon || '🎯';
+  const xp = task.xpReward || 0;
+  return `
+    <article class="continue-card" data-task-id="${task.id}">
+      <div class="continue-icon">${icon}</div>
+      <div class="continue-title">${escapeHtml(task.title || 'Task')}</div>
+      <div class="continue-progress"><div class="continue-progress-bar" style="width:${progress}%"></div></div>
+      <div class="continue-meta">
+        <span>${task.count || 0} / ${task.target || 1}</span>
+        ${xp ? `<span class="xp">+${xp} XP</span>` : ''}
+      </div>
+    </article>
+  `;
+}
+
+async function renderActiveChallenges(uid) {
+  const listEl = $('challengesList');
+  const emptyEl = $('challengesEmpty');
+  const sectionEl = $('challengesSection');
+  if (!listEl) return;
+
+  listEl.innerHTML = '<div style="padding:16px; text-align:center; color:var(--color-ink-muted);">Loading challenges…</div>';
+
+  try {
+    const allChallenges = await listCommunityTasks({ status: 'active', max: 40 });
+    if (!allChallenges.length) {
+      listEl.innerHTML = '';
+      sectionEl.hidden = true;
+      if (emptyEl) emptyEl.hidden = false;
+      return;
+    }
+
+    // Batch membership checks — bounded at 40 reads max
+    const membershipResults = await Promise.all(
+      allChallenges.map(c => isMember(c.id, uid).then(joined => ({ challenge: c, joined })))
+    );
+
+    const joinedChallenges = membershipResults.filter(r => r.joined).map(r => r.challenge);
+
+    if (!joinedChallenges.length) {
+      listEl.innerHTML = '';
+      sectionEl.hidden = true;
+      if (emptyEl) emptyEl.hidden = false;
+      return;
+    }
+
+    sectionEl.hidden = false;
+    if (emptyEl) emptyEl.hidden = true;
+
+    listEl.innerHTML = joinedChallenges.map(c => buildChallengeCard(c)).join('');
+  } catch (err) {
+    console.error('renderActiveChallenges failed', err);
+    listEl.innerHTML = '<div style="padding:16px; text-align:center; color:var(--color-ink-muted);">Could not load challenges</div>';
+    sectionEl.hidden = true;
+    if (emptyEl) emptyEl.hidden = false;
+  }
+}
+
+function buildChallengeCard(c) {
+  const progress = Math.min(100, Math.round(((c.completions || 0) / Math.max(1, c.target || 1)) * 100));
+  const icon = c.icon || '🎯';
+  const xp = c.xpReward || 0;
+  const members = c.joins || 0;
+  return `
+    <article class="challenge-card" data-task-id="${c.id}">
+      <div class="challenge-icon">${icon}</div>
+      <div class="challenge-content">
+        <div class="challenge-title">${escapeHtml(c.title || 'Challenge')}</div>
+        <div class="challenge-meta">
+          ${xp ? `<span class="xp">+${xp} XP</span>` : ''}
+          <span class="members">👥 ${members}</span>
+        </div>
+        <div class="challenge-progress"><div class="challenge-progress-bar" style="width:${progress}%"></div></div>
+      </div>
+      <a href="task-detail.html?id=${encodeURIComponent(c.id)}" class="challenge-cta nkm-btn nkm-btn--secondary">View</a>
+    </article>
+  `;
+}
+
+async function renderPeople(uid) {
+  const listEl = $('peopleList');
+  const sectionEl = $('peopleSection');
+  if (!listEl) return;
+
+  try {
+    const cached = trioCache.get('lb_global') || trioCache.get('leaderboard_global');
+    if (!cached || !cached.entries || !cached.entries.length) {
+      sectionEl.hidden = true;
+      return;
+    }
+
+    const me = await getCachedUser(uid);
+    const followingIds = new Set(
+      me?.following?.map(f => f.uid) || []
+    );
+
+    const others = cached.entries
+      .filter(e => e.uid !== uid)
+      .slice(0, 12);
+
+    if (!others.length) {
+      sectionEl.hidden = true;
+      return;
+    }
+
+    sectionEl.hidden = false;
+    listEl.innerHTML = others.map(u => `
+      <article class="person-card" data-uid="${u.uid}">
+        <div class="person-avatar">${u.photoURL ? `<img src="${escapeHtml(u.photoURL)}" alt="">` : (u.name || 'U').charAt(0).toUpperCase()}</div>
+        <div class="person-name">${escapeHtml(u.name || 'User')}</div>
+        <div class="person-id">${escapeHtml(u.userId || u.uid.slice(0, 8))}</div>
+      </article>
+    `).join('');
+
+    listEl.querySelectorAll('.person-card').forEach(card => {
+      card.addEventListener('click', () => {
+        const targetUid = card.dataset.uid;
+        if (targetUid) location.href = `profile.html?uid=${encodeURIComponent(targetUid)}`;
+      });
+    });
+  } catch (err) {
+    console.error('renderPeople failed', err);
+    sectionEl.hidden = true;
+  }
+}
+
+function startNotificationDot(uid) {
+  if (!uid) return;
+  try {
+    const notifRef = collection(db, 'users', uid, 'notifications');
+    const q = query(notifRef, where('read', '==', false), limit(1));
+    onSnapshot(q, snap => {
+      const dot = document.getElementById('headerNotifDot');
+      if (dot) dot.hidden = snap.empty;
+    }, () => {});
   } catch {}
+}
+
+function updateCommunityPulse() {
+  // No-op: replaced by initTodayScreen sections
 }
 
 async function ensureUserProfile(user) {
@@ -1042,35 +1469,31 @@ function renderHeroStories(stories){
   setTimeout(()=>{ wrap.scrollLeft = 0; }, 50);
 }
 
-function render(posts) {
+function renderHighlightsFeed(posts) {
   if (!feed) return;
   cachedPosts = posts;
   if (feedLoading) feedLoading.hidden = true;
   feed.innerHTML = '';
 
-  const stories = posts.filter(p => p.isStory && p.createdAtMs && (Date.now() - p.createdAtMs) < 24 * 60 * 60 * 1000);
   const regularPosts = posts.filter(p => !p.isStory);
-  try{ renderHeroStories(stories); }catch(e){}
-
   const postsToRender = regularPosts.sort((a, b) => (b.createdAtMs || 0) - (a.createdAtMs || 0));
-  if (!postsToRender.length && stories.length === 0) { if (feedEmpty) feedEmpty.hidden = false; return; }
+  if (!postsToRender.length) { if (feedEmpty) feedEmpty.hidden = false; return; }
   if (feedEmpty) feedEmpty.hidden = true;
   postsToRender.forEach(p => feed.appendChild(buildFeedItem(p)));
-  try { updateCommunityPulse(); } catch {}
 }
 
-if (feed) {
+function initHighlightsFeed() {
+  if (!feed) return;
   // Phase 0: limit + orderBy to cut reads (was full collection scan). Cache-first render uses trio-cache feed_recent if available.
   const cachedFeed = trioCache.get('feed_recent');
-  if (cachedFeed && cachedFeed.length) render(cachedFeed);
+  if (cachedFeed && cachedFeed.length) renderHighlightsFeed(cachedFeed);
   const feedQuery = query(collection(db, 'posts'), orderBy('createdAtMs', 'desc'), limit(20));
   onSnapshot(feedQuery, snap => {
     const posts = [];
     snap.forEach(d => { const p = d.data(); posts.push({ ...p, _id: d.id }); });
-    // Keep client filter for isStory/stories separation already in render()
     trioCache.set('feed_recent', posts, trioCache.TTL.SHORT);
     if (feedError) feedError.hidden = true;
-    render(posts);
+    renderHighlightsFeed(posts);
   }, err => {
     console.error(err);
     if (feedLoading) feedLoading.hidden = true;

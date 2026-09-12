@@ -41,6 +41,22 @@ export function initHeader() {
     }
   }
 
+  // Notification bell with unread dot (presence only, not count)
+  if (!document.querySelector('#headerNotifBtn')) {
+    const notifBtn = document.createElement('a');
+    notifBtn.id = 'headerNotifBtn';
+    notifBtn.className = 'nkm-header-chat notification-bell';
+    notifBtn.href = 'notifications.html';
+    notifBtn.setAttribute('aria-label', 'Notifications');
+    notifBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="nav-dot" id="headerNotifDot" hidden aria-hidden="true"></span>`;
+    const actions = inner.querySelector('.topbar-actions');
+    const authEl = document.getElementById('authStatus');
+    if (actions) {
+      if (authEl) actions.insertBefore(notifBtn, authEl);
+      else actions.prepend(notifBtn);
+    }
+  }
+
   // Mobile Chat — single intentional access point near Notification (mobile only, desktop uses rail)
   if (!document.querySelector('#headerChatBtn')) {
     const chatBtn = document.createElement('a');

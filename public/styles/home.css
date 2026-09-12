@@ -1,77 +1,113 @@
-/* Home / Feed — NKM Phase 2A (16:9 compact, pulse → create → feed)
-   Uses semantic tokens from tokens.css.
-   ═══════════════════════════════════════════════════════════════ */
-.nkm-home { max-width: 680px; margin: auto; padding: var(--space-4); display: flex; flex-direction: column; gap: var(--space-3); }
-@media (min-width: 1024px) {
-  .nkm-home { max-width: 680px; padding: var(--space-5) var(--space-4); }
-  /* Optional contextual rail on desktop — 280px right, only if needed; keep feed centered */
-  .nkm-home.has-rail { max-width: 980px; display: grid; grid-template-columns: 680px 280px; gap: var(--space-4); align-items: start; }
-  .nkm-home.has-rail > #communityPulse { grid-column: 1 / -1; }
-  .nkm-home.has-rail > #feedSection { grid-column: 1 / 2; }
-  .nkm-rail-context { display: block; }
-}
-@media (max-width: 1023px) { .nkm-rail-context { display: none; } }
+/* Home / Today — Phase 4: Greeting → Stories → Focus → Continue → Challenges → People → Highlights
+   Uses semantic tokens from tokens.css only. Mobile-first, no px-only spacing.
+   ═════════════════════════════════════════════════════════════════════════════════ */
 
-/* ── Pulse ── */
-.nkm-pulse { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-2); }
-@media (max-width: 600px) {
-  .nkm-pulse { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 4px; scrollbar-width: none; }
-  .nkm-pulse::-webkit-scrollbar { display: none; }
-  .nkm-pulse > .nkm-pulse-card { flex: 0 0 160px; scroll-snap-align: start; }
-}
-.nkm-pulse-card {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  padding: var(--space-3);
-  min-height: 88px;
+.nkm-home {
+  max-width: 680px;
+  margin: auto;
+  padding: var(--space-4) var(--space-3);
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
-}
-.nkm-pulse-card h3 { font-size: var(--text-sm); font-weight: var(--font-bold); margin: 0; line-height: 1.2; }
-.nkm-pulse-card p {
-  font-size: var(--text-xs);
-  color: var(--color-ink-muted);
-  margin: 0;
-  line-height: 1.4;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-.nkm-pulse-card .nkm-badge { align-self: flex-start; }
-.nkm-pulse-card--empty {
-  border-style: dashed;
-  justify-content: center;
-  align-items: center;
-  text-align: center;
-  color: var(--color-ink-dim);
-  font-size: var(--text-xs);
+  gap: var(--space-4);
 }
 
-/* ── Stories strip (compact horizontal) ── */
+@media (min-width: 1024px) {
+  .nkm-home { max-width: 680px; padding: var(--space-5) var(--space-4); }
+}
+
+/* ═════════════════════════════════════════════════════════════════════════════════
+   Greeting
+   ════════════════════════════════════════════════════════════════════════════════ */
+
+.today-greeting {
+  padding: var(--space-2) 0;
+  text-align: center;
+}
+
+.greeting-main {
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 5vw, 2rem);
+  font-weight: var(--font-extrabold);
+  color: var(--color-ink);
+  margin: 0 0 var(--space-1);
+  line-height: 1.15;
+}
+
+.greeting-main span#greetingName {
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-strong));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.greeting-sub {
+  font-size: var(--text-sm);
+  color: var(--color-ink-muted);
+  margin: 0;
+  font-weight: var(--font-medium);
+}
+
+/* ═════════════════════════════════════════════════════════════════════════════════
+   Section Title (shared)
+   ════════════════════════════════════════════════════════════════════════════════ */
+
+.today-section-title {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: var(--font-bold);
+  color: var(--color-ink);
+  margin: 0 0 var(--space-3);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* ═════════════════════════════════════════════════════════════════════════════════
+   Stories Strip
+   ════════════════════════════════════════════════════════════════════════════════ */
+
 .nkm-stories-strip {
   display: flex;
   gap: var(--space-2);
   overflow-x: auto;
-  padding: 8px 2px;
+  padding: var(--space-2) var(--space-1);
   scroll-snap-type: x proximity;
   scrollbar-width: none;
+  margin: calc(var(--space-2) * -1) calc(var(--space-3) * -1);
+  padding-left: var(--space-3);
+  padding-right: var(--space-3);
 }
+
 .nkm-stories-strip::-webkit-scrollbar { display: none; }
-.nkm-stories-strip .hero-story-circle {
-  width: 56px;
-  height: 56px;
-  flex: 0 0 56px;
+
+.hero-story-circle {
+  width: 64px;
+  height: 64px;
+  flex: 0 0 64px;
   border-radius: 50%;
   padding: 2px;
   background: linear-gradient(45deg, #feda75, #fa7e1e, #d62976, #962fbf, #4f5bd5);
   scroll-snap-align: start;
   cursor: pointer;
   border: 0;
+  transition: transform var(--transition-fast), opacity var(--transition-fast);
 }
-.nkm-stories-strip .hero-story-circle-inner {
+
+.hero-story-circle:hover { transform: scale(1.05); }
+
+.hero-story-circle.add-story {
+  background: var(--color-surface);
+  border: 2px dashed var(--color-border);
+  padding: 0;
+}
+
+.hero-story-circle.add-story .hero-story-circle-inner {
+  background: var(--color-surface);
+  color: var(--color-primary);
+  font-size: 28px;
+}
+
+.hero-story-circle-inner {
   width: 100%;
   height: 100%;
   border-radius: 50%;
@@ -82,18 +118,351 @@
   border: 2px solid var(--color-surface);
   font-weight: var(--font-bold);
   color: var(--color-ink);
-  font-size: 16px;
+  font-size: 18px;
 }
-.nkm-stories-strip .hero-story-circle-inner img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.nkm-stories-strip .hero-story-circle.viewed,
-.nkm-stories-strip .hero-story-circle.seen { opacity: .55; background: var(--color-border-strong); }
 
-/* Hide legacy competing create buttons (consolidated to bottom nav + chooser) — headerPlus kept visible */
-#heroPostBtn, #storyPostBtn, #fabBtn { display: none !important; }
+.hero-story-circle-inner img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
-/* ── Feed (12px gaps, 16:9 media) ── */
-#feedSection { display: flex; flex-direction: column; gap: var(--space-3); }
+.hero-story-circle.viewed,
+.hero-story-circle.seen { opacity: .55; background: var(--color-border-strong); }
+
+/* ═════════════════════════════════════════════════════════════════════════════════
+   Today's Focus — Primary + Secondary cards
+   ════════════════════════════════════════════════════════════════════════════════ */
+
+.focus-primary,
+.focus-secondary { display: flex; flex-direction: column; gap: var(--space-2); }
+
+.focus-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.focus-card:hover {
+  border-color: var(--color-border-strong);
+  box-shadow: var(--shadow-md);
+}
+
+.focus-card.completed {
+  border-color: var(--color-success-soft);
+  background: var(--color-success-soft);
+}
+
+.focus-icon {
+  width: 48px;
+  height: 48px;
+  flex: none;
+  border-radius: var(--radius-md);
+  display: grid;
+  place-items: center;
+  font-size: 22px;
+  background: var(--color-primary-soft);
+}
+
+.focus-card.completed .focus-icon { background: var(--color-success-soft); }
+
+.focus-content { flex: 1; min-width: 0; display: grid; gap: var(--space-1); }
+
+.focus-title {
+  font-weight: var(--font-bold);
+  font-size: var(--text-base);
+  color: var(--color-ink);
+  line-height: 1.3;
+}
+
+.focus-meta {
+  font-size: var(--text-xs);
+  color: var(--color-ink-muted);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.focus-meta .xp { color: var(--color-warning); font-weight: var(--font-semibold); }
+.focus-meta .badge { color: var(--color-primary); font-weight: var(--font-semibold); }
+.focus-meta .metric { color: var(--color-ink-dim); }
+
+.focus-progress {
+  height: 6px;
+  background: var(--color-bg);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  margin-top: var(--space-1);
+}
+
+.focus-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-primary), var(--color-primary-strong));
+  border-radius: var(--radius-full);
+  transition: width var(--transition-normal);
+}
+
+.focus-card.completed .focus-progress-bar { background: var(--color-success); }
+
+.focus-cta {
+  flex: none;
+  margin-top: auto;
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  border-radius: var(--radius-md);
+  min-width: 96px;
+}
+
+.focus-cta.completed {
+  background: var(--color-success-soft);
+  color: var(--color-success);
+  border-color: var(--color-success-soft);
+  cursor: default;
+}
+
+/* Secondary focus cards — smaller */
+.focus-secondary .focus-card { padding: var(--space-3); }
+.focus-secondary .focus-icon { width: 40px; height: 40px; font-size: 18px; }
+.focus-secondary .focus-title { font-size: var(--text-sm); }
+.focus-secondary .focus-meta { font-size: var(--text-xs); }
+.focus-secondary .focus-cta { padding: var(--space-1) var(--space-2); font-size: var(--text-xs); min-width: 80px; }
+
+/* ═════════════════════════════════════════════════════════════════════════════════
+   Continue — In-progress horizontal strip
+   ═════════════════════════════════════════════════════════════════════════════════ */
+
+.continue-list {
+  display: flex;
+  gap: var(--space-2);
+  overflow-x: auto;
+  padding: var(--space-1) var(--space-1) var(--space-2);
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+  margin: calc(var(--space-1) * -1) calc(var(--space-3) * -1);
+  padding-left: var(--space-3);
+  padding-right: var(--space-3);
+}
+
+.continue-list::-webkit-scrollbar { display: none; }
+
+.continue-card {
+  flex: 0 0 160px;
+  min-width: 160px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  scroll-snap-align: start;
+  transition: border-color var(--transition-fast), transform var(--transition-fast);
+}
+
+.continue-card:hover {
+  border-color: var(--color-border-strong);
+  transform: translateY(-2px);
+}
+
+.continue-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  display: grid;
+  place-items: center;
+  font-size: 20px;
+  background: var(--color-primary-soft);
+}
+
+.continue-title {
+  font-weight: var(--font-semibold);
+  font-size: var(--text-sm);
+  color: var(--color-ink);
+  line-height: 1.3;
+}
+
+.continue-progress {
+  height: 5px;
+  background: var(--color-bg);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  flex: 1;
+}
+
+.continue-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-primary), var(--color-primary-strong));
+  border-radius: var(--radius-full);
+  transition: width var(--transition-normal);
+}
+
+.continue-meta {
+  font-size: var(--text-xs);
+  color: var(--color-ink-muted);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.continue-meta .xp { color: var(--color-warning); font-weight: var(--font-semibold); }
+
+/* ═════════════════════════════════════════════════════════════════════════════════
+   Active Challenges — Joined challenges only
+   ════════════════════════════════════════════════════════════════════════════════ */
+
+.challenges-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.challenge-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3) var(--space-4);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.challenge-card:hover {
+  border-color: var(--color-border-strong);
+  box-shadow: var(--shadow-md);
+}
+
+.challenge-icon {
+  width: 44px;
+  height: 44px;
+  flex: none;
+  border-radius: var(--radius-md);
+  display: grid;
+  place-items: center;
+  font-size: 20px;
+  background: var(--color-secondary-soft);
+}
+
+.challenge-content { flex: 1; min-width: 0; display: grid; gap: 2px; }
+
+.challenge-title {
+  font-weight: var(--font-semibold);
+  font-size: var(--text-sm);
+  color: var(--color-ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.challenge-meta {
+  font-size: var(--text-xs);
+  color: var(--color-ink-muted);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.challenge-meta .xp { color: var(--color-warning); font-weight: var(--font-semibold); }
+.challenge-meta .members { color: var(--color-primary); font-weight: var(--font-semibold); }
+
+.challenge-progress {
+  width: 80px;
+  flex: none;
+  height: 6px;
+  background: var(--color-bg);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.challenge-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-secondary), var(--color-secondary-strong));
+  border-radius: var(--radius-full);
+  transition: width var(--transition-normal);
+}
+
+.challenge-cta {
+  flex: none;
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  border-radius: var(--radius-md);
+  min-width: 88px;
+}
+
+/* ═════════════════════════════════════════════════════════════════════════════════
+   People Strip
+   ════════════════════════════════════════════════════════════════════════════════ */
+
+.people-strip {
+  display: flex;
+  gap: var(--space-2);
+  overflow-x: auto;
+  padding: var(--space-1) var(--space-1) var(--space-2);
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+  margin: calc(var(--space-1) * -1) calc(var(--space-3) * -1);
+  padding-left: var(--space-3);
+  padding-right: var(--space-3);
+}
+
+.people-strip::-webkit-scrollbar { display: none; }
+
+.person-card {
+  flex: 0 0 80px;
+  min-width: 80px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  scroll-snap-align: start;
+}
+
+.person-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-strong));
+  color: var(--color-primary-ink);
+  font-weight: var(--font-bold);
+  font-size: 20px;
+  border: 2px solid var(--color-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.person-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.person-name {
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  color: var(--color-ink);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 80px;
+}
+
+.person-id {
+  font-size: 10px;
+  color: var(--color-ink-dim);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+/* ═════════════════════════════════════════════════════════════════════════════════
+   Highlights — Compact feed cards (16:9)
+   ════════════════════════════════════════════════════════════════════════════════ */
+
 .feed { display: flex; flex-direction: column; gap: var(--space-3); }
+
 .nkm-post {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
@@ -102,7 +471,9 @@
   display: flex;
   flex-direction: column;
 }
+
 .nkm-post-head { display: flex; gap: var(--space-2); align-items: center; padding: 12px 12px 8px; }
+
 .nkm-post-avatar {
   width: 36px;
   height: 36px;
@@ -116,14 +487,23 @@
   font-size: var(--text-sm);
   flex: none;
 }
+
 .nkm-post-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
 .nkm-post-meta { min-width: 0; flex: 1; }
+
 .nkm-post-name { font-weight: var(--font-bold); font-size: var(--text-sm); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
 .nkm-post-id { font-size: var(--text-xs); color: var(--color-ink-dim); letter-spacing: .04em; text-transform: uppercase; }
+
 .nkm-post-time { font-size: var(--text-xs); color: var(--color-ink-dim); }
+
 .nkm-post-media { background: var(--color-bg); aspect-ratio: 16 / 9; max-height: 420px; overflow: hidden; position: relative; }
+
 .nkm-post-media img.media { width: 100%; height: 100%; object-fit: cover; display: block; aspect-ratio: 16 / 9; }
+
 .nkm-post-media.text-only { display: grid; place-items: center; padding: 20px; aspect-ratio: 16 / 9; }
+
 .nkm-post-media.text-only .text-only-copy {
   font-size: var(--text-base);
   line-height: 1.4;
@@ -135,7 +515,9 @@
   padding: 14px;
   max-width: 90%;
 }
+
 .nkm-post-caption { padding: 10px 12px 0; font-size: var(--text-sm); line-height: 1.55; color: var(--color-ink); white-space: pre-wrap; overflow-wrap: anywhere; }
+
 .nkm-post-actions {
   display: flex;
   gap: 6px;
@@ -145,6 +527,7 @@
   flex-wrap: wrap;
   margin-top: 8px;
 }
+
 .nkm-post-actions .action-btn {
   min-height: 32px;
   padding: 6px 10px;
@@ -156,26 +539,63 @@
   font-weight: var(--font-semibold);
   gap: 6px;
 }
+
 .nkm-post-actions .action-btn.liked {
   background: var(--color-secondary-soft);
   color: var(--color-secondary);
   border-color: var(--color-secondary-soft);
 }
+
 .nkm-post-actions .action-btn:hover { background: var(--color-glass-hover); transform: none; }
+
 .nkm-post-actions .danger-action { margin-left: auto; color: var(--color-danger) !important; border-color: var(--color-danger-soft) !important; }
 
-/* Reactions picker re-styled compact */
+/* Reactions picker */
 .nkm-post .reaction-picker { bottom: calc(100% + 6px); right: 12px; border-radius: var(--radius-sm); padding: 6px; gap: 4px; display: flex; flex-wrap: wrap; min-width: 200px; max-width: 260px; }
 .nkm-post .reaction-picker[hidden] { display: none !important; }
 
-/* Comments preview compact */
+/* Comments preview */
 .nkm-post .comments-preview { margin: 0 12px 8px; padding: 0; }
 
-/* Skeleton 16:9 reserved — hide correctly when [hidden] */
+/* Skeleton */
 .skeleton-stack { display: flex; flex-direction: column; gap: var(--space-3); }
 .skeleton-stack[hidden], #feedLoading[hidden] { display: none !important; }
-.skeleton-card { height: auto; aspect-ratio: 16/9; max-height: 220px; border-radius: var(--radius-md); }
+.skeleton-card { height: auto; aspect-ratio: 16/9; max-height: 220px; border-radius: var(--radius-md); background: linear-gradient(90deg,rgba(255,255,255,.04) 0%,rgba(255,255,255,.08) 50%,rgba(255,255,255,.04) 100%); background-size:200% 100%; }
 
-/* Empty state compact */
+/* Empty state */
 .empty-state { padding: 24px 16px; text-align: center; }
 .empty-state .empty-chakra { font-size: 32px; margin-bottom: 8px; }
+.empty-state h3 { margin: 0 0 var(--space-1); font-size: var(--text-base); font-weight: var(--font-semibold); }
+.empty-state p { margin: 0 0 var(--space-3); font-size: var(--text-sm); color: var(--color-ink-muted); }
+
+/* ═════════════════════════════════════════════════════════════════════════════════
+   Notification Bell Dot
+   ════════════════════════════════════════════════════════════════════════════════ */
+
+.notification-bell { position: relative; }
+.notification-bell .nav-dot {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-danger);
+  border: 2px solid var(--color-bg);
+  transform: translate(50%, -50%);
+}
+.notification-bell .nav-dot[hidden] { display: none !important; }
+
+/* ═════════════════════════════════════════════════════════════════════════════════
+   Responsive
+   ═════════════════════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 360px) {
+  .hero-story-circle { width: 56px; height: 56px; flex: 0 0 56px; }
+  .hero-story-circle-inner { font-size: 16px; }
+  .continue-card { flex: 0 0 140px; min-width: 140px; }
+  .person-card { flex: 0 0 72px; min-width: 72px; }
+  .person-avatar { width: 48px; height: 48px; font-size: 18px; }
+  .challenge-card { padding: var(--space-2) var(--space-3); }
+  .challenge-progress { width: 60px; }
+}

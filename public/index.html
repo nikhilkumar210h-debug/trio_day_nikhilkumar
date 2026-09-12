@@ -50,21 +50,46 @@
   </header>
 
   <main class="app-main nkm-home">
-    <!-- Community Pulse — NKM-specific (compact, no fake data) -->
-    <section id="communityPulse" class="nkm-pulse" aria-label="Community Pulse">
-      <div class="nkm-pulse-card" id="pulseChallenge"><span style="font-size:16px">⚡</span><h3>Today's Challenge</h3><p id="pulseChallengeText">Loading…</p></div>
-      <div class="nkm-pulse-card" id="pulseBuzz"><span style="font-size:16px">💬</span><h3>Community Buzz</h3><p id="pulseBuzzText">No buzz yet — be first to post.</p></div>
-      <div class="nkm-pulse-card" id="pulseCreator"><span style="font-size:16px">🌟</span><h3>Rising Creator</h3><p id="pulseCreatorText">Discover creators in Community.</p></div>
+    <!-- Greeting -->
+    <section class="today-greeting" aria-label="Greeting">
+      <h1 class="greeting-main">Good day, <span id="greetingName">Friend</span> <span aria-hidden="true">👋</span></h1>
+      <p class="greeting-sub" id="greetingSub">Small steps create big results.</p>
     </section>
 
-    <!-- Stories strip — compact horizontal (preserves heroStories id) -->
+    <!-- Stories strip (preserves heroStories id) -->
     <section id="storiesStrip" class="nkm-stories-strip" aria-label="Stories">
       <div id="heroStories" style="display:flex; gap:10px; align-items:center;"></div>
-      <div id="heroStoriesEmpty" class="nkm-pulse-card--empty" style="display:none; padding:10px 14px; font-size:12px; border:1px dashed rgba(148,163,184,.12); border-radius:12px; color:var(--color-ink-dim)">No stories yet</div>
+      <div id="heroStoriesEmpty" class="nkm-pulse-card--empty" style="display:none; padding:10px 14px; font-size:12px; border:1px dashed var(--border); border-radius:12px; color:var(--color-ink-dim)">No stories yet</div>
     </section>
 
-    <!-- Feed — 12px gaps, 16:9 compact cards -->
-    <section id="feedSection">
+    <!-- Today's Focus — real task data -->
+    <section id="todayFocus" class="today-section" aria-label="Today's Focus">
+      <h2 class="today-section-title">Today's Focus</h2>
+      <div id="focusPrimary" class="focus-primary"></div>
+      <div id="focusSecondary" class="focus-secondary"></div>
+    </section>
+
+    <!-- Continue — in-progress items -->
+    <section id="continueSection" class="today-section" aria-label="Continue" hidden>
+      <h2 class="today-section-title">Continue</h2>
+      <div id="continueList" class="continue-list"></div>
+    </section>
+
+    <!-- Active Challenges — joined challenges only -->
+    <section id="challengesSection" class="today-section" aria-label="Active Challenges" hidden>
+      <h2 class="today-section-title">Active Challenges</h2>
+      <div id="challengesList" class="challenges-list"></div>
+    </section>
+
+    <!-- People — real community members -->
+    <section id="peopleSection" class="today-section" aria-label="People" hidden>
+      <h2 class="today-section-title">People</h2>
+      <div id="peopleList" class="people-strip"></div>
+    </section>
+
+    <!-- Highlights — activity highlights (compact feed) -->
+    <section id="highlightsSection" class="today-section" aria-label="Highlights">
+      <h2 class="today-section-title">Highlights</h2>
       <div id="feedLoading" class="skeleton-stack">
         <div class="skeleton-card"></div>
         <div class="skeleton-card"></div>
@@ -73,7 +98,7 @@
       <div id="feedEmpty" class="empty-state" hidden>
         <div class="empty-chakra">☸</div>
         <h3>Nothing here yet</h3>
-        <p>Start the conversation — share a thought, Shayari or moment.</p>
+        <p>Start the conversation — share a thought or moment.</p>
         <button class="nkm-btn nkm-btn--primary" type="button" data-open-post style="margin-top:8px">Create Something</button>
       </div>
       <div id="feedError" class="banner-error" hidden></div>
