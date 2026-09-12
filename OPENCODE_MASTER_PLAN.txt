@@ -56,9 +56,10 @@ PART 3: ARCHITECTURE & TECH STACK
 - Delivery: Cloudflare Edge (Static Assets) -> Cloud Run (Dynamic Flask API).
 
 ================================================================================
-PART 4: EXHAUSTIVE PHASE-BY-PHASE EXECUTION (PHASE 1 TO 19)
+PART 4: EXHAUSTIVE PHASE-BY-PHASE EXECUTION (PHASE 1 TO 22)
 ================================================================================
-You must execute these phases sequentially. Do not stop until Phase 19 is done.
+
+You must execute these phases sequentially. Do not stop until Phase 22 is done.
 
 --------------------------------------------------------------------------------
 PHASE 01: AUDIT, BACKUP & FIREBASE RULE EXTRACTION
@@ -140,14 +141,30 @@ PHASE 09: CREATE FLOW
 9.3 Build the "Photo-to-Poster" UI: Upload image, select template, position text, flat export button. Keep processing client-side to save server cost.
 
 --------------------------------------------------------------------------------
-PHASE 10: SOCIAL INTEGRATION, CHAT & ROOMS
+PHASE 10A: SOCIAL INTEGRATION
 --------------------------------------------------------------------------------
-10.1 Comments: Clicking comment must open a small, flat modal. DO NOT auto-focus the input to prevent mobile keyboard from jarring the screen.
-10.2 Chat UI (`chat.css`, `private-chat.css`): Build flat message bubbles. Sender (Accent Color background), Receiver (Slate Gray background). Remove rounded-pill bubbles, use 6px border-radius.
-10.3 Rooms UI: Build the realtime Text-Based Room DOM. Topic Header, Active Members list, Slim Progress Bar, Text Input. NO Video/Audio components.
+10A.1 Comments: Clicking comment must open a small, flat modal. DO NOT auto-focus the input to prevent mobile keyboard from jarring the screen.
+10A.2 Chat UI (`chat.css`, `private-chat.css`): Build flat message bubbles. Sender (Accent Color background), Receiver (Slate Gray background). Remove rounded-pill bubbles, use 6px border-radius.
+10A.3 Rooms UI: Build the realtime Text-Based Room DOM. Topic Header, Active Members list, Slim Progress Bar, Text Input. NO Video/Audio components.
+10A.4 Integrate social features around challenges: posts, comments, reactions, sharing, stories, notifications.
 
 --------------------------------------------------------------------------------
-PHASE 11: SOUND, LOADING & UX POLISH
+PHASE 10B: CHAT
+--------------------------------------------------------------------------------
+10B.1 Private chat / group chat / messaging states / unread counts / notifications / privacy / realtime optimization.
+
+--------------------------------------------------------------------------------
+PHASE 10C: ROOMS
+--------------------------------------------------------------------------------
+10C.1 Activity rooms / members / goal / timer / progress / text chat / live state / join-leave / moderation.
+
+--------------------------------------------------------------------------------
+PHASE 10D: SOCIAL + ACTIVITY INTEGRATION QA
+--------------------------------------------------------------------------------
+10D.1 Full loop test: Challenge → Join → Room → Chat → Complete → XP → Achievement.
+
+--------------------------------------------------------------------------------
+PHASE 11: SOUND + LOADING + UX POLISH
 --------------------------------------------------------------------------------
 11.1 Implement a `SoundManager` JS class. Map lightweight base64 audio blips to: `success`, `achievement`, `notification`.
 11.2 Add a global UI toggle for sounds.
@@ -168,9 +185,10 @@ PHASE 13: CLOUDFLARE WORKER TO FLASK MIGRATION
 13.2 Replicate Gamification logic (XP, Streaks) in Flask. ENSURE server-side calculation (Do not trust client XP values).
 13.3 Replicate Notifications & Reminders in Flask.
 13.4 Update Frontend JS `fetch()` URLs to point to the new Flask routing architecture dynamically.
+13.5 Sub-phases: 13A Gamification / 13B Notifications / 13C Push / 13D Reminders / 13E Studio AI / 13F Remove old Worker deps / 13G Integration QA
 
 --------------------------------------------------------------------------------
-PHASE 14: DEPLOYMENT ARCHITECTURE (CLOUDFLARE + CLOUD RUN)
+PHASE 14: CLOUDFLARE FRONTEND + CLOUD RUN FLASK DEPLOYMENT
 --------------------------------------------------------------------------------
 14.1 Write `Dockerfile` for the Flask Backend (Gunicorn, workers, thread optimization for Cloud Run).
 14.2 Structure static assets (HTML/CSS/JS) to be served purely via Cloudflare.
@@ -182,9 +200,10 @@ PHASE 15: PERFORMANCE & COST OPTIMIZATION
 15.1 Audit Frontend Firestore calls. Replace expensive `onSnapshot()` listeners with `get()` calls where real-time is NOT strictly required (e.g., Profile stats, Discover page).
 15.2 Keep `onSnapshot()` ONLY for Chat and Live Rooms.
 15.3 Implement client-side caching (sessionStorage/localStorage) for static configurations or challenge lists.
+15.4 Optimize Cloud Run CPU/memory, Cloudinary bandwidth, caching, pagination, rate limits.
 
 --------------------------------------------------------------------------------
-PHASE 16: SECURITY, PRIVACY & SEO HARDENING
+PHASE 16: SECURITY + PRIVACY + SEO (Final Hardening)
 --------------------------------------------------------------------------------
 16.1 Add proper Meta tags, OpenGraph tags, and Title tags for SEO.
 16.2 Write `robots.txt` and `sitemap.xml` generators.
@@ -192,7 +211,7 @@ PHASE 16: SECURITY, PRIVACY & SEO HARDENING
 16.4 Verify that Private data (chats, private profiles) cannot be indexed by search engines.
 
 --------------------------------------------------------------------------------
-PHASE 17: OBSERVABILITY & MONITORING
+PHASE 17: OBSERVABILITY + MONITORING
 --------------------------------------------------------------------------------
 17.1 Add global error boundaries in JavaScript (`window.onerror`, `unhandledrejection`) to catch and format frontend errors silently.
 17.2 Add Python `logging` module configuration in Flask for structured JSON logging (compatible with GCP Cloud Logging).
@@ -204,21 +223,45 @@ PHASE 18: AUTOMATED TESTING & RELIABILITY
 18.2 Write basic Pytest scripts for Flask backend authorization rules.
 
 --------------------------------------------------------------------------------
-PHASE 19: MOBILE & RESPONSIVE QA
+PHASE 19: MOBILE QA
 --------------------------------------------------------------------------------
 19.1 Audit all touch targets (minimum 44x44px for buttons).
 19.2 Audit the "Users/Profile" page on mobile viewports. Fix the horizontal overflow issue caused by message/connect controls. Ensure it wraps gracefully using CSS Flexbox/Grid.
 19.3 Verify padding, safe-area-insets (for iOS notches/Android nav bars), and dark mode contrast across mobile sizes.
 
+--------------------------------------------------------------------------------
+PHASE 20: DESKTOP QA
+--------------------------------------------------------------------------------
+20.1 Audit all touch targets (minimum 44x44px for buttons) on desktop.
+20.2 Verify desktop layout compatibility and responsiveness.
+20.3 Test keyboard navigation and accessibility on desktop viewports.
+
+--------------------------------------------------------------------------------
+PHASE 21: BACKUP + DISASTER RECOVERY
+--------------------------------------------------------------------------------
+21.1 Define explicit backup and recovery procedures for Firestore data.
+21.2 Implement disaster recovery plans for deployment failures.
+21.3 Ensure Cloudinary asset recovery procedures are in place.
+21.4 Test backup/restore procedures regularly.
+
+--------------------------------------------------------------------------------
+PHASE 22: PRODUCTION HARDENING + RELEASE
+--------------------------------------------------------------------------------
+22.1 Final security audit and penetration testing.
+22.2 Performance optimization and load testing.
+22.3 Cross-browser and cross-device compatibility testing.
+22.4 Prepare for production release with comprehensive documentation.
+22.5 Implement feature flags and gradual rollout mechanisms.
+
 ================================================================================
 PART 5: FINAL REPORTING PROTOCOL
 ================================================================================
 Do NOT output conversation, intermediate status, or partial phase updates.
-Once Phase 19 is absolutely complete, output ONE massive, comprehensive final report containing:
-1. SUMMARY OF EXECUTION: Confirming phases 1-19 are done.
+Once Phase 22 is absolutely complete, output ONE massive, comprehensive final report containing:
+1. SUMMARY OF EXECUTION: Confirming phases 1-22 are done.
 2. DESIGN SYSTEM LOG: List of primary CSS variables and classes created to achieve the "Flat/Modern" look.
 3. FIREBASE & FLASK LOG: Summary of backend migration, security rule updates, and cost-saving measures taken (e.g., removed snapshots).
-4. QA LOG: List of responsive layout fixes applied in Phase 19.
+4. QA LOG: List of responsive layout fixes applied in Phase 20.
 5. REQUIRED MANUAL ACTIONS: Any environment variables (e.g., Cloudinary secrets, Firebase Admin JSON) that the human user must manually inject into Google Cloud Run or Cloudflare.
 
 BEGIN FULL AUTONOMOUS EXECUTION NOW.

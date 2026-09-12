@@ -153,21 +153,86 @@ PHASE 3 — APP SHELL + NAVIGATION — COMPLETE
 - **Rail overlap:** `notifications-main`/`search-main`/`policy-main`/`view-post-main` added to rail offset
 - **Broken script tags:** literal `` `n `` corruption removed from 16 pages
 - **tokens.css** added to 404.html and sitemap.html
+ 
+PHASE 4 — TODAY / HOME — CURRENT / NOT COMPLETE
+--------------------------------------------------
+**Objective:** Implement the Today/Home page as the central action discovery interface.
+
+**Status:** Production implementation not complete. Design preview exists in `public/design-preview.html` but must not be treated as completed implementation.
+
+**Key Requirements:**
+- Primary question: "What should I do now?"
+- Not a generic feed; prioritizes meaningful action
+- Suggested hierarchy:
+  - greeting + streak
+  - Today's Focus
+  - primary recommended action
+  - Continue
+  - recommended activities/challenges
+  - active challenges
+  - meaningful people/activity context
+  - selective achievements/highlights
+- Should not become a huge dashboard with dozens of equal cards
+- Implement using existing design tokens, theme system, and components where appropriate
+- Real existing application data, responsive behavior
+- Dark/light theme support, loading states, empty states, error states
+- Accessibility compliant, mobile-first UX
 
 ---
 
 TECH STACK
 ----------
 Frontend: HTML, CSS (vanilla, ES modules), JS (vanilla, ES modules), PWA
-Backend: Cloudflare Workers (gamification, notifications, task reminders, AI proxy)
-         Firebase Functions (minimal)
+Backend: Google Cloud Run (Python/Flask) [Target - Migration in Progress]
+          Cloudflare Workers (Current - to be migrated)
 Auth: Firebase Authentication
 Database: Cloud Firestore
 Media: Cloudinary (unsigned uploads)
-Push: OneSignal via Cloudflare Worker proxy
-Hosting: Cloudflare Pages (static) + Cloudflare Workers (API)
+Push: OneSignal via Cloudflare Worker proxy (Transitioning to Flask)
+Hosting: Cloudflare (static frontend) + Google Cloud Run (Flask API)
 
----
+CURRENT STATUS & ROADMAP
+------------------------
+**22-Phase Roadmap:** Trio Day v2.0 follows a 22-phase roadmap:
+- Phase 1: Audit + Backup (COMPLETE)
+- Phase 2: Design System — Dark + Light (COMPLETE)
+- Phase 3: App Shell + Navigation (COMPLETE)
+- Phase 4: Today / Home (CURRENT / NOT COMPLETE)
+- Phases 5-22: NOT COMPLETE
+
+**Product Direction:**
+- **Posts:** Remain in Discover section (not removed or relocated)
+- **Stories:** Today-only experience (not duplicated into Discover)
+- **Discover:** Central hub for finding meaningful activities including Posts, Activities, Challenges, People, Projects/Builds, Competition, Topics/Interests
+- **Mobile Posts:** Horizontal swipe interface, one post at a time (not endless vertical feed)
+- **Content Seeding:** Pre-launch ecosystem with 40+ challenges per field (50+ preferred) to ensure immediate value for new users
+- **Recommendation System:** Interest + difficulty + time match + previous completion + recent behavior + freshness + community activity + quality + creator reputation - skip/hide/report signals
+
+**Architecture & Stack:**
+- Frontend: Cloudflare (static HTML/CSS/JS/PWA)
+- Backend: Google Cloud Run (Python/Flask) - Worker → Flask migration in progress (Phase 13)
+- Data: Firebase Firestore
+- Auth: Firebase Authentication
+- Media: Cloudinary (unsigned uploads)
+- Preserved Services: Firebase Auth, Firestore, Cloudinary (no migration planned during current phases)
+
+**Git Workflow:**
+- Stable branch: master (production-ready)
+- Development: Always in phase branches
+- Standard flow: master → phase branch → work → review → merge to master
+- Critical: Never merge phase branches into master without review; never force-push; preserve history
+
+**Security & Privacy Principles:**
+- Never expose private chats, profile/activity data, notifications, or Firestore data
+- Never trust client for XP, level, completion rewards, admin privileges, or private data access
+- Server-side validation for all security-critical operations
+- Privacy-first design with clear data lifecycle policies
+
+**Testing & Quality Assurance:**
+- Automated testing required for backend (auth, authorization, API, validation, rate limits)
+- Frontend testing for critical interactions, theme consistency, responsive behavior
+- Security testing for unauthorized access, wrong-user access, admin-only functions, token validation
+- Cross-browser/device testing, accessibility verification, performance optimization
 
 WHAT'S NEW IN v1.1 (Gamification)
 ----------------------------------
