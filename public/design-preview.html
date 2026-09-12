@@ -1,0 +1,776 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#0a0f1a">
+  <script>!function(){try{var k='trio-theme',t=localStorage.getItem(k);if(t!=='light'&&t!=='dark'){t=localStorage.getItem('trio_theme');t=(t==='light'||t==='dark')?t:null;}if(!t){t=matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';}document.documentElement.setAttribute('data-theme',t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',t==='light'?'#f8fafc':'#0a0f1a');}catch(e){}}</script>
+  <title>Trio Day Design Preview</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet"></noscript>
+  <link rel="stylesheet" href="styles/tokens.css">
+  <link rel="stylesheet" href="styles/skeleton.css">
+  <link rel="stylesheet" href="styles/sheet.css">
+  <link rel="stylesheet" href="styles/nav.css">
+  <link rel="stylesheet" href="styles/header.css">
+  <link rel="stylesheet" href="styles/components.css">
+  <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json">
+</head>
+<body class="app-page">
+  <div class="tricolor-strip"><span></span><span></span><span></span></div>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="design-preview.html"><span class="brand-chakra">☸</span><span class="brand-copy"><strong>trio_day</strong></span></a>
+      <div class="topbar-actions">
+        <div id="authStatus" class="auth-status"></div>
+        <button id="headerSearch" class="nkm-header-search-btn" type="button" aria-label="Search">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </button>
+        <button id="headerNotifications" class="nkm-header-chat" type="button" aria-label="Notifications" position="relative">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M12 8v4l3 3"/><path d="M16 13H5a3 3 0 0 0-3 3v3a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-3a3 3 0 0 0-3-3z"/></svg>
+          <div class="nav-chat-dot" style="top: 2px; right: 2px; width: 8px; height: 8px; background: var(--color-danger); border-radius: 50%; position: absolute;"></div>
+        </button>
+        <button id="headerProfile" class="auth-chip" type="button" aria-label="Profile">
+          <div class="auth-avatar-fallback" style="width: 28px; height: 28px; border-radius: 50%; background: var(--color-primary); display: grid; place-items: center; color: var(--color-primary-ink); font-size: 14px;">U</div>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="app-main" id="previewContent">
+    <!-- Content will be injected by JavaScript -->
+  </main>
+
+  <nav class="bottom-nav" aria-label="Primary navigation">
+    <div class="nav-row">
+      <a class="nav-btn" href="design-preview.html#today" data-nav="today" aria-label="Today"><span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg></span><span class="nav-label">Today</span></a>
+      <a class="nav-btn" href="design-preview.html#discover" data-nav="discover" aria-label="Discover"><span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18 15 15 0 0 1 0-18z"/></svg></span><span class="nav-label">Discover</span></a>
+      <a class="nav-btn" href="design-preview.html#do" data-nav="do" aria-label="Do"><span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z"/></svg></span><span class="nav-label">Do</span></a>
+      <a class="nav-btn" href="design-preview.html#chat" data-nav="chat" aria-label="Chat"><span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span><span class="nav-label">Chat</span></a>
+      <a class="nav-btn active" href="design-preview.html#you" data-nav="you" aria-label="You"><span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="12" cy="8" r="4"/><path d="M4 19a8 8 0 0 1 16 0"/></svg></span><span class="nav-label">You</span></a>
+    </div>
+  </nav>
+
+  <script type="module">
+    import { initTheme, toggleTheme, applyTheme, resolveTheme, createThemeToggle } from './theme.js';
+    
+    // Initialize theme
+    initTheme();
+    
+    // Screen content definitions
+    const screens = {
+      today: `
+        <section class="today-preview">
+          <div class="section-header">
+            <h2>Today</h2>
+            <p class="section-subtitle">What should I do today?</p>
+          </div>
+          
+          <!-- Stories Strip -->
+          <div class="stories-strip">
+            <h3 class="section-title">Stories</h3>
+            <div class="stories-container">
+              <div class="story-preview" style="background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; border-radius: var(--radius-lg); padding: var(--space-4); text-align: center; flex: 0 0 72px;">
+                <div class="story-avatar" style="width: 40px; height: 40px; border-radius: 50%; background: rgba(255,255,255,0.2); margin: 0 auto var(--space-2); display: grid; place-items: center;">U</div>
+                <div class="story-name" style="font-size: var(--text-xs); font-weight: var(--font-medium);">Alex</div>
+              </div>
+              <div class="story-preview" style="background: linear-gradient(135deg, #ec4899, #f43f5e); color: white; border-radius: var(--radius-lg); padding: var(--space-4); text-align: center; flex: 0 0 72px;">
+                <div class="story-avatar" style="width: 40px; height: 40px; border-radius: 50%; background: rgba(255,255,255,0.2); margin: 0 auto var(--space-2); display: grid; place-items: center;">S</div>
+                <div class="story-name" style="font-size: var(--text-xs); font-weight: var(--font-medium);">Sam</div>
+              </div>
+              <div class="story-preview" style="background: linear-gradient(135deg, #10b981, #059669); color: white; border-radius: var(--radius-lg); padding: var(--space-4); text-align: center; flex: 0 0 72px;">
+                <div class="story-avatar" style="width: 40px; height: 40px; border-radius: 50%; background: rgba(255,255,255,0.2); margin: 0 auto var(--space-2); display: grid; place-items: center;">J</div>
+                <div class="story-name" style="font-size: var(--text-xs); font-weight: var(--font-medium);">Jordan</div>
+              </div>
+              <div class="story-preview" style="background: var(--color-surface); border: 1px dashed var(--color-border); border-radius: var(--radius-lg); padding: var(--space-4); text-align: center; flex: 0 0 72px; color: var(--color-ink-muted);">
+                <div class="story-add" style="font-size: 1.5rem; margin: 0 auto var(--space-2);">+</div>
+                <div class="story-name" style="font-size: var(--text-xs);">Add Story</div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Today's Focus -->
+          <div class="focus-section">
+            <h3 class="section-title">Today's Focus</h3>
+            <div class="focus-grid">
+              <button class="focus-card" style="border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-4); text-align: center; flex: 1; min-width: 0;">
+                <div class="focus-icon" style="font-size: 2rem; margin-bottom: var(--space-2);">🧩</div>
+                <div class="focus-title" style="font-weight: var(--font-semibold);">Solve Puzzle</div>
+                <div class="focus-desc" style="font-size: var(--text-sm); color: var(--color-ink-muted);">Logic challenge - 10 min</div>
+              </button>
+              <button class="focus-card" style="border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-4); text-align: center; flex: 1; min-width: 0;">
+                <div class="focus-icon" style="font-size: 2rem; margin-bottom: var(--space-2);">📚</div>
+                <div class="focus-title" style="font-weight: var(--font-semibold);">Learn</div>
+                <div class="focus-desc" style="font-size: var(--text-sm); color: var(--color-ink-muted);">Python basics - 15 min</div>
+              </button>
+              <button class="focus-card" style="border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-4); text-align: center; flex: 1; min-width: 0;">
+                <div class="focus-icon" style="font-size: 2rem; margin-bottom: var(--space-2);">🔨</div>
+                <div class="focus-title" style="font-weight: var(--font-semibold);">Build</div>
+                <div class="focus-desc" style="font-size: var(--text-sm); color: var(--color-ink-muted);">Web project - 30 min</div>
+              </button>
+              <button class="focus-card" style="border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-4); text-align: center; flex: 1; min-width: 0;">
+                <div class="focus-icon" style="font-size: 2rem; margin-bottom: var(--space-2);">⚔️</div>
+                <div class="focus-title" style="font-weight: var(--font-semibold);">Challenge</div>
+                <div class="focus-desc" style="font-size: var(--text-sm); color: var(--color-ink-muted);">Daily coding challenge</div>
+              </button>
+            </div>
+          </div>
+          
+          <!-- Continue Section -->
+          <div class="continue-section">
+            <h3 class="section-title">Continue</h3>
+            <div class="continue-items">
+              <div class="continue-item" style="display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3); background: var(--color-surface); border-radius: var(--radius-md); border: 1px solid var(--color-border);">
+                <div class="continue-icon" style="font-size: 1.5rem; flex-shrink: 0;">📖</div>
+                <div class="continue-info">
+                  <div class="continue-title" style="font-weight: var(--font-medium);">JavaScript Tutorial</div>
+                  <div class="continue-subtitle" style="font-size: var(--text-sm); color: var(--color-ink-muted);">Lesson 3 of 5 • 12 min remaining</div>
+                </div>
+                <button class="continue-btn" style="margin-left: auto; padding: var(--space-1) var(--space-2); border-radius: var(--radius-sm); font-size: var(--text-sm);">Resume</button>
+              </div>
+              <div class="continue-item" style="display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3); background: var(--color-surface); border-radius: var(--radius-md); border: 1px solid var(--color-border); margin-top: var(--space-2);">
+                <div class="continue-icon" style="font-size: 1.5rem; flex-shrink: 0;">💪</div>
+                <div class="continue-info">
+                  <div class="continue-title" style="font-weight: var(--font-medium);">Fitness Challenge</div>
+                  <div class="continue-subtitle" style="font-size: var(--text-sm); color: var(--color-ink-muted);">Day 14 of 30 • 8 min workout</div>
+                </div>
+                <button class="continue-btn" style="margin-left: auto; padding: var(--space-1) var(--space-2); border-radius: var(--radius-sm); font-size: var(--text-sm);">Resume</button>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Active Challenges -->
+          <div class="challenges-section">
+            <h3 class="section-title">Active Challenges</h3>
+            <div class="challenges-container">
+              <div class="challenge-card" style="border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-4);">
+                <div class="challenge-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: var(--space-3);">
+                  <div class="challenge-title" style="font-weight: var(--font-semibold);">30-Day Coding Streak</div>
+                  <div class="challenge-stats" style="font-size: var(--text-sm); color: var(--color-ink-muted);">Day 12/30</div>
+                </div>
+                <div class="challenge-desc" style="color: var(--color-ink-muted); margin-bottom: var(--space-3);">Code for at least 20 minutes daily</div>
+                <div class="challenge-progress" style="height: 4px; background: var(--color-border); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: var(--space-3);">
+                  <div style="width: 40%; height: 100%; background: var(--color-primary);"></div>
+                </div>
+                <button class="challenge-btn" style="width: 100%; padding: var(--space-2); border-radius: var(--radius-md); font-weight: var(--font-medium);">Continue Challenge</button>
+              </div>
+              <div class="challenge-card" style="border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-4); margin-top: var(--space-3);">
+                <div class="challenge-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: var(--space-3);">
+                  <div class="challenge-title" style="font-weight: var(--font-semibold);">Weekly Learning Goal</div>
+                  <div class="challenge-stats" style="font-size: var(--text-sm); color: var(--color-ink-muted);">3/5 completed</div>
+                </div>
+                <div class="challenge-desc" style="color: var(--color-ink-muted); margin-bottom: var(--space-3);">Complete 5 tutorials this week</div>
+                <div class="challenge-progress" style="height: 4px; background: var(--color-border); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: var(--space-3);">
+                  <div style="width: 60%; height: 100%; background: var(--color-accent);"></div>
+                </div>
+                <button class="challenge-btn" style="width: 100%; padding: var(--space-2); border-radius: var(--radius-md); font-weight: var(--font-medium);">View Progress</button>
+              </div>
+            </div>
+          </div>
+          
+          <!-- People/Connections -->
+          <div class="people-section">
+            <h3 class="section-title">People</h3>
+            <div class="people-container">
+              <div class="person-card" style="display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3); background: var(--color-surface); border-radius: var(--radius-md); border: 1px solid var(--color-border);">
+                <div class="person-avatar" style="width: 36px; height: 36px; border-radius: 50%; background: var(--color-primary); display: grid; place-items: center; color: var(--color-primary-ink); font-size: 14px;">A</div>
+                <div class="person-info">
+                  <div class="person-name" style="font-weight: var(--font-medium);">Alex Chen</div>
+                  <div class="person-subtitle" style="font-size: var(--text-sm); color: var(--color-ink-muted);">Solving algorithms together</div>
+                </div>
+                <button class="person-btn" style="margin-left: auto; padding: var(--space-1) var(--space-2); border-radius: var(--radius-sm); font-size: var(--text-sm);">Join Session</button>
+              </div>
+              <div class="person-card" style="display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3); background: var(--color-surface); border-radius: var(--radius-md); border: 1px solid var(--color-border); margin-top: var(--space-2);">
+                <div class="person-avatar" style="width: 36px; height: 36px; border-radius: 50%; background: var(--color-accent); display: grid; place-items: center; color: var(--color-primary-ink); font-size: 14px;">J</div>
+                <div class="person-info">
+                  <div class="person-name" style="font-weight: var(--font-medium);">Jordan Lee</div>
+                  <div class="person-subtitle" style="font-size: var(--text-sm); color: var(--color-ink-muted);">Built a cool project</div>
+                </div>
+                <button class="person-btn" style="margin-left: auto; padding: var(--space-1) var(--space-2); border-radius: var(--radius-sm); font-size: var(--text-sm);">View Project</button>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Highlights -->
+          <div class="highlights-section">
+            <h3 class="section-title">Highlights</h3>
+            <div class="highlights-grid">
+              <div class="highlight-card" style="border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-4); text-align: center; flex: 1; min-width: 0;">
+                <div class="highlight-icon" style="font-size: 2rem; margin-bottom: var(--space-2);">🔥</div>
+                <div class="highlight-title" style="font-weight: var(--font-semibold);">14 Day Streak</div>
+                <div class="highlight-desc" style="font-size: var(--text-sm); color: var(--color-ink-muted);">Consistent learning</div>
+              </div>
+              <div class="highlight-card" style="border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-4); text-align: center; flex: 1; min-width: 0;">
+                <div class="highlight-icon" style="font-size: 2rem; margin-bottom: var(--space-2);">⭐</div>
+                <div class="highlight-title" style="font-weight: var(--font-semibold);">Level 5 Achieved</div>
+                <div class="highlight-desc" style="font-size: var(--text-sm); color: var(--color-ink-muted);">Intermediate coder</div>
+              </div>
+              <div class="highlight-card" style="border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-4); text-align: center; flex: 1; min-width: 0;">
+                <div class="highlight-icon" style="font-size: 2rem; margin-bottom: var(--space-2);">🏆</div>
+                <div class="highlight-title" style="font-weight: var(--font-semibold);">Challenge Winner</div>
+                <div class="highlight-desc" style="font-size: var(--text-sm); color: var(--color-ink-muted);">Weekly coding contest</div>
+              </div>
+            </div>
+          </div>
+        </section>
+      `,
+      
+      discover: `
+        <section class="discover-preview">
+          <div class="section-header">
+            <h2>Discover</h2>
+            <p class="section-subtitle">What is worth exploring?</p>
+          </div>
+          
+          <!-- Search/Discovery Input -->
+          <div class="discover-search" style="margin-bottom: var(--space-6);">
+            <input type="search" placeholder="Search for activities, posts, people..." class="nkm-search" style="width: 100%; padding: var(--space-2) var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-surface); color: var(--color-ink); font-size: var(--text-base);">
+          </div>
+          
+          <!-- For You Section -->
+          <div class="for-you-section">
+            <h3 class="section-title">For You</h3>
+            <div class="for-you-grid">
+              <div class="discover-card" style="border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-4);">
+                <div class="discover-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: var(--space-2);">
+                  <div class="discover-title" style="font-weight: var(--font-semibold);">JavaScript Algorithms</div>
+                  <div class="discover-stats" style="font-size: var(--text-sm); color: var(--color-ink-muted);">8 people doing this now</div>
+                </div>
+                <div class="discover-desc" style="color: var(--color-ink-muted); margin-bottom: var(--space-3);">Learn sorting, searching, and recursion through interactive exercises</div>
+                <div class="discover-tags" style="display: flex; gap: var(--space-1); flex-wrap: wrap; margin-bottom: var(--space-3);">
+                  <span class="discover-tag" style="background: var(--color-primary-soft); color: var(--color-primary); padding: var(--space-0) var(--space-2); border-radius: var(--radius-sm); font-size: var(--text-xs);">Learning</span>
+                  <span class="discover-tag" style="background: var(--color-primary-soft); color: var(--color-primary); padding: var(--space-0) var(--space-2); border-radius: var(--radius-sm); font-size: var(--text-xs);">JavaScript</span>
+                </div>
+                <button class="discover-btn" style="width: 100%; padding: var(--space-2); border-radius: var(--radius-md); font-weight: var(--font-medium);">Start Learning</button>
+              </div>
+              
+              <div class="discover-card" style="border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-4);">
+                <div class="discover-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: var(--space-2);">
+                  <div class="discover-title" style="font-weight: var(--font-semibold);">Weekend Hackathon</div>
+                  <div class="discover-stats" style="font-size: var(--text-sm); color: var(--color-ink-muted);">Register by Friday</div>
+                </div>
+                <div class="discover-desc" style="color: var(--color-ink-muted); margin-bottom: var(--space-3);">Build something amazing in 48 hours - theme: AI for social good</div>
+                <div class="discover-tags" style="display: flex; gap: var(--space-1); flex-wrap: wrap; margin-bottom: var(--space-3);">
+                  <span class="discover-tag" style="background: var(--color-accent-soft); color: var(--color-accent); padding: var(--space-0) var(--space-2); border-radius: var(--radius-sm); font-size: var(--text-xs);">Build</span>
+                  <span class="discover-tag" style="background: var(--color-accent-soft); color: var(--color-accent); padding: var(--space-0) var(--space-2); border-radius: var(--radius-sm); font-size: var(--text-xs);">Challenge</span>
+                </div>
+                <button class="discover-btn" style="width: 100%; padding: var(--space-2); border-radius: var(--radius-md); font-weight: var(--font-medium);">Learn More</button>
+              </div>
+              
+              <div class="discover-post" style="border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-4);">
+                <div class="post-header" style="display: flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-3);">
+                  <div class="post-avatar" style="width: 32px; height: 32px; border-radius: 50%; background: var(--color-secondary); display: grid; place-items: center; color: var(--color-primary-ink); font-size: 12px;">M</div>
+                  <div class="post-info">
+                    <div class="post-author" style="font-weight: var(--font-medium);">Maria Gonzales</div>
+                    <div class="post-meta" style="font-size: var(--text-xs); color: var(--color-ink-muted);">Posted 2 hours ago • 3 min read</div>
+                  </div>
+                </div>
+                <div class="post-content" style="color: var(--color-ink); line-height: var(--leading-relaxed); margin-bottom: var(--space-3);">
+                  Just finished building my first full-stack app with Firebase and Flask! The authentication flow was tricky but super rewarding to get working. Learned so much about security best practices and data validation.
+                </div>
+                <div class="post-tags" style="display: flex; gap: var(--space-1); flex-wrap: wrap; margin-bottom: var(--space-3);">
+                  <span class="post-tag" style="background: var(--color-primary-soft); color: var(--color-primary); padding: var(--space-0) var(--space-2); border-radius: var(--radius-sm); font-size: var(--text-xs);">Build</span>
+                  <span class="post-tag" style="background: var(--color-primary-soft); color: var(--color-primary); padding: var(--space-0) var(--space-2); border-radius: var(--radius-sm); font-size: var(--text-xs);">Firebase</span>
+                  <span class="post-tag" style="background: var(--color-primary-soft); color: var(--color-primary); padding: var(--space-0) var(--space-2); border-radius: var(--radius-sm); font-size: var(--text-xs);">Flask</span>
+                </div>
+                <div class="post-actions" style="display: flex; justify-content: space-between; align-items: center;">
+                  <div class="post-reactions" style="display: flex; gap: var(--space-1);">
+                    <span class="post-reaction" style="font-size: 1.2rem;">👍</span>
+                    <span class="post-reaction" style="font-size: 1.2rem;">❤️</span>
+                    <span class="post-reaction" style="font-size: 1.2rem;">🚀</span>
+                  </div>
+                  <div class="post-comments" style="font-size: var(--text-sm); color: var(--color-ink-muted);">5 comments</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Category Filters -->
+          <div class="discover-filters" style="display: flex; gap: var(--space-2); overflow-x: auto; padding: var(--space-3) 0; margin-bottom: var(--space-6);">
+            <button class="filter-btn active" style="padding: var(--space-1) var(--space-2); border-radius: var(--radius-sm); font-size: var(--text-sm); font-weight: var(--font-medium);">Posts</button>
+            <button class="filter-btn" style="padding: var(--space-1) var(--space-2); border-radius: var(--radius-sm); font-size: var(--text-sm); font-weight: var(--font-medium);">Activities</button>
+            <button class="filter-btn" style="padding: var(--space-1) var(--space-2); border-radius: var(--radius-sm); font-size: var(--text-sm); font-weight: var(--font-medium);">Challenges</button>
+            <button class="filter-btn" style="padding: var(--space-1) var(--space-2); border-radius: var(--radius-sm); font-size: var(--text-sm); font-weight: var(--font-medium);">People</button>
+            <button class="filter-btn" style="padding: var(--space-1) var(--space-2); border-radius: var(--radius-sm); font-size: var(--text-sm); font-weight: var(--font-medium);">Projects</button>
+          </div>
+          
+          <!-- Sample Content Grid -->
+          <div class="discover-content" style="display: grid; gap: var(--space-4);">
+            <!-- Activity Card -->
+            <div class="discover-card" style="border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-4);">
+              <div class="discover-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: var(--space-2);">
+                <div class="discover-title" style="font-weight: var(--font-semibold);">Daily Logic Puzzle</div>
+                <div class="discover-stats" style="font-size: var(--text-sm); color: var(--color-ink-muted);">124 people solved today</div>
+              </div>
+              <div class="discover-desc" style="color: var(--color-ink-muted); margin-bottom: var(--space-3);">A new challenge every day to sharpen your problem-solving skills</div>
+              <div class="discover-tags" style="display: flex; gap: var(--space-1); flex-wrap: wrap; margin-bottom: var(--space-3);">
+                <span class="discover-tag" style="background: var(--color-warm-soft); color: var(--color-warm); padding: var(--space-0) var(--space-2); border-radius: var(--radius-sm); font-size: var(--text-xs);">Solve</span>
+                <span class="discover-tag" style="background: var(--color-warm-soft); color: var(--color-warm); padding: var(--space-0) var(--space-2); border-radius: var(--radius-sm); font-size: var(--text-xs);">Daily</span>
+              </div>
+              <button class="discover-btn" style="width: 100%; padding: var(--space-2); border-radius: var(--radius-md); font-weight: var(--font-medium);">Try Today's Puzzle</button>
+            </div>
+            
+            <!-- Project Showcase -->
+            <div class="discover-card" style="border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-4);">
+              <div class="discover-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: var(--space-2);">
+                <div class="discover-title" style="font-weight: var(--font-semibold);">Open Source Contributions</div>
+                <div class="discover-stats" style="font-size: var(--text-sm); color: var(--color-ink-muted);">Trending in developer community</div>
+              </div>
+              <div class="discover-desc" style="color: var(--color-ink-muted); margin-bottom: var(--space-3);">Find beginner-friendly issues to contribute to popular open source projects</div>
+              <div class="discover-tags" style="display: flex; gap: var(--space-1); flex-wrap: wrap; margin-bottom: var(--space-3);">
+                <span class="discover-tag" style="background: var(--color-accent-soft); color: var(--color-accent); padding: var(--space-0) var(--space-2); border-radius: var(--radius-sm); font-size: var(--text-xs);">Build</span>
+                <span class="discover-tag" style="background: var(--color-accent-soft); color: var(--color-accent); padding: var(--space-0) var(--space-2); border-radius: var(--radius-sm); font-size: var(--text-xs);">Open Source</span>
+                <span class="discover-tag" style="background: var(--color-accent-soft); color: var(--color-accent); padding: var(--space-0) var(--space-2); border-radius: var(--radius-sm); font-size: var(--text-xs);">Community</span>
+              </div>
+              <button class="discover-btn" style="width: 100%; padding: var(--space-2); border-radius: var(--radius-md); font-weight: var(--font-medium);">Explore Projects</button>
+            </div>
+          </div>
+        </section>
+      `,
+      
+      do: `
+        <section class="do-preview">
+          <div class="section-header">
+            <h2>Do</h2>
+            <p class="section-subtitle">What do you want to do?</p>
+          </div>
+          
+          <div class="do-grid" style="display: grid; gap: var(--space-4);">
+            <button class="do-card" style="border: 2px solid var(--color-border); border-radius: var(--radius-xl); padding: var(--space-6); text-align: center; transition: all var(--duration-fast) var(--ease-out);">
+              <div class="do-icon" style="font-size: 3rem; margin-bottom: var(--space-3);">🧩</div>
+              <div class="do-title" style="font-size: var(--text-lg); font-weight: var(--font-bold);">Solve</div>
+              <div class="do-desc" style="font-size: var(--text-sm); color: var(--color-ink-muted); margin-top: var(--space-2);">Puzzles, challenges, and brain teasers</div>
+            </button>
+            
+            <button class="do-card" style="border: 2px solid var(--color-border); border-radius: var(--radius-xl); padding: var(--space-6); text-align: center; transition: all var(--duration-fast) var(--ease-out);">
+              <div class="do-icon" style="font-size: 3rem; margin-bottom: var(--space-3);">📚</div>
+              <div class="do-title" style="font-size: var(--text-lg); font-weight: var(--font-bold);">Learn</div>
+              <div class="do-desc" style="font-size: var(--text-sm); color: var(--color-ink-muted); margin-top: var(--space-2);">Courses, tutorials, and skill building</div>
+            </button>
+            
+            <button class="do-card" style="border: 2px solid var(--color-border); border-radius: var(--radius-xl); padding: var(--space-6); text-align: center; transition: all var(--duration-fast) var(--ease-out);">
+              <div class="do-icon" style="font-size: 3rem; margin-bottom: var(--space-3);">🔨</div>
+              <div class="do-title" style="font-size: var(--text-lg); font-weight: var(--font-bold);">Build</div>
+              <div class="do-desc" style="font-size: var(--text-sm); color: var(--color-ink-muted); margin-top: var(--space-2);">Projects, coding, and creation</div>
+            </button>
+            
+            <button class="do-card" style="border: 2px solid var(--color-border); border-radius: var(--radius-xl); padding: var(--space-6); text-align: center; transition: all var(--duration-fast) var(--ease-out);">
+              <div class="do-icon" style="font-size: 3rem; margin-bottom: var(--space-3);">🎨</div>
+              <div class="do-title" style="font-size: var(--text-lg); font-weight: var(--font-bold);">Create</div>
+              <div class="do-desc" style="font-size: var(--text-sm); color: var(--color-ink-muted); margin-top: var(--space-2);">Design, writing, and artistic expression</div>
+            </button>
+            
+            <button class="do-card" style="border: 2px solid var(--color-border); border-radius: var(--radius-xl); padding: var(--space-6); text-align: center; transition: all var(--duration-fast) var(--ease-out);">
+              <div class="do-icon" style="font-size: 3rem; margin-bottom: var(--space-3);">⚔️</div>
+              <div class="do-title" style="font-size: var(--text-lg); font-weight: var(--font-bold);">Challenge</div>
+              <div class="do-desc" style="font-size: var(--text-sm); color: var(--color-ink-muted); margin-top: var(--space-2);">Competitions, contests, and battles</div>
+            </button>
+            
+            <button class="do-card" style="border: 2px solid var(--color-border); border-radius: var(--radius-xl); padding: var(--space-6); text-align: center; transition: all var(--duration-fast) var(--ease-out);">
+              <div class="do-icon" style="font-size: 3rem; margin-bottom: var(--space-3);">👥</div>
+              <div class="do-title" style="font-size: var(--text-lg); font-weight: var(--font-bold);">Group</div>
+              <div class="do-desc" style="font-size: var(--text-sm); color: var(--color-ink-muted); margin-top: var(--space-2);">Collaborate, team up, and achieve together</div>
+            </button>
+          </div>
+          
+          <!-- Recently Active -->
+          <div class="recent-section" style="margin-top: var(--space-8);">
+            <h3 class="section-title">Recently Active</h3>
+            <div class="recent-grid" style="display: flex; gap: var(--space-3); overflow-x: auto; padding: var(--space-3) 0;">
+              <div class="recent-card" style="min-width: 120px; border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-3); text-align: center; background: var(--color-surface);">
+                <div class="recent-icon" style="font-size: 2rem; margin-bottom: var(--space-2);">🧩</div>
+                <div class="recent-title" style="font-weight: var(--font-medium);">Daily Puzzle</div>
+                <div class="recent-subtitle" style="font-size: var(--text-xs); color: var(--color-ink-muted);">Updated 2 hours ago</div>
+              </div>
+              <div class="recent-card" style="min-width: 120px; border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-3); text-align: center; background: var(--color-surface);">
+                <div class="recent-icon" style="font-size: 2rem; margin-bottom: var(--space-2);">📚</div>
+                <div class="recent-title" style="font-weight: var(--font-medium);">Python Course</div>
+                <div class="recent-subtitle" style="font-size: var(--text-xs); color: var(--color-ink-muted);">Updated 5 hours ago</div>
+              </div>
+              <div class="recent-card" style="min-width: 120px; border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-3); text-align: center; background: var(--color-surface);">
+                <div class="recent-icon" style="font-size: 2rem; margin-bottom: var(--space-2);">🔨</div>
+                <div class="recent-title" style="font-weight: var(--font-medium);">Web Dev Project</div>
+                <div class="recent-subtitle" style="font-size: var(--text-xs); color: var(--color-ink-muted);">Updated 1 day ago</div>
+              </div>
+            </div>
+          </div>
+        </section>
+      `,
+      
+      chat: `
+        <section class="chat-preview">
+          <div class="section-header">
+            <h2>Chat</h2>
+            <p class="section-subtitle">Talk and collaborate</p>
+          </div>
+          
+          <div class="chat-mode-tabs" style="display: flex; gap: var(--space-2); margin-bottom: var(--space-4);">
+            <button class="chat-tab active" style="flex: 1; padding: var(--space-2); border-radius: var(--radius-md); font-weight: var(--font-medium); border-bottom: 2px solid var(--color-primary);">Private</button>
+            <button class="chat-tab" style="flex: 1; padding: var(--space-2); border-radius: var(--radius-md); font-weight: var(--font-medium); border-bottom: 2px solid transparent;">Groups</button>
+          </div>
+          
+          <div class="chat-search" style="margin-bottom: var(--space-4);">
+            <input type="search" placeholder="Search conversations..." class="nkm-search" style="width: 100%; padding: var(--space-2) var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-surface); color: var(--color-ink); font-size: var(--text-base);">
+          </div>
+          
+          <div class="chat-list" style="display: flex; flex-direction: column; gap: var(--space-3);">
+            <!-- Private Conversations -->
+            <div class="chat-section-title" style="font-size: var(--text-sm); font-weight: var(--font-semibold); color: var(--color-ink-muted); text-transform: uppercase; letter-spacing: .02em; margin-bottom: var(--space-2);">Private Messages</div>
+            
+            <div class="chat-item" style="display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3); background: var(--color-surface); border-radius: var(--radius-lg); border: 1px solid var(--color-hover);">
+              <div class="chat-avatar" style="width: 40px; height: 40px; border-radius: 50%; background: var(--color-primary); display: grid; place-items: center; color: var(--color-primary-ink); font-size: 16px;">A</div>
+              <div class="chat-info" style="flex: 1; min-width: 0;">
+                <div class="chat-name" style="font-weight: var(--font-semibold);">Alex Chen</div>
+                <div class="chat-preview" style="font-size: var(--text-sm); color: var(--color-ink-muted);">Hey! Did you figure out that algorithm problem?</div>
+              </div>
+              <div class="chat-meta" style="flex-shrink: 0;">
+                <div class="chat-time" style="font-size: var(--text-xs); color: var(--color-ink-muted);">2:15 PM</div>
+                <div class="chat-unread" style="width: 8px; height: 8px; border-radius: 50%; background: var(--color-danger); margin-top: var(--space-1);"></div>
+              </div>
+            </div>
+            
+            <div class="chat-item" style="display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3); background: var(--color-surface); border-radius: var(--radius-lg); border: 1px solid var(--color-border);">
+              <div class="chat-avatar" style="width: 40px; height: 40px; border-radius: 50%; background: var(--color-accent); display: grid; place-items: center; color: var(--color-primary-ink); font-size: 16px;">J</div>
+              <div class="chat-info" style="flex: 1; min-width: 0;">
+                <div class="chat-name" style="font-weight: var(--font-semibold);">Jordan Lee</div>
+                <div class="chat-preview" style="font-size: var(--text-sm); color: var(--color-ink-muted);">Just deployed my new project! Want to check it out?</div>
+              </div>
+              <div class="chat-meta" style="flex-shrink: 0;">
+                <div class="chat-time" style="font-size: var(--text-xs); color: var(--color-ink-muted);">Yesterday</div>
+              </div>
+            </div>
+            
+            <div class="chat-item" style="display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3); background: var(--color-surface); border-radius: var(--radius-lg); border: 1px solid var(--color-border);">
+              <div class="chat-avatar" style="width: 40px; height: 40px; border-radius: 50%; background: var(--color-warm); display: grid; place-items: center; color: var(--color-primary-ink); font-size: 16px;">S</div>
+              <div class="chat-info" style="flex: 1; min-width: 0;">
+                <div class="chat-name" style="font-weight: var(--font-semibold);">Sam Rivera</div>
+                <div class="chat-preview" style="font-size: var(--text-sm); color: var(--color-ink-muted);">Study group tonight at 7?</div>
+              </div>
+              <div class="chat-meta" style="flex-shrink: 0;">
+                <div class="chat-time" style="font-size: var(--text-xs); color: var(--color-ink-muted);">Monday</div>
+              </div>
+            </div>
+            
+            <!-- Group Conversations -->
+            <div class="chat-section-title" style="font-size: var(--text-sm); font-weight: var(--font-semibold); color: var(--color-ink-muted); text-transform: uppercase; letter-spacing: .02em; margin: var(--space-6) 0 var(--space-2);">Groups & Communities</div>
+            
+            <div class="chat-item" style="display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3); background: var(--color-surface); border-radius: var(--radius-lg); border: 1px solid var(--color-border);">
+              <div class="chat-avatar" style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #8b5cf6); display: grid; place-items: center; color: var(--color-primary-ink); font-size: 16px;">💻</div>
+              <div class="chat-info" style="flex: 1; min-width: 0;">
+                <div class="chat-name" style="font-weight: var(--font-semibold);">Dev Trio Day</div>
+                <div class="chat-preview" style="font-size: var(--text-sm); color: var(--color-ink-muted);">Weekly sync tomorrow at 10 AM</div>
+              </div>
+              <div class="chat-meta" style="flex-shrink: 0;">
+                <div class="chat-members" style="font-size: var(--text-xs); color: var(--color-ink-muted);">12 members</div>
+              </div>
+            </div>
+            
+            <div class="chat-item" style="display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3); background: var(--color-surface); border-radius: var(--radius-lg); border: 1px solid var(--color-border);">
+              <div class="chat-avatar" style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #ec4899, #f43f5e); display: grid; place-items: center; color: var(--color-primary-ink); font-size: 16px;">📚</div>
+              <div class="chat-info" style="flex: 1; min-width: 0;">
+                <div class="chat-name" style="font-weight: var(--font-semibold);">Learning Circle</div>
+                <div class="chat-preview" style="font-size: var(--text-sm); color: var(--color-ink-muted);">New Python tutorial just dropped!</div>
+              </div>
+              <div class="chat-meta" style="flex-shrink: 0;">
+                <div class="chat-members" style="font-size: var(--text-xs); color: var(--color-ink-muted);">8 members</div>
+              </div>
+            </div>
+          </div>
+        </section>
+      `,
+      
+      you: `
+        <section class="you-preview">
+          <div class="section-header">
+            <h2>You</h2>
+            <p class="section-subtitle">Your progress and achievements</p>
+          </div>
+          
+          <!-- Profile Header -->
+          <div class="profile-header" style="display: flex; align-items: center; gap: var(--space-4); margin-bottom: var(--space-6);">
+            <div class="profile-avatar" style="width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #8b5cf6); display: grid; place-items: center; color: var(--color-primary-ink); font-size: 24px;">U</div>
+            <div class="profile-info">
+              <h2 class="profile-name" style="margin: 0 0 var(--space-1) 0; font-size: var(--text-xl); font-weight: var(--font-bold);">Alex Chen</h2>
+              <div class="profile-tagline" style="font-size: var(--text-sm); color: var(--color-ink-muted);">Full-stack developer • Problem solver</div>
+            </div>
+          </div>
+          
+          <!-- Stats Row -->
+          <div class="profile-stats" style="display: grid; gap: var(--space-3); margin-bottom: var(--space-6);">
+            <div class="stat-card" style="border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-4); text-align: center;">
+              <div class="stat-value" style="font-size: var(--text-2xl); font-weight: var(--font-bold); color: var(--color-primary);">14</div>
+              <div class="stat-label" style="font-size: var(--text-sm); color: var(--color-ink-muted);">Day Streak</div>
+            </div>
+            <div class="stat-card" style="border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-4); text-align: center;">
+              <div class="stat-value" style="font-size: var(--text-2xl); font-weight: var(--font-bold); color: var(--color-accent);">1,240</div>
+              <div class="stat-label" style="font-size: var(--text-sm); color: var(--color-ink-muted);">XP</div>
+            </div>
+            <div class="stat-card" style="border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-4); text-align: center;">
+              <div class="stat-value" style="font-size: var(--text-2xl); font-weight: var(--font-bold); color: var(--color-warm);">5</div>
+              <div class="stat-label" style="font-size: var(--text-sm); color: var(--color-ink-muted);">Level</div>
+            </div>
+          </div>
+          
+          <!-- Progress Bar -->
+          <div class="progress-section" style="margin-bottom: var(--space-6);">
+            <div class="progress-title" style="font-size: var(--text-sm); font-weight: var(--font-semibold); margin-bottom: var(--space-2);">To Level 6</div>
+            <div class="progress-bar" style="height: 8px; background: var(--color-border); border-radius: var(--radius-sm); overflow: hidden;">
+              <div style="width: 65%; height: 100%; background: var(--color-primary);"></div>
+            </div>
+            <div class="progress-text" style="display: flex; justify-content: space-between; font-size: var(--text-sm); color: var(--color-ink-muted); margin-top: var(--space-1);">
+              <span>806 / 1240 XP</span>
+              <span>65%</span>
+            </div>
+          </div>
+          
+          <!-- Achievements -->
+          <div class="achievements-section" style="margin-bottom: var(--space-6);">
+            <h3 class="section-title">Achievements</h3>
+            <div class="achievements-grid" style="display: grid; gap: var(--space-3); grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));">
+              <div class="achievement-badge" style="border: 2px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-3); text-align: center; background: var(--color-surface);">
+                <div class="badge-icon" style="font-size: 2rem; margin-bottom: var(--space-2);">🔥</div>
+                <div class="badge-title" style="font-weight: var(--font-medium); font-size: var(--text-sm);">Streak Master</div>
+                <div class="badge-desc" style="font-size: var(--text-xs); color: var(--color-ink-muted);">7+ day streak</div>
+              </div>
+              <div class="achievement-badge" style="border: 2px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-3); text-align: center; background: var(--color-surface);">
+                <div class="badge-icon" style="font-size: 2rem; margin-bottom: var(--space-2);">⚡</div>
+                <div class="badge-title" style="font-weight: var(--font-medium); font-size: var(--text-sm);">Speed Learner</div>
+                <div class="badge-desc" style="font-size: var(--text-xs); color: var(--color-ink-muted);">Complete 5 lessons in a day</div>
+              </div>
+              <div class="achievement-badge" style="border: 2px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-3); text-align: center; background: var(--color-surface);">
+                <div class="badge-icon" style="font-size: 2rem; margin-bottom: var(--space-2);">🏆</div>
+                <div class="badge-title" style="font-weight: var(--font-medium); font-size: var(--text-sm);">Challenge Champion</div>
+                <div class="badge-desc" style="font-size: var(--text-xs); color: var(--color-ink-muted);">Win 3 weekly challenges</div>
+              </div>
+              <div class="achievement-badge" style="border: 2px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-3); text-align: center; background: var(--color-surface);">
+                <div class="badge-icon" style="font-size: 2rem; margin-bottom: var(--space-2);">👥</div>
+                <div class="badge-title" style="font-weight: var(--font-medium); font-size: var(--text-sm);">Team Player</div>
+                <div class="badge-desc" style="font-size: var(--text-xs); color: var(--color-ink-muted);">Help 10+ learners</div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Recent Activity -->
+          <div class="recent-activity-section" style="margin-bottom: var(--space-6);">
+            <h3 class="section-title">Recent Activity</h3>
+            <div class="activity-list" style="display: flex; flex-direction: column; gap: var(--space-3);">
+              <div class="activity-item" style="display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3); background: var(--color-surface); border-radius: var(--radius-lg); border: 1px solid var(--color-border);">
+                <div class="activity-icon" style="font-size: 1.5rem; flex-shrink: 0;">🧩</div>
+                <div class="activity-info">
+                  <div class="activity-title" style="font-weight: var(--font-medium);">Solved Daily Puzzle</div>
+                  <div class="activity-detail" style="font-size: var(--text-sm); color: var(--color-ink-muted);">Earned 25 XP • 2 hours ago</div>
+                </div>
+              </div>
+              <div class="activity-item" style="display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3); background: var(--color-surface); border-radius: var(--radius-lg); border: 1px solid var(--color-border);">
+                <div class="activity-icon" style="font-size: 1.5rem; flex-shrink: 0;">📚</div>
+                <div class="activity-info">
+                  <div class="activity-title" style="font-weight: var(--font-medium);">Completed JavaScript Basics</div>
+                  <div class="activity-detail" style="font-size: var(--text-sm); color: var(--color-ink-muted);">Earned 100 XP • 5 hours ago</div>
+                </div>
+              </div>
+              <div class="activity-item" style="display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3); background: var(--color-surface); border-radius: var(--radius-lg); border: 1px solid var(--color-border);">
+                <div class="activity-icon" style="font-size: 1.5rem; flex-shrink: 0;">🔨</div>
+                <div class="activity-info">
+                  <div class="activity-title" style="font-weight: var(--font-medium);">Started Web Project</div>
+                  <div class="activity-detail" style="font-size: var(--text-sm); color: var(--color-ink-muted);">Earned 50 XP • Yesterday</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Settings Section -->
+          <div class="settings-section">
+            <h3 class="section-title">Settings</h3>
+            <div class="settings-list" style="display: flex; flex-direction: column; gap: var(--space-3);">
+              <div class="settings-item" style="display: flex; justify-content: space-between; align-items: center; padding: var(--space-3); background: var(--color-surface); border-radius: var(--radius-lg); border: 1px solid var(--color-border);">
+                <div class="settings-label" style="font-weight: var(--font-medium);">Theme</div>
+                <div class="settings-value" style="display: flex; align-items: center; gap: var(--space-2);">
+                  <span style="font-size: var(--text-sm); color: var(--color-ink-muted);">Dark Mode</span>
+                  <button class="settings-toggle" style="width: 32px; height: 18px; background: var(--color-border); border-radius: 9999px; position: relative; overflow: hidden;">
+                    <div style="width: 18px; height: 18px; background: var(--color-primary); border-radius: 50%; position: absolute; top: 0; left: 0; transition: transform var(--duration-fast) var(--ease-out); transform: translateX(14px);"></div>
+                  </button>
+                </div>
+              </div>
+              <div class="settings-item" style="display: flex; justify-content: space-between; align-items: center; padding: var(--space-3); background: var(--color-surface); border-radius: var(--radius-lg); border: 1px solid var(--color-border);">
+                <div class="settings-label" style="font-weight: var(--font-medium);">Notifications</div>
+                <div class="settings-value" style="font-size: var(--text-sm); color: var(--color-ink-muted);">On</div>
+              </div>
+              <div class="settings-item" style="display: flex; justify-content: space-between; align-items: center; padding: var(--space-3); background: var(--color-surface); border-radius: var(--radius-lg); border: 1px solid var(--color-border);">
+                <div class="settings-label" style="font-weight: var(--font-medium);">Privacy</div>
+                <div class="settings-value" style="font-size: var(--text-sm); color: var(--color-ink-muted);">Friends</div>
+              </div>
+              <div class="settings-item" style="display: flex; justify-content: space-between; align-items: center; padding: var(--space-3); background: var(--color-surface); border-radius: var(--radius-lg); border: 1px solid var(--color-border);">
+                <div class="settings-label" style="font-weight: var(--font-medium);">Data Usage</div>
+                <div class="settings-value" style="font-size: var(--text-sm); color: var(--color-ink-muted);">Low</div>
+              </div>
+            </div>
+          </div>
+        </section>
+      `,
+      
+      notifications: `
+        <section class="notifications-preview">
+          <div class="section-header">
+            <h2>Notifications</h2>
+            <p class="section-subtitle">What requires your attention</p>
+          </div>
+          
+          <div class="notifications-tabs" role="tablist" aria-label="Notification filters" style="display: flex; gap: var(--space-2); margin-bottom: var(--space-4);">
+            <button role="tab" class="notification-tab active" data-tab="all" aria-selected="true" style="flex: 1; padding: var(--space-2); border-radius: var(--radius-md); font-weight: var(--font-medium); border-bottom: 2px solid var(--color-primary);">All</button>
+            <button role="tab" class="notification-tab" data-tab="unread" aria-selected="false" style="flex: 1; padding: var(--space-2); border-radius: var(--radius-md); font-weight: var(--font-medium); border-bottom: 2px solid transparent;">Unread</button>
+          </div>
+          
+          <div class="notifications-list" style="display: flex; flex-direction: column; gap: var(--space-3);">
+            <!-- Today Section -->
+            <div class="notifications-section-title" style="font-size: var(--text-sm); font-weight: var(--font-semibold); color: var(--color-ink-muted); text-transform: uppercase; letter-spacing: .02em; margin-bottom: var(--space-2);">Today</div>
+            
+            <div class="notification-item" style="display: flex; align-items: flex-start; gap: var(--space-3); padding: var(--space-4); background: var(--color-surface); border-radius: var(--radius-lg); border-left: 3px solid var(--color-primary);">
+              <div class="notification-icon" style="flex-shrink: 0; font-size: 1.5rem; color: var(--color-primary);">🔔</div>
+              <div class="notification-content" style="flex: 1; min-width: 0;">
+                <div class="notification-title" style="font-weight: var(--font-semibold);">Your friend joined your challenge</div>
+                <div class="notification-desc" style="font-size: var(--text-sm); color: var(--color-ink-muted);">Alex Chen started the JavaScript Algorithms challenge with you</div>
+                <div class="notification-time" style="font-size: var(--text-xs); color: var(--color-ink-muted);margin-top: var(--space-1);">2:15 PM</div>
+              </div>
+            </div>
+            
+            <div class="notification-item" style="display: flex; align-items: flex-start; gap: var(--space-3); padding: var(--space-4); background: var(--color-surface); border-radius: var(--radius-lg); border-left: 3px solid var(--color-accent);">
+              <div class="notification-icon" style="flex-shrink: 0; font-size: 1.5rem; color: var(--color-accent);">🎯</div>
+              <div class="notification-content" style="flex: 1; min-width: 0;">
+                <div class="notification-title" style="font-weight: var(--font-semibold);">Challenge milestone reached</div>
+                <div class="notification-desc" style="font-size: var(--text-sm); color: var(--color-ink-muted);">Your weekly learning group reached 50% completion</div>
+                <div class="notification-time" style="font-size: var(--text-xs); color: var(--color-ink-muted);margin-top: var(--space-1);">1:30 PM</div>
+              </div>
+            </div>
+            
+            <div class="notification-item" style="display: flex; align-items: flex-start; gap: var(--space-3); padding: var(--space-4); background: var(--color-surface); border-radius: var(--radius-lg); border-left: 3px solid var(--color-warm);">
+              <div class="notification-icon" style="flex-shrink: 0; font-size: 1.5rem; color: var(--color-warm);">👥</div>
+              <div class="notification-content" style="flex: 1; min-width: 0;">
+                <div class="notification-title" style="font-weight: var(--font-semibold);">New connection request</div>
+                <div class="notification-desc" style="font-size: var(--text-sm); color: var(--color-ink-muted);">Jordan Lee wants to connect and study together</div>
+                <div class="notification-time" style="font-size: var(--text-xs); color: var(--color-ink-muted);margin-top: var(--space-1);">12:45 PM</div>
+              </div>
+            </div>
+            
+            <div class="notification-item" style="display: flex; align-items: flex-start; gap: var(--space-3); padding: var(--space-4); background: var(--color-surface); border-radius: var(--radius-lg); border-left: 3px solid var(--color-danger);">
+              <div class="notification-icon" style="flex-shrink: 0; font-size: 1.5rem; color: var(--color-danger);">⚠️</div>
+              <div class="notification-content" style="flex: 1; min-width: 0;">
+                <div class="notification-title" style="font-weight: var(--font-semibold);">Group activity starting soon</div>
+                <div class="notification-desc" style="font-size: var(--text-sm); color: var(--color-ink-muted);">Dev Trio Day sync begins in 10 minutes</div>
+                <div class="notification-time" style="font-size: var(--text-xs); color: var(--color-ink-muted);margin-top: var(--space-1);">11:55 AM</div>
+              </div>
+            </div>
+            
+            <!-- Earlier Section -->
+            <div class="notifications-section-title" style="font-size: var(--text-sm); font-weight: var(--font-semibold); color: var(--color-ink-muted); text-transform: uppercase; letter-spacing: .02em; margin: var(--space-6) 0 var(--space-2);">Earlier</div>
+            
+            <div class="notification-item" style="display: flex; align-items: flex-start; gap: var(--space-3); padding: var(--space-4); background: var(--color-surface); border-radius: var(--radius-lg);">
+              <div class="notification-icon" style="flex-shrink: 0; font-size: 1.5rem; color: var(--color-ink-muted);">📝</div>
+              <div class="notification-content" style="flex: 1; min-width: 0;">
+                <div class="notification-title" style="font-weight: var(--font-semibold);">You received a reaction</div>
+                <div class="notification-desc" style="font-size: var(--text-sm); color: var(--color-ink-muted);">Sam Rivera reacted to your post with ❤️</div>
+                <div class="notification-time" style="font-size: var(--text-xs); color: var(--color-ink-muted);margin-top: var(--space-1);">Yesterday, 8:20 PM</div>
+              </div>
+            </div>
+            
+            <div class="notification-item" style="display: flex; align-items: flex-start; gap: var(--space-3); padding: var(--space-4); background: var(--color-surface); border-radius: var(--radius-lg);">
+              <div class="notification-icon" style="flex-shrink: 0; font-size: 1.5rem; color: var(--color-ink-muted);">🏆</div>
+              <div class="notification-content" style="flex: 1; min-width: 0;">
+                <div class="notification-title" style="font-weight: var(--font-semibold);">Achievement unlocked</div>
+                <div class="notification-desc" style="font-size: var(--text-sm); color: var(--color-ink-muted);">You earned the "Streak Master" badge</div>
+                <div class="notification-time" style="font-size: var(--text-xs); color: var(--color-ink-muted);margin-top: var(--space-1);">Yesterday, 6:45 PM</div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="notifications-actions" style="margin-top: var(--space-6); text-align: center;">
+            <button class="notifications-btn" style="padding: var(--space-2) var(--space-4); border-radius: var(--radius-md); font-weight: var(--font-medium);">Mark all as read</button>
+          </div>
+        </section>
+      `
+    };
+    
+    // Theme toggle button for You screen (placed in settings)
+    function setupThemeToggle() {
+      // This will be initialized when You screen loads
+    }
+    
+    // Handle navigation
+    function showScreen(screenId) {
+      // Hide all screens
+      document.querySelectorAll('[id^="screen-"]').forEach(el => el.classList.add('hidden'));
+      
+      // Show selected screen
+      const screenEl = document.getElementById(`screen-${screenId}`);
+      if (screenEl) {
+        screenEl.classList.remove('hidden');
+      }
+      
+      // Update active nav button
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-nav') === screenId);
+      });
+      
+      // Update URL hash
+      window.location.hash = screenId;
+    }
+    
+    // Initialize
+    function initPreview() {
+      // Create screen containers
+      Object.keys(screens).forEach(screenId => {
+        const screenDiv = document.createElement('div');
+        screenDiv.id = `screen-${screenId}`;
+        screenDiv.className = 'preview-screen';
+        screenDiv.innerHTML = screens[screenId];
+        if (screenId !== 'today') { // Hide all except today by default
+          screenDiv.classList.add('hidden');
+        }
+        document.getElementById('previewContent').appendChild(screenDiv);
+      });
+      
+      // Handle hash changes
+      window.addEventListener('hashchange', () => {
+        const hash = window.location.hash.substring(1);
+        if (hash && screens[hash]) {
+          showScreen(hash);
+        }
+      });
+      
+      // Show initial screen based on hash or default to today
+      const initialHash = window.location.hash.substring(1);
+      if (initialHash && screens[initialHash]) {
+        showScreen(initialHash);
+      } else {
+        showScreen('today');
+      }
+      
+      // Setup theme toggle listeners for You screen
+      const youScreen = document.getElementById('screen-you');
+      if (youScreen) {
+        const themeToggle = youScreen.querySelector('.settings-toggle');
+        if (themeToggle) {
+          themeToggle.addEventListener('click', () => {
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            const newTheme = isDark ? 'light' : 'dark';
+            applyTheme(newTheme);
+            
+            // Update toggle visual
+            const toggleDot = themeToggle.querySelector('div');
+            toggleDot.style.transform = isDark ? 'translateX(0)' : 'translateX(14px)';
+          });
+        }
+      }
+    }
+    
+    // Start preview when DOM loads
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initPreview);
+    } else {
+      initPreview();
+    }
+  </script>
+</body>
+</html>
