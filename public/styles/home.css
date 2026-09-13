@@ -572,6 +572,13 @@
    Notification Bell Dot
    ════════════════════════════════════════════════════════════════════════════════ */
 
+@media (min-width: 840px) {
+  .today-page .header-plus,
+  .today-page .notification-wrap {
+    display: none;
+  }
+}
+
 .notification-bell { position: relative; }
 .notification-bell .nav-dot {
   position: absolute;
