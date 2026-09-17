@@ -95,7 +95,7 @@
   height: var(--chip-h);
   border-radius: var(--radius-full);
   background: var(--color-primary-soft);
-  color: var(--color-primary);
+  color: var(--color-primary-text);
   font-size: var(--text-xs);
   font-weight: var(--font-bold);
   letter-spacing: .02em;
@@ -120,7 +120,7 @@
 .nkm-tab.is-active {
   background: var(--color-primary-soft);
   border-color: var(--color-primary);
-  color: var(--color-primary);
+  color: var(--color-primary-text);
 }
 .nkm-tab:hover { background: var(--color-glass-hover); color: var(--color-ink); }
 

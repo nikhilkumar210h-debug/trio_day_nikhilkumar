@@ -30,13 +30,6 @@ const FIREBASE_PUBLIC_KEYS_URL =
   'https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com';
 const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
 
-const ALLOWED_ORIGINS = [
-  'https://nkm-ind.web.app',
-  'https://nkm-ind.firebaseapp.com',
-  'http://localhost',
-  'http://127.0.0.1'
-];
-
 // ─── Per-UID rate limiting (10 requests/minute) ───────────────────────────────
 const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
 const RATE_LIMIT_MAX_REQUESTS = 10;

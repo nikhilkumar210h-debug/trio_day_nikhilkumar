@@ -1822,7 +1822,7 @@ position: absolute;
   gap: var(--space-3);
   margin-bottom: var(--space-2);
   padding-bottom: var(--space-3);
-  border-bottom: 1px solid var(--color-border).
+  border-bottom: 1px solid var(--color-border);
 }
 .notification-modal-head h2 { font-family: var(--font-display); font-size: var(--text-2xl); font-weight: var(--font-extrabold); }
 .notification-list { display: flex; flex-direction: column; gap: var(--space-2); overflow: auto; padding-right: var(--space-1); }
@@ -1853,7 +1853,7 @@ position: absolute;
   border-radius: var(--radius-md);
   background: transparent;
   font: inherit;
-  transition: background var(--duration-fast) var(--ease-out).
+  transition: background var(--duration-fast) var(--ease-out);
 }
 .notification-item:hover { background: var(--color-glass); }
 .notification-item.unread { background: var(--color-primary-soft); }
@@ -1989,7 +1989,7 @@ position: absolute;
   background: rgba(8, 14, 24, 0.82);
   backdrop-filter: blur(12px);
   border: 1px solid rgba(245, 158, 11, 0.35);
-  color: var(--saffron);
+  color: #fbbf24;
   font-size: 12px;
   font-weight: 800;
   text-decoration: none;
@@ -1998,11 +1998,24 @@ position: absolute;
   transition: background 0.15s, transform 0.12s;
 }
 .rank-strip-link:hover {
-  background: rgba(245, 158, 11, 0.12);
+  background: rgba(8, 14, 24, 0.92);
   transform: translateY(-1px);
 }
 .rank-strip-link strong {
   color: #fff;
+}
+/* Light theme — clean translucent white pill, amber accent stays readable */
+[data-theme="light"] .rank-strip-link {
+  background: rgba(255, 255, 255, 0.92);
+  border-color: rgba(217, 119, 6, 0.35);
+  color: #b45309;
+  box-shadow: 0 2px 12px rgba(217, 119, 6, 0.15);
+}
+[data-theme="light"] .rank-strip-link:hover {
+  background: rgba(254, 243, 199, 0.95);
+}
+[data-theme="light"] .rank-strip-link strong {
+  color: #92400e;
 }
 @media (max-width: 760px) {
   #trioRankStrip { bottom: 54px; }

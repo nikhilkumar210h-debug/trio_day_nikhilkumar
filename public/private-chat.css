@@ -91,6 +91,7 @@
   height: calc(100dvh - 112px);
   min-height: 420px;
   margin-bottom: var(--space-3);
+  box-shadow: var(--shadow-sm);
 }
 @media (min-width: 840px) { .private-chat-card { height: calc(100dvh - 124px); margin-bottom: 0; } }
 @media (max-width: 839px) {

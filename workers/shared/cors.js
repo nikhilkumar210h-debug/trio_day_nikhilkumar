@@ -1,14 +1,22 @@
 // Shared CORS helpers — Phase 0 dedupe (was duplicated in gamification.js + send-push.js)
 export const ALLOWED_ORIGINS = [
   "https://nkm-ind.web.app",
-  "https://nkm-ind.firebaseapp.com",
-  "http://localhost",
-  "http://127.0.0.1"
+  "https://nkm-ind.firebaseapp.com"
 ];
+
+// Local dev origins — the browser's Origin header includes the port
+// (e.g. http://127.0.0.1:3000), so we match on scheme + host and allow any port.
+const LOCAL_HOSTS = ["localhost", "127.0.0.1", "[::1]"];
 
 export function isAllowedOrigin(origin) {
   if (!origin) return false;
-  return ALLOWED_ORIGINS.includes(origin);
+  if (ALLOWED_ORIGINS.includes(origin)) return true;
+  try {
+    const u = new URL(origin);
+    return u.protocol === "http:" && LOCAL_HOSTS.includes(u.hostname);
+  } catch (_) {
+    return false;
+  }
 }
 
 export function corsHeaders(origin) {
