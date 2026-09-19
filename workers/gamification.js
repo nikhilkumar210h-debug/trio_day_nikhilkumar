@@ -1141,11 +1141,26 @@ async function handleCounter(uid, body, env) {
 
   if (!taskId) throw new Error('taskId required');
 
-  const validActions = ['join', 'leave', 'like', 'unlike', 'comment', 'complete'];
+  const validActions = ['join', 'leave', 'like', 'unlike', 'comment'];
   if (!validActions.includes(action)) throw new Error(`Invalid action: ${action}`);
 
   const projectId = env.FIREBASE_PROJECT_ID;
   const token = await getAccessToken(env);
+  const task = await fsGet(projectId, token, `communityTasks/${taskId}`);
+  if (!task) throw new Error('Challenge not found');
+
+  if (action === 'like' || action === 'unlike') {
+    const likeUid = String(body.likeUid || uid);
+    if (likeUid !== uid) throw new Error('Like owner mismatch');
+    const likeDoc = await fsGet(projectId, token, `communityTasks/${taskId}/likes/${uid}`);
+    if (!likeDoc) throw new Error('Like document not found');
+  }
+  if (action === 'comment') {
+    const commentId = String(body.commentId || '').trim();
+    if (!commentId) throw new Error('commentId required');
+    const commentDoc = await fsGet(projectId, token, `communityTasks/${taskId}/comments/${commentId}`);
+    if (!commentDoc || commentDoc.uid !== uid) throw new Error('Comment document not found');
+  }
 
   const fieldMap = {
     join:     { field: 'joins',       delta: 1 },
