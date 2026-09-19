@@ -68,4 +68,13 @@ onAuthStateChanged(auth,async u=>{
  me=u;if(!u){location.href='login.html?redirect=task-create.html';return}
  const s=await getDoc(doc(db,'users',u.uid));profile=s.exists()?s.data():{name:u.displayName};
  renderLanes();renderCategorySuggestions();renderMechanics();renderTemplates();updateExpiry();renderLivePreview();
-});\n$('title')?.addEventListener('input',renderLivePreview);$('title')?.addEventListener('change',renderLivePreview);\n$('category')?.addEventListener('input',renderLivePreview);$('category')?.addEventListener('change',renderLivePreview);\n$('description')?.addEventListener('input',renderLivePreview);$('description')?.addEventListener('change',renderLivePreview);\n$('goal')?.addEventListener('input',renderLivePreview);$('goal')?.addEventListener('change',renderLivePreview);\n$('instructions')?.addEventListener('input',renderLivePreview);$('instructions')?.addEventListener('change',renderLivePreview);\n$('durationMin')?.addEventListener('input',renderLivePreview);$('durationMin')?.addEventListener('change',renderLivePreview);\n$('difficulty')?.addEventListener('input',renderLivePreview);$('difficulty')?.addEventListener('change',renderLivePreview);\n$('expiresDays')?.addEventListener('input',renderLivePreview);$('expiresDays')?.addEventListener('change',renderLivePreview);\n$('icon')?.addEventListener('input',renderLivePreview);$('icon')?.addEventListener('change',renderLivePreview);
+});
+$('title')?.addEventListener('input',renderLivePreview);$('title')?.addEventListener('change',renderLivePreview);
+$('category')?.addEventListener('input',renderLivePreview);$('category')?.addEventListener('change',renderLivePreview);
+$('description')?.addEventListener('input',renderLivePreview);$('description')?.addEventListener('change',renderLivePreview);
+$('goal')?.addEventListener('input',renderLivePreview);$('goal')?.addEventListener('change',renderLivePreview);
+$('instructions')?.addEventListener('input',renderLivePreview);$('instructions')?.addEventListener('change',renderLivePreview);
+$('durationMin')?.addEventListener('input',renderLivePreview);$('durationMin')?.addEventListener('change',renderLivePreview);
+$('difficulty')?.addEventListener('input',renderLivePreview);$('difficulty')?.addEventListener('change',renderLivePreview);
+$('expiresDays')?.addEventListener('input',renderLivePreview);$('expiresDays')?.addEventListener('change',renderLivePreview);
+$('icon')?.addEventListener('input',renderLivePreview);$('icon')?.addEventListener('change',renderLivePreview);
