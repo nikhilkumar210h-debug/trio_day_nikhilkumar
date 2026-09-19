@@ -187,7 +187,7 @@ async function openProfileMenu(userData) {
         <button type="button" class="profile-menu-item" data-action="password">
           <span>🔐</span> Change Password
         </button>
-        <a class="profile-menu-item" href="privacy-policy.html">
+        <a class="profile-menu-item" href="privacy.html">
           <span>🔒</span> Privacy Policy
         </a>
         <label class="profile-menu-item profile-menu-toggle" style="cursor:pointer">
