@@ -292,8 +292,6 @@ service cloud.firestore {
         allow delete: if owner(ratingUid);
       }
     }
-  }
-
     match /rooms/{roomId} {
       allow read: if signedIn();
       allow create: if signedIn() && request.resource.data.hostUid == request.auth.uid
@@ -374,4 +372,5 @@ service cloud.firestore {
           && get(/databases/$(database)/documents/rooms/$(roomId)).data.hostUid == request.auth.uid;
       }
     }
-}
+
+  }}
