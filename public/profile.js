@@ -196,9 +196,9 @@ async function openProfileMenu(userData) {
         <button type="button" class="profile-menu-item" data-action="password">
           <span>🔐</span> Change Password
         </button>
-        <button type="button" class="profile-menu-item" data-action="privacy">
-          <span>🔒</span> Privacy Settings
-        </button>
+        <a class="profile-menu-item" href="privacy-policy.html">
+          <span>🔒</span> Privacy Policy
+        </a>
         <label class="profile-menu-item profile-menu-toggle" style="cursor:pointer">
           <span>🔊</span> Sound Effects
           <input type="checkbox" id="sheetSoundToggle" ${SoundManager.isEnabled() ? 'checked' : ''} style="margin-left:auto">
@@ -251,21 +251,7 @@ async function openProfileMenu(userData) {
           const { showToast } = await import('./ui/toast.js');
           showToast(err.message, 'error');
         }
-      } else if (action === 'privacy') {
-        // Toggle emailHidden
-        const newEmailHidden = !userData.emailHidden;
-        try {
-          await updateDoc(doc(db, 'users', me.uid), { emailHidden: newEmailHidden, updatedAt: serverTimestamp() });
-          trioCache.invalidate(`user_${me.uid}`);
-          const { showToast } = await import('./ui/toast.js');
-          showToast(newEmailHidden ? 'Email hidden kar diya' : 'Email visible kar diya');
-          await new Promise(r => setTimeout(r, 300));
-          await loadProfile(me.uid);
-        } catch (err) {
-          console.error(err);
-          const { showToast } = await import('./ui/toast.js');
-          showToast('Failed to update privacy setting', 'error');
-        }
+      } else if (action === 'install') {
       } else if (action === 'install') {
         // Trigger install prompt
         const event = new CustomEvent('app-install-prompt');
