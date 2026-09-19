@@ -7,9 +7,20 @@ export function renderBuildWorkspace(root,activity,onPass){
  root.innerHTML='<div class="forge-workspace-head"><div><h3>Forge Board</h3><p>Actually build the solution. Your result is checked against the activity constraints.</p></div><span class="forge-pill">LIVE LOGIC</span></div><div class="forge-board-body"></div><div class="forge-result"></div>';
  const body=root.querySelector('.forge-board-body');
  if(cfg.mechanic==='order'){
-   const render=()=>{body.innerHTML='<div class="forge-order-list">'+state.order.map((item,i)=>'<div class="forge-order-row"><span class="forge-order-label">'+esc(item)+'</span><button class="forge-mini-btn" data-move="'+i+'" data-dir="-1" aria-label="Move up">↑</button><button class="forge-mini-btn" data-move="'+i+'" data-dir="1" aria-label="Move down">↓</button></div>').join('')+'</div><button class="forge-check" id="forgeCheck">Check build</button>';};
-   body.querySelectorAll('[data-move]').forEach(b=>b.onclick=()=>{const i=Number(b.dataset.move),to=i+Number(b.dataset.dir);if(to<0||to>=state.order.length)return;[state.order[i],state.order[to]]=[state.order[to],state.order[i]];render()});
-   body.querySelector('#forgeCheck').onclick=()=>{const target=cfg.target||[];const ok=target.length===state.order.length&&target.every((x,i)=>x===state.order[i]);setResult(ok?'Build accepted — every step is in the correct order.':'Not quite. Check the constraints and try another arrangement.',ok)};
+   const render=()=>{
+     body.innerHTML='<div class="forge-order-list">'+state.order.map((item,i)=>'<div class="forge-order-row"><span class="forge-order-label">'+esc(item)+'</span><button class="forge-mini-btn" data-move="'+i+'" data-dir="-1" aria-label="Move up">↑</button><button class="forge-mini-btn" data-move="'+i+'" data-dir="1" aria-label="Move down">↓</button></div>').join('')+'</div><button class="forge-check" id="forgeCheck">Check build</button>';
+     body.querySelectorAll('[data-move]').forEach(b=>b.onclick=()=>{
+       const i=Number(b.dataset.move),to=i+Number(b.dataset.dir);
+       if(to<0||to>=state.order.length)return;
+       [state.order[i],state.order[to]]=[state.order[to],state.order[i]];
+       render();
+     });
+     body.querySelector('#forgeCheck').onclick=()=>{
+       const target=cfg.target||[];
+       const ok=target.length===state.order.length&&target.every((x,i)=>x===state.order[i]);
+       setResult(ok?'Build accepted — every step is in the correct order.':'Not quite. Check the constraints and try another arrangement.',ok);
+     };
+   };
    render();
  }else if(cfg.mechanic==='allocate'){
    body.innerHTML='<div class="forge-budget-list">'+cfg.items.map((it,i)=>'<label class="forge-budget-row"><strong>'+esc(it[0])+'</strong><input type="number" min="0" max="'+cfg.budget+'" value="0" data-alloc="'+i+'"><span></span></label>').join('')+'</div><div class="forge-total">Total: <strong id="forgeTotal">0</strong> / '+cfg.budget+'</div><button class="forge-check" id="forgeCheck">Check allocation</button>';
