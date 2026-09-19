@@ -94,6 +94,75 @@ function levelFromXp(xp) {
   return Math.floor(Math.max(0, Number(xp) || 0) / XP_PER_LEVEL) + 1;
 }
 
+const CATALOG_MEDIUM = new Set([
+  'p2','p3','p4','p7','p8','p9','p10','p11',
+  'b3','b4','b6','b7','b8','b10','b12',
+  'l2','l4','l5','l8','l9','l10','l11',
+  'c2','c4','c5','c6','c9','c10',
+  'g6','g8','g10','g11'
+]);
+const CATALOG_HARD = new Set(['p12','b11']);
+
+function catalogXp(activityId) {
+  const id = String(activityId || '').trim().toLowerCase();
+  if (!/^[pblcg]\\d+$/.test(id)) return 0;
+  if (CATALOG_HARD.has(id)) return 60;
+  if (CATALOG_MEDIUM.has(id)) return 40;
+  return 25;
+}
+
+function catalogCycleDays(activityId) {
+  const cycles = {
+    p1:14,p2:21,p3:14,p4:30,p5:14,p6:14,p7:21,p8:30,p9:30,p10:21,p11:14,p12:40,
+    b1:21,b2:14,b3:21,b4:30,b5:21,b6:30,b7:30,b8:21,b9:14,b10:21,b11:30,b12:21,
+    l1:30,l2:21,l3:21,l4:30,l5:30,l6:21,l7:30,l8:30,l9:21,l10:40,l11:40,l12:14,
+    c1:14,c2:21,c3:14,c4:30,c5:21,c6:30,c7:14,c8:21,c9:21,c10:30,c11:14,c12:21,
+    g1:14,g2:14,g3:21,g4:14,g5:14,g6:21,g7:14,g8:21,g9:14,g10:21,g11:14,g12:21
+  };
+  return cycles[String(activityId || '').trim().toLowerCase()] || 21;
+}
+
+function catalogCycleKey(activityId, nowMs) {
+  const days = catalogCycleDays(activityId);
+  const epoch = Date.UTC(2026, 0, 1);
+  const index = Math.max(0, Math.floor((nowMs - epoch) / (days * 86400000)));
+  return activityId + '_' + String(epoch + index * days * 86400000);
+}
+
+async function fsCreateDoc(projectId, accessToken, path, data) {
+  const slash = path.lastIndexOf('/');
+  const parent = path.slice(0, slash);
+  const documentId = path.slice(slash + 1);
+  const url = firestoreBase(projectId) + '/' + parent + '?documentId=' + encodeURIComponent(documentId);
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      Authorization: 'Bearer ' + accessToken,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ fields: toFirestoreFields(data) })
+  });
+  if (res.status === 409) return false;
+  if (!res.ok) {
+    const txt = await res.text();
+    throw new Error('Firestore CREATE ' + path + ' failed: ' + res.status + ' ' + txt);
+  }
+  return true;
+}
+async function fsDelete(projectId, accessToken, path) {
+  const url = firestoreBase(projectId) + '/' + path;
+  const res = await fetch(url, {
+    method:'DELETE',
+    headers:{ Authorization:'Bearer ' + accessToken }
+  });
+  if (res.status === 404) return false;
+  if (!res.ok) {
+    const txt = await res.text();
+    throw new Error('Firestore DELETE ' + path + ' failed: ' + res.status + ' ' + txt);
+  }
+  return true;
+}
+
 // ─── Firebase ID token verification ──────────────────────────────────────────
 
 /**
@@ -581,82 +650,95 @@ function evaluateBadgesDelta(currentBadges, xp, streakCurrent, extraTemplateId) 
  * writes user doc, updates all leaderboards, evaluates badges.
  */
 async function handleAwardXp(uid, body, env) {
-  const amount = Math.max(0, Math.min(MAX_XP_AWARD, Math.round(Number(body.amount) || 0)));
-  if (amount <= 0) throw new Error('amount must be 1–500');
+  const meta = body?.meta || {};
+  const communityTaskId = String(meta.communityTaskId || '').trim();
+  const catalogActivityId = String(meta.catalogActivityId || '').trim().toLowerCase();
+  if (!communityTaskId && !catalogActivityId) throw new Error('activity context required');
 
-  const meta = body.meta || {};
   const projectId = env.FIREBASE_PROJECT_ID;
   const token = await getAccessToken(env);
+  const now = Date.now();
+  let amount = 0;
+  let grantKey = '';
 
-  // Read authoritative user doc
-  const userData = await fsGet(projectId, token, `users/${uid}`) || {};
+  if (communityTaskId) {
+    const task = await fsGet(projectId, token, 'communityTasks/' + communityTaskId);
+    if (!task || task.status !== 'active') throw new Error('Community activity is not active');
+    const completion = await fsGet(projectId, token, 'communityTasks/' + communityTaskId + '/completions/' + uid);
+    if (!completion) throw new Error('Completion record not found');
+    amount = Math.max(1, Math.min(MAX_XP_AWARD, Math.round(Number(task.xpReward) || 50)));
+    grantKey = 'community_' + communityTaskId;
+  } else {
+    amount = catalogXp(catalogActivityId);
+    if (!amount) throw new Error('Unknown catalog activity');
+    const expectedKey = catalogCycleKey(catalogActivityId, now);
+    const completionKey = String(meta.catalogCycleKey || '');
+    if (completionKey !== expectedKey) throw new Error('Invalid catalog cycle');
+    const completion = await fsGet(projectId, token, 'users/' + uid + '/activityCompletions/' + completionKey);
+    if (!completion || completion.activityId !== catalogActivityId) throw new Error('Completion record not found');
+    grantKey = 'catalog_' + expectedKey;
+  }
 
-  const weekKey   = localWeekKey();
-  const monthKey  = localMonthKey();
-  const prevXp    = Number(userData.xp) || 0;
-  const newXp     = prevXp + amount;
-  const newLevel  = levelFromXp(newXp);
+  const grantPath = 'users/' + uid + '/xpAwards/' + grantKey.replace(/[^A-Za-z0-9_-]/g, '_');
+  const created = await fsCreateDoc(projectId, token, grantPath, { uid, grantKey, amount, createdAtMs: now });
+  if (!created) {
+    const current = await fsGet(projectId, token, 'users/' + uid) || {};
+    return {
+      ok: true,
+      xp: Number(current.xp) || 0,
+      level: Number(current.level) || 1,
+      leveledUp: false,
+      awarded: 0,
+      alreadyAwarded: true,
+      badgesEarned: []
+    };
+  }
 
-  let weeklyXp   = Number(userData.weeklyXp)   || 0;
-  let monthlyXp  = Number(userData.monthlyXp)  || 0;
-  if (userData.weeklyXpKey  !== weekKey)  weeklyXp  = 0;
+  const userData = await fsGet(projectId, token, 'users/' + uid) || {};
+  const weekKey = localWeekKey();
+  const monthKey = localMonthKey();
+  const prevXp = Number(userData.xp) || 0;
+  const newXp = prevXp + amount;
+  const newLevel = levelFromXp(newXp);
+
+  let weeklyXp = Number(userData.weeklyXp) || 0;
+  let monthlyXp = Number(userData.monthlyXp) || 0;
+  if (userData.weeklyXpKey !== weekKey) weeklyXp = 0;
   if (userData.monthlyXpKey !== monthKey) monthlyXp = 0;
-  weeklyXp  += amount;
+  weeklyXp += amount;
   monthlyXp += amount;
 
-  const patch = {
-    xp:           newXp,
-    level:        newLevel,
-    weeklyXp,
-    monthlyXp,
-    weeklyXpKey:  weekKey,
-    monthlyXpKey: monthKey
-  };
+  await fsPatch(projectId, token, 'users/' + uid,
+    { xp:newXp, level:newLevel, weeklyXp, monthlyXp, weeklyXpKey:weekKey, monthlyXpKey:monthKey },
+    ['xp','level','weeklyXp','monthlyXp','weeklyXpKey','monthlyXpKey']);
 
-  await fsPatch(projectId, token, `users/${uid}`, patch,
-    ['xp', 'level', 'weeklyXp', 'monthlyXp', 'weeklyXpKey', 'monthlyXpKey']);
-
-  // Build verified row for leaderboard
   const verified = {
     uid,
-    name:           userData.name      || 'User',
-    photoURL:       userData.photoURL  || null,
-    level:          newLevel,
-    xp:             newXp,
+    name: userData.name || 'User',
+    photoURL: userData.photoURL || null,
+    level: newLevel,
+    xp: newXp,
     weeklyXp,
     monthlyXp,
-    streakCurrent:  Number(userData.streakCurrent) || 0
+    streakCurrent: Number(userData.streakCurrent) || 0
   };
-
-  // Update all 4 leaderboards (best-effort, non-blocking failures tolerated)
   const boards = [
-    { id: 'global',                         key: 'xp' },
-    { id: `weekly_${weekKey}`,              key: 'weeklyXp' },
-    { id: `monthly_${monthKey}`,            key: 'monthlyXp' },
-    { id: 'streak',                         key: 'streakCurrent' }
+    { id:'global', key:'xp' },
+    { id:'weekly_' + weekKey, key:'weeklyXp' },
+    { id:'monthly_' + monthKey, key:'monthlyXp' },
+    { id:'streak', key:'streakCurrent' }
   ];
   await Promise.allSettled(boards.map(b =>
     fsTransactionUpdateLeaderboard(projectId, token, b.id, uid, verified, b.key)
   ));
 
-  // Evaluate badges
   const currentBadges = Array.isArray(userData.badges) ? userData.badges : [];
-  const streakCurrent = Number(userData.streakCurrent) || 0;
-  const earned = evaluateBadgesDelta(currentBadges, newXp, streakCurrent, meta.templateId);
-
-  if (earned.length > 0) {
-    const newBadges = [...currentBadges, ...earned];
-    await fsPatch(projectId, token, `users/${uid}`, { badges: newBadges }, ['badges']);
+  const earned = evaluateBadgesDelta(currentBadges, newXp, Number(userData.streakCurrent) || 0, meta.templateId);
+  if (earned.length) {
+    await fsPatch(projectId, token, 'users/' + uid, { badges:[...currentBadges, ...earned] }, ['badges']);
   }
 
-  return {
-    ok: true,
-    xp:          newXp,
-    level:       newLevel,
-    leveledUp:   newLevel > levelFromXp(prevXp),
-    awarded:     amount,
-    badgesEarned: earned
-  };
+  return { ok:true, xp:newXp, level:newLevel, leveledUp:newLevel > levelFromXp(prevXp), awarded:amount, badgesEarned:earned };
 }
 
 /**
@@ -747,30 +829,66 @@ async function handleAwardBadges(uid, body, env) {
  * action: 'join'|'leave'|'like'|'unlike'|'comment'|'complete'
  */
 async function handleCounter(uid, body, env) {
-  const taskId = String(body.taskId || '').trim();
-  const action = String(body.action || '').trim();
-
+  const taskId = String(body?.taskId || '').trim();
+  const action = String(body?.action || '').trim();
+  const eventId = String(body?.eventId || '').trim();
   if (!taskId) throw new Error('taskId required');
+  if (!eventId) throw new Error('eventId required');
 
-  const validActions = ['join', 'leave', 'like', 'unlike', 'comment', 'complete'];
-  if (!validActions.includes(action)) throw new Error(`Invalid action: ${action}`);
+  const validActions = ['join','leave','like','unlike','comment','complete'];
+  if (!validActions.includes(action)) throw new Error('Invalid action: ' + action);
 
   const projectId = env.FIREBASE_PROJECT_ID;
   const token = await getAccessToken(env);
+  const eventKey = action === 'unlike' ? 'like_' + uid + '_' + eventId :
+                   action === 'leave' ? 'join_' + uid + '_' + eventId :
+                   action + '_' + uid + '_' + eventId;
+  const eventPath = 'communityTasks/' + taskId + '/counterEvents/' + eventKey.replace(/[^A-Za-z0-9_-]/g, '_');
+
+  let verified = false;
+  if (action === 'join') {
+    const member = await fsGet(projectId, token, 'communityTasks/' + taskId + '/members/' + uid);
+    verified = !!member && String(member.joinedAtMs) === eventId;
+  } else if (action === 'like') {
+    const like = await fsGet(projectId, token, 'communityTasks/' + taskId + '/likes/' + uid);
+    verified = !!like && String(like.atMs) === eventId;
+  } else if (action === 'comment') {
+    const comment = await fsGet(projectId, token, 'communityTasks/' + taskId + '/comments/' + eventId);
+    verified = !!comment && comment.uid === uid;
+  } else if (action === 'complete') {
+    const completion = await fsGet(projectId, token, 'communityTasks/' + taskId + '/completions/' + uid);
+    verified = !!completion && String(completion.atMs) === eventId;
+  } else {
+    const previous = await fsGet(projectId, token, eventPath);
+    verified = !!previous && previous.uid === uid;
+  }
+
+  if (!verified) throw new Error('Counter event could not be verified');
+
+  if (action === 'unlike' || action === 'leave') {
+    await fsDelete(projectId, token, eventPath);
+    await fsAtomicIncrement(
+      projectId,
+      token,
+      'communityTasks/' + taskId,
+      action === 'unlike' ? 'likes' : 'joins',
+      -1
+    );
+    return { ok:true, taskId, action, eventId, delta:-1 };
+  }
+
+  const created = await fsCreateDoc(projectId, token, eventPath, {
+    uid, action, eventId, createdAtMs: Date.now()
+  });
+  if (!created) {
+    return { ok:true, taskId, action, eventId, delta:0, alreadyCounted:true };
+  }
 
   const fieldMap = {
-    join:     { field: 'joins',       delta: 1 },
-    leave:    { field: 'joins',       delta: -1 },
-    like:     { field: 'likes',       delta: 1 },
-    unlike:   { field: 'likes',       delta: -1 },
-    comment:  { field: 'comments',    delta: 1 },
-    complete: { field: 'completions', delta: 1 }
+    join:'joins', like:'likes', comment:'comments', complete:'completions'
   };
-
-  const { field, delta } = fieldMap[action];
-  await fsAtomicIncrement(projectId, token, `communityTasks/${taskId}`, field, delta);
-
-  return { ok: true, taskId, action, field, delta };
+  await fsAtomicIncrement(projectId, token, 'communityTasks/' + taskId, fieldMap[action], 1);
+  return { ok:true, taskId, action, eventId, delta:1 };
 }
 
 // ─── Request router ───────────────────────────────────────────────────────────

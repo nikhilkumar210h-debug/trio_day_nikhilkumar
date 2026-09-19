@@ -126,7 +126,7 @@ $('completeBtn').onclick=async()=>{
      await setDoc(ref,{uid:me.uid,activityId:activity.id,cycleKey,title:activity.title,type:activity.type,completedAtMs:Date.now(),cycleEndsAtMs:activity.endAtMs});
      const xp=activity.difficulty==='Hard'?60:activity.difficulty==='Medium'?40:25;
      try{
-       const award=await awardXp(me.uid,xp,{catalogActivityId:activity.id});
+       const award=await awardXp(me.uid,xp,{catalogActivityId:activity.id,catalogCycleKey:cycleKey});
        showAchievement({title:activity.title,subtitle:'+'+xp+' XP',icon:activity.icon||'🎯',leveledUp:award?.leveledUp,level:award?.level,badges:award?.badgesEarned||[]});
      }catch(xpErr){console.warn('XP award skipped',xpErr)}
    }
