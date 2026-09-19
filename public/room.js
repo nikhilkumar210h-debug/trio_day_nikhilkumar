@@ -1,6 +1,6 @@
 import{auth,db}from'./firebase-init.js';
 import{onAuthStateChanged}from'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
-import{collection,query,orderBy,limit,onSnapshot,getDoc,getDocs,doc,setDoc,deleteDoc,addDoc,updateDoc}from'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
+import{collection,query,orderBy,limit,onSnapshot,getDoc,getDocs,doc,setDoc,deleteDoc,addDoc,updateDoc,runTransaction}from'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 import{escapeHtml as esc,avatarHtml}from'./utils.js';
 import{activityCardHtml}from'./activity-ui.js';
 import{activeCatalogActivities}from'./activity-catalog.js';
@@ -15,9 +15,25 @@ async function load(){
  room={id:s.id,...s.data()};if(room.status==='closed'||((Number(room.expiresAtMs)||((Number(room.createdAtMs)||Date.now())+6*60*60*1000))<=Date.now()))return fail('This room has expired.');
  const mine=await getDoc(doc(db,'rooms',id,'members',me.uid));
  if(!mine.exists()){
-   const ms=await getDocs(query(collection(db,'rooms',id,'members'),limit(20)));
-   if(ms.size>=Number(room.maxPlayers||3))return fail('This room is full.');
-   await setDoc(doc(db,'rooms',id,'members',me.uid),{uid:me.uid,name:p.name||me.displayName||'User',photoURL:p.photoURL||me.photoURL||null,joinedAtMs:Date.now()});
+   try{
+     await runTransaction(db, async transaction => {
+       const roomRef=doc(db,'rooms',id);
+       const memberRef=doc(db,'rooms',id,'members',me.uid);
+       const roomSnap=await transaction.get(roomRef);
+       const memberSnap=await transaction.get(memberRef);
+       if(!roomSnap.exists())throw new Error('Room not found.');
+       const latest=roomSnap.data();
+       if(memberSnap.exists())return;
+       const expires=Number(latest.expiresAtMs)||((Number(latest.createdAtMs)||Date.now())+6*60*60*1000);
+       if(latest.status!=='open'||expires<=Date.now())throw new Error('This room is no longer open.');
+       const count=Math.max(0,Number(latest.memberCount)||0);
+       const max=Math.max(2,Number(latest.maxPlayers)||3);
+       if(count>=max)throw new Error('This room is full.');
+       transaction.set(memberRef,{uid:me.uid,name:p.name||me.displayName||'User',photoURL:p.photoURL||me.photoURL||null,joinedAtMs:Date.now()});
+       transaction.update(roomRef,{memberCount:count+1});
+     });
+     room.memberCount=Math.min(Number(room.maxPlayers||3),Number(room.memberCount||0)+1);
+   }catch(joinErr){return fail(joinErr.message||'Could not join this room.');}
  }
  $('roomGrid').hidden=false;
  $('roomTitle').textContent=room.title||'Open room';
