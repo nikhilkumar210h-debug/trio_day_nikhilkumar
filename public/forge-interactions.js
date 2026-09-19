@@ -1,8 +1,8 @@
 const Q={
 p1:{kind:'quiz',question:'What comes next: 3, 6, 12, 24, __?',options:['30','36','48','60'],correct:2},
 p2:{kind:'quiz',question:'Three switches control three lamps. You may enter once. Which extra clue can help identify a switch before entering?',options:['Lamp heat','Room size','Wall color','Door width'],correct:0},
-p3:{kind:'quiz',question:'A says B is lying. B says C is lying. C says A and B are both truthful. Exactly one statement is false. Which statement is false?',options:['A','B','C','None'],correct:2},
-p4:{kind:'quiz',question:'A is left of B and F is right of B. Which person is guaranteed to be left of F?',options:['A','B','C','E'],correct:0},
+p3:{kind:'quiz',question:'A says B is lying. B says C is lying. C says A is truthful. Exactly one statement is false. Which statement is false?',options:['A','B','C','None'],correct:1},
+p4:{kind:'quiz',question:'A is left of B and F is right of B. Which person is guaranteed to be left of B?',options:['A','B','C','E'],correct:0},
 p5:{kind:'quiz',question:'What comes next: 2, 5, 10, 17, 26, __?',options:['31','35','37','42'],correct:2},
 p6:{kind:'quiz',question:'Which is a valid first step when changing COLD to WARM one letter at a time?',options:['CORD','WARM','BOLD','WARD'],correct:0},
 p7:{kind:'quiz',question:'In a shortest-path problem, what should you optimize first?',options:['Number of turns only','Total path length','Alphabetical order','Color count'],correct:1},
