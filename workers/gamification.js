@@ -434,6 +434,32 @@ async function fsPatch(projectId, accessToken, path, data, updateMask) {
 }
 
 /**
+ * List documents from a Firestore collection/subcollection.
+ */
+async function fsListDocs(projectId, accessToken, path, pageSize = 100) {
+  const url = `${firestoreBase(projectId)}/${path}?pageSize=${Math.min(200, Math.max(1, pageSize))}`;
+  const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+  if (!res.ok) throw new Error(`Firestore LIST ${path} failed: ${res.status}`);
+  const data = await res.json();
+  return (data.documents || []).map(doc => ({
+    name: doc.name,
+    id: doc.name.split('/').pop(),
+    ...fromFirestoreFields(doc.fields)
+  }));
+}
+
+async function fsDelete(projectId, accessToken, path) {
+  const url = `${firestoreBase(projectId)}/${path}`;
+  const res = await fetch(url, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${accessToken}` }
+  });
+  if (res.status === 404) return false;
+  if (!res.ok) throw new Error(`Firestore DELETE ${path} failed: ${res.status}`);
+  return true;
+}
+
+/**
  * Firestore REST transaction: beginTransaction → read board doc → commit with update.
  * Used for leaderboard upserts to prevent races.
  */
@@ -824,6 +850,8 @@ async function handleCreateMystery(uid, body, env) {
 
   const suspectId = String(rawSolution.suspectId || '').trim();
   const motive = String(rawSolution.motive || '').trim().slice(0, 300);
+  const motiveVariants = cleanCaseArray(rawSolution.motiveVariants, 8, v => String(v || '').trim().slice(0, 300))
+    .filter(Boolean);
   const keyEvidenceIds = normalizeCaseIds(rawSolution.keyEvidenceIds);
 
   if (!suspectIds.has(suspectId)) throw new Error('Solution suspectId must match a suspect');
@@ -880,9 +908,11 @@ async function handleCreateMystery(uid, body, env) {
     suspectId,
     motive,
     motiveNormalized: normalizeCaseText(motive),
+    motiveVariants,
+    motiveVariantsNormalized: [motive, ...motiveVariants].map(normalizeCaseText).filter(Boolean),
     keyEvidenceIds,
     createdAtMs: now
-  }, ['type','suspectId','motive','motiveNormalized','keyEvidenceIds','createdAtMs']);
+  }, ['type','suspectId','motive','motiveNormalized','motiveVariants','motiveVariantsNormalized','keyEvidenceIds','createdAtMs']);
 
   return { ok: true, taskId, challengeType: 'mystery' };
 }
@@ -920,7 +950,10 @@ async function handleCompleteChallenge(uid, body, env) {
     const submittedEvidence = normalizeCaseIds(submitted.keyEvidenceIds);
 
     const suspectCorrect = submittedSuspectId === String(privateVerification.suspectId || '');
-    const motiveCorrect = submittedMotive === String(privateVerification.motiveNormalized || '');
+    const acceptedMotives = Array.isArray(privateVerification.motiveVariantsNormalized)
+      ? privateVerification.motiveVariantsNormalized
+      : [String(privateVerification.motiveNormalized || '')];
+    const motiveCorrect = acceptedMotives.includes(submittedMotive);
     const expectedEvidence = normalizeCaseIds(privateVerification.keyEvidenceIds);
     const evidenceCorrect =
       submittedEvidence.length === expectedEvidence.length &&
@@ -987,6 +1020,115 @@ async function handleCompleteChallenge(uid, body, env) {
   const xp = Number(task.xpReward) || 50;
   const award = await handleAwardXp(uid, { amount: xp, meta: { communityTaskId: taskId, templateId: task.templateId } }, env);
   return { ok: true, already: false, verified: true, award };
+}
+
+/**
+ * Create/remove membership server-side and keep the accepted counter aligned.
+ */
+async function handleMembership(uid, body, env) {
+  const taskId = String(body.taskId || '').trim();
+  const action = String(body.action || '').trim();
+  if (!taskId) throw new Error('taskId required');
+  if (!['join','leave'].includes(action)) throw new Error('Invalid membership action');
+
+  const projectId = env.FIREBASE_PROJECT_ID;
+  const token = await getAccessToken(env);
+  const task = await fsGet(projectId, token, `communityTasks/${taskId}`);
+  if (!task) throw new Error('Challenge not found');
+  if (task.endAtMs && Number(task.endAtMs) < Date.now()) throw new Error('Challenge expired');
+
+  const memberPath = `communityTasks/${taskId}/members/${uid}`;
+  const member = await fsGet(projectId, token, memberPath);
+  const user = await fsGet(projectId, token, `users/${uid}`) || {};
+
+  if (action === 'join') {
+    if (member) return { ok: true, already: true, joined: true };
+    await fsPatch(projectId, token, memberPath, {
+      uid,
+      name: String(user.name || 'User').slice(0,50),
+      userId: String(user.userId || '').slice(0,50),
+      photoURL: user.photoURL || null,
+      joinedAtMs: Date.now(),
+      solvingActive: false,
+      solvingAtMs: 0
+    }, ['uid','name','userId','photoURL','joinedAtMs','solvingActive','solvingAtMs']);
+    await fsAtomicIncrement(projectId, token, `communityTasks/${taskId}`, 'joins', 1);
+    return { ok: true, already: false, joined: true };
+  }
+
+  if (!member) return { ok: true, already: true, joined: false };
+  await fsDelete(projectId, token, memberPath);
+  const joins = Math.max(0, Number(task.joins) || 0);
+  if (joins > 0) await fsAtomicIncrement(projectId, token, `communityTasks/${taskId}`, 'joins', -1);
+  return { ok: true, already: false, joined: false };
+}
+
+/**
+ * Maintain a near-real-time solving presence count.
+ * Presence expires after 90s; any fresh heartbeat reconciles the task count.
+ */
+async function handlePresence(uid, body, env) {
+  const taskId = String(body.taskId || '').trim();
+  const active = body.active === true;
+  if (!taskId) throw new Error('taskId required');
+
+  const projectId = env.FIREBASE_PROJECT_ID;
+  const token = await getAccessToken(env);
+  const task = await fsGet(projectId, token, `communityTasks/${taskId}`);
+  if (!task) throw new Error('Challenge not found');
+  if (task.endAtMs && Number(task.endAtMs) < Date.now()) throw new Error('Challenge expired');
+
+  const memberPath = `communityTasks/${taskId}/members/${uid}`;
+  const member = await fsGet(projectId, token, memberPath);
+  if (!member) throw new Error('Accept the challenge first');
+
+  const now = Date.now();
+  await fsPatch(projectId, token, memberPath, {
+    solvingActive: active,
+    solvingAtMs: active ? now : 0
+  }, ['solvingActive','solvingAtMs']);
+
+  const members = await fsListDocs(projectId, token, `communityTasks/${taskId}/members`, 200);
+  const activeCount = members.filter(m => m.solvingActive === true && Number(m.solvingAtMs) > now - 90 * 1000).length;
+  await fsPatch(projectId, token, `communityTasks/${taskId}`, { solvingNow: activeCount }, ['solvingNow']);
+
+  return { ok: true, solvingNow: activeCount };
+}
+
+/**
+ * Rate a completed challenge and recalculate the aggregate on the server.
+ */
+async function handleRateChallenge(uid, body, env) {
+  const taskId = String(body.taskId || '').trim();
+  const rating = Math.round(Number(body.rating));
+  const feedback = String(body.feedback || '').trim().slice(0,160);
+  if (!taskId) throw new Error('taskId required');
+  if (!Number.isInteger(rating) || rating < 1 || rating > 5) throw new Error('Rating must be 1–5');
+
+  const projectId = env.FIREBASE_PROJECT_ID;
+  const token = await getAccessToken(env);
+  const task = await fsGet(projectId, token, `communityTasks/${taskId}`);
+  if (!task) throw new Error('Challenge not found');
+
+  const member = await fsGet(projectId, token, `communityTasks/${taskId}/members/${uid}`);
+  if (!member) throw new Error('Accept the challenge first');
+  const completion = await fsGet(projectId, token, `communityTasks/${taskId}/completions/${uid}`);
+  if (!completion) throw new Error('Complete the challenge before rating it');
+
+  await fsPatch(projectId, token, `communityTasks/${taskId}/ratings/${uid}`, {
+    uid, rating, feedback, atMs: Date.now()
+  }, ['uid','rating','feedback','atMs']);
+
+  const ratings = await fsListDocs(projectId, token, `communityTasks/${taskId}/ratings`, 200);
+  const valid = ratings.map(r => Number(r.rating)).filter(n => Number.isFinite(n) && n >= 1 && n <= 5);
+  const count = valid.length;
+  const average = count ? Number((valid.reduce((a,b)=>a+b,0)/count).toFixed(2)) : 0;
+  await fsPatch(projectId, token, `communityTasks/${taskId}`, {
+    ratingAverage: average,
+    ratingCount: count
+  }, ['ratingAverage','ratingCount']);
+
+  return { ok: true, rating, ratingAverage: average, ratingCount: count };
 }
 
 /**
@@ -1091,6 +1233,12 @@ export default {
         result = await handleAwardBadges(uid, body, env);
       } else if (path === '/gamification/counter') {
         result = await handleCounter(uid, body, env);
+      } else if (path === '/gamification/membership') {
+        result = await handleMembership(uid, body, env);
+      } else if (path === '/gamification/presence') {
+        result = await handlePresence(uid, body, env);
+      } else if (path === '/gamification/rate-challenge') {
+        result = await handleRateChallenge(uid, body, env);
       } else if (path === '/gamification/complete-challenge') {
         result = await handleCompleteChallenge(uid, body, env);
       } else if (path === '/gamification/create-mystery') {
