@@ -185,3 +185,10 @@ html, body { overflow-x: hidden; }
 .bottom-nav {
   box-shadow: 0 -10px 34px rgba(2, 6, 23, .10);
 }
+
+@media (min-width: 840px) {
+  .bottom-nav,
+  .fab {
+    display: none !important;
+  }
+}
