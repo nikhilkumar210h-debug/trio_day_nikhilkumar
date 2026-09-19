@@ -313,6 +313,14 @@ function renderPreview() {
   const host = $('creatorLivePreviewCard');
   if (!host) return;
   const type = ACTIVITY_TYPES[activeType];
+  const canvas=$('creatorCanvasVisual');
+  if(canvas){
+    canvas.dataset.tone=type.tone;
+    const icon=$('creatorCanvasIcon'), titleEl=$('creatorCanvasTitle'), metaEl=$('creatorCanvasMeta');
+    if(icon)icon.textContent=type.icon;
+    if(titleEl)titleEl.textContent=title || 'Your activity';
+    if(metaEl)metaEl.textContent=(selected?'Starter adapted':'Blank canvas')+' · '+type.label;
+  }
   const mechanic = activeType === 'build'
     ? mechanicInfo('build', interactionDraft?.mechanic || currentMechanic())
     : mechanicInfo(activeType, selected?.mechanic);
