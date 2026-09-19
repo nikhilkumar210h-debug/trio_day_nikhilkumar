@@ -1,3 +1,4 @@
+import { SoundManager } from './sound-manager.js';
 /* Trio Day 2.0 — Theme System (Phase 3)
    Single global theme preference for the entire application.
    ═══════════════════════════════════════════════════════════ */
@@ -90,6 +91,9 @@ function watchSystemTheme() {
     mediaQuery.addEventListener ? mediaQuery.addEventListener('change', handler) : mediaQuery.addListener(handler);
   } catch { }
 }
+
+// Sound is a shared app capability; initialize it on every themed page so the setting persists everywhere.
+SoundManager.init();
 
 // Initialize on load
 if (document.readyState === 'loading') {
