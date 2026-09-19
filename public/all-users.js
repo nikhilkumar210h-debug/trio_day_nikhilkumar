@@ -111,6 +111,7 @@ function render() {
             <div class="challenge-objective">${esc(challenge.objective || challenge.description || 'Complete this challenge.')}</div>
 
             <div class="challenge-meta">
+              ${challenge.challengeType === 'mystery' ? '<span class="pill">🕵️ Mystery</span>' : ''}
               <span class="pill">${esc(category)}</span>
               <span class="pill">${esc(difficulty)}</span>
               <span class="pill">${minutes ? `${minutes} min` : 'Flexible'}</span>
