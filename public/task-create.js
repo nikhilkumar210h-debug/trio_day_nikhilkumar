@@ -1,152 +1,73 @@
 import { auth, db } from './firebase-init.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
-import { collection, doc, getDoc, getDocs, query, where, limit } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
-import { listActiveTemplates, createTemplate, isAdmin } from './gamification/templates.js';
+import { getDoc, doc } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 import { createCommunityTask } from './gamification/community-tasks.js';
-import { escapeHtml as esc } from './utils.js';
 import { showToast } from './ui/toast.js';
 
-const $ = id => document.getElementById(id);
+const $ = (id) => document.getElementById(id);
 let me = null;
 let profile = null;
-let selected = null;
-let admin = false;
 
-
-
-// ── Duplicate check ───────────────────────────────────────────────────────────
-async function checkDuplicate(title) {
-  if (!title) return false;
-  try {
-    const q = query(
-      collection(db, 'communityTasks'),
-      where('status', '==', 'active'),
-      where('title', '==', title.trim()),
-      limit(1)
-    );
-    const snap = await getDocs(q);
-    return !snap.empty;
-  } catch (_) {
-    return false;
-  }
+function updatePreview() {
+  $('previewIcon').textContent = $('icon')?.value.trim() || '✦';
+  $('previewTitle').textContent = $('title')?.value.trim() || 'Your challenge';
+  $('previewObjective').textContent = $('objective')?.value.trim() || 'Describe what people should do.';
+  $('previewCategory').textContent = $('category')?.value || 'Reasoning';
+  $('previewDifficulty').textContent = $('difficulty')?.value || 'Medium';
+  const duration = Number($('durationMinutes')?.value || 15);
+  $('previewTime').textContent = duration >= 60 ? (duration / 60) + ' hr' + (duration > 60 ? 's' : '') : duration + ' min';
 }
 
-// ── Template picker ───────────────────────────────────────────────────────────
-function fillFromTemplate(t) {
-  selected = t;
-  $('title').value = t.title || '';
-  $('description').value = t.description || '';
-  $('icon').value = t.icon || '🏁';
-  $('metric').value = t.metric || 'manual';
-  $('target').value = t.target || 1;
-  $('xpReward').value = t.xpReward || 50;
-  document.querySelectorAll('.template-option').forEach(el => {
-    el.classList.toggle('selected', el.dataset.id === t.id);
-  });
-}
+['title','objective','icon','category','difficulty','durationMinutes'].forEach((id) => {
+  const element = $(id);
+  element?.addEventListener('input', updatePreview);
+  element?.addEventListener('change', updatePreview);
+});
 
-async function loadTemplates() {
-  const list = await listActiveTemplates();
-  const box = $('templatePicker');
-  box.innerHTML = list.map(t =>
-    `<button type="button" class="template-option" data-id="${esc(t.id)}">
-      <strong>${esc(t.icon || '✅')} ${esc(t.title)}</strong>
-      <div style="font-size:0.75rem;opacity:0.7">${esc(t.cadence)} · target ${esc(t.target)} · +${esc(t.xpReward)} XP</div>
-    </button>`
-  ).join('');
-  box.querySelectorAll('.template-option').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const t = list.find(x => x.id === btn.dataset.id);
-      if (t) fillFromTemplate(t);
-    });
-  });
-  if (list[0]) fillFromTemplate(list[0]);
-}
-
-// ── Submit ────────────────────────────────────────────────────────────────────
-$('submitBtn').addEventListener('click', async () => {
+$('submitBtn')?.addEventListener('click', async () => {
   if (!me) { showToast('Please login first', 'error'); return; }
-
-  const btn = $('submitBtn');
-  const status = $('formStatus');
   const title = $('title').value.trim();
-
-  if (!title) {
-    showToast('Please enter a challenge title', 'warn');
-    $('title').focus();
-    return;
-  }
-
-  // Disable immediately — prevents double-submit
-  btn.disabled = true;
-  btn.textContent = 'Saving…';
+  const objective = $('objective').value.trim();
+  if (!title) { showToast('Give your challenge a title.', 'warn'); $('title').focus(); return; }
+  if (objective.length < 10) { showToast('Add a clear objective so people know what to solve.', 'warn'); $('objective').focus(); return; }
+  const button = $('submitBtn');
+  const status = $('formStatus');
+  button.disabled = true;
+  button.textContent = 'Publishing…';
   status.textContent = '';
-  status.classList.remove('error');
-
   try {
-    // Duplicate check
-    const isDuplicate = await checkDuplicate(title);
-    if (isDuplicate) {
-      const proceed = confirm(`A challenge named "${title}" already exists.\n\nCreate anyway?`);
-      if (!proceed) {
-        btn.disabled = false;
-        btn.textContent = 'Publish challenge';
-        return;
-      }
-    }
-
-    status.textContent = 'Publishing…';
-
-    const days = Math.max(1, Number($('days').value) || 7);
+    const days = Number($('days').value || 7);
     const id = await createCommunityTask(me.uid, profile, {
       title,
-      description: $('description').value.trim(),
-      icon: $('icon').value.trim() || '🏁',
-      kind: $('kind').value,
-      templateId: selected?.id || null,
-      metric: $('metric').value,
+      description: objective,
+      objective,
+      icon: $('icon').value.trim() || '✦',
+      category: $('category').value,
+      difficulty: $('difficulty').value,
+      durationMinutes: Number($('durationMinutes').value || 15),
+      metric: $('metric').value || 'manual',
       target: Number($('target').value) || 1,
       xpReward: Number($('xpReward').value) || 50,
       startAtMs: Date.now(),
       endAtMs: Date.now() + days * 86400000
     });
-
-    if ($('alsoTemplate').checked) {
-      await createTemplate(me.uid, {
-        title,
-        description: $('description').value.trim(),
-        icon: $('icon').value.trim(),
-        cadence: 'once',
-        metric: $('metric').value,
-        target: Number($('target').value) || 1,
-        xpReward: Number($('xpReward').value) || 50
-      }, { isAdmin: admin });
-    }
-
-    status.textContent = 'Published ✅';
-    showToast('Challenge published successfully! 🎉');
-
-    // Redirect to tasks.html after toast is visible
-    setTimeout(() => { location.href = 'tasks.html'; }, 1400);
-
-  } catch (err) {
-    console.error(err);
-    const msg = err.message || 'Failed to publish challenge';
-    status.textContent = msg;
+    status.textContent = 'Published ✓';
+    showToast('Challenge published successfully!');
+    setTimeout(() => { location.href = 'task-detail.html?id=' + encodeURIComponent(id); }, 700);
+  } catch (error) {
+    console.error('Create challenge failed:', error);
+    status.textContent = error.message || 'Could not publish challenge.';
     status.classList.add('error');
-    showToast(msg, 'error');
-    btn.disabled = false;
-    btn.textContent = 'Publish challenge';
+    showToast(error.message || 'Could not publish challenge.', 'error');
+    button.disabled = false;
+    button.textContent = 'Publish challenge';
   }
 });
 
-// ── Auth ──────────────────────────────────────────────────────────────────────
-onAuthStateChanged(auth, async user => {
+onAuthStateChanged(auth, async (user) => {
   me = user;
-  if (!user) return;
-  const snap = await getDoc(doc(db, 'users', user.uid));
-  profile = snap.exists() ? snap.data() : { name: user.displayName };
-  admin = await isAdmin(user.uid);
-  $('alsoTemplateWrap').hidden = false;
-  await loadTemplates();
+  if (!user) { $('formStatus').textContent = 'Please login to create a challenge.'; return; }
+  const snap = await getDoc(doc(db, 'users', user.uid)).catch(() => null);
+  profile = snap?.exists() ? snap.data() : { name: user.displayName || 'User', photoURL: user.photoURL || null };
+  updatePreview();
 });
