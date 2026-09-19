@@ -1,0 +1,30 @@
+import{getBuildConfig}from'./activity-catalog.js';
+const esc=s=>{const d=document.createElement('div');d.textContent=String(s??'');return d.innerHTML};
+export function renderBuildWorkspace(root,activity,onPass){
+ const cfg=getBuildConfig(activity.id); if(!cfg){root.hidden=true;return null} root.hidden=false; let passed=false;
+ const state={order:cfg.items?.slice()||[],alloc:{},selectedTool:null,placed:{},assign:{}};
+ const setResult=(text,ok)=>{root.querySelector('.forge-result').textContent=text;root.querySelector('.forge-result').className='forge-result '+(ok?'ok':'bad');if(ok&&!passed){passed=true;onPass?.(true)}};
+ root.innerHTML='<div class="forge-workspace-head"><div><h3>Forge Board</h3><p>Actually build the solution. Your result is checked against the activity constraints.</p></div><span class="forge-pill">LIVE LOGIC</span></div><div class="forge-board-body"></div><div class="forge-result"></div>';
+ const body=root.querySelector('.forge-board-body');
+ if(cfg.mechanic==='order'){
+   const render=()=>{body.innerHTML='<div class="forge-order-list">'+state.order.map((item,i)=>'<div class="forge-order-row"><span class="forge-order-label">'+esc(item)+'</span><button class="forge-mini-btn" data-move="'+i+'" data-dir="-1" aria-label="Move up">↑</button><button class="forge-mini-btn" data-move="'+i+'" data-dir="1" aria-label="Move down">↓</button></div>').join('')+'</div><button class="forge-check" id="forgeCheck">Check build</button>';
+   body.querySelectorAll('[data-move]').forEach(b=>b.onclick=()=>{const i=Number(b.dataset.move),to=i+Number(b.dataset.dir);if(to<0||to>=state.order.length)return;[state.order[i],state.order[to]]=[state.order[to],state.order[i]];render()});
+   body.querySelector('#forgeCheck').onclick=()=>{const target=cfg.target||[];const ok=target.length===state.order.length&&target.every((x,i)=>x===state.order[i]);setResult(ok?'Build accepted — every step is in the correct order.':'Not quite. Check the constraints and try another arrangement.',ok)};
+   render();
+ }else if(cfg.mechanic==='allocate'){
+   body.innerHTML='<div class="forge-budget-list">'+cfg.items.map((it,i)=>'<label class="forge-budget-row"><strong>'+esc(it[0])+'</strong><input type="number" min="0" max="'+cfg.budget+'" value="'+it[1]+'" data-alloc="'+i+'"><span></span></label>').join('')+'</div><div class="forge-total">Total: <strong id="forgeTotal">0</strong> / '+cfg.budget+'</div><button class="forge-check" id="forgeCheck">Check allocation</button>';
+   const update=()=>{let total=0;body.querySelectorAll('[data-alloc]').forEach((input,i)=>{const v=Math.max(0,Number(input.value)||0);state.alloc[i]=v;total+=v});body.querySelector('#forgeTotal').textContent=total};
+   body.querySelectorAll('[data-alloc]').forEach(i=>i.addEventListener('input',update));update();
+   body.querySelector('#forgeCheck').onclick=()=>{const total=Object.values(state.alloc).reduce((a,b)=>a+b,0);const ok=total<=cfg.budget&&cfg.items.every((it,i)=>Number(state.alloc[i])===Number(it[1]));setResult(ok?'Allocation works — every required bucket is satisfied.':'Check the budget and required allocation, then adjust the values.',ok)};
+ }else if(cfg.mechanic==='grid'){
+   const blocked=new Set(cfg.blocked||[]);let html='<div class="forge-grid-tools">'+cfg.required.map((x,i)=>'<button class="forge-grid-tool '+(i===0?'active':'')+'" data-tool="'+i+'">'+esc(x)+'</button>').join('')+'</div><div class="forge-grid-board">'+Array.from({length:cfg.size*cfg.size},(_,i)=>'<button type="button" class="forge-grid-cell '+(blocked.has(i)?'blocked':'')+'" data-cell="'+i+'" '+(blocked.has(i)?'disabled':'')+'></button>').join('')+'</div><button class="forge-check" id="forgeCheck" style="margin-top:10px">Check layout</button>';body.innerHTML=html;state.selectedTool=0;
+   body.querySelectorAll('[data-tool]').forEach(b=>b.onclick=()=>{state.selectedTool=Number(b.dataset.tool);body.querySelectorAll('.forge-grid-tool').forEach(x=>x.classList.toggle('active',x===b))});
+   body.querySelectorAll('[data-cell]').forEach(cell=>cell.onclick=()=>{const idx=Number(cell.dataset.cell);const already=Object.keys(state.placed).find(k=>Number(k)===idx);if(already!==undefined)delete state.placed[already];else state.placed[idx]=state.selectedTool;cell.textContent=already!==undefined?'':cfg.required[state.selectedTool];cell.classList.toggle('placed',already===undefined)});
+   body.querySelector('#forgeCheck').onclick=()=>{const occupied=Object.keys(state.placed).length===cfg.required.length;const unique=new Set(Object.values(state.placed)).size===cfg.required.length;const safe=Object.keys(state.placed).every(k=>!blocked.has(Number(k)));setResult(occupied&&unique&&safe?'Layout accepted — all required zones are placed safely.':'Use each required item once and keep every placement on an available cell.',occupied&&unique&&safe)};
+ }else if(cfg.mechanic==='assign'){
+   body.innerHTML='<div class="forge-assign-list">'+cfg.people.map((person,i)=>'<label class="forge-assign-row"><span>'+esc(person)+'</span><select data-person="'+esc(person)+'"><option value="">Choose role…</option>'+cfg.roles.map(r=>'<option>'+esc(r)+'</option>').join('')+'</select></label>').join('')+'</div><button class="forge-check" id="forgeCheck">Check team</button>';
+   body.querySelectorAll('[data-person]').forEach(s=>s.onchange=()=>state.assign[s.dataset.person]=s.value);
+   body.querySelector('#forgeCheck').onclick=()=>{const ok=cfg.people.every(p=>state.assign[p]===cfg.correct[p])&&new Set(Object.values(state.assign)).size===cfg.roles.length;setResult(ok?'Team accepted — every role has the right fit.':'The assignment has conflicts. Try matching strengths to roles again.',ok)};
+ }
+ return{isPassed:()=>passed};
+}
