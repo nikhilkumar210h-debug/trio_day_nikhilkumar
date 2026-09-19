@@ -44,12 +44,21 @@
           class="brand-copy"><strong>trio_day</strong><small>COMMUNITY • INDIA</small></span></a>
       <div class="topbar-actions">
         <div id="authStatus" class="auth-status"></div>
-        <button id="headerPlus" class="header-plus" type="button" aria-label="Create post">+</button>
+        <button id="headerPlus" class="header-plus" type="button" aria-label="Create challenge">+</button>
       </div>
     </div>
   </header>
 
   <main class="app-main nkm-home">
+    <section class="today-hero" aria-label="Today">
+      <div class="today-hero-copy">
+        <span class="eyebrow">TODAY</span>
+        <h1>What will you solve today<span class="today-hero-name" id="greetingName"></span>?</h1>
+        <p id="greetingSub">Find a challenge, accept it, solve it, finish it.</p>
+      </div>
+      <a class="today-hero-cta" href="all-users.html">Explore Challenges <span>↗</span></a>
+    </section>
+
     <!-- Today: Stories + accepted active challenges only -->
     <section id="todayStories" class="today-section" aria-label="Stories">
       <div class="today-section-head">
