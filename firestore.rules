@@ -307,7 +307,7 @@ service cloud.firestore {
           && request.resource.data.difficulty in ['Easy','Medium','Hard']
           && request.resource.data.endAtMs is number
           && request.resource.data.expiresInDays in [7,14,21,30,40]
-          && validActivityInteraction(request.resource.data.interaction)
+          && (!('interaction' in request.resource.data) || validActivityInteraction(request.resource.data.interaction))
         )
       );
       allow delete: if isAdmin() || (signedIn() && resource.data.creatorUid == request.auth.uid);
@@ -346,7 +346,7 @@ service cloud.firestore {
               && request.resource.data.proofText.size() >= 20
               && request.resource.data.proofText.size() <= 500
               && (
-                !(get(/databases/$(database)/documents/communityTasks/$(taskId)).data.interaction is map)
+                !('interaction' in get(/databases/$(database)/documents/communityTasks/$(taskId)).data)
                 || get(/databases/$(database)/documents/communityTasks/$(taskId)).data.interaction.kind != 'quiz'
                 || request.resource.data.answerIndex == get(/databases/$(database)/documents/communityTasks/$(taskId)).data.interaction.correct
               )
