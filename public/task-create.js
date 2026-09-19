@@ -109,8 +109,17 @@ function renderBuildCustomizer(host) {
   $('addBuildAlloc')?.addEventListener('click',()=>{if(c.items.length<8)c.items.push(['New category',0]);renderBuildCustomizer(host)});
   host.querySelectorAll('[data-grid-name]').forEach(el=>el.addEventListener('input',()=>c.required[Number(el.dataset.gridName)]=el.value));
   host.querySelectorAll('[data-block-cell]').forEach(el=>el.addEventListener('click',()=>{const i=Number(el.dataset.blockCell);c.blocked=c.blocked.includes(i)?c.blocked.filter(x=>x!==i):[...c.blocked,i];renderBuildCustomizer(host);}));
-  host.querySelectorAll('[data-person-name]').forEach(el=>el.addEventListener('input',()=>c.people[Number(el.dataset.personName)]=el.value));
-  host.querySelectorAll('[data-role-name]').forEach(el=>el.addEventListener('input',()=>{const i=Number(el.dataset.roleName);c.roles[i]=el.value;Object.keys(c.correct).forEach(p=>{if(c.correct[p]===interactionDraft.config.roles[i])c.correct[p]=el.value;});renderBuildCustomizer(host)}));
+  host.querySelectorAll('[data-person-name]').forEach(el=>el.addEventListener('input',()=>{
+    const i=Number(el.dataset.personName), oldName=c.people[i], newName=el.value;
+    if(Object.prototype.hasOwnProperty.call(c.correct,oldName)){c.correct[newName]=c.correct[oldName];delete c.correct[oldName];}
+    c.people[i]=newName;
+  }));
+  host.querySelectorAll('[data-role-name]').forEach(el=>el.addEventListener('input',()=>{
+    const i=Number(el.dataset.roleName), oldRole=c.roles[i], newRole=el.value;
+    Object.keys(c.correct).forEach(p=>{if(c.correct[p]===oldRole)c.correct[p]=newRole;});
+    c.roles[i]=newRole;
+    renderBuildCustomizer(host);
+  }));
   host.querySelectorAll('[data-person-role]').forEach(el=>el.addEventListener('change',()=>{const i=Number(el.dataset.personRole);c.correct[c.people[i]]=el.value;}));
 }
 
