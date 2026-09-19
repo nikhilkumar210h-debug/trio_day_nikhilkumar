@@ -30,6 +30,15 @@
 .builder-grid,.advanced-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
 .advanced-create{border-top:1px solid var(--border);padding-top:14px}.advanced-create summary{cursor:pointer;font-weight:700;padding:8px 0}.advanced-grid{margin-top:14px}
 @media(max-width:650px){.builder-grid,.advanced-grid{grid-template-columns:1fr}.challenge-preview{align-items:flex-start}.preview-copy h2{font-size:20px}}
+
+.mystery-builder{display:grid;gap:14px;padding:16px;border:1px solid rgba(124,58,237,.22);border-radius:18px;background:linear-gradient(135deg,rgba(124,58,237,.08),rgba(255,255,255,.02))}
+.mystery-builder[hidden]{display:none!important}
+.mystery-builder-head{display:flex;gap:12px;align-items:flex-start}
+.mystery-mark{width:42px;height:42px;border-radius:13px;display:grid;place-items:center;background:rgba(124,58,237,.16);font-size:22px;flex:none}
+.mystery-builder h3{margin:0 0 4px;font-size:17px}
+.mystery-builder p{margin:0;color:var(--color-ink-muted);font-size:12px;line-height:1.5}
+.mystery-json{min-height:420px;width:100%;font-family:"SFMono-Regular",Consolas,monospace;font-size:12px;line-height:1.5;resize:vertical}
+.mystery-note{padding:10px 12px;border-radius:12px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.18);font-size:12px;color:var(--color-ink-muted)}
 </style></head>
 <body class="app-page">
   <div class="tricolor-strip"><span></span><span></span><span></span></div>
@@ -40,7 +49,7 @@
     </div>
   </header>
   <main class="tasks-main">
-    <a class="btn secondary" href="tasks.html" style="display:inline-flex;align-items:center;gap:0.4rem;margin-bottom:0.75rem">← Back</a>
+    <a class="btn secondary" href="all-users.html" style="display:inline-flex;align-items:center;gap:0.4rem;margin-bottom:0.75rem">← Back</a>
     <span class="eyebrow">Open to everyone</span>
     <h1>Create a challenge</h1>
     <p class="muted">Create something people will actually want to solve. Start with the idea; advanced mechanics stay out of the way.</p>
@@ -79,6 +88,16 @@
         </label>
       </div>
 
+      <div class="builder-section">
+        <div class="builder-label">Challenge format</div>
+        <label class="field"><span class="label-text">Type</span>
+          <select id="challengeType">
+            <option value="standard" selected>Standard challenge</option>
+            <option value="mystery">Mystery / Detective case</option>
+          </select>
+        </label>
+      </div>
+
       <div class="builder-section verification-builder">
         <div class="builder-label">How will people prove they solved it?</div>
         <label class="field"><span class="label-text">Proof method</span>
@@ -95,6 +114,23 @@
           <textarea id="proofInstruction" rows="3" maxlength="500" placeholder="Example: Explain your reasoning and include the final result."></textarea>
         </label>
       </div>
+
+      <section class="mystery-builder" id="mysteryBuilder" hidden>
+        <div class="mystery-builder-head">
+          <div class="mystery-mark">🕵️</div>
+          <div>
+            <h3>Case builder</h3>
+            <p>Use your Gemini-generated case JSON here. Trio Day publishes the investigation data publicly and stores the final solution in a server-only verification document.</p>
+          </div>
+        </div>
+        <label class="field">
+          <span class="label-text">Case JSON</span>
+          <textarea id="caseJson" class="mystery-json" spellcheck="false"></textarea>
+        </label>
+        <div class="mystery-note">
+          Required: briefing, at least 2 suspects, at least 3 clues, at least 2 timeline events, and solution.suspectId + solution.motive + solution.keyEvidenceIds.
+        </div>
+      </section>
 
       <details class="advanced-create">
         <summary>Customize challenge</summary>
