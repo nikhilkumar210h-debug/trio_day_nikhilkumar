@@ -94,6 +94,12 @@ function levelFromXp(xp) {
   return Math.floor(Math.max(0, Number(xp) || 0) / XP_PER_LEVEL) + 1;
 }
 
+async function sha256Hex(value) {
+  const bytes = new TextEncoder().encode(String(value || '').trim().toLowerCase());
+  const digest = await crypto.subtle.digest('SHA-256', bytes);
+  return [...new Uint8Array(digest)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
 // ─── Firebase ID token verification ──────────────────────────────────────────
 
 /**
@@ -732,6 +738,64 @@ async function handleAwardBadges(uid, body, env) {
 }
 
 /**
+ * Verify and finalize a challenge. The client never writes completions directly.
+ */
+async function handleCompleteChallenge(uid, body, env) {
+  const taskId = String(body.taskId || '').trim();
+  if (!taskId) throw new Error('taskId required');
+
+  const projectId = env.FIREBASE_PROJECT_ID;
+  const token = await getAccessToken(env);
+  const task = await fsGet(projectId, token, `communityTasks/${taskId}`);
+  if (!task) throw new Error('Challenge not found');
+  if (task.endAtMs && Number(task.endAtMs) < Date.now()) throw new Error('Challenge expired');
+  if (task.creatorUid === uid) throw new Error('Creators cannot complete their own challenge');
+
+  const member = await fsGet(projectId, token, `communityTasks/${taskId}/members/${uid}`);
+  if (!member) throw new Error('Accept the challenge first');
+
+  const completionPath = `communityTasks/${taskId}/completions/${uid}`;
+  const existing = await fsGet(projectId, token, completionPath);
+  if (existing) return { ok: true, already: true };
+
+  const verificationType = task.verificationType === 'answer' ? 'answer' : 'proof';
+
+  if (verificationType === 'answer') {
+    const answer = String(body.answer || '').trim();
+    if (!answer) throw new Error('Answer required');
+    const expectedHash = String(task.answerHash || '');
+    if (!expectedHash) throw new Error('This challenge has no configured answer');
+    const actualHash = await sha256Hex(answer);
+    if (actualHash !== expectedHash) {
+      return { ok: false, correct: false, message: 'Not correct yet. Check the challenge and try again.' };
+    }
+    await fsPatch(projectId, token, completionPath, { uid, atMs: Date.now(), verification: 'answer' }, ['uid', 'atMs', 'verification']);
+    await fsAtomicIncrement(projectId, token, `communityTasks/${taskId}`, 'completions', 1);
+    const xp = Number(task.xpReward) || 50;
+    const award = await handleAwardXp(uid, { amount: xp, meta: { communityTaskId: taskId, templateId: task.templateId } }, env);
+    return { ok: true, already: false, verified: true, award };
+  }
+
+  const submissionId = String(body.submissionId || uid).trim();
+  const submission = await fsGet(projectId, token, `communityTasks/${taskId}/submissions/${submissionId}`);
+  if (!submission || submission.uid !== uid) throw new Error('Proof submission not found');
+  if (submission.status !== 'approved') {
+    return { ok: false, pending: submission.status === 'pending', rejected: submission.status === 'rejected' };
+  }
+
+  await fsPatch(projectId, token, completionPath, {
+    uid,
+    atMs: Date.now(),
+    verification: 'proof',
+    submissionId
+  }, ['uid', 'atMs', 'verification', 'submissionId']);
+  await fsAtomicIncrement(projectId, token, `communityTasks/${taskId}`, 'completions', 1);
+  const xp = Number(task.xpReward) || 50;
+  const award = await handleAwardXp(uid, { amount: xp, meta: { communityTaskId: taskId, templateId: task.templateId } }, env);
+  return { ok: true, already: false, verified: true, award };
+}
+
+/**
  * Bump a counter field on a communityTasks document.
  * action: 'join'|'leave'|'like'|'unlike'|'comment'|'complete'
  */
@@ -833,6 +897,8 @@ export default {
         result = await handleAwardBadges(uid, body, env);
       } else if (path === '/gamification/counter') {
         result = await handleCounter(uid, body, env);
+      } else if (path === '/gamification/complete-challenge') {
+        result = await handleCompleteChallenge(uid, body, env);
       } else {
         return json({ error: 'Unknown route' }, 404, origin);
       }
