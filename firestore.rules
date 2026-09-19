@@ -305,5 +305,18 @@ service cloud.firestore {
         allow create: if signedIn() && request.resource.data.uid == request.auth.uid && exists(/databases/$(database)/documents/rooms/$(roomId)/members/$(request.auth.uid)) && request.resource.data.text is string && request.resource.data.text.size() > 0 && request.resource.data.text.size() <= 500;
         allow update, delete: if false;
       }
+      match /state/{stateId} {
+        allow read: if signedIn()
+          && exists(/databases/$(database)/documents/rooms/$(roomId)/members/$(request.auth.uid));
+        allow create, update: if signedIn()
+          && exists(/databases/$(database)/documents/rooms/$(roomId)/members/$(request.auth.uid))
+          && request.resource.data.updatedBy == request.auth.uid
+          && request.resource.data.state is map
+          && request.resource.data.state.size() <= 30
+          && request.resource.data.version is number
+          && request.resource.data.updatedAtMs is number;
+        allow delete: if signedIn()
+          && get(/databases/$(database)/documents/rooms/$(roomId)).data.hostUid == request.auth.uid;
+      }
     }
 }
