@@ -3,9 +3,9 @@ import{onAuthStateChanged}from'https://www.gstatic.com/firebasejs/10.13.0/fireba
 import{doc,getDoc,setDoc}from'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 import{activeCatalogActivities}from'./activity-catalog.js?v=20260919-catalog4';
 import{activityTypeInfo}from'./activity-ui.js';
-import{renderBuildWorkspace}from'./forge-engine.js?v=20260919-engine3';
+import{renderBuildWorkspace}from'./forge-engine.js?v=20260919-engine4';
 import{getInteractiveConfig,getChallengeRounds}from'./forge-interactions.js?v=20260919-interactions3';
-import{completeTask as completeCommunityTask}from'./gamification/community-tasks.js?v=20260919-community4';
+import{completeTask as completeCommunityTask}from'./gamification/community-tasks.js?v=20260919-community5';
 import{awardXp}from'./gamification/xp-levels.js';
 import{showAchievement}from'./ui/achievements.js';
 import{escapeHtml as esc}from'./utils.js';
