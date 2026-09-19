@@ -56,7 +56,7 @@ $('creatorForm').addEventListener('submit',async e=>{
    const id=await createCommunityTask(me.uid,profile,{
      title,description:$('description').value.trim(),goal:$('goal').value.trim(),instructions:$('instructions').value.trim(),
      icon:$('icon').value.trim()||ACTIVITY_TYPES[activeType].icon,kind:activeType==='challenge'?'challenge':'community',activityType:activeType,
-     category:$('category').value.trim()||'General',mechanic:selectedMechanic||mechanicsFor(activeType)[0]?.id||'custom',durationMin:Number($('durationMin').value)||20,difficulty:$('difficulty').value,
+     category:$('category').value.trim()||'General',mechanic:selectedMechanic||'custom',templateId:selected?.id||null,durationMin:Number($('durationMin').value)||20,difficulty:$('difficulty').value,
      expiresInDays:days,startAtMs:start,endAtMs:end,target:1,metric:'manual',xpReward:Number($('xpReward')?.value)||40
    });
    status.textContent='Published ✓';
