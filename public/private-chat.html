@@ -1,58 +1,21 @@
 <!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#081018">
-<script>!function(){try{var k='trio-theme',t=localStorage.getItem(k);if(t!=='light'&&t!=='dark'){t=localStorage.getItem('trio_theme');t=(t==='light'||t==='dark')?t:null;}if(!t){t=matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';}document.documentElement.setAttribute('data-theme',t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',t==='light'?'#f8fafc':'#0a0f1a');}catch(e){}}</script>
-<title>Private Chat — Trio Day</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="preload" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
-<noscript><link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
-   <style>:root{--primary:#6366f1;--bg:#0a0f1a;--surface:#141b2e;--ink:#f1f5f9;--border:rgba(148,163,184,.12)}*{box-sizing:border-box}html{background:var(--color-bg)}body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif}.tricolor-strip{height:3px;display:flex;position:fixed;inset:0 0 auto;z-index:200}.tricolor-strip span{flex:1}.tricolor-strip span:nth-child(1){background:linear-gradient(90deg,#ff9933,#ff7700)}.tricolor-strip span:nth-child(2){background:#fff}.tricolor-strip span:nth-child(3){background:linear-gradient(90deg,#128807,#0a6305)}.private-main{width:min(680px,100%);margin:auto;padding:12px;padding-bottom:24px}.private-chat-card{height:calc(100dvh - 112px);min-height:420px;margin-bottom:12px}</style>  <link rel="stylesheet" href="styles/tokens.css">  <link rel="stylesheet" href="styles/skeleton.css">  <link rel="stylesheet" href="styles/sheet.css">  <link rel="stylesheet" href="styles/nav.css">  <link rel="stylesheet" href="styles/header.css">  <link rel="stylesheet" href="styles/components.css">
-    <link rel="stylesheet" href="style.css">
-<link rel="stylesheet" href="private-chat.css?v=33">
-<link rel="manifest" href="manifest.json">
-</head>
-<body class="private-chat-page">
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0a0f12">
+<title>Conversation — Trio Day</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'"><noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet"></noscript>
+<script>!function(){try{var t=localStorage.getItem('trio-theme')||localStorage.getItem('trio_theme');if(t!=='dark'&&t!=='light')t=matchMedia('(prefers-color-scheme:light)').matches?'light':'dark';document.documentElement.setAttribute('data-theme',t)}catch(e){}}()</script>
+<link rel="stylesheet" href="styles/tokens.css"><link rel="stylesheet" href="styles/skeleton.css"><link rel="stylesheet" href="styles/sheet.css"><link rel="stylesheet" href="styles/nav.css"><link rel="stylesheet" href="styles/header.css"><link rel="stylesheet" href="styles/components.css"><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="private-chat.css?v=35"><link rel="manifest" href="manifest.json">
+</head><body class="private-chat-page">
 <div class="tricolor-strip"><span></span><span></span><span></span></div>
-<header class="topbar private-topbar">
-  <div class="topbar-inner">
-    <a class="back-chat" href="chat.html" aria-label="Back to chats">‹</a>
-    <a id="peerProfile" class="peer-top" href="#" aria-label="Open profile">
-      <span id="peerAvatar" class="peer-avatar">U</span>
-      <span class="peer-copy"><strong id="peerName">Loading...</strong><small id="peerId">TRIO-</small></span>
-    </a>
-    <div class="private-top-actions"><a id="peerProfileIcon" class="icon-link" href="#" aria-label="Profile">◉</a><a class="icon-link" href="chat.html" aria-label="Back to chats">☰</a></div>
-  </div>
-</header>
-
-<main class="private-main">
-  <section class="private-chat-card">
-    <div id="privateMessages" class="private-messages" aria-live="polite"></div>
-    <form id="privateForm" class="chat-input-row">
-      <input id="privateInput" maxlength="500" autocomplete="off" placeholder="Message…">
-      <button class="btn primary" type="submit">Send</button>
-    </form>
-  </section>
-</main>
-
-<nav class="bottom-nav" aria-label="Primary navigation">
-        <div class="nav-row">
-        <a class="nav-btn" href="index.html" data-nav="today" aria-label="Today"><span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg></span><span class="nav-label">Today</span></a>
-        <a class="nav-btn" href="all-users.html" data-nav="discover" aria-label="Discover"><span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18 15 15 0 0 1 0-18z"/></svg></span><span class="nav-label">Discover</span></a>
-        <a class="nav-btn" href="tasks.html" data-nav="do" aria-label="Do"><span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z"/></svg></span><span class="nav-label">Do</span></a>
-        <a class="nav-btn active" href="chat.html" data-nav="chat" aria-label="Chat"><span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span><span class="nav-label">Chat</span></a>
-        <a class="nav-btn" href="profile.html" data-nav="you" aria-label="You"><span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="12" cy="8" r="4"/><path d="M4 19a8 8 0 0 1 16 0"/></svg></span><span class="nav-label">You</span></a>
-        </div>
-    </nav>
-<script type="module" src="auth-guard.js"></script>
-<script type="module" src="private-chat.js"></script>
-<script type="module" src="auth-ui.js"></script>
-  <script type="module" src="theme.js"></script>
-<script type="module" src="ui/header.js"></script>
-  <script type="module" src="ui/nav.js"></script>
-  <script type="module" src="ui/sheet.js"></script>
-</body>
-</html>
+<header class="topbar private-topbar"><div class="topbar-inner">
+<a class="back-chat" href="chat.html" aria-label="Back to messages">‹</a>
+<a id="peerProfile" class="peer-top" href="#" aria-label="Open profile"><span id="peerAvatar" class="peer-avatar">U</span><span class="peer-copy"><strong id="peerName">Loading...</strong><small id="peerId">TRIO-</small></span></a>
+<div class="private-top-actions"><a id="peerProfileIcon" class="icon-link" href="#" aria-label="Open profile">◉</a></div>
+</div></header>
+<main class="private-main"><section class="private-chat-card">
+<div id="privateMessages" class="private-messages" aria-live="polite"></div>
+<form id="privateForm" class="chat-input-row"><input id="privateInput" maxlength="500" autocomplete="off" placeholder="Write a message…"><button class="btn primary" type="submit">Send</button></form>
+</section></main>
+<nav class="bottom-nav" aria-label="Primary navigation"><div class="nav-row"></div></nav>
+<script type="module" src="auth-guard.js"></script><script type="module" src="private-chat.js?v=35"></script><script type="module" src="auth-ui.js"></script><script type="module" src="theme.js"></script><script type="module" src="ui/header.js"></script><script type="module" src="ui/nav.js?v=2"></script><script type="module" src="ui/sheet.js"></script>
+</body></html>
