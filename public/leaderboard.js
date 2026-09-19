@@ -1,5 +1,4 @@
 import { auth, db } from './firebase-init.js';
-import { auth, db } from './firebase-init.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
 import { collection, getDocs } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 import { getLeaderboard, currentBoardIds, friendsLeaderboard } from './gamification/leaderboards.js';
