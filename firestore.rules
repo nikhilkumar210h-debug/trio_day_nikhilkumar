@@ -329,6 +329,16 @@ service cloud.firestore {
           )
           && request.resource.data.memberCount >= 0
           && request.resource.data.memberCount <= request.resource.data.maxPlayers
+          && (
+            (
+              request.resource.data.memberCount == resource.data.memberCount + 1
+              && getAfter(/databases/$(database)/documents/rooms/$(roomId)/members/$(request.auth.uid)).exists()
+            )
+            || (
+              request.resource.data.memberCount == resource.data.memberCount - 1
+              && !getAfter(/databases/$(database)/documents/rooms/$(roomId)/members/$(request.auth.uid)).exists()
+            )
+          )
         )
       );
       allow delete: if signedIn() && resource.data.hostUid == request.auth.uid;
