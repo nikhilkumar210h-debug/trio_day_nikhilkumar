@@ -85,11 +85,13 @@ async function getCachedUserPosts(uid) {
     console.log('[Profile] Sample post keys:', samples.map(s => Object.keys(s)));
     
     const snap = await getDocs(
-      query(collection(db, 'posts'), where('uid', '==', uid), where('isStory', '==', false), orderBy('createdAtMs', 'desc'), limit(50))
+      query(collection(db, 'posts'), where('uid', '==', uid), limit(80))
     );
-    console.log('[Profile] Raw docs:', snap.docs.map(d => ({ id: d.id, ...d.data() })));
-    const posts = snap.docs.map(d => ({ ...d.data(), _id: d.id })).filter(p => p.type !== 'story');
-    console.log('[Profile] Fetched posts:', posts.length, posts);
+    const posts = snap.docs
+      .map(d => ({ ...d.data(), _id: d.id }))
+      .filter(p => p.type !== 'story' && p.isStory !== true)
+      .sort((a,b) => (Number(b.createdAtMs)||0) - (Number(a.createdAtMs)||0))
+      .slice(0, 50);
     trioCache.set(key, posts, trioCache.TTL.SHORT);
     return posts;
   } catch (err) {
@@ -197,7 +199,7 @@ async function openProfileMenu(userData) {
           <span>🔐</span> Change Password
         </button>
         <button type="button" class="profile-menu-item" data-action="privacy">
-          <span>🔒</span> Privacy Settings
+          <span>🔒</span> Privacy Policy
         </button>
         <label class="profile-menu-item profile-menu-toggle" style="cursor:pointer">
           <span>🔊</span> Sound Effects
@@ -252,20 +254,7 @@ async function openProfileMenu(userData) {
           showToast(err.message, 'error');
         }
       } else if (action === 'privacy') {
-        // Toggle emailHidden
-        const newEmailHidden = !userData.emailHidden;
-        try {
-          await updateDoc(doc(db, 'users', me.uid), { emailHidden: newEmailHidden, updatedAt: serverTimestamp() });
-          trioCache.invalidate(`user_${me.uid}`);
-          const { showToast } = await import('./ui/toast.js');
-          showToast(newEmailHidden ? 'Email hidden kar diya' : 'Email visible kar diya');
-          await new Promise(r => setTimeout(r, 300));
-          await loadProfile(me.uid);
-        } catch (err) {
-          console.error(err);
-          const { showToast } = await import('./ui/toast.js');
-          showToast('Failed to update privacy setting', 'error');
-        }
+        location.href = 'privacy-policy.html';
       } else if (action === 'install') {
         // Trigger install prompt
         const event = new CustomEvent('app-install-prompt');
