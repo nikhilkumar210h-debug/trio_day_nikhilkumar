@@ -86,6 +86,33 @@ export async function listCommunityTasks({ kind = null, status = 'active', max =
   }
 }
 
+export async function createMysteryCommunityTask(uid, profile, data) {
+  if (!uid) throw new Error('Login required to create a challenge');
+  const user = auth.currentUser;
+  if (!user || user.uid !== uid) throw new Error('Not authenticated');
+
+  const result = await workerPost('/gamification/create-mystery', {
+    title: String(data.title || '').trim(),
+    category: data.category,
+    difficulty: data.difficulty,
+    durationMinutes: Number(data.durationMinutes) || 30,
+    xpReward: Number(data.xpReward) || 100,
+    startAtMs: Number(data.startAtMs) || Date.now(),
+    endAtMs: Number(data.endAtMs) || (Date.now() + 7 * 86400000),
+    caseData: data.caseData,
+    solution: data.solution
+  }, user);
+
+  const taskId = result.taskId;
+  if (!taskId) throw new Error('Mystery challenge was not created');
+  trioCache.invalidatePrefix('ctasks_');
+  trioCache.invalidatePrefix('communityTasks_');
+
+  // Creator is automatically accepted so the new case can be previewed immediately.
+  await joinTask(taskId, uid, profile).catch(() => {});
+  return taskId;
+}
+
 export async function getCommunityTask(id) {
   const snap = await getDoc(doc(db, 'communityTasks', id));
   return snap.exists() ? { id: snap.id, ...snap.data() } : null;
