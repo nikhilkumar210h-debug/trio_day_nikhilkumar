@@ -15,6 +15,7 @@ import { makeUserId, escapeHtml, initials, formatTime, getFilterCSS } from './ut
 import { getMergedTasks, manualBump } from './gamification/progress.js';
 import { listCommunityTasks, isMember } from './gamification/community-tasks.js';
 import { SYSTEM_BADGES } from './gamification/constants.js';
+import { activityCardHtml, normalizeActivityType } from './activity-ui.js';
 
 const $ = id => document.getElementById(id);
 let currentUser = null;
@@ -267,43 +268,41 @@ async function renderFocusAndContinue(uid) {
 
   if (!focusPrimary || !focusSecondary) return;
 
-  focusPrimary.innerHTML = '<div class="focus-skeleton" style="display:flex; gap:12px; align-items:center; padding:16px; background:var(--color-surface); border:1px solid var(--color-border); border-radius:var(--radius-lg);"><div class="nkm-skeleton" style="width:48px; height:48px; border-radius:var(--radius-md); flex:none"></div><div style="flex:1; display:grid; gap:8px"><div class="nkm-skeleton" style="height:18px; width:60%"></div><div class="nkm-skeleton" style="height:14px; width:80%"></div><div class="nkm-skeleton" style="height:14px; width:40%"></div></div><div class="nkm-skeleton" style="width:100px; height:40px; border-radius:var(--radius-md); flex:none"></div></div>';
+  focusPrimary.innerHTML = '<div class="focus-skeleton" style="height:180px;border-radius:var(--radius-lg);"></div>';
   focusSecondary.innerHTML = '';
 
   try {
-    const [dailyTasks, weeklyTasks] = await Promise.all([
+    const [activitySnap, dailyTasks, weeklyTasks] = await Promise.all([
+      listCommunityTasks({ status: 'active', max: 24 }),
       getMergedTasks(uid, 'daily'),
       getMergedTasks(uid, 'weekly'),
     ]);
 
-    const allTasks = [...dailyTasks, ...weeklyTasks];
-    const incomplete = allTasks.filter(t => !t.done);
-    const completed = allTasks.filter(t => t.done);
+    const meaningful = activitySnap
+      .filter(t => !t.hidden)
+      .map(t => ({ ...t, activityType: normalizeActivityType(t) }))
+      .filter(t => ['puzzle','build','learn','challenge'].includes(t.activityType));
 
-    // Primary: first incomplete daily task, or first incomplete weekly
-    const primaryTask = incomplete.find(t => t.cadence === 'daily') || incomplete[0];
+    const focusActivities = meaningful.slice(0, 3);
+    const primaryActivity = focusActivities[0];
 
-    if (primaryTask) {
-      focusPrimary.innerHTML = buildFocusCard(primaryTask, true);
-      attachFocusCTA(primaryTask, uid, focusPrimary.querySelector('.focus-cta'));
-    } else if (completed.length) {
-      focusPrimary.innerHTML = buildFocusCard(completed[0], true);
-      const cta = focusPrimary.querySelector('.focus-cta');
-      if (cta) { cta.classList.add('completed'); cta.textContent = 'Done ✓'; cta.disabled = true; }
+    if (primaryActivity) {
+      focusPrimary.innerHTML = activityCardHtml(primaryActivity);
+      focusPrimary.classList.add('focus-activity-wrap');
     } else {
-      focusPrimary.innerHTML = '<div style="padding:16px; text-align:center; color:var(--color-ink-muted);">No tasks today — create one in <a href="tasks.html" style="color:var(--primary);">Do</a></div>';
+      focusPrimary.innerHTML = '<div class="focus-empty-card"><strong>Make today count.</strong><p>Pick one real activity from Discover and spend a few minutes solving, learning or building.</p><a class="nkm-btn nkm-btn--primary" href="all-users.html">Explore activities</a></div>';
+      focusPrimary.classList.remove('focus-activity-wrap');
     }
 
-    // Secondary: up to 3 other incomplete tasks
-    const secondaryTasks = incomplete.filter(t => t !== primaryTask).slice(0, 3);
-    if (secondaryTasks.length) {
-      focusSecondary.innerHTML = secondaryTasks.map(t => buildFocusCard(t, false)).join('');
-      focusSecondary.querySelectorAll('.focus-cta').forEach((btn, i) => {
-        attachFocusCTA(secondaryTasks[i], uid, btn);
-      });
+    if (focusActivities.length > 1) {
+      focusSecondary.innerHTML = focusActivities.slice(1).map(t => activityCardHtml(t, { compact: true })).join('');
+      focusSecondary.classList.add('focus-activity-wrap');
+    } else {
+      focusSecondary.classList.remove('focus-activity-wrap');
     }
 
-    // Continue: incomplete tasks with progress > 0
+    // Personal progress stays useful, but no longer dominates Today's Focus.
+    const allTasks = [...dailyTasks, ...weeklyTasks];
     const inProgress = allTasks.filter(t => !t.done && (t.count || 0) > 0);
     if (continueList && inProgress.length) {
       continueSection.hidden = false;
@@ -316,7 +315,7 @@ async function renderFocusAndContinue(uid) {
     }
   } catch (err) {
     console.error('renderFocusAndContinue failed', err);
-    focusPrimary.innerHTML = '<div style="padding:16px; text-align:center; color:var(--color-ink-muted);">Could not load focus</div>';
+    focusPrimary.innerHTML = '<div class="focus-empty-card"><strong>Focus is loading.</strong><p>Open Discover to choose something meaningful to do today.</p><a class="nkm-btn nkm-btn--primary" href="all-users.html">Open Discover</a></div>';
   }
 }
 
