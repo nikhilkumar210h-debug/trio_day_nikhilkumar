@@ -457,7 +457,7 @@ service cloud.firestore {
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['title','status','endedAtMs'])
         )
         || (
-          get(/databases/$(database)/documents/rooms/$(roomId)/members/$(request.auth.uid)).exists()
+          exists(/databases/$(database)/documents/rooms/$(roomId)/members/$(request.auth.uid))
           && request.resource.data.hostUid == resource.data.hostUid
           && request.resource.data.activityType == resource.data.activityType
           && request.resource.data.activitySource == resource.data.activitySource
@@ -474,11 +474,11 @@ service cloud.firestore {
           && (
             (
               request.resource.data.memberCount == resource.data.memberCount + 1
-              && getAfter(/databases/$(database)/documents/rooms/$(roomId)/members/$(request.auth.uid)).exists()
+              && existsAfter(/databases/$(database)/documents/rooms/$(roomId)/members/$(request.auth.uid))
             )
             || (
               request.resource.data.memberCount == resource.data.memberCount - 1
-              && !getAfter(/databases/$(database)/documents/rooms/$(roomId)/members/$(request.auth.uid)).exists()
+              && !existsAfter(/databases/$(database)/documents/rooms/$(roomId)/members/$(request.auth.uid))
             )
           )
         )
