@@ -98,12 +98,19 @@ export async function createCommunityTask(uid, profile, data) {
   const now = Date.now();
   const startAtMs = Number(data.startAtMs) || now;
   const endAtMs   = Number(data.endAtMs)   || (now + 7 * 86400000);
-  const kind = ['community', 'challenge', 'seasonal'].includes(data.kind) ? data.kind : 'challenge';
+  const kind = 'challenge';
+  const category = ['Logic','Observation','Speed','Reasoning','Memory','Decision','Knowledge'].includes(data.category) ? data.category : 'Reasoning';
+  const difficulty = ['Easy','Medium','Hard'].includes(data.difficulty) ? data.difficulty : 'Medium';
+  const durationMinutes = Math.max(1, Math.min(180, Number(data.durationMinutes) || 15));
   const payload = {
     title:        String(data.title       || 'Community challenge').slice(0, 100),
     description:  String(data.description || '').slice(0, 500),
     icon:         String(data.icon        || '🎯').slice(0, 8),
     kind,
+    category,
+    difficulty,
+    durationMinutes,
+    objective: String(data.objective || data.description || '').slice(0, 180),
     templateId:   data.templateId || null,
     metric:       data.metric     || 'manual',
     target:       Math.max(1, Number(data.target)    || 1),
@@ -119,6 +126,9 @@ export async function createCommunityTask(uid, profile, data) {
     hidden:   false,
     // Counters start at 0; Worker bumps these — no client increment here
     joins:       0,
+    solvingNow:  0,
+    ratingAverage: 0,
+    ratingCount: 0,
     likes:       0,
     comments:    0,
     completions: 0,
