@@ -86,10 +86,13 @@ async function render() {
   const completionSnap = me ? await getDoc(doc(db, 'communityTasks', taskId, 'completions', me.uid)) : null;
   const completed = !!completionSnap?.exists();
   const actions = $('actions');
+  const startedKey = me ? `challenge_started_${me.uid}_${taskId}` : '';
+  const started = startedKey ? localStorage.getItem(startedKey) === '1' : false;
   actions.innerHTML = `
-    <button type="button" class="btn primary" id="joinBtn">${joined ? 'Leave' : 'Join'}</button>
+    <button type="button" class="btn primary" id="joinBtn">${joined ? 'REJECT' : 'ACCEPT'}</button>
+    ${joined && !completed ? `<button type="button" class="btn primary" id="startBtn">${started ? 'Continue Solo' : 'Start Solo'}</button>` : ''}
     <button type="button" class="btn secondary" id="likeBtn">Like</button>
-    <button type="button" class="btn primary" id="completeBtn" ${completed ? 'disabled' : ''}>${completed ? 'Completed ✓' : 'Complete (+XP)'}</button>
+    <button type="button" class="btn primary" id="completeBtn" ${(!started || completed) ? 'disabled' : ''}>${completed ? 'Completed ✓' : 'Finish Challenge (+XP)'}</button>
     ${completed ? '<button type="button" class="btn secondary" id="storyBtn">📸 Share to Story</button>' : ''}
     <button type="button" class="btn secondary" id="followBtn">Follow creator</button>
     <a class="btn secondary" href="tasks.html">Back</a>
@@ -102,10 +105,21 @@ async function render() {
 
   $('joinBtn').onclick = async () => {
     if (!me) return alert('Login first');
-    if (joined) await leaveTask(taskId, me.uid);
-    else await joinTask(taskId, me.uid, profile);
+    if (joined) {
+      const ok = confirm('Reject this challenge? Your accepted state will be removed.');
+      if (!ok) return;
+      await leaveTask(taskId, me.uid);
+      if (startedKey) localStorage.removeItem(startedKey);
+    } else {
+      await joinTask(taskId, me.uid, profile);
+    }
     await render();
   };
+  $('startBtn')?.addEventListener('click', () => {
+    if (!me || !joined || completed) return;
+    localStorage.setItem(startedKey, '1');
+    render();
+  });
   $('likeBtn').onclick = async () => {
     if (!me) return alert('Login first');
     await toggleLike(taskId, me.uid);
