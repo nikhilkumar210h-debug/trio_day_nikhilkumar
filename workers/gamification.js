@@ -816,30 +816,66 @@ async function handleAwardBadges(uid, body, env) {
  * action: 'join'|'leave'|'like'|'unlike'|'comment'|'complete'
  */
 async function handleCounter(uid, body, env) {
-  const taskId = String(body.taskId || '').trim();
-  const action = String(body.action || '').trim();
-
+  const taskId = String(body?.taskId || '').trim();
+  const action = String(body?.action || '').trim();
+  const eventId = String(body?.eventId || '').trim();
   if (!taskId) throw new Error('taskId required');
+  if (!eventId) throw new Error('eventId required');
 
-  const validActions = ['join', 'leave', 'like', 'unlike', 'comment', 'complete'];
-  if (!validActions.includes(action)) throw new Error(`Invalid action: ${action}`);
+  const validActions = ['join','leave','like','unlike','comment','complete'];
+  if (!validActions.includes(action)) throw new Error('Invalid action: ' + action);
 
   const projectId = env.FIREBASE_PROJECT_ID;
   const token = await getAccessToken(env);
+  const eventKey = action === 'unlike' ? 'like_' + uid + '_' + eventId :
+                   action === 'leave' ? 'join_' + uid + '_' + eventId :
+                   action + '_' + uid + '_' + eventId;
+  const eventPath = 'communityTasks/' + taskId + '/counterEvents/' + eventKey.replace(/[^A-Za-z0-9_-]/g, '_');
+
+  let verified = false;
+  if (action === 'join') {
+    const member = await fsGet(projectId, token, 'communityTasks/' + taskId + '/members/' + uid);
+    verified = !!member && String(member.joinedAtMs) === eventId;
+  } else if (action === 'like') {
+    const like = await fsGet(projectId, token, 'communityTasks/' + taskId + '/likes/' + uid);
+    verified = !!like && String(like.atMs) === eventId;
+  } else if (action === 'comment') {
+    const comment = await fsGet(projectId, token, 'communityTasks/' + taskId + '/comments/' + eventId);
+    verified = !!comment && comment.uid === uid;
+  } else if (action === 'complete') {
+    const completion = await fsGet(projectId, token, 'communityTasks/' + taskId + '/completions/' + uid);
+    verified = !!completion && String(completion.atMs) === eventId;
+  } else {
+    const previous = await fsGet(projectId, token, eventPath);
+    verified = !!previous && previous.uid === uid;
+  }
+
+  if (!verified) throw new Error('Counter event could not be verified');
+
+  if (action === 'unlike' || action === 'leave') {
+    await fsDelete(projectId, token, eventPath);
+    await fsAtomicIncrement(
+      projectId,
+      token,
+      'communityTasks/' + taskId,
+      action === 'unlike' ? 'likes' : 'joins',
+      -1
+    );
+    return { ok:true, taskId, action, eventId, delta:-1 };
+  }
+
+  const created = await fsCreateDoc(projectId, token, eventPath, {
+    uid, action, eventId, createdAtMs: Date.now()
+  });
+  if (!created) {
+    return { ok:true, taskId, action, eventId, delta:0, alreadyCounted:true };
+  }
 
   const fieldMap = {
-    join:     { field: 'joins',       delta: 1 },
-    leave:    { field: 'joins',       delta: -1 },
-    like:     { field: 'likes',       delta: 1 },
-    unlike:   { field: 'likes',       delta: -1 },
-    comment:  { field: 'comments',    delta: 1 },
-    complete: { field: 'completions', delta: 1 }
+    join:'joins', like:'likes', comment:'comments', complete:'completions'
   };
-
-  const { field, delta } = fieldMap[action];
-  await fsAtomicIncrement(projectId, token, `communityTasks/${taskId}`, field, delta);
-
-  return { ok: true, taskId, action, field, delta };
+  await fsAtomicIncrement(projectId, token, 'communityTasks/' + taskId, fieldMap[action], 1);
+  return { ok:true, taskId, action, eventId, delta:1 };
 }
 
 // ─── Request router ───────────────────────────────────────────────────────────
