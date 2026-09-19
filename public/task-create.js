@@ -265,7 +265,7 @@ function renderLanes() {
     selected=null;
     startChosen=false;
     interactionDraft=null;
-    buildCustomizerStage=0;quizCustomizerStage=0;challengeRound=0;
+    quizCustomizerStage=0;challengeRound=0;
     resetLaneDraft();
     renderLanes();renderTemplates();renderInteractionEditor();setEditorStage(0);renderPreview();
   }));
