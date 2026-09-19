@@ -73,11 +73,11 @@ export function activityCardHtml(task, { compact=false } = {}){
 export function activityCategoryCard(type){
   const info = ACTIVITY_TYPES[type];
   return `
-    <button type="button" class="activity-category activity-category--${info.tone}" data-activity-filter="${type}">
+    <a class="activity-category activity-category--${info.tone}" href="${type}.html" aria-label="Explore ${info.label}">
       <span class="activity-category-icon">${info.icon}</span>
       <span class="activity-category-copy"><strong>${info.label}</strong><small>${info.desc}</small></span>
       <span class="activity-category-arrow">→</span>
-    </button>`;
+    </a>`;
 }
 
 export function roomCardHtml(room){
