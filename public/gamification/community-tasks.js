@@ -364,7 +364,18 @@ export async function completeTask(taskId, uid, profile, evidence = null) {
           ? {
               buildEvidence: {
                 mechanic: String(evidence.buildEvidence.mechanic || '').slice(0, 40),
-                state: String(evidence.buildEvidence.state || '').slice(0, 1600)
+                state: evidence.buildEvidence.state && typeof evidence.buildEvidence.state === 'object'
+                  ? {
+                      order: Array.isArray(evidence.buildEvidence.state.order) ? evidence.buildEvidence.state.order.slice(0, 8) : undefined,
+                      allocation: Array.isArray(evidence.buildEvidence.state.allocation) ? evidence.buildEvidence.state.allocation.slice(0, 8).map(v => Math.max(0, Number(v) || 0)) : undefined,
+                      positions: evidence.buildEvidence.state.positions && typeof evidence.buildEvidence.state.positions === 'object'
+                        ? Object.fromEntries(Object.entries(evidence.buildEvidence.state.positions).slice(0, 4).map(([k,v]) => [String(k).slice(0, 40), Number(v)]))
+                        : undefined,
+                      assign: evidence.buildEvidence.state.assign && typeof evidence.buildEvidence.state.assign === 'object'
+                        ? Object.fromEntries(Object.entries(evidence.buildEvidence.state.assign).slice(0, 4).map(([k,v]) => [String(k).slice(0, 40), String(v || '').slice(0, 40)]))
+                        : undefined
+                    }
+                  : null
               }
             }
           : {})
