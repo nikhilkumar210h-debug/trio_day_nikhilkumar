@@ -163,14 +163,22 @@ async function render() {
       <button type="button" class="btn secondary danger-action" id="removeBtn">Remove</button>
     ` : ''}`;
 
-  if (task.templateId) {
+  const hasInteractiveSetup = !!(task.interaction || task.templateId || task.activityType === 'game');
+  if (task.templateId || task.interaction) {
     const complete = $('completeBtn');
     if (complete) {
       const open = document.createElement('a');
       open.className = 'btn primary';
       open.href = 'activity.html?id=' + encodeURIComponent(taskId) + '&source=community';
-      open.textContent = 'Open activity';
+      open.textContent = task.activityType === 'game' ? 'Open room activity' : 'Open activity';
       complete.replaceWith(open);
+    }
+  } else if (!hasInteractiveSetup && task.activityType !== 'game') {
+    const complete = $('completeBtn');
+    if (complete) {
+      complete.disabled = true;
+      complete.textContent = 'Activity needs setup';
+      complete.title = 'This older activity has no interactive setup and cannot be completed here.';
     }
   }
 
