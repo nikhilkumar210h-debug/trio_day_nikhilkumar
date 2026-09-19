@@ -112,10 +112,14 @@ function catalogXp(activityId) {
 }
 
 function catalogCycleDays(activityId) {
-  const id = String(activityId || '').trim().toLowerCase();
-  if (['p4','p7','p8','p9','p10','p12','b3','b4','b6','b7','b8','b10','b11','b12','l4','l5','l7','l8','l9','l10','l11','c5','c6','c9','c10','g6','g8','g10','g11'].includes(id)) return 30;
-  if (['p2','p5','p6','b1','b2','b5','b9','c1','c3','c7','c8','c11','c12','g1','g2','g3','g4','g5','g7','g9','g12'].includes(id)) return 14;
-  return 21;
+  const cycles = {
+    p1:14,p2:21,p3:14,p4:30,p5:14,p6:14,p7:21,p8:30,p9:30,p10:21,p11:14,p12:40,
+    b1:21,b2:14,b3:21,b4:30,b5:21,b6:30,b7:30,b8:21,b9:14,b10:21,b11:30,b12:21,
+    l1:30,l2:21,l3:21,l4:30,l5:30,l6:21,l7:30,l8:30,l9:21,l10:40,l11:40,l12:14,
+    c1:14,c2:21,c3:14,c4:30,c5:21,c6:30,c7:14,c8:21,c9:21,c10:30,c11:14,c12:21,
+    g1:14,g2:14,g3:21,g4:14,g5:14,g6:21,g7:14,g8:21,g9:14,g10:21,g11:14,g12:21
+  };
+  return cycles[String(activityId || '').trim().toLowerCase()] || 21;
 }
 
 function catalogCycleKey(activityId, nowMs) {
