@@ -3,6 +3,7 @@ import{onAuthStateChanged}from'https://www.gstatic.com/firebasejs/10.13.0/fireba
 import{collection,query,orderBy,limit,onSnapshot,getDoc,getDocs,doc,setDoc,deleteDoc,addDoc,updateDoc}from'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 import{escapeHtml as esc,avatarHtml}from'./utils.js';
 import{activityCardHtml}from'./activity-ui.js';
+import{activeCatalogActivities}from'./activity-catalog.js';
 const $=id=>document.getElementById(id),id=new URLSearchParams(location.search).get('id');
 let me=null,p={},room=null;
 function fail(t){$('roomStatus').textContent=t;$('roomStatus').classList.add('error')}
@@ -22,8 +23,14 @@ async function load(){
  $('endBtn').hidden=room.hostUid!==me.uid;
  $('roomPeopleBadge').textContent='… / '+(room.maxPlayers||3);
  if(room.challengeId){
-   const ts=await getDoc(doc(db,'communityTasks',room.challengeId));
-   if(ts.exists()){$('roomActivity').innerHTML=activityCardHtml({id:ts.id,...ts.data()},{compact:true});$('workspaceTitle').textContent=ts.data().title||'Activity workspace';$('challengeLink').href='task-detail.html?id='+encodeURIComponent(room.challengeId);}
+   let activity=null;
+   if(room.activitySource==='catalog') activity=activeCatalogActivities().find(x=>x.id===room.challengeId)||null;
+   else {const ts=await getDoc(doc(db,'communityTasks',room.challengeId));if(ts.exists())activity={id:ts.id,...ts.data(),source:'community'};}
+   if(activity){
+     $('roomActivity').innerHTML=activityCardHtml(activity,{compact:true});
+     $('workspaceTitle').textContent=activity.title||'Activity workspace';
+     $('challengeLink').href=activity.source==='catalog'?'activity.html?id='+encodeURIComponent(room.challengeId):'task-detail.html?id='+encodeURIComponent(room.challengeId);
+   }
  }
  onSnapshot(query(collection(db,'rooms',id,'members'),orderBy('joinedAtMs','asc'),limit(20)),s=>{
    $('roomPeopleBadge').textContent=s.size+' / '+(room.maxPlayers||3);
