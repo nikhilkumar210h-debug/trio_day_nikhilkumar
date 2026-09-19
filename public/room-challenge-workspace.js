@@ -8,7 +8,7 @@ const esc = value => {
 };
 
 export async function mountSharedChallengeWorkspace(root, { db, roomId, activity, me, hostUid }) {
-  const rounds = getChallengeRounds((Number(String(activity.id).replace(/\D/g, '')) || 0) % 10, 5);
+  const rounds = getChallengeRounds((Number(String(activity.engineId || activity.id).replace(/\D/g, '')) || 0) % 10, 5);
   const ref = doc(db, 'rooms', roomId, 'state', 'main');
   const roundSeconds = Math.max(30, Math.min(120, Math.round((Number(activity.durationMin || 20) * 60) / rounds.length)));
   const base = {
