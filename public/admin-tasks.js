@@ -123,7 +123,7 @@ onAuthStateChanged(auth, async user => {
       }, { isAdmin: true });
       statusEl.textContent = 'Template saved ✅';
       showToast('Template saved successfully! ✅');
-      setTimeout(() => { location.href = 'tasks.html'; }, 1400);
+      setTimeout(() => { location.href = 'all-users.html'; }, 1400);
     } catch (err) {
       console.error(err);
       const msg = err.message || 'Save failed';
