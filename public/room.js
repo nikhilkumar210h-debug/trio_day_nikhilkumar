@@ -3,6 +3,7 @@ import{onAuthStateChanged}from'https://www.gstatic.com/firebasejs/10.13.0/fireba
 import{collection,query,orderBy,limit,onSnapshot,getDoc,getDocs,doc,setDoc,deleteDoc,addDoc,updateDoc,runTransaction}from'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 import{escapeHtml as esc,avatarHtml}from'./utils.js';
 import{activityCardHtml}from'./activity-ui.js';
+import{showToast}from'./ui/toast.js';
 import{activeCatalogActivities}from'./activity-catalog.js';
 import{mountSharedBuildWorkspace}from'./room-workspace.js';
 import{mountSharedQuizWorkspace}from'./room-quiz-workspace.js';
@@ -71,7 +72,7 @@ async function load(){
 }
 $('messageForm').onsubmit=async e=>{e.preventDefault();const i=$('messageInput'),t=i.value.trim();if(!t)return;await addDoc(collection(db,'rooms',id,'messages'),{uid:me.uid,name:p.name||me.displayName||'User',text:t.slice(0,500),createdAtMs:Date.now()});i.value='';i.focus()};
 $('leaveBtn').onclick=async()=>{
-  if(room?.hostUid===me.uid)return alert('Host must end the room.');
+  if(room?.hostUid===me.uid)return showToast('Host must end the room.', 'warn');
   try{
     await runTransaction(db,async transaction=>{
       const roomRef=doc(db,'rooms',id);
@@ -86,7 +87,7 @@ $('leaveBtn').onclick=async()=>{
     });
     location.href='rooms.html';
   }catch(err){
-    alert(err.message||'Could not leave the room.');
+    showToast(err.message||'Could not leave the room.', 'error');
   }
 };
 $('endBtn').onclick=async()=>{if(room?.hostUid!==me.uid)return;await updateDoc(doc(db,'rooms',id),{status:'closed',endedAtMs:Date.now()});location.href='rooms.html'};
