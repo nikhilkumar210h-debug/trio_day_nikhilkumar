@@ -952,16 +952,6 @@ form?.addEventListener('submit', async e => {
       }
       mediaUrl = await uploadPostImage(currentUser.uid, fileToUpload); setStatus('Uploading…');
     }
-    let allowedUids = [];
-    if (storyPrivacy === 'friends') {
-      const [followingSnap, followersSnap] = await Promise.all([
-        getDocs(query(collection(db, 'users', currentUser.uid, 'following'), limit(500))),
-        getDocs(query(collection(db, 'users', currentUser.uid, 'followers'), limit(500)))
-      ]);
-      const following = new Set(followingSnap.docs.map(d => d.id));
-      const mutual = followersSnap.docs.map(d => d.id).filter(id => following.has(id));
-      allowedUids = [currentUser.uid, ...mutual].slice(0, 500);
-    }
     await addDoc(collection(db, 'posts'), {
       name: me?.name || currentUser.displayName || 'User',
       userId: me?.userId || makeUserId(currentUser.uid),
