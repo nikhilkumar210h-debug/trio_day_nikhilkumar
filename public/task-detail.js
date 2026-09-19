@@ -101,27 +101,45 @@ async function render() {
     $('actions').innerHTML = '';
     return;
   }
-  const ends = task.endAtMs ? new Date(task.endAtMs).toLocaleString() : '—';
+  const ends = task.endAtMs ? new Date(task.endAtMs).toLocaleDateString() : '—';
+  const typeLabel = String(task.activityType || task.kind || 'activity');
+  const remaining = task.endAtMs ? Math.max(0, Math.ceil((Number(task.endAtMs)-Date.now())/86400000)) : 30;
+  const instructionItems = String(task.instructions || '').split(/\.|\n/).map(x => x.trim()).filter(Boolean);
   $('detail').innerHTML = `
-    <span class="eyebrow">${esc(task.kind || 'challenge')} · ${esc(task.status || 'active')}${task.featured ? ' · featured' : ''}${task.hidden ? ' · hidden' : ''}</span>
-    <h1 style="margin:0.35rem 0">${esc(task.icon || '🏁')} ${esc(task.title)}</h1>
-    <p>${esc(task.description || '')}</p>
-    <div class="community-stats">
-      <span>${task.joins || 0} joined</span>
-      <span>${task.likes || 0} likes</span>
-      <span>${task.comments || 0} comments</span>
-      <span>${task.completions || 0} completed</span>
-      <span>+${task.xpReward || 0} XP</span>
+    <div class="detail-activity-hero">
+      <div class="detail-activity-icon">${esc(task.icon || '🎯')}</div>
+      <div class="detail-activity-copy">
+        <span class="activity-detail-kicker">${esc(typeLabel)} · ${esc(task.category || 'Community')}</span>
+        <h1>${esc(task.title)}</h1>
+        <p>${esc(task.description || '')}</p>
+      </div>
     </div>
-    <p style="font-size:0.8rem;opacity:0.7;margin-top:0.75rem">
-      By <a href="profile.html?uid=${encodeURIComponent(task.creatorUid || '')}">${esc(task.creatorName || 'User')}</a>
-      · Ends ${esc(ends)}
-    </p>`;
+    <div class="activity-detail-chips">
+      <span class="activity-detail-chip">⏱ ${Number(task.durationMin)||20} min</span>
+      <span class="activity-detail-chip">${esc(task.difficulty || 'Medium')}</span>
+      <span class="activity-detail-chip">⌛ ${remaining}d left</span>
+      <span class="activity-detail-chip">👥 ${Number(task.joins)||0} joined</span>
+    </div>
+    <div class="community-detail-body">
+      <div>
+        <h2>Success looks like</h2>
+        <div class="activity-brief">${esc(task.goal || 'Complete the activity and be able to explain what you did.')}</div>
+        <h2 style="margin-top:18px">How it works</h2>
+        <ul>${instructionItems.length ? instructionItems.map(x => '<li>'+esc(x)+'.</li>').join('') : '<li>Read the goal, work through the activity, then mark it complete.</li>'}</ul>
+      </div>
+      <div class="community-detail-aside">
+        <span>Created by <strong>${esc(task.creatorName || 'Community')}</strong></span>
+        <span>Cycle ends ${esc(ends)}</span>
+        <span>✓ ${Number(task.completions)||0} completed</span>
+        <span>+ ${Number(task.xpReward)||0} XP</span>
+      </div>
+    </div>`;
+
 
   const joined = me ? await isMember(taskId, me.uid) : false;
   const actions = $('actions');
   actions.innerHTML = `
-    <button type="button" class="btn primary" id="joinBtn">${joined ? 'Leave' : 'Join'}</button>\n    <a class="btn primary" href="rooms.html?taskId=${encodeURIComponent(taskId)}">🔥 Start a room</a>
+    <button type="button" class="btn primary" id="joinBtn">${joined ? 'Leave' : 'Join'}</button>\n    <a class="btn primary" href="rooms.html?taskId=${encodeURIComponent(taskId)}">Open a room</a>
     <button type="button" class="btn secondary" id="likeBtn">Like</button>
     <button type="button" class="btn primary" id="completeBtn">Complete (+XP)</button>
     <button type="button" class="btn secondary" id="followBtn">Follow creator</button>
