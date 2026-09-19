@@ -286,8 +286,9 @@ async function renderFocusAndContinue(uid) {
     const meaningful = [...builtIns, ...communityActivities]
       .filter(t => ['puzzle','build','learn','challenge'].includes(t.activityType || t.type));
 
-    const focusActivities = meaningful.slice(0, 3);
-    const primaryActivity = focusActivities[0];
+    const focusIndex = meaningful.length ? Math.floor(Date.now() / 86400000) % meaningful.length : 0;
+    const primaryActivity = meaningful[focusIndex];
+    const focusActivities = primaryActivity ? [primaryActivity] : [];
 
     if (primaryActivity) {
       focusPrimary.innerHTML = activityCardHtml(primaryActivity);
@@ -297,9 +298,9 @@ async function renderFocusAndContinue(uid) {
       focusPrimary.classList.remove('focus-activity-wrap');
     }
 
-    if (focusActivities.length > 1) {
-      focusSecondary.innerHTML = focusActivities.slice(1).map(t => activityCardHtml(t, { compact: true })).join('');
-      focusSecondary.classList.add('focus-activity-wrap');
+    if (focusSecondary) {
+      focusSecondary.innerHTML = '';
+      focusSecondary.classList.remove('focus-activity-wrap');
     } else {
       focusSecondary.classList.remove('focus-activity-wrap');
     }
