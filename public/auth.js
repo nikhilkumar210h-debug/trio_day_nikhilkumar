@@ -26,7 +26,7 @@ function status(t = '', err = false) {
 }
 
 async function saveUserProfile(user, chosenName = '') {
-  const [{ doc, setDoc, serverTimestamp, getDoc }, { db }] = await Promise.all([
+  const [{ doc, setDoc, serverTimestamp, getDoc, deleteField }, { db }] = await Promise.all([
     import('https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js'),
     import('./firebase-init.js')
   ]);
@@ -34,11 +34,15 @@ async function saveUserProfile(user, chosenName = '') {
   const snap = await getDoc(ref).catch(() => null);
   const old = snap?.exists() ? snap.data() : {};
   const name = chosenName.trim() || old.name || user.displayName || user.email?.split('@')[0] || 'User';
+  await setDoc(doc(db, 'usersPrivate', user.uid), {
+    email: user.email || null,
+    updatedAt: serverTimestamp()
+  }, { merge: true });
   await setDoc(ref, {
     uid: user.uid,
     userId: old.userId || makeUserId(user.uid),
     name,
-    email: user.email || null,
+    email: deleteField(),
     photoURL: old.photoURL || user.photoURL || null,
     bio: old.bio || '',
     emailHidden: Boolean(old.emailHidden),
