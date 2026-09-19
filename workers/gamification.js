@@ -737,6 +737,156 @@ async function handleAwardBadges(uid, body, env) {
   return { ok: true, badgesEarned: earned };
 }
 
+function normalizeCaseText(value) {
+  return String(value ?? '').trim().toLowerCase().replace(/\\s+/g, ' ');
+}
+
+function normalizeCaseIds(value) {
+  if (!Array.isArray(value)) return [];
+  return [...new Set(value.map(v => String(v ?? '').trim()).filter(Boolean))].sort();
+}
+
+function cleanCaseArray(value, maxItems, mapper) {
+  return (Array.isArray(value) ? value : []).slice(0, maxItems).map(mapper);
+}
+
+/**
+ * Create a mystery case with public investigation data and a server-only solution.
+ * The solution is deliberately stored outside the readable communityTasks document.
+ */
+async function handleCreateMystery(uid, body, env) {
+  const projectId = env.FIREBASE_PROJECT_ID;
+  const token = await getAccessToken(env);
+
+  const title = String(body.title || '').trim().slice(0, 100);
+  const category = ['Logic','Observation','Speed','Reasoning','Memory','Decision','Knowledge'].includes(body.category)
+    ? body.category : 'Reasoning';
+  const difficulty = ['Easy','Medium','Hard'].includes(body.difficulty)
+    ? body.difficulty : 'Medium';
+  const durationMinutes = Math.max(5, Math.min(180, Number(body.durationMinutes) || 30));
+  const xpReward = Math.max(10, Math.min(500, Number(body.xpReward) || 100));
+  const startAtMs = Number(body.startAtMs) || Date.now();
+  const endAtMs = Number(body.endAtMs) || (startAtMs + 7 * 86400000);
+
+  const rawCase = body.caseData && typeof body.caseData === 'object' ? body.caseData : {};
+  const rawSolution = body.solution && typeof body.solution === 'object' ? body.solution : {};
+
+  if (!title) throw new Error('Challenge title required');
+  if (!(endAtMs > startAtMs)) throw new Error('Invalid challenge duration');
+
+  const suspects = cleanCaseArray(rawCase.suspects, 8, (s, i) => ({
+    id: String(s?.id || `suspect_${i + 1}`).trim().slice(0, 40),
+    name: String(s?.name || '').trim().slice(0, 80),
+    role: String(s?.role || '').trim().slice(0, 100),
+    alibi: String(s?.alibi || '').trim().slice(0, 500),
+    description: String(s?.description || '').trim().slice(0, 800)
+  }));
+
+  const clues = cleanCaseArray(rawCase.clues, 24, (clue, i) => ({
+    id: String(clue?.id || `clue_${i + 1}`).trim().slice(0, 40),
+    title: String(clue?.title || `Evidence ${i + 1}`).trim().slice(0, 120),
+    type: ['text','document','image','map'].includes(clue?.type) ? clue.type : 'text',
+    content: String(clue?.content || '').trim().slice(0, 3000),
+    mediaUrl: String(clue?.mediaUrl || '').trim().slice(0, 1000)
+  }));
+
+  const timeline = cleanCaseArray(rawCase.timeline, 24, (event, i) => ({
+    id: String(event?.id || `event_${i + 1}`).trim().slice(0, 40),
+    time: String(event?.time || '').trim().slice(0, 80),
+    event: String(event?.event || '').trim().slice(0, 500)
+  }));
+
+  const hints = cleanCaseArray(rawCase.hints, 6, (hint, i) => ({
+    id: String(hint?.id || `hint_${i + 1}`).trim().slice(0, 40),
+    text: String(hint?.text || '').trim().slice(0, 600)
+  })).filter(h => h.text);
+
+  const caseData = {
+    synopsis: String(rawCase.synopsis || '').trim().slice(0, 900),
+    briefing: String(rawCase.briefing || '').trim().slice(0, 1800),
+    estimatedTime: Math.max(5, Math.min(180, Number(rawCase.estimatedTime) || durationMinutes)),
+    suspects,
+    clues,
+    timeline,
+    hints,
+    finalPrompt: String(rawCase.finalPrompt || 'Who is responsible, why did they do it, and which evidence proves your deduction?').trim().slice(0, 500)
+  };
+
+  if (caseData.briefing.length < 20) throw new Error('Mystery briefing is too short');
+  if (suspects.length < 2) throw new Error('Add at least 2 suspects');
+  if (clues.length < 3) throw new Error('Add at least 3 clues');
+  if (timeline.length < 2) throw new Error('Add at least 2 timeline events');
+
+  const suspectIds = new Set(suspects.map(s => s.id));
+  const clueIds = new Set(clues.map(clue => clue.id));
+  if (suspectIds.size !== suspects.length) throw new Error('Suspect ids must be unique');
+  if (clueIds.size !== clues.length) throw new Error('Clue ids must be unique');
+
+  const suspectId = String(rawSolution.suspectId || '').trim();
+  const motive = String(rawSolution.motive || '').trim().slice(0, 300);
+  const keyEvidenceIds = normalizeCaseIds(rawSolution.keyEvidenceIds);
+
+  if (!suspectIds.has(suspectId)) throw new Error('Solution suspectId must match a suspect');
+  if (motive.length < 3) throw new Error('Solution motive is required');
+  if (!keyEvidenceIds.length) throw new Error('Select at least one key evidence item');
+  if (keyEvidenceIds.some(id => !clueIds.has(id))) throw new Error('Solution evidence contains an unknown clue');
+
+  const taskId = crypto.randomUUID();
+  const now = Date.now();
+  const taskPath = `communityTasks/${taskId}`;
+  const verificationPath = `${taskPath}/verification/private`;
+
+  await fsPatch(projectId, token, taskPath, {
+    title,
+    description: caseData.synopsis,
+    objective: caseData.synopsis || caseData.finalPrompt,
+    icon: '🕵️',
+    kind: 'challenge',
+    category,
+    difficulty,
+    durationMinutes,
+    xpReward,
+    challengeType: 'mystery',
+    caseVersion: 1,
+    caseData,
+    metric: 'case_solution',
+    target: 1,
+    creatorUid: uid,
+    creatorName: String(body.creatorName || 'User').slice(0, 50),
+    creatorPhoto: body.creatorPhoto || null,
+    startAtMs,
+    endAtMs,
+    status: 'active',
+    featured: false,
+    hidden: false,
+    joins: 0,
+    solvingNow: 0,
+    ratingAverage: 0,
+    ratingCount: 0,
+    likes: 0,
+    comments: 0,
+    completions: 0,
+    createdAtMs: now
+  }, [
+    'title','description','objective','icon','kind','category','difficulty',
+    'durationMinutes','xpReward','challengeType','caseVersion','caseData',
+    'metric','target','creatorUid','creatorName','creatorPhoto','startAtMs',
+    'endAtMs','status','featured','hidden','joins','solvingNow','ratingAverage',
+    'ratingCount','likes','comments','completions','createdAtMs'
+  ]);
+
+  await fsPatch(projectId, token, verificationPath, {
+    type: 'mystery-v1',
+    suspectId,
+    motive,
+    motiveNormalized: normalizeCaseText(motive),
+    keyEvidenceIds,
+    createdAtMs: now
+  }, ['type','suspectId','motive','motiveNormalized','keyEvidenceIds','createdAtMs']);
+
+  return { ok: true, taskId, challengeType: 'mystery' };
+}
+
 /**
  * Verify and finalize a challenge. The client never writes completions directly.
  */
@@ -757,6 +907,50 @@ async function handleCompleteChallenge(uid, body, env) {
   const completionPath = `communityTasks/${taskId}/completions/${uid}`;
   const existing = await fsGet(projectId, token, completionPath);
   if (existing) return { ok: true, already: true };
+
+  if (task.challengeType === 'mystery') {
+    const privateVerification = await fsGet(projectId, token, `communityTasks/${taskId}/verification/private`);
+    if (!privateVerification || privateVerification.type !== 'mystery-v1') {
+      throw new Error('Mystery verification is not configured');
+    }
+
+    const submitted = body.caseSolution && typeof body.caseSolution === 'object' ? body.caseSolution : {};
+    const submittedSuspectId = String(submitted.suspectId || '').trim();
+    const submittedMotive = normalizeCaseText(submitted.motive);
+    const submittedEvidence = normalizeCaseIds(submitted.keyEvidenceIds);
+
+    const suspectCorrect = submittedSuspectId === String(privateVerification.suspectId || '');
+    const motiveCorrect = submittedMotive === String(privateVerification.motiveNormalized || '');
+    const expectedEvidence = normalizeCaseIds(privateVerification.keyEvidenceIds);
+    const evidenceCorrect =
+      submittedEvidence.length === expectedEvidence.length &&
+      submittedEvidence.every((id, index) => id === expectedEvidence[index]);
+
+    if (!suspectCorrect || !motiveCorrect || !evidenceCorrect) {
+      return {
+        ok: false,
+        correct: false,
+        breakdown: { suspectCorrect, motiveCorrect, evidenceCorrect },
+        message: 'Your deduction is incomplete. Re-check the evidence and try again.'
+      };
+    }
+
+    await fsPatch(projectId, token, completionPath, {
+      uid,
+      atMs: Date.now(),
+      verification: 'mystery',
+      caseVersion: Number(task.caseVersion) || 1
+    }, ['uid','atMs','verification','caseVersion']);
+
+    await fsAtomicIncrement(projectId, token, `communityTasks/${taskId}`, 'completions', 1);
+    const xp = Number(task.xpReward) || 100;
+    const award = await handleAwardXp(uid, {
+      amount: xp,
+      meta: { communityTaskId: taskId, templateId: task.templateId }
+    }, env);
+
+    return { ok: true, already: false, verified: true, award };
+  }
 
   const verificationType = task.verificationType === 'answer' ? 'answer' : 'proof';
 
@@ -899,6 +1093,8 @@ export default {
         result = await handleCounter(uid, body, env);
       } else if (path === '/gamification/complete-challenge') {
         result = await handleCompleteChallenge(uid, body, env);
+      } else if (path === '/gamification/create-mystery') {
+        result = await handleCreateMystery(uid, body, env);
       } else {
         return json({ error: 'Unknown route' }, 404, origin);
       }
