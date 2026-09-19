@@ -161,3 +161,13 @@ button:disabled,.nkm-btn:disabled,.btn:disabled{cursor:not-allowed;opacity:.55;t
 @media(prefers-reduced-motion:reduce){
   .nkm-btn,.btn,.activity-action{transition:none}
 }
+
+@media(max-width:640px){
+  .topbar-inner{min-height:56px;padding-inline:12px}
+  .brand{gap:9px}
+  .brand-chakra{width:36px;height:36px;font-size:18px}
+  .brand strong{font-size:18px}
+  .brand small{font-size:9px}
+  .forge-section-head p,.do-action p{display:none}
+  .activity-section-head{margin-top:18px;margin-bottom:9px}
+}
