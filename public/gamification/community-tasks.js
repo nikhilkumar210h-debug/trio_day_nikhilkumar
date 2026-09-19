@@ -108,6 +108,7 @@ export async function createCommunityTask(uid, profile, data) {
     kind,
     activityType: ['puzzle','build','learn','challenge','game'].includes(data.activityType) ? data.activityType : (kind === 'challenge' ? 'challenge' : 'game'),
     category: String(data.category || 'General').slice(0, 60),
+    mechanic: String(data.mechanic || 'custom').slice(0, 40),
     durationMin: Math.max(5, Math.min(180, Number(data.durationMin) || 20)),
     difficulty: ['Easy','Medium','Hard'].includes(data.difficulty) ? data.difficulty : 'Medium',
     goal: String(data.goal || '').slice(0, 240),
