@@ -1,7 +1,16 @@
 import{getBuildConfig}from'./activity-catalog.js';
 const esc=s=>{const d=document.createElement('div');d.textContent=String(s??'');return d.innerHTML};
 export function renderBuildWorkspace(root,activity,onPass){
- const cfg=getBuildConfig(activity.engineId || activity.id); if(!cfg){root.hidden=true;return null} root.hidden=false; let passed=false;
+ const selectedMechanic=activity.interaction?.kind==='build' ? String(activity.interaction.mechanic||'') : '';
+ const generic={
+  order:{mechanic:'order',items:['Start','Step 1','Step 2','Finish'],target:['Start','Step 1','Step 2','Finish']},
+  allocate:{mechanic:'allocate',budget:100,items:[['Core',30],['Support',25],['Backup',10],['Extra',5]],mins:[30,25,10,5]},
+  grid:{mechanic:'grid',size:4,required:['Start','Work','Check'],blocked:[5,6,9],adjacentPairs:[['Start','Work'],['Work','Check']]},
+  assign:{mechanic:'assign',people:['Person 1','Person 2','Person 3','Person 4'],roles:['Planner','Builder','Checker','Presenter'],correct:{'Person 1':'Planner','Person 2':'Builder','Person 3':'Checker','Person 4':'Presenter'}}
+ };
+ const original=getBuildConfig(activity.engineId || activity.id);
+ const cfg=selectedMechanic && generic[selectedMechanic] && original?.mechanic!==selectedMechanic ? generic[selectedMechanic] : original;
+ if(!cfg){root.hidden=true;return null} root.hidden=false; let passed=false;
  const baseOrder=cfg.items?.slice()||[];let order=baseOrder.slice();if(order.length>2){const shift=((activity.engineId || activity.id||'b0').charCodeAt(1)||1)%order.length;order=order.slice(shift).concat(order.slice(0,shift));if(order.every((x,i)=>x===cfg.target?.[i]))order.reverse()}const state={order,alloc:{},selectedTool:null,placed:{},assign:{}};
  const setResult=(text,ok)=>{root.querySelector('.forge-result').textContent=text;root.querySelector('.forge-result').className='forge-result '+(ok?'ok':'bad');if(ok&&!passed){passed=true;onPass?.(true)}};
  root.innerHTML='<div class="forge-workspace-head"><div><h3>Forge Board</h3><p>Actually build the solution. Your result is checked against the activity constraints.</p></div><span class="forge-pill">LIVE LOGIC</span></div><div class="forge-board-body"></div><div class="forge-result"></div>';
