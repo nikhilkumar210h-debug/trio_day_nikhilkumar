@@ -115,18 +115,29 @@ function b64urlDecode(str) {
  */
 async function getFirebasePublicKeys(cacheStorage) {
   const cacheKey = 'https://firebase-pubkeys.internal/v1';
-  // Try cache first
+  let certMap = null;
+
+  // Cache the raw Google certificate map, not CryptoKey objects (CryptoKey is not JSON-serializable).
   try {
     const cached = await cacheStorage.match(cacheKey);
-    if (cached) {
-      const keys = await cached.json();
-      return keys;
-    }
-  } catch (_) { /* ignore */ }
+    if (cached) certMap = await cached.json();
+  } catch (_) { /* ignore corrupt cache */ }
 
-  const res = await fetch(FIREBASE_PUBLIC_KEYS_URL);
-  const certMap = await res.json(); // { kid: "-----BEGIN CERTIFICATE-----..." }
-  // Convert PEM certs to CryptoKey objects
+  if (!certMap || typeof certMap !== 'object') {
+    const res = await fetch(FIREBASE_PUBLIC_KEYS_URL);
+    if (!res.ok) throw new Error(`Firebase public key fetch failed: ${res.status}`);
+    certMap = await res.json();
+    try {
+      await cacheStorage.put(
+        cacheKey,
+        new Response(JSON.stringify(certMap), {
+          headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=3600' }
+        })
+      );
+    } catch (_) { /* cache is optional */ }
+  }
+
+  // Convert PEM certs to CryptoKey objects for signature verification.
   const result = {};
   for (const [kid, pem] of Object.entries(certMap)) {
     try {
