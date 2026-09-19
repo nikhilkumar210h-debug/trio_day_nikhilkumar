@@ -16,7 +16,11 @@ if(!validTypes.includes(activeType))activeType='puzzle';
 function escText(v){return esc(String(v||''))}
 function renderLanes(){
  $('creatorLanes').innerHTML=validTypes.map(type=>{const i=ACTIVITY_TYPES[type];return '<button type="button" class="creator-lane '+(type===activeType?'active':'')+'" data-type="'+type+'">'+i.icon+' '+i.label+'</button>'}).join('');
- document.querySelectorAll('.creator-lane').forEach(b=>b.onclick=()=>{activeType=b.dataset.type;renderLanes();renderTemplates()});
+ document.querySelectorAll('.creator-lane').forEach(b=>b.onclick=()=>{activeType=b.dataset.type;renderLanes();renderCategorySuggestions();renderTemplates()});
+}
+function renderCategorySuggestions(){
+ const cats=[...new Set(ACTIVITY_CATALOG.filter(a=>a.type===activeType).map(a=>a.category).filter(Boolean))].sort();
+ $('categoryOptions').innerHTML=cats.map(x=>'<option value="'+escText(x)+'"></option>').join('');
 }
 function renderTemplates(){
  const list=ACTIVITY_CATALOG.filter(a=>a.type===activeType).slice(0,12);
@@ -55,5 +59,5 @@ $('creatorForm').addEventListener('submit',async e=>{
 onAuthStateChanged(auth,async u=>{
  me=u;if(!u){location.href='login.html?redirect=task-create.html';return}
  const s=await getDoc(doc(db,'users',u.uid));profile=s.exists()?s.data():{name:u.displayName};
- renderLanes();renderTemplates();updateExpiry();
+ renderLanes();renderCategorySuggestions();renderTemplates();updateExpiry();
 });
