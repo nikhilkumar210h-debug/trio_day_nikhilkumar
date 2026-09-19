@@ -1,6 +1,6 @@
 /* Offline cache + efficient cache lifetimes (95 KiB savings fix). OneSignal SW lives under push/onesignal/. */
-const CACHE_NAME = "trio-day-cache-v34";
-const STATIC_CACHE = "trio-static-v34";
+const CACHE_NAME = "trio-day-cache-v35";
+const STATIC_CACHE = "trio-static-v35";
 const BASE = "/";
 const FILES_TO_CACHE = [
   BASE,
@@ -26,6 +26,28 @@ const FILES_TO_CACHE = [
   BASE + "auth-ui.js",
   BASE + "auth-guard.js",
   BASE + "all-users.js",
+  BASE + "activity.html",
+  BASE + "activity.js",
+  BASE + "activity-ui.js",
+  BASE + "activity-catalog.js",
+  BASE + "forge-engine.js",
+  BASE + "forge-interactions.js",
+  BASE + "forge-lane.js",
+  BASE + "forge-mechanics.js",
+  BASE + "rooms.html",
+  BASE + "rooms.js",
+  BASE + "rooms.css",
+  BASE + "room.html",
+  BASE + "room.js",
+  BASE + "room-workspace.js",
+  BASE + "room-challenge-workspace.js",
+  BASE + "room-puzzle-workspace.js",
+  BASE + "room-quiz-workspace.js",
+  BASE + "room-workspace.css",
+  BASE + "task-create.html",
+  BASE + "task-create.js",
+  BASE + "task-detail.html",
+  BASE + "task-detail.js",
   BASE + "utils.js",
   BASE + "trio-cache.js",
   BASE + "install-prompt.js",
