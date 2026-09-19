@@ -62,7 +62,7 @@ async function render() {
   const joined = me ? await isMember(taskId, me.uid) : false;
   const actions = $('actions');
   actions.innerHTML = `
-    <button type="button" class="btn primary" id="joinBtn">${joined ? 'Leave' : 'Join'}</button>
+    <button type="button" class="btn primary" id="joinBtn">${joined ? 'Leave' : 'Join'}</button>\n    <a class="btn primary" href="rooms.html?taskId=${encodeURIComponent(taskId)}">🔥 Start a room</a>
     <button type="button" class="btn secondary" id="likeBtn">Like</button>
     <button type="button" class="btn primary" id="completeBtn">Complete (+XP)</button>
     <button type="button" class="btn secondary" id="followBtn">Follow creator</button>
