@@ -162,6 +162,13 @@ function render(){
 function updateCompleteState(){
  const b=$('completeBtn');
  if(!b)return;
+ const isOwnCommunity = activity?.source === 'community' && activity?.creatorUid === me?.uid;
+ if(isOwnCommunity){
+   b.disabled=true;
+   b.textContent='Creator preview';
+   b.title='Creators can test their activity but do not earn XP from their own activity.';
+   return;
+ }
  b.disabled=!activityPassed;
  if(activity?.type==='game')b.textContent='Play in a room';
  else b.textContent=activityPassed?'Mark complete':'Finish the activity first';
