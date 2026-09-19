@@ -1,20 +1,38 @@
 import{auth,db}from'./firebase-init.js';
 import{onAuthStateChanged}from'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
-import{collection,getDocs,query,orderBy,limit}from'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
+import{listCommunityTasks}from'./gamification/community-tasks.js';
+import{activeCatalogActivities}from'./activity-catalog.js';
+import{activityCardHtml,normalizeActivityType}from'./activity-ui.js';
 
 const $=id=>document.getElementById(id);
-function esc(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
-async function loadFeatured(){
-  const host=$('doFeatured'); if(!host)return;
-  try{
-    const snap=await getDocs(query(collection(db,'communityTasks'),orderBy('createdAtMs','desc'),limit(6)));
-    const rows=snap.docs.map(d=>({id:d.id,...d.data()})).filter(x=>!x.hidden&&!x.archived).slice(0,4);
-    if(!rows.length){host.hidden=true;return}
-    host.hidden=false;
-    host.innerHTML='<div class="do-featured-head"><strong>Active in Trio Day</strong><span>Pick one</span></div>'+rows.map(x=>'<a class="do-featured-card" href="task-detail.html?id='+encodeURIComponent(x.id)+'"><span class="do-featured-icon">'+esc(x.icon||'🎯')+'</span><span><strong>'+esc(x.title||'Activity')+'</strong><small>'+esc(x.description||'Open the activity and get started.')+'</small></span><b>→</b></a>').join('');
-  }catch(e){console.warn('Featured activities unavailable',e);host.hidden=true}
+
+function renderCatalog(){
+  const host=$('doNowList'),section=$('doNow');if(!host||!section)return;
+  const items=activeCatalogActivities().filter(a=>['puzzle','build','learn','challenge','game'].includes(a.type)).slice(0,6);
+  section.hidden=!items.length;
+  host.innerHTML=items.map(a=>activityCardHtml({...a,source:'catalog',activityType:a.type})).join('');
 }
+
+async function renderCommunity(){
+  const host=$('doFeaturedList'),section=$('doFeatured');if(!host||!section)return;
+  try{
+    const rows=(await listCommunityTasks({status:'active',max:12}))
+      .filter(x=>!x.hidden)
+      .map(x=>({...x,source:'community',activityType:normalizeActivityType(x)}))
+      .slice(0,6);
+    section.hidden=!rows.length;
+    host.innerHTML=rows.length
+      ?rows.map(a=>activityCardHtml(a)).join('')
+      :'<div class="do-empty">No community activities are live yet. Create the first one.</div>';
+  }catch(e){
+    console.warn('Community activities unavailable',e);
+    section.hidden=false;
+    host.innerHTML='<div class="do-empty">Community activities are temporarily unavailable.</div>';
+  }
+}
+
 onAuthStateChanged(auth,async u=>{
   if(!u){location.href='login.html?redirect=tasks.html';return}
-  await loadFeatured();
+  renderCatalog();
+  await renderCommunity();
 });
