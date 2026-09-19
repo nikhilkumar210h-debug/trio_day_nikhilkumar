@@ -36,10 +36,10 @@ async function loadActivity(){
 }
 function render(rs){
  const now=Date.now();
- const activeRooms=rs.filter(r=>!r.expiresAtMs||Number(r.expiresAtMs)>now);
+ const activeRooms=rs.filter(r=>{const expires=Number(r.expiresAtMs)||((Number(r.createdAtMs)||now)+6*60*60*1000);return expires>now;});
  const visible=filterActivityId?activeRooms.filter(r=>r.challengeId===filterActivityId):activeRooms;
  $('roomStatus').textContent=visible.length?visible.length+' live room'+(visible.length>1?'s':''):(filterActivityId?'No room is open for this activity yet':'No rooms live yet');
- $('roomList').innerHTML=visible.length?visible.map(r=>`<a class="room-card" href="room.html?id=${encodeURIComponent(r.id)}"><span class="room-orb">✦</span><span class="room-card-main"><span class="room-card-title">${esc(r.title||'Open room')}</span><span class="room-card-meta"><span class="room-live">● LIVE</span><span>${Number(r.memberCount)||0}/${Number(r.maxPlayers)||6} people</span><span>${esc(r.activityTitle||'Open activity')}</span><span>${r.expiresAtMs?'⌛ '+Math.max(0,Math.ceil((Number(r.expiresAtMs)-Date.now())/3600000))+'h left':''}</span></span></span><span>↗</span></a>`).join(''):'<div class="room-empty">No open rooms. Start one around an activity and let people join.</div>';
+ $('roomList').innerHTML=visible.length?visible.map(r=>`<a class="room-card" href="room.html?id=${encodeURIComponent(r.id)}"><span class="room-orb">✦</span><span class="room-card-main"><span class="room-card-title">${esc(r.title||'Open room')}</span><span class="room-card-meta"><span class="room-live">● LIVE</span><span>${Number(r.memberCount)||0}/${Number(r.maxPlayers)||6} people</span><span>${esc(r.activityTitle||'Open activity')}</span><span>${'⌛ '+Math.max(0,Math.ceil(((Number(r.expiresAtMs)||((Number(r.createdAtMs)||Date.now())+6*60*60*1000))-Date.now())/3600000))+'h left'}</span></span></span><span>↗</span></a>`).join(''):'<div class="room-empty">No open rooms. Start one around an activity and let people join.</div>';
 }
 document.querySelectorAll('[data-cap]').forEach(b=>b.onclick=()=>{capacity=Number(b.dataset.cap);document.querySelectorAll('[data-cap]').forEach(x=>x.classList.toggle('is-active',x===b));});
 $('roomForm').onsubmit=async e=>{
