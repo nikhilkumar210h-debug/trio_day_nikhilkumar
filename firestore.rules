@@ -257,6 +257,22 @@ service cloud.firestore {
       match /verification/{docId} {
         allow read, create, update, delete: if false;
       }
+      // Challenge-scoped live room; only accepted participants can read/write.
+      match /roomMessages/{messageId} {
+        allow read: if signedIn()
+          && exists(/databases/$(database)/documents/communityTasks/$(taskId)/members/$(request.auth.uid));
+        allow create: if signedIn()
+          && exists(/databases/$(database)/documents/communityTasks/$(taskId)/members/$(request.auth.uid))
+          && request.resource.data.uid == request.auth.uid
+          && request.resource.data.name is string
+          && request.resource.data.name.size() <= 50
+          && request.resource.data.text is string
+          && request.resource.data.text.size() > 0
+          && request.resource.data.text.size() <= 500
+          && request.resource.data.createdAtMs is number;
+        allow update: if false;
+        allow delete: if signedIn() && resource.data.uid == request.auth.uid;
+      }
       match /submissions/{uid} {
         allow read: if signedIn() && (
           request.auth.uid == uid
