@@ -69,11 +69,11 @@ async function shareCompletionToStory() {
 async function render() {
   task = await getCommunityTask(taskId);
   if (!task) {
-    $('detail').innerHTML = '<h2>Challenge not found</h2><a href="tasks.html">Back</a>';
+    $('detail').innerHTML = '<h2>Challenge not found</h2><a href="all-users.html">Back</a>';
     return;
   }
   if (task.hidden && !admin && me?.uid !== task.creatorUid) {
-    $('detail').innerHTML = '<h2>This challenge is unavailable</h2><a href="tasks.html">Back</a>';
+    $('detail').innerHTML = '<h2>This challenge is unavailable</h2><a href="all-users.html">Back</a>';
     $('actions').innerHTML = '';
     return;
   }
@@ -273,7 +273,7 @@ async function render() {
     $('removeBtn').onclick = async () => {
       if (!confirm('Permanently remove this challenge?')) return;
       await removeChallenge(taskId);
-      location.href = 'tasks.html';
+      location.href = 'all-users.html';
     };
   }
 
