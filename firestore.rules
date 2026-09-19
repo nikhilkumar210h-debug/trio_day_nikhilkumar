@@ -291,6 +291,16 @@ service cloud.firestore {
           || (difficulty == 'Hard' && xp == 60));
     }
 
+    function challengeAnswerScore(taskId) {
+      let d = get(/databases/$(database)/documents/communityTasks/$(taskId)).data;
+      let a = request.resource.data.answers;
+      return (a[0] == d.interaction.rounds[0].a ? 1 : 0)
+        + (a[1] == d.interaction.rounds[1].a ? 1 : 0)
+        + (a[2] == d.interaction.rounds[2].a ? 1 : 0)
+        + (a[3] == d.interaction.rounds[3].a ? 1 : 0)
+        + (a[4] == d.interaction.rounds[4].a ? 1 : 0);
+    }
+
     function challengeAnswersPass(taskId) {
       let d = get(/databases/$(database)/documents/communityTasks/$(taskId)).data;
       let a = request.resource.data.answers;
@@ -578,6 +588,7 @@ service cloud.firestore {
               && request.resource.data.score is int
               && request.resource.data.score >= 3
               && request.resource.data.score <= 5
+              && request.resource.data.score == challengeAnswerScore(taskId)
               && challengeAnswersPass(taskId)
               && request.resource.data.proofText is string
               && request.resource.data.proofText.size() >= 20
