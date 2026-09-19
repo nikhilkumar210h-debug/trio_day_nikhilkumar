@@ -99,6 +99,8 @@ export async function createMysteryCommunityTask(uid, profile, data) {
     xpReward: Number(data.xpReward) || 100,
     startAtMs: Number(data.startAtMs) || Date.now(),
     endAtMs: Number(data.endAtMs) || (Date.now() + 7 * 86400000),
+    creatorName: profile?.name || 'User',
+    creatorPhoto: profile?.photoURL || null,
     caseData: data.caseData,
     solution: data.solution
   }, user);
