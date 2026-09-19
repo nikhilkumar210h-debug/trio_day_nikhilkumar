@@ -9,7 +9,7 @@ export const ACTIVITY_TYPES = {
 };
 
 export function normalizeActivityType(task){
-  const raw = String(task?.activityType || '').toLowerCase().trim();
+  const raw = String(task?.activityType || task?.type || '').toLowerCase().trim();
   if (ACTIVITY_TYPES[raw]) return raw;
   const text = String(task?.title || '') + ' ' + String(task?.description || '');
   if (/puzzle|riddle|logic|brain|pattern|mystery|word/i.test(text)) return 'puzzle';
@@ -28,7 +28,11 @@ export function activityCardHtml(task, { compact=false } = {}){
   const id = encodeURIComponent(task.id || '');
   const title = esc(task.title || 'Untitled activity');
   const desc = esc(task.description || type.desc);
-  const creator = esc(task.creatorName || 'Community');
+  const creator = esc(task.creatorName || (task.source === 'catalog' ? 'Trio Day' : 'Community'));
+  const isCatalog = task.source === 'catalog';
+  const viewHref = isCatalog ? 'activity.html?id=' + encodeURIComponent(task.id || '') : 'task-detail.html?id=' + encodeURIComponent(task.id || '');
+  const expiry = Number.isFinite(task.expiresInDays) ? task.expiresInDays + 'd left' : (task.endAtMs ? Math.max(0, Math.ceil((task.endAtMs-Date.now())/86400000)) + 'd left' : '30d cycle');
+  const duration = Number(task.durationMin) || 0;
   const xp = Number(task.xpReward) || 0;
   const joins = Number(task.joins) || 0;
   const completions = Number(task.completions) || 0;
@@ -51,15 +55,15 @@ export function activityCardHtml(task, { compact=false } = {}){
         <h3>${title}</h3>
         <p>${desc}</p>
         <div class="activity-meta">
-          <span>👥 ${joins} joined</span>
-          <span>✓ ${completions} done</span>
-          <span>+ ${xp} XP</span>
+          <span>${duration ? '⏱ ' + duration + ' min' : '👥 ' + joins + ' joined'}</span>
+          <span>${esc(task.difficulty || (isCatalog ? 'Open' : 'Community'))}</span>
+          <span>⌛ ${expiry}</span>
         </div>
         <div class="activity-footer">
           <span class="activity-creator">by ${creator}</span>
           <div class="activity-actions">
-            <a class="activity-action activity-action--ghost" href="task-detail.html?id=${id}">View</a>
-            <a class="activity-action activity-action--primary" href="rooms.html?taskId=${id}">Find a room</a>
+            <a class="activity-action activity-action--ghost" href="${viewHref}">View</a>
+            <a class="activity-action activity-action--primary" href="rooms.html?taskId=${id}${isCatalog ? "&source=catalog" : ""}">Find a room</a>
           </div>
         </div>
       </div>
