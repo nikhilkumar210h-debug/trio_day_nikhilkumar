@@ -149,11 +149,6 @@ async function render() {
     localStorage.setItem(startedKey, '1');
     render();
   });
-  $('likeBtn').onclick = async () => {
-    if (!me) return alert('Login first');
-    await toggleLike(taskId, me.uid);
-    await render();
-  };
   $('storyBtn')?.addEventListener('click', async () => {
     if (!me || !completed) return;
     const btn = $('storyBtn');
@@ -224,8 +219,6 @@ async function render() {
     }
   });
 
-
-  $('followBtn').onclick = () => followCreator(task.creatorUid);
 
   if (me?.uid === task.creatorUid && !completed) {
     const submissions = await listSubmissions(taskId);
