@@ -41,14 +41,7 @@ onAuthStateChanged(auth, async user => {
 async function initTodayScreen(uid) {
   renderGreeting();
   await renderStoryStrip();
-  if (uid) {
-    await Promise.all([
-      renderFocusAndContinue(uid),
-      renderActiveChallenges(uid),
-      renderPeople(uid),
-    ]);
-  }
-  initHighlightsFeed();
+  if (uid) await renderActiveChallenges(uid);
 }
 
 function renderGreeting() {
@@ -382,7 +375,7 @@ async function renderActiveChallenges(uid) {
   const sectionEl = $('challengesSection');
   if (!listEl) return;
 
-  listEl.innerHTML = '<div style="padding:16px; text-align:center; color:var(--color-ink-muted);">Loading challenges…</div>';
+  listEl.innerHTML = '<div class="nkm-skeleton nkm-skel-row" style="height:92px"></div><div class="nkm-skeleton nkm-skel-row" style="height:92px;margin-top:10px"></div>';
 
   try {
     const allChallenges = await listCommunityTasks({ status: 'active', max: 40 });
