@@ -3,16 +3,17 @@ import{onAuthStateChanged}from'https://www.gstatic.com/firebasejs/10.13.0/fireba
 import{doc,getDoc,setDoc}from'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 import{activeCatalogActivities}from'./activity-catalog.js';
 import{activityTypeInfo}from'./activity-ui.js';
+import{renderBuildWorkspace}from'./forge-engine.js';
 import{awardXp}from'./gamification/xp-levels.js';
 import{showAchievement}from'./ui/achievements.js';
 import{escapeHtml as esc}from'./utils.js';
 const $=id=>document.getElementById(id),id=new URLSearchParams(location.search).get('id');
-let me=null,activity=null,timer=null,remaining=0;
+let me=null,activity=null,timer=null,remaining=0,activityPassed=false;
+
 function fail(t){$('activityStatus').textContent=t;$('activityStatus').classList.add('error')}
 function render(){
  const type=activityTypeInfo(activity);
- $('activityStatus').textContent='';
- $('activityHero').hidden=false;$('activityGrid').hidden=false;
+ $('activityStatus').textContent='';$('activityHero').hidden=false;$('activityGrid').hidden=false;
  $('activityKicker').textContent=type.icon+' '+type.label+' · '+activity.category;
  $('activityTitle').textContent=activity.title;
  $('activityDescription').textContent=activity.description;
@@ -24,9 +25,25 @@ function render(){
  $('roomBtn').href='rooms.html?taskId='+encodeURIComponent(activity.id)+'&source=catalog';
  $('expiryText').textContent=activity.expiresInDays+' days remaining in this cycle';
  remaining=Math.max(60,Number(activity.durationMin||20)*60);paintTimer();
+
+ const workspace=$('forgeWorkspace');
+ if(activity.type==='build'){
+   activityPassed=false;
+   renderBuildWorkspace(workspace,activity,passed=>{activityPassed=!!passed;updateCompleteState()});
+ }else{
+   workspace.hidden=true;
+   activityPassed=true;
+ }
+ updateCompleteState();
+}
+function updateCompleteState(){
+ const b=$('completeBtn');
+ if(!b)return;
+ const blocked=activity?.type==='build'&&!activityPassed;
+ b.disabled=blocked;
+ b.textContent=blocked?'Finish the build first': 'Mark complete';
 }
 function paintTimer(){const m=Math.floor(remaining/60),s=remaining%60;$('timerDisplay').textContent=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0')}
-$('timerBtn').onclick=()=>{if(timer){clearInterval(timer);timer=null;$('timerBtn').textContent='Resume timer';return}timer=setInterval(()=>{remaining=Math.max(0,remaining-1);paintTimer();if(!remaining){clearInterval(timer);timer=null;$('timerBtn').textContent='Time complete'}} ,1000);$('timerBtn').textContent='Pause timer'};
-$('completeBtn').onclick=async()=>{if(!me||!activity)return;const b=$('completeBtn');b.disabled=true;b.textContent='Saving…';try{const cycleKey=activity.id+'_'+activity.startAtMs;
-const ref=doc(db,'users',me.uid,'activityCompletions',cycleKey);const old=await getDoc(ref);if(old.exists()){$('completionNote').textContent='Already completed in this cycle ✓';b.textContent='Completed';return}await setDoc(ref,{uid:me.uid,activityId:activity.id,cycleKey,title:activity.title,type:activity.type,completedAtMs:Date.now(),cycleEndsAtMs:activity.endAtMs});const xp=activity.difficulty==='Hard'?60:activity.difficulty==='Medium'?40:25;let award=null;try{award=await awardXp(me.uid,xp,{catalogActivityId:activity.id});showAchievement({title:activity.title,subtitle:'+'+xp+' XP',icon:activity.icon||'🎯',leveledUp:award?.leveledUp,level:award?.level,badges:award?.badgesEarned||[]})}catch(xpErr){console.warn('XP award skipped',xpErr)}$('completionNote').innerHTML='<div class="activity-success">Completed ✓ Great job.</div>';b.textContent='Completed'}catch(e){b.disabled=false;b.textContent='Mark complete';$('completionNote').textContent=e.message||'Could not save completion.'}};
+$('timerBtn').onclick=()=>{if(timer){clearInterval(timer);timer=null;$('timerBtn').textContent='Resume timer';return}timer=setInterval(()=>{remaining=Math.max(0,remaining-1);paintTimer();if(!remaining){clearInterval(timer);timer=null;$('timerBtn').textContent='Time complete'}},1000);$('timerBtn').textContent='Pause timer'};
+$('completeBtn').onclick=async()=>{if(!me||!activity|| (activity.type==='build'&&!activityPassed))return;const b=$('completeBtn');b.disabled=true;b.textContent='Saving…';try{const cycleKey=activity.id+'_'+activity.startAtMs;const ref=doc(db,'users',me.uid,'activityCompletions',cycleKey);const old=await getDoc(ref);if(old.exists()){$('completionNote').textContent='Already completed in this cycle ✓';b.textContent='Completed';return}await setDoc(ref,{uid:me.uid,activityId:activity.id,cycleKey,title:activity.title,type:activity.type,completedAtMs:Date.now(),cycleEndsAtMs:activity.endAtMs});const xp=activity.difficulty==='Hard'?60:activity.difficulty==='Medium'?40:25;let award=null;try{award=await awardXp(me.uid,xp,{catalogActivityId:activity.id});showAchievement({title:activity.title,subtitle:'+'+xp+' XP',icon:activity.icon||'🎯',leveledUp:award?.leveledUp,level:award?.level,badges:award?.badgesEarned||[]})}catch(xpErr){console.warn('XP award skipped',xpErr)}$('completionNote').innerHTML='<div class="activity-success">Completed ✓ Great job.</div>';b.textContent='Completed'}catch(e){b.disabled=false;updateCompleteState();$('completionNote').textContent=e.message||'Could not save completion.'}};
 onAuthStateChanged(auth,u=>{if(!u){location.href='login.html?redirect=activity.html?id='+encodeURIComponent(id||'');return}me=u;activity=activeCatalogActivities().find(x=>x.id===id)||null;if(!activity)return fail('Activity not found or its cycle has ended.');render()});
