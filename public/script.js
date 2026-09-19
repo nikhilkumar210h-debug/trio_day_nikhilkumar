@@ -1526,7 +1526,12 @@ function initHighlightsFeed(uid) {
   );
 
   onSnapshot(
-    query(collection(db, 'posts'), where('privacy', '==', 'public'), limit(50)),
+    query(
+      collection(db, 'posts'),
+      where('privacy', '==', 'public'),
+      where('isStory', '==', true),
+      limit(50)
+    ),
     handle('publicStories'),
     err => { console.error('Public stories feed:', err); }
   );
@@ -1535,6 +1540,7 @@ function initHighlightsFeed(uid) {
     query(
       collection(db, 'posts'),
       where('privacy', '==', 'friends'),
+      where('isStory', '==', true),
       where('allowedUids', 'array-contains', uid),
       limit(50)
     ),
