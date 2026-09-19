@@ -217,6 +217,16 @@ service cloud.firestore {
         && request.resource.data.title.size() > 0
         && request.resource.data.title.size() <= 100
         && request.resource.data.kind in ['community', 'challenge', 'seasonal']
+        && request.resource.data.activityType in ['puzzle','build','learn','challenge','game']
+        && request.resource.data.category is string
+        && request.resource.data.category.size() > 0
+        && request.resource.data.category.size() <= 60
+        && request.resource.data.durationMin is number
+        && request.resource.data.durationMin >= 5
+        && request.resource.data.durationMin <= 180
+        && request.resource.data.difficulty in ['Easy','Medium','Hard']
+        && request.resource.data.endAtMs is number
+        && request.resource.data.expiresInDays in [7,14,21,30,40]
         && request.resource.data.featured == false
         && request.resource.data.hidden == false;
       allow update: if signedIn() && (
