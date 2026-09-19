@@ -1,6 +1,6 @@
 import{auth,db}from'./firebase-init.js';
 import{onAuthStateChanged}from'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
-import{collection,query,where,limit,onSnapshot,getDoc,doc,addDoc,setDoc,serverTimestamp,getDocs,writeBatch}from'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
+import{collection,query,where,limit,onSnapshot,getDoc,doc,getDocs,writeBatch}from'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 import{escapeHtml as esc}from'./utils.js';
 import{activityCardHtml,ACTIVITY_TYPES,normalizeActivityType}from'./activity-ui.js';
 import{activeCatalogActivities}from'./activity-catalog.js';
