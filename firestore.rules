@@ -218,7 +218,10 @@ service cloud.firestore {
         || (
           resource.data.creatorUid == request.auth.uid
           && !request.resource.data.diff(resource.data).affectedKeys()
-              .hasAny(['featured', 'hidden', 'joins', 'likes', 'comments', 'completions', 'status'])
+              .hasAny([
+                'featured', 'hidden', 'joins', 'likes', 'comments', 'completions', 'status',
+                'challengeType', 'caseVersion', 'caseData', 'verificationType', 'answerHash'
+              ])
         )
         // No rule allows arbitrary counter/status bumps by a signed-in user.
         // Counter fields (joins, likes, comments, completions) are updated
@@ -249,6 +252,10 @@ service cloud.firestore {
       match /completions/{uid} {
         allow read: if signedIn();
         allow create, update, delete: if false;
+      }
+      // Mystery solutions are server-only. The public case data lives on the parent task.
+      match /verification/{docId} {
+        allow read, create, update, delete: if false;
       }
       match /submissions/{uid} {
         allow read: if signedIn() && (
