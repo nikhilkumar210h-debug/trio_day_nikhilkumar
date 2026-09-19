@@ -1,4 +1,4 @@
-import{doc,getDoc,setDoc,onSnapshot}from'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';import{getBuildConfig}from'./activity-catalog.js';
+import{doc,getDoc,setDoc,onSnapshot,runTransaction}from'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';import{getBuildConfig}from'./activity-catalog.js';
 const esc=s=>{const d=document.createElement('div');d.textContent=String(s??'');return d.innerHTML};
 const stateRef=(db,roomId)=>doc(db,'rooms',roomId,'state','main');
 function initialState(activity){const cfg=getBuildConfig(activity.id);if(!cfg)return null;const st={order:(cfg.items||[]).slice(),alloc:{},placed:{},assign:{}};if(cfg.mechanic==='order'&&st.order.length>2){const shift=((activity.id||'b0').charCodeAt(1)||1)%st.order.length;st.order=st.order.slice(shift).concat(st.order.slice(0,shift));if(st.order.every((x,i)=>x===cfg.target?.[i]))st.order.reverse()}return st}
@@ -7,7 +7,15 @@ export async function mountSharedBuildWorkspace(root,{db,roomId,activity,me,onSt
  root.innerHTML='<div class="room-forge-head"><div class="room-forge-title"><strong>Shared Forge Board</strong><small>Everyone in this room sees the same board.</small></div><span class="room-forge-sync"><i></i> SYNCED</span></div><div id="roomForgeBody" class="room-forge-body"></div><div id="roomForgeLast" class="room-forge-last">Waiting for the shared board…</div>';
  let current=null,tool=0;
  const ref=stateRef(db,roomId);
- const write=async(next)=>{if(!current)return;const merged={...current,...next};await setDoc(ref,{state:merged,updatedBy:me.uid,updatedAtMs:Date.now(),version:Number(current.version||0)+1},{merge:true})};
+ const write=async(next)=>{
+   await runTransaction(db,async tx=>{
+     const snap=await tx.get(ref);
+     const latest=snap.exists()?snap.data():{state:initialState(activity)||{}};
+     const merged={...(latest.state||{}),...next};
+     tx.set(ref,{state:merged,updatedBy:me.uid,updatedAtMs:Date.now(),version:Number(latest.version||0)+1,activityId:activity.id,mechanic:cfg.mechanic},{merge:true});
+     current={...merged,version:Number(latest.version||0)+1,updatedBy:me.uid,updatedAtMs:Date.now()};
+   });
+ };
  const pass=async()=>{await write({passed:true,passedBy:me.uid,passedAtMs:Date.now()});onStateChange?.({passed:true})};
  const render=state=>{current=state;const body=root.querySelector('#roomForgeBody');if(!body)return;
   if(cfg.mechanic==='order'){body.innerHTML='<div class="forge-order-list">'+state.order.map((item,i)=>'<div class="forge-order-row"><span class="forge-order-label">'+esc(item)+'</span><button class="forge-mini-btn" data-move="'+i+'" data-dir="-1">↑</button><button class="forge-mini-btn" data-move="'+i+'" data-dir="1">↓</button></div>').join('')+'</div><div class="room-forge-actions"><button class="room-forge-btn room-forge-btn--primary" id="roomCheck">Check shared build</button></div><div id="roomResult" class="room-forge-status">'+(state.passed?'Shared build accepted ✓':'')+'</div>';
