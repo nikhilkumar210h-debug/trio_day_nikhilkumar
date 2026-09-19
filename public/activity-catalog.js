@@ -30,18 +30,18 @@ const P=[
 ['p12','Logic','Codebreaker Mini','Deduce a four-symbol secret code from feedback clues.','Solve 3 codes within 8 guesses each.','Separate exact-position clues from correct-symbol clues and keep candidates.',25,'Hard',40,'🧩']
 ];
 const B=[
-['Web','One-Page Landing','Build a polished responsive landing page for an imaginary product.','Ship a working one-page layout with hero, value, CTA and footer.','Start with structure, then spacing, type and one visual accent.','45','Medium',30,'🖥️'],
-['UI','Study Dashboard','Design a dashboard that makes a student’s week easy to understand.','Create four useful cards and one progress visual.','Prioritize hierarchy and useful information over decoration.','40','Medium',21,'📊'],
-['Web','Mini Expense UI','Build a clean expense-tracker interface with categories and totals.','Show add, list, filter and total states.','Use realistic sample data and make mobile layout intentional.','45','Medium',30,'💳'],
-['Creative','CSS Poster','Create a poster using only HTML and CSS.','Produce a visual composition with a clear hierarchy.','Experiment with grids, typography, gradients and geometric shapes.',30,'Easy',14,'🎨'],
-['Web','Quiz Interface','Build a quiz screen with question, options, progress and result states.','Prototype the full user flow.','Design both correct and incorrect states before polishing.',40,'Medium',30,'❓'],
-['Product','Pomodoro Workspace','Build a focused timer workspace with task and session areas.','Create a calm desktop and mobile layout.','Think about what should remain visible while the timer is running.',35,'Medium',21,'⏱️'],
-['Portfolio','Hero Section','Build a memorable portfolio hero for a creator or engineer.','Create hero, proof points and a strong primary action.','Use visual hierarchy to communicate identity in seconds.',30,'Easy',14,'🚀'],
-['Product','Study Planner','Design a weekly study planner with subject filters.','Make it easy to see what to do next.','Use categories, priority and time estimates rather than decoration.',40,'Medium',30,'📚'],
-['Data','Data Story Card','Turn a small dataset into a visual story card.','Create one chart and three useful findings.','Lead with the insight; show supporting numbers second.',35,'Medium',21,'📈'],
-['Utility','CLI Tool Plan','Design a useful command-line tool for an everyday problem.','Define commands, inputs, outputs and 5 edge cases.','Write the interface first, implementation plan second.',25,'Easy',14,'⌨️'],
-['Mobile','App Wireframe','Wireframe a mobile app that solves one clear problem.','Create 5 connected screens.','Start with user flow and reduce every screen to one job.',40,'Medium',30,'📱'],
-['AI','Prompt Playground','Build a small interface for testing structured AI prompts.','Create input, prompt-template and result sections.','Make the controls understandable to a first-time user.',40,'Medium',40,'🤖']
+['Systems','Build a Reminder Flow','Arrange the pieces of a reminder system from trigger to result.','Create a working flow with the right order and no missing step.','Choose the trigger first, then condition, action and feedback.',25,'Easy',21,'🔔'],
+['Planning','Build a Study Day','Arrange six study blocks into a realistic day with breaks and priorities.','Create a schedule that completes the required work without overlap.','Protect focused time, add recovery and place the hardest block when attention is highest.',25,'Easy',14,'🗓️'],
+['Routes','Build a Smart Route','Arrange five stops into a route while keeping the route practical.','Reach every required stop and finish at the destination.','Think about order, repeated travel and the final return before committing.',20,'Medium',21,'🗺️'],
+['Budget','Build a ₹5,000 Event','Allocate a fixed budget across venue, food, travel and backup.','Stay under budget while covering every required category.','Spend on essentials first and keep a deliberate buffer.',25,'Medium',30,'💰'],
+['Space','Build a Desk Setup','Place six objects on a small grid without blocking the main work zone.','Place every required object and keep the central area clear.','Keep frequently used objects close and preserve a clean movement path.',20,'Easy',21,'🖥️'],
+['Workflow','Build a Support Workflow','Arrange a customer-support flow from issue to resolution.','Create a sequence that handles every required step exactly once.','Separate verification, investigation, resolution and follow-up.',20,'Medium',30,'🔄'],
+['Dashboard','Build an Insight Board','Arrange four information blocks so the key metric is visible first.','Put the decision-critical information in the correct hierarchy.','Start with the question a user needs answered, then add supporting context.',25,'Medium',30,'📊'],
+['Strategy','Build a Revision Plan','Arrange revision topics around prerequisites and limited time.','Create a sequence that respects every prerequisite.','Learn foundations before dependent topics and leave a final review block.',25,'Medium',21,'🧠'],
+['Resources','Build a Travel Pack','Choose and arrange essential items for a one-day trip under a weight limit.','Pack every required category without crossing the limit.','Prioritize essentials, combine functions and leave room for one contingency item.',20,'Easy',14,'🎒'],
+['Decision','Build a Rescue Plan','Arrange response steps for a simple non-dangerous everyday failure scenario.','Create a safe and complete response order.','Check the problem, stabilize the situation, choose a fix and verify the result.',20,'Medium',21,'🧭'],
+['Grid','Build a Mini Workspace','Place required zones on a 4×4 grid while keeping related zones adjacent.','Satisfy every placement constraint.','Place fixed zones first, then use adjacency constraints to finish the layout.',25,'Hard',30,'▦'],
+['Team','Build a Team Mission','Assign four roles to four people with different strengths and constraints.','Produce one valid team assignment with no conflicting roles.','Match the task requirement to the relevant strength, then resolve the remaining constraints.',25,'Medium',21,'🤝']
 ];
 const L=[
 ['Coding','Python Foundations','Practice lists, dictionaries, functions and clean data flow.','Solve 6 small tasks and explain one solution.','Code first, then rewrite one solution with clearer names and functions.',35,'Easy',30,'🐍'],
@@ -85,6 +85,22 @@ const G=[
 ['Patterns','Visual Sequence','Identify the next item in quick visual sequences.','Solve 10 rounds.','Look for rotation, count, position and color changes.',15,'Medium',14,'🟣'],
 ['Team','Build-a-Story','Each person adds one sentence to create a shared story.','Complete a 12-sentence story.','Keep continuity while adding one surprising but safe detail.',15,'Easy',21,'📖']
 ];
+
+const BUILD_CONFIG={
+ b1:{mechanic:'order',items:['Trigger','Condition','Action','Feedback'],target:['Trigger','Condition','Action','Feedback']},
+ b2:{mechanic:'order',items:['Hard topic','Break','Easy topic','Practice','Review','Plan tomorrow'],target:['Hard topic','Break','Easy topic','Practice','Review','Plan tomorrow']},
+ b3:{mechanic:'order',items:['Start','Stop A','Stop B','Stop C','Destination'],target:['Start','Stop A','Stop B','Stop C','Destination']},
+ b4:{mechanic:'allocate',budget:5000,items:[['Venue',1500],['Food',1800],['Travel',900],['Backup',800]]},
+ b5:{mechanic:'grid',size:4,required:['Desk','Lamp','Notebook'],blocked:[5,6,9]},
+ b6:{mechanic:'order',items:['Receive issue','Verify','Investigate','Resolve','Follow up'],target:['Receive issue','Verify','Investigate','Resolve','Follow up']},
+ b7:{mechanic:'order',items:['Key metric','Trend','Breakdown','Detail'],target:['Key metric','Trend','Breakdown','Detail']},
+ b8:{mechanic:'order',items:['Foundations','Core skill','Application','Practice','Review'],target:['Foundations','Core skill','Application','Practice','Review']},
+ b9:{mechanic:'allocate',budget:10,items:[['Water',3],['Food',3],['Navigation',2],['Contingency',2]]},
+ b10:{mechanic:'order',items:['Understand problem','Stabilize','Choose fix','Apply','Verify'],target:['Understand problem','Stabilize','Choose fix','Apply','Verify']},
+ b11:{mechanic:'grid',size:4,required:['Focus','Reference','Write','Tools'],blocked:[3,7,12]},
+ b12:{mechanic:'assign',people:['Ava','Ben','Cara','Dev'],roles:['Planner','Builder','Checker','Presenter'],correct:{Ava:'Planner',Ben:'Builder',Cara:'Checker',Dev:'Presenter'}}
+};
+export function getBuildConfig(id){return BUILD_CONFIG[id]||null}
 
 export const ACTIVITY_CATALOG=[
   ...P.map((x,i)=>C('p'+(i+1),'puzzle',...x)),
