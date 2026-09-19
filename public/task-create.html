@@ -79,6 +79,23 @@
         </label>
       </div>
 
+      <div class="builder-section verification-builder">
+        <div class="builder-label">How will people prove they solved it?</div>
+        <label class="field"><span class="label-text">Proof method</span>
+          <select id="verificationType">
+            <option value="answer" selected>Answer — player submits the correct answer</option>
+            <option value="proof">Proof — player submits evidence for creator review</option>
+          </select>
+        </label>
+        <label class="field" id="answerField"><span class="label-text">Correct answer</span>
+          <input id="answer" maxlength="200" placeholder="Example: 42">
+          <small class="muted">This stays out of the challenge instructions. The server checks the submitted answer.</small>
+        </label>
+        <label class="field" id="proofField" hidden><span class="label-text">What counts as proof?</span>
+          <textarea id="proofInstruction" rows="3" maxlength="500" placeholder="Example: Explain your reasoning and include the final result."></textarea>
+        </label>
+      </div>
+
       <details class="advanced-create">
         <summary>Customize challenge</summary>
         <div class="advanced-grid">
