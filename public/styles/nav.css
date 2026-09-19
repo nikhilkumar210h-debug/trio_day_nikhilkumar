@@ -102,13 +102,13 @@
   .nkm-rail .nav-label { font-size: var(--text-xs); letter-spacing: .04em; }
   .nkm-rail .nav-btn--create { margin-top: auto; height: 52px; }
   /* Push main content aside — account for rail width */
-  .app-main, .profile-main, .users-main, .chat-main, .tasks-main, .private-main,
+  .app-main, .profile-main, .users-main, .discover-main, .create-main, .chat-main, .tasks-main, .private-main,
   .notifications-main, .search-main, .policy-main, .view-post-main, .auth-wrap {
     margin-left: 72px;
     width: calc(100% - 72px);
     max-width: calc(100% - 72px);
   }
-  .tasks-main.nkm-activity, .profile-main, .chat-main.nkm-chat, .private-main,
+  .tasks-main.nkm-activity, .profile-main, .discover-main, .create-main, .chat-main.nkm-chat, .private-main,
   .notifications-main, .search-main, .policy-main, .view-post-main {
     margin-left: 72px !important;
     margin-right: auto;
@@ -131,13 +131,13 @@
   }
   .nkm-rail .nav-label { text-transform: none; letter-spacing: 0; }
   .nkm-rail .nav-btn--create { justify-content: center; }
-  .app-main, .profile-main, .users-main, .chat-main, .tasks-main, .private-main,
+  .app-main, .profile-main, .users-main, .discover-main, .create-main, .chat-main, .tasks-main, .private-main,
   .notifications-main, .search-main, .policy-main, .view-post-main, .auth-wrap {
     margin-left: 240px;
     width: calc(100% - 240px);
     max-width: calc(100% - 240px);
   }
-  .tasks-main.nkm-activity, .profile-main, .chat-main.nkm-chat, .private-main,
+  .tasks-main.nkm-activity, .profile-main, .discover-main, .create-main, .chat-main.nkm-chat, .private-main,
   .notifications-main, .search-main, .policy-main, .view-post-main {
     margin-left: 240px !important;
   }
