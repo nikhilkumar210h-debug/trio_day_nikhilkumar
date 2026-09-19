@@ -148,8 +148,8 @@ async function renderStoryStrip(uid) {
 function openStoryViewer(s) {
   const ov = document.createElement('div');
   ov.className = 'story-viewer-overlay';
-  const safeN = (s.name || 'Story').replace(/</g, '<');
-  const safeM = (s.message || '').slice(0, 120).replace(/</g, '<');
+  const safeN = escapeHtml(s.name || 'Story');
+  const safeM = escapeHtml((s.message || '').slice(0, 120));
   const isOwn = s.uid && currentUser && s.uid === currentUser.uid;
   const isVoice = s.isVoice || s.type === 'voice';
   const mediaTag = isVoice
