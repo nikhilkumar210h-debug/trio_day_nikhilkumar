@@ -55,8 +55,8 @@ function ensureInit() {
       await OneSignal.init({
         appId: ONESIGNAL_APP_ID,
         allowLocalhostAsSecureOrigin: true,
-        serviceWorkerPath: "/push/onesignal/OneSignalSDKWorker.js?v=23",
-        serviceWorkerParam: { scope: "/" }
+        serviceWorkerPath: "push/onesignal/OneSignalSDKWorker.js",
+        serviceWorkerParam: { scope: "/push/onesignal/" }
       });
       // Prefer in-app toasts while the tab is open (auth-ui Firestore listener).
       OneSignal.Notifications.addEventListener("foregroundWillDisplay", (event) => {
