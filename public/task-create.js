@@ -457,17 +457,97 @@ function renderPreview() {
   }
 });
 
-$('toStep2')?.addEventListener('click', () => setStep(2));
-$('backStep1')?.addEventListener('click', () => setStep(1));
-$('toStep3')?.addEventListener('click', () => {
-  const error = validateBeforePreview();
-  if (error) return showToast(error, 'warn');
+function validateBasicsOnly(){
+  const title=$('title')?.value.trim()||'', desc=$('description')?.value.trim()||'', goal=$('goal')?.value.trim()||'';
+  if(title.length<3)return 'Give the activity a clear name first.';
+  if(desc.length<10)return 'Describe what people will actually do.';
+  if(goal.length<5)return 'Add a simple finish line.';
+  return null;
+}
+
+function previewInteractionMarkup(){
+  const type=ACTIVITY_TYPES[activeType], d=interactionDraft||{};
+  if(activeType==='puzzle'||activeType==='learn'){
+    const lesson=activeType==='learn'&&d.lesson?'<div class="preview-mini-lesson">'+esc(d.lesson)+'</div>':'';
+    return lesson+'<div class="preview-mini-question">'+esc(d.question||'Your question will appear here.')+'</div><div class="preview-mini-options">'+(d.options||['Answer A','Answer B','Answer C','Answer D']).map((o,i)=>'<button type="button" data-preview-answer="'+i+'">'+esc(o||'Answer '+String.fromCharCode(65+i))+'</button>').join('')+'</div><div id="previewInteractionResult" class="preview-interaction-result">Pick an answer to test the interaction.</div>';
+  }
+  if(activeType==='challenge'){
+    const rounds=d.rounds||[], round=rounds[challengeRound]||rounds[0]||{q:'Your challenge question',o:['A','B','C','D'],a:0};
+    return '<div class="preview-round-label">ROUND '+(challengeRound+1)+' / 5</div><div class="preview-mini-question">'+esc(round.q||'Your challenge question')+'</div><div class="preview-mini-options">'+(round.o||[]).map((o,i)=>'<button type="button" data-preview-answer="'+i+'">'+esc(o||'Answer')+'</button>').join('')+'</div><div id="previewInteractionResult" class="preview-interaction-result">This is a live feel-test, not a saved response.</div>';
+  }
+  if(activeType==='build'){
+    const m=d.mechanic||'order', c=d.config||{};
+    if(m==='order') return '<div class="preview-build-label">FLOW</div><div class="preview-build-items">'+(c.items||['Step 1','Step 2','Step 3']).map((x,i)=>'<span><b>'+(i+1)+'</b>'+esc(x)+'</span>').join('')+'</div>';
+    if(m==='allocate') return '<div class="preview-build-label">BUDGET</div><div class="preview-build-budget"><strong>'+Number(c.budget||100)+'</strong><span>Total budget</span></div><div class="preview-build-items">'+(c.items||[]).map(x=>'<span><b>+</b>'+esc(x[0])+ '<small>min '+Number(x[1]||0)+'</small></span>').join('')+'</div>';
+    if(m==='grid') return '<div class="preview-build-label">GRID</div><div class="preview-mini-grid">'+[...Array(16).keys()].map(i=>'<i class="'+((c.blocked||[]).includes(i)?'blocked':'')+'">'+(i+1)+'</i>').join('')+'</div>';
+    if(m==='assign') return '<div class="preview-build-label">ROLES</div><div class="preview-build-items">'+(c.people||[]).map((x,i)=>'<span><b>◎</b>'+esc(x)+'<small>'+esc(c.correct?.[x]||c.roles?.[i]||'Role')+'</small></span>').join('')+'</div>';
+  }
+  return '<div class="preview-game-state"><span>LIVE ROOM</span><strong>Players join a shared room.</strong><small>Your published game starts here.</small></div>';
+}
+
+function openCreatorPreview(){
+  const modal=$('creatorPreviewModal'), body=$('creatorPreviewModalBody');
+  if(!modal||!body)return;
+  const type=ACTIVITY_TYPES[activeType], title=$('title')?.value.trim()||'Your activity';
+  const desc=$('description')?.value.trim()||type.desc;
+  const goal=$('goal')?.value.trim()||defaults[activeType].goal;
+  $('creatorPreviewModalTitle').textContent=title;
+  body.innerHTML='<div class="preview-modal-hero"><span class="preview-modal-icon">'+esc(type.icon)+'</span><div><span>'+esc(type.label)+'</span><h3>'+esc(title)+'</h3><p>'+esc(desc)+'</p></div></div><div class="preview-modal-goal"><strong>Goal</strong><span>'+esc(goal)+'</span></div><div class="preview-modal-interaction"><div class="preview-modal-kicker">INTERACTION</div>'+previewInteractionMarkup()+'</div>';
+  modal.hidden=false;modal.setAttribute('aria-hidden','false');document.body.classList.add('preview-open');
+  const close=()=>{modal.hidden=true;modal.setAttribute('aria-hidden','true');document.body.classList.remove('preview-open');};
+  modal.querySelectorAll('[data-preview-close]').forEach(el=>{el.onclick=close;});
+  modal.querySelectorAll('[data-preview-answer]').forEach(btn=>btn.addEventListener('click',()=>{
+    const picked=Number(btn.dataset.previewAnswer);
+    const correct=Number((activeType==='challenge'?(interactionDraft?.rounds?.[challengeRound]||{}):interactionDraft||{}).correct ?? (activeType==='challenge'?(interactionDraft?.rounds?.[challengeRound]||{}).a:0));
+    const result=modal.querySelector('#previewInteractionResult');
+    if(!result)return;
+    result.textContent=picked===correct?'Looks good ✓ Correct option responds.':'That is how a wrong choice will feel.';
+    result.className='preview-interaction-result '+(picked===correct?'ok':'bad');
+  }));
+}
+
+$('toStep2')?.addEventListener('click',()=>{
+  if(!startChosen)return showToast('Choose a starter or Blank canvas first.','warn');
+  setStep(2,{stage:0});
+});
+$('backStep1')?.addEventListener('click',()=>setStep(1));
+$('creatorStageNext')?.addEventListener('click',()=>{
+  if(editorStage===0){
+    if(!startChosen)return showToast('Choose a starter or Blank canvas first.','warn');
+    setEditorStage(1); return;
+  }
+  if(editorStage===1){
+    const error=validateBasicsOnly();
+    if(error)return showToast(error,'warn');
+    setEditorStage(2);
+    if(!interactionDraft)interactionDraft=blankInteraction(activeType);
+    quizCustomizerStage=0; challengeRound=0; renderInteractionEditor(); return;
+  }
+  if(editorStage===2){
+    if((activeType==='puzzle'||activeType==='learn') && quizCustomizerStage<2){
+      quizCustomizerStage+=1;renderInteractionEditor();return;
+    }
+    const error=validateBeforePreview();
+    if(error)return showToast(error,'warn');
+    setEditorStage(3);return;
+  }
+  const error=validateBeforePreview();
+  if(error)return showToast(error,'warn');
   setStep(3);
 });
-$('backStep2')?.addEventListener('click', () => setStep(2));
-document.querySelectorAll('[data-step]').forEach(btn => btn.addEventListener('click', () => {
-  const target = Number(btn.dataset.step);
-  if (target < step) setStep(target);
+$('creatorStageBack')?.addEventListener('click',()=>{
+  if(editorStage===2){
+    if((activeType==='puzzle'||activeType==='learn') && quizCustomizerStage>0){quizCustomizerStage-=1;renderInteractionEditor();return;}
+    setEditorStage(1);return;
+  }
+  if(editorStage>0){setEditorStage(editorStage-1);return;}
+  setStep(1);
+});
+$('backStep2')?.addEventListener('click',()=>setStep(2,{stage:3}));
+$('openCreatorPreview')?.addEventListener('click',openCreatorPreview);
+document.querySelectorAll('[data-step]').forEach(btn=>btn.addEventListener('click',()=>{
+  const target=Number(btn.dataset.step);
+  if(target<step)setStep(target);
 }));
 
 $('creatorForm')?.addEventListener('submit', async e => {
@@ -530,12 +610,16 @@ onAuthStateChanged(auth, async user => {
   me = user;
   const snap = await getDoc(doc(db, 'users', user.uid)).catch(() => null);
   profile = snap?.exists() ? snap.data() : { name: user.displayName || 'User' };
-  selected = starters()[0] || null;
-  interactionDraft = sourceConfig(selected);
+  selected = null;
+  startChosen = false;
+  interactionDraft = null;
+  editorStage = 0;
+  buildCustomizerStage = 0;
+  quizCustomizerStage = 0;
+  challengeRound = 0;
+  resetLaneDraft();
   renderLanes();
   renderTemplates();
-  fillFormFromStarter(true);
   renderInteractionEditor();
-  renderPreview();
   setStep(1);
 });
