@@ -54,8 +54,9 @@ export async function listCommunityTasks({ kind = null, status = 'active', max =
     let list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     const now = Date.now();
     list = list.filter(t => {
+      const start = Number(t.startAtMs) || 0;
       const effectiveEnd = Number(t.endAtMs) || ((Number(t.createdAtMs) || now) + 30 * 86400000);
-      if (effectiveEnd <= now) return false;
+      if (start > now || effectiveEnd <= now) return false;
       if (!includeHidden && t.hidden) return false;
       return true;
     });
@@ -98,8 +99,12 @@ export async function getCommunityTask(id) {
 export async function createCommunityTask(uid, profile, data) {
   if (!uid) throw new Error('Login required to create a challenge');
   const now = Date.now();
-  const startAtMs = Number(data.startAtMs) || now;
-  const endAtMs   = Math.min(Number(data.endAtMs) || (now + 14 * 86400000), now + 40 * 86400000);
+  const startAtMs = Math.max(now, Number(data.startAtMs) || now);
+  const requestedDays = Number(data.expiresInDays) || 14;
+  const expiresInDays = [7,14,21,30,40].includes(requestedDays) ? requestedDays : 14;
+  const minimumEnd = startAtMs + expiresInDays * 86400000;
+  const requestedEnd = Number(data.endAtMs) || minimumEnd;
+  const endAtMs = Math.min(Math.max(requestedEnd, minimumEnd), now + 40 * 86400000);
   const kind = ['community', 'challenge', 'seasonal'].includes(data.kind) ? data.kind : 'challenge';
   const payload = {
     title:        String(data.title       || 'Community challenge').slice(0, 100),
@@ -113,7 +118,7 @@ export async function createCommunityTask(uid, profile, data) {
     difficulty: ['Easy','Medium','Hard'].includes(data.difficulty) ? data.difficulty : 'Medium',
     goal: String(data.goal || '').slice(0, 240),
     instructions: String(data.instructions || '').slice(0, 900),
-    expiresInDays: Math.max(7, Math.min(40, Number(data.expiresInDays) || 14)),
+    expiresInDays,
     templateId:   data.templateId || null,
     metric:       data.metric     || 'manual',
     target:       Math.max(1, Number(data.target)    || 1),
