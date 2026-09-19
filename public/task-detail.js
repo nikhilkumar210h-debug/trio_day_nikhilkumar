@@ -5,7 +5,7 @@ import {
   getCommunityTask, joinTask, leaveTask, isMember, toggleLike,
   addComment, listComments, completeTask,
   setChallengeFeatured, setChallengeHidden, removeChallenge, archiveTask,
-  submitProof, listSubmissions, reviewSubmission
+  submitProof, listSubmissions, reviewSubmission, setChallengePresence, rateChallenge as saveChallengeRating
 } from './gamification/community-tasks.js';
 import { isAdmin } from './gamification/templates.js';
 import { trioCache } from './trio-cache.js';
@@ -35,13 +35,28 @@ async function followCreator(creatorUid) {
 
 async function rateChallenge(rating, feedback) {
   if (!me || !task) return;
-  const value = Math.max(1, Math.min(5, Number(rating)));
-  await setDoc(doc(db, 'communityTasks', taskId, 'ratings', me.uid), { uid: me.uid, rating: value, feedback: String(feedback || '').slice(0, 160), atMs: Date.now() });
-  const count = Number(task.ratingCount || 0);
-  const avg = Number(task.ratingAverage || 0);
-  const nextAvg = ((avg * count) + value) / (count + 1);
-  await updateDoc(doc(db, 'communityTasks', taskId), { ratingAverage: Number(nextAvg.toFixed(2)), ratingCount: count + 1 }).catch(() => {});
+  return saveChallengeRating(taskId, me.uid, rating, feedback);
 }
+
+let presenceTimer = null;
+let presenceActive = false;
+async function syncChallengePresence(active) {
+  if (!me || !taskId) return;
+  if (!active) {
+    if (!presenceActive) return;
+    presenceActive = false;
+    clearInterval(presenceTimer);
+    presenceTimer = null;
+    await setChallengePresence(taskId, false).catch(() => {});
+    return;
+  }
+  if (presenceActive) return;
+  presenceActive = true;
+  await setChallengePresence(taskId, true).catch(() => {});
+  clearInterval(presenceTimer);
+  presenceTimer = setInterval(() => setChallengePresence(taskId, true).catch(() => {}), 45 * 1000);
+}
+
 
 async function shareCompletionToStory() {
   if (!me || !task) throw new Error('Login required');
@@ -105,6 +120,7 @@ async function render() {
   const started = startedKey ? localStorage.getItem(startedKey) === '1' : false;
   const isMystery = task.challengeType === 'mystery';
   const verificationType = task.verificationType === 'answer' ? 'answer' : 'proof';
+  syncChallengePresence(!!(joined && started && !completed));
   const proofInstruction = task.proofInstruction || 'Explain what you did and provide enough evidence for the creator to verify it.';
   if (isMystery) {
     const existingCase = $('mysteryCaseMount');
@@ -159,6 +175,7 @@ async function render() {
   $('startBtn')?.addEventListener('click', () => {
     if (!me || !joined || completed) return;
     localStorage.setItem(startedKey, '1');
+    await syncChallengePresence(true);
     render();
   });
   $('storyBtn')?.addEventListener('click', async () => {
@@ -295,6 +312,18 @@ $('commentBtn').addEventListener('click', async () => {
 });
 
 window.addEventListener('trio-mystery-complete', () => { render().catch(console.error); });
+window.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    syncChallengePresence(false).catch(() => {});
+  } else if (me && task) {
+    const startedKey = `challenge_started_${me.uid}_${taskId}`;
+    isMember(taskId, me.uid).then(joined => {
+      const completedRef = doc(db, 'communityTasks', taskId, 'completions', me.uid);
+      return getDoc(completedRef).then(snap => syncChallengePresence(!!(joined && localStorage.getItem(startedKey) === '1' && !snap.exists())));
+    }).catch(() => {});
+  }
+});
+window.addEventListener('pagehide', () => { syncChallengePresence(false).catch(() => {}); });
 
 onAuthStateChanged(auth, async user => {
   me = user;
