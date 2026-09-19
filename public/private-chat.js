@@ -16,6 +16,7 @@ const params = new URLSearchParams(location.search);
 const peerUid = params.get('uid');
 
 import { createSheet } from './ui/sheet.js';
+import { showToast } from './ui/toast.js';
 
 function messageHtml(m) {
   const text = m?.text ?? m?.message ?? '';
@@ -62,7 +63,7 @@ async function deletePrivateMessage(msgDocId) {
     await deleteDoc(ref);
   } catch (err) {
     console.error('Delete failed:', err);
-    alert('Message delete nahi hua: ' + (err?.message || err));
+    showToast('Message delete nahi hua: ' + (err?.message || err), 'error');
   }
 }
 
