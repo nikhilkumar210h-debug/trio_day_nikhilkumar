@@ -44,7 +44,7 @@ function createHandler() {
   if (fab) { fab.click(); return; }
   if (headerPlus) { headerPlus.click(); return; }
   if (chooser) { chooser.hidden = false; document.body.style.overflow = 'hidden'; return; }
-  location.href = 'create.html';
+  location.href = 'task-create.html';
 }
 
 export function renderNav() {
