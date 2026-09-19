@@ -23,16 +23,22 @@ async function renderRatings() {
   if (!section || !me) return;
   section.hidden = false;
   const status = $('ratingStatus');
+  const submit = $('ratingSubmit');
   try {
+    const completed = await getDoc(doc(db, 'communityTasks', taskId, 'completions', me.uid));
     const snap = await getDocs(collection(db, 'communityTasks', taskId, 'ratings'));
     const rows = snap.docs.map(d => d.data()).filter(r => Number(r.overall) >= 1);
+
     if (rows.length) {
       const avg = rows.reduce((sum, r) => sum + Number(r.overall), 0) / rows.length;
       $('ratingSummary').textContent = avg.toFixed(1) + ' / 5 · ' + rows.length + ' rating' + (rows.length === 1 ? '' : 's');
     } else {
       $('ratingSummary').textContent = 'No ratings yet';
     }
+
     const mine = snap.docs.find(d => d.id === me.uid)?.data();
+    const canRate = completed.exists();
+
     if (mine) {
       ['Overall','Fun','Useful','Teamwork'].forEach(k => {
         const el = $('rating' + k);
@@ -40,11 +46,14 @@ async function renderRatings() {
         if (el && Number(v) >= 1) el.value = String(v);
       });
       $('ratingSubmit').textContent = 'Update rating';
-      status.textContent = 'You have already rated this activity.';
-    } else {
-      status.textContent = '';
     }
+
+    submit.disabled = !canRate;
+    status.textContent = canRate
+      ? (mine ? 'You have rated this activity.' : 'Complete the activity to leave your rating.')
+      : 'Complete the activity before rating it.';
   } catch (e) {
+    status.textContent = 'Rating is temporarily unavailable.';
     console.error('renderRatings failed', e);
   }
 }
@@ -52,6 +61,8 @@ async function renderRatings() {
 async function saveRating(e) {
   e.preventDefault();
   if (!me || !task) return;
+  const completed = await getDoc(doc(db, 'communityTasks', taskId, 'completions', me.uid));
+  if (!completed.exists()) return;
   const btn = $('ratingSubmit');
   const status = $('ratingStatus');
   btn.disabled = true;
