@@ -25,25 +25,14 @@
 <main class="chat-main nkm-chat">
   <div class="nkm-chat-head">
     <h1>Messages</h1>
-    <p>Recent conversations — fast, original NKM</p>
+    <p>Private conversations and challenge discussions.</p>
   </div>
-  <div class="chat-mode-switch nkm-tabs" role="tablist" aria-label="Chat mode">
-    <button class="chat-mode-btn nkm-tab is-active" type="button" data-mode="private">Private</button>
-    <button class="chat-mode-btn nkm-tab" type="button" data-mode="group">Communities</button>
-  </div>
-
   <section id="privateInbox" class="nkm-inbox-panel">
     <div class="nkm-inbox-head">
       <strong>Messages</strong><span id="conversationCount" class="nkm-badge">0</span>
     </div>
     <div class="nkm-inbox-search"><input id="userSearch" class="nkm-search" type="search" placeholder="Search name, TRIO-ID…"></div>
     <div id="userList" class="nkm-inbox-list"></div>
-  </section>
-
-  <section id="groupPanel" class="nkm-group-panel" hidden>
-    <div class="nkm-group-head"><strong>Communities</strong><span>Everyone can join</span></div>
-    <div id="groupMessages" class="nkm-messages"></div>
-    <form id="groupForm" class="nkm-input-row"><input id="groupInput" class="nkm-input" maxlength="500" autocomplete="off" placeholder="Message the group…"><button class="nkm-btn nkm-btn--primary" type="submit">Send</button></form>
   </section>
 </main>
 
