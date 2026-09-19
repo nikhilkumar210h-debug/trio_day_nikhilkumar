@@ -15,11 +15,11 @@ import { workerPost } from './worker-config.js';
  * action: 'join' | 'leave' | 'like' | 'unlike' | 'comment' | 'complete'
  * Fails silently — counter is best-effort; subcollection doc is the source of truth.
  */
-async function bumpCounter(taskId, action) {
+async function bumpCounter(taskId, action, extra = {}) {
   const user = auth.currentUser;
   if (!user) return;
   try {
-    await workerPost('/gamification/counter', { taskId, action }, user);
+    await workerPost('/gamification/counter', { taskId, action, ...extra }, user);
   } catch (err) {
     console.warn(`[counter] ${action} on ${taskId} failed:`, err.message);
   }
@@ -292,12 +292,12 @@ export async function toggleLike(taskId, uid) {
   const ref  = doc(db, 'communityTasks', taskId, 'likes', uid);
   const snap = await getDoc(ref);
   if (snap.exists()) {
+    await bumpCounter(taskId, 'unlike', { likeUid: uid });
     await deleteDoc(ref);
-    await bumpCounter(taskId, 'unlike');
     return false;
   }
   await setDoc(ref, { uid, atMs: Date.now() });
-  await bumpCounter(taskId, 'like');
+  await bumpCounter(taskId, 'like', { likeUid: uid });
   return true;
 }
 
@@ -306,14 +306,14 @@ export async function toggleLike(taskId, uid) {
 export async function addComment(taskId, uid, profile, text) {
   const txt = String(text || '').trim().slice(0, 199);
   if (!txt) throw new Error('Empty comment');
-  await addDoc(collection(db, 'communityTasks', taskId, 'comments'), {
+  const commentRef = await addDoc(collection(db, 'communityTasks', taskId, 'comments'), {
     uid,
     name:        profile?.name || 'User',
     txt,
     createdAt:   serverTimestamp(),
     createdAtMs: Date.now()
   });
-  await bumpCounter(taskId, 'comment');
+  await bumpCounter(taskId, 'comment', { commentId: commentRef.id });
 }
 
 export async function listComments(taskId, max = 40) {
