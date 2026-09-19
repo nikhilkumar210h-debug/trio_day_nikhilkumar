@@ -1,6 +1,6 @@
 import { auth, db } from './firebase-init.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
-import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
+import { doc, getDoc, setDoc, updateDoc, serverTimestamp, collection, addDoc, onSnapshot, query, orderBy, limit } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 import {
   getCommunityTask, joinTask, leaveTask, isMember, toggleLike,
   addComment, listComments, completeTask,
@@ -40,6 +40,88 @@ async function rateChallenge(rating, feedback) {
 
 let presenceTimer = null;
 let presenceActive = false;
+let roomUnsub = null;
+
+function renderChallengeRoom(taskId, activePeerMode) {
+  const mount = $('challengeRoomMount');
+  roomUnsub?.();
+  roomUnsub = null;
+  if (!mount) return;
+  if (!me || !task || !activePeerMode || activePeerMode !== 'together') {
+    mount.hidden = true;
+    mount.innerHTML = '';
+    return;
+  }
+
+  mount.hidden = false;
+  mount.innerHTML = `
+    <section class="challenge-room">
+      <div class="challenge-room-head">
+        <div><h3>Solve Together</h3><p>Discuss clues with everyone accepted into this challenge.</p></div>
+        <span class="nkm-badge">${Number(task.joins || 0)} players</span>
+      </div>
+      <div id="challengeRoomMessages" class="challenge-room-messages"><div class="muted">Loading room…</div></div>
+      <form id="challengeRoomForm" class="challenge-room-form">
+        <input id="challengeRoomInput" maxlength="500" autocomplete="off" placeholder="Share a clue, theory or question…">
+        <button class="btn primary" type="submit">Send</button>
+      </form>
+    </section>`;
+
+  const messagesBox = $('challengeRoomMessages');
+  const form = $('challengeRoomForm');
+  const input = $('challengeRoomInput');
+  if (!messagesBox || !form || !input) return;
+
+  const roomQuery = query(
+    collection(db, 'communityTasks', taskId, 'roomMessages'),
+    orderBy('createdAtMs', 'asc'),
+    limit(120)
+  );
+  roomUnsub = onSnapshot(roomQuery, snap => {
+    messagesBox.innerHTML = '';
+    if (snap.empty) {
+      messagesBox.innerHTML = '<div class="muted">No messages yet. Start the investigation together.</div>';
+      return;
+    }
+    snap.forEach(d => {
+      const m = d.data();
+      const row = document.createElement('article');
+      row.className = 'challenge-room-message' + (m.uid === me.uid ? ' mine' : '');
+      const safeName = esc(m.name || 'Player');
+      const safeText = esc(m.text || '');
+      row.innerHTML = `<span class="challenge-room-author">${safeName}</span><span>${safeText}</span><span class="challenge-room-time">${esc(new Date(Number(m.createdAtMs)||Date.now()).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}))}</span>`;
+      messagesBox.appendChild(row);
+    });
+    messagesBox.scrollTop = messagesBox.scrollHeight;
+  }, err => {
+    console.error('Challenge room listener:', err);
+    messagesBox.innerHTML = '<div class="muted">The room is unavailable right now.</div>';
+  });
+
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    const text = input.value.trim();
+    if (!text || !me) return;
+    const btn = form.querySelector('button[type="submit"]');
+    if (btn) { btn.disabled = true; btn.textContent = '…'; }
+    try {
+      await addDoc(collection(db, 'communityTasks', taskId, 'roomMessages'), {
+        uid: me.uid,
+        name: profile?.name || me.displayName || 'Player',
+        text: text.slice(0, 500),
+        createdAtMs: Date.now(),
+        createdAt: serverTimestamp()
+      });
+      input.value = '';
+      input.focus();
+    } catch (err) {
+      alert(err.message || 'Could not send room message.');
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = 'Send'; }
+    }
+  });
+}
+
 async function syncChallengePresence(active) {
   if (!me || !taskId) return;
   if (!active) {
@@ -117,7 +199,9 @@ async function render() {
   const completed = !!completionSnap?.exists();
   const actions = $('actions');
   const startedKey = me ? `challenge_started_${me.uid}_${taskId}` : '';
+  const modeKey = me ? `challenge_mode_${me.uid}_${taskId}` : '';
   const started = startedKey ? localStorage.getItem(startedKey) === '1' : false;
+  const activeMode = modeKey ? (localStorage.getItem(modeKey) || 'solo') : 'solo';
   const isMystery = task.challengeType === 'mystery';
   const verificationType = task.verificationType === 'answer' ? 'answer' : 'proof';
   syncChallengePresence(!!(joined && started && !completed));
@@ -133,7 +217,12 @@ async function render() {
 
   actions.innerHTML = `
     <button type="button" class="btn primary" id="joinBtn">${joined ? 'REJECT' : 'ACCEPT'}</button>
-    ${joined && !completed ? `<button type="button" class="btn primary" id="startBtn">${started ? 'Continue' : 'Start Challenge'}</button>` : ''}
+    ${joined && !completed && !started ? `
+      <div class="start-mode-grid">
+        <button type="button" class="start-mode-card" data-start-mode="solo"><strong>Start Solo</strong><span>Investigate at your own pace.</span></button>
+        <button type="button" class="start-mode-card" data-start-mode="together"><strong>Solve Together</strong><span>Open a live room with accepted players.</span></button>
+      </div>` : ''}
+    ${joined && !completed && started ? `<button type="button" class="btn primary" id="startBtn">${activeMode === 'together' ? 'Open Room' : 'Continue Solo'}</button>` : ''}
     ${joined && started && !completed && !isMystery && verificationType === 'answer' ? `
       <div class="challenge-submit-box">
         <strong>Submit your answer</strong>
@@ -167,16 +256,28 @@ async function render() {
       if (!ok) return;
       await leaveTask(taskId, me.uid);
       if (startedKey) localStorage.removeItem(startedKey);
+      if (modeKey) localStorage.removeItem(modeKey);
     } else {
       await joinTask(taskId, me.uid, profile);
     }
     await render();
   });
+  actions.querySelectorAll('[data-start-mode]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      if (!me || !joined || completed) return;
+      const mode = btn.dataset.startMode === 'together' ? 'together' : 'solo';
+      localStorage.setItem(startedKey, '1');
+      if (modeKey) localStorage.setItem(modeKey, mode);
+      await syncChallengePresence(true);
+      await render();
+    });
+  });
+
   $('startBtn')?.addEventListener('click', async () => {
     if (!me || !joined || completed) return;
-    localStorage.setItem(startedKey, '1');
     await syncChallengePresence(true);
-    render();
+    renderChallengeRoom(taskId, activeMode);
+    $('challengeRoomMount')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
   $('storyBtn')?.addEventListener('click', async () => {
     if (!me || !completed) return;
@@ -194,6 +295,8 @@ async function render() {
       btn.textContent = '📸 Share to Story';
     }
   });
+
+  renderChallengeRoom(taskId, joined && started && !completed ? activeMode : null);
 
   if (completed && !document.getElementById('ratingBtn')) {
     actions.insertAdjacentHTML('beforeend', '<button type="button" class="btn secondary" id="ratingBtn">Rate challenge</button>');
