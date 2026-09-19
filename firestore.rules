@@ -104,34 +104,191 @@ service cloud.firestore {
         || resource.data.userId == '';
     }
 
-    function validActivityInteraction(value) {
+    function validFourOptions(options) {
+      return options is list
+        && options.size() == 4
+        && options[0] is string && options[0].size() > 0 && options[0].size() <= 180
+        && options[1] is string && options[1].size() > 0 && options[1].size() <= 180
+        && options[2] is string && options[2].size() > 0 && options[2].size() <= 180
+        && options[3] is string && options[3].size() > 0 && options[3].size() <= 180
+        && options[0] != options[1]
+        && options[0] != options[2]
+        && options[0] != options[3]
+        && options[1] != options[2]
+        && options[1] != options[3]
+        && options[2] != options[3];
+    }
+
+    function validQuizInteraction(activityType, value) {
+      return value is map
+        && value.kind == 'quiz'
+        && value.question is string
+        && value.question.size() >= 10
+        && value.question.size() <= 500
+        && validFourOptions(value.options)
+        && value.correct is int
+        && value.correct >= 0
+        && value.correct <= 3
+        && value.proofRequired == true
+        && value.proofPrompt is string
+        && value.proofPrompt.size() >= 10
+        && value.proofPrompt.size() <= 240
+        && (
+          activityType == 'puzzle'
+          || (
+            activityType == 'learn'
+            && value.lesson is string
+            && value.lesson.size() >= 20
+            && value.lesson.size() <= 900
+          )
+        );
+    }
+
+    function validAllocationItems(items) {
+      return items is list
+        && items.size() >= 2
+        && items.size() <= 8
+        && items[0] is list && items[0].size() == 2
+        && items[0][0] is string && items[0][0].size() > 0 && items[0][0].size() <= 50
+        && items[0][1] is number && items[0][1] >= 0
+        && items[1] is list && items[1].size() == 2
+        && items[1][0] is string && items[1][0].size() > 0 && items[1][0].size() <= 50
+        && items[1][1] is number && items[1][1] >= 0
+        && (items.size() < 3 || (
+          items[2] is list && items[2].size() == 2
+          && items[2][0] is string && items[2][0].size() > 0 && items[2][0].size() <= 50
+          && items[2][1] is number && items[2][1] >= 0
+        ))
+        && (items.size() < 4 || (
+          items[3] is list && items[3].size() == 2
+          && items[3][0] is string && items[3][0].size() > 0 && items[3][0].size() <= 50
+          && items[3][1] is number && items[3][1] >= 0
+        ))
+        && (items.size() < 5 || (
+          items[4] is list && items[4].size() == 2
+          && items[4][0] is string && items[4][0].size() > 0 && items[4][0].size() <= 50
+          && items[4][1] is number && items[4][1] >= 0
+        ))
+        && (items.size() < 6 || (
+          items[5] is list && items[5].size() == 2
+          && items[5][0] is string && items[5][0].size() > 0 && items[5][0].size() <= 50
+          && items[5][1] is number && items[5][1] >= 0
+        ))
+        && (items.size() < 7 || (
+          items[6] is list && items[6].size() == 2
+          && items[6][0] is string && items[6][0].size() > 0 && items[6][0].size() <= 50
+          && items[6][1] is number && items[6][1] >= 0
+        ))
+        && (items.size() < 8 || (
+          items[7] is list && items[7].size() == 2
+          && items[7][0] is string && items[7][0].size() > 0 && items[7][0].size() <= 50
+          && items[7][1] is number && items[7][1] >= 0
+        ));
+    }
+
+    function validBuildInteraction(value) {
+      return value is map
+        && value.kind == 'build'
+        && value.mechanic in ['order','allocate','grid','assign']
+        && (
+          (
+            value.mechanic == 'order'
+            && value.items is list
+            && value.items.size() >= 3
+            && value.items.size() <= 8
+            && value.items[0] is string && value.items[0].size() > 0 && value.items[0].size() <= 70
+            && value.items[1] is string && value.items[1].size() > 0 && value.items[1].size() <= 70
+          )
+          || (
+            value.mechanic == 'allocate'
+            && value.budget is number
+            && value.budget >= 1
+            && value.budget <= 100000
+            && validAllocationItems(value.items)
+          )
+          || (
+            value.mechanic == 'grid'
+            && value.size == 4
+            && value.required is list
+            && value.required.size() >= 2
+            && value.required.size() <= 4
+            && value.required[0] is string && value.required[0].size() > 0 && value.required[0].size() <= 40
+            && value.required[1] is string && value.required[1].size() > 0 && value.required[1].size() <= 40
+            && (value.required.size() < 3 || (value.required[2] is string && value.required[2].size() > 0 && value.required[2].size() <= 40))
+            && (value.required.size() < 4 || (value.required[3] is string && value.required[3].size() > 0 && value.required[3].size() <= 40))
+            && value.blocked is list
+            && value.blocked.size() <= 8
+            && value.adjacentPairs is list
+            && value.adjacentPairs.size() <= 3
+          )
+          || (
+            value.mechanic == 'assign'
+            && value.people is list
+            && value.people.size() == 4
+            && value.roles is list
+            && value.roles.size() == 4
+            && value.people[0] is string && value.people[0].size() > 0 && value.people[0].size() <= 40
+            && value.people[1] is string && value.people[1].size() > 0 && value.people[1].size() <= 40
+            && value.people[2] is string && value.people[2].size() > 0 && value.people[2].size() <= 40
+            && value.people[3] is string && value.people[3].size() > 0 && value.people[3].size() <= 40
+            && value.roles[0] is string && value.roles[0].size() > 0 && value.roles[0].size() <= 40
+            && value.roles[1] is string && value.roles[1].size() > 0 && value.roles[1].size() <= 40
+            && value.roles[2] is string && value.roles[2].size() > 0 && value.roles[2].size() <= 40
+            && value.roles[3] is string && value.roles[3].size() > 0 && value.roles[3].size() <= 40
+            && value.correct is map
+            && value.correct[value.people[0]] is string && value.correct[value.people[0]] in value.roles
+            && value.correct[value.people[1]] is string && value.correct[value.people[1]] in value.roles
+            && value.correct[value.people[2]] is string && value.correct[value.people[2]] in value.roles
+            && value.correct[value.people[3]] is string && value.correct[value.people[3]] in value.roles
+            && value.correct[value.people[0]] != value.correct[value.people[1]]
+            && value.correct[value.people[0]] != value.correct[value.people[2]]
+            && value.correct[value.people[0]] != value.correct[value.people[3]]
+            && value.correct[value.people[1]] != value.correct[value.people[2]]
+            && value.correct[value.people[1]] != value.correct[value.people[3]]
+            && value.correct[value.people[2]] != value.correct[value.people[3]]
+          )
+        );
+    }
+
+    function validChallengeRound(round) {
+      return round is map
+        && round.q is string
+        && round.q.size() >= 8
+        && round.q.size() <= 240
+        && validFourOptions(round.o)
+        && round.a is int
+        && round.a >= 0
+        && round.a <= 3;
+    }
+
+    function validChallengeInteraction(value) {
+      return value is map
+        && value.kind == 'challenge'
+        && value.rounds is list
+        && value.rounds.size() == 5
+        && validChallengeRound(value.rounds[0])
+        && validChallengeRound(value.rounds[1])
+        && validChallengeRound(value.rounds[2])
+        && validChallengeRound(value.rounds[3])
+        && validChallengeRound(value.rounds[4]);
+    }
+
+    function validActivityInteraction(activityType, value) {
       return value is map
         && value.size() <= 20
         && (
-          (
-            value.kind == 'quiz'
-            && value.question is string
-            && value.question.size() > 0
-            && value.question.size() <= 500
-            && value.options is list
-            && value.options.size() == 4
-            && value.correct is int
-            && value.correct >= 0
-            && value.correct <= 3
-          )
-          || (
-            value.kind == 'build'
-            && value.mechanic in ['order','allocate','grid','assign']
-          )
-          || (
-            value.kind == 'challenge'
-            && value.rounds is list
-            && value.rounds.size() == 5
-          )
-          || (
-            value.kind == 'room'
-          )
+          ((activityType == 'puzzle' || activityType == 'learn') && validQuizInteraction(activityType, value))
+          || (activityType == 'build' && validBuildInteraction(value))
+          || (activityType == 'challenge' && validChallengeInteraction(value))
+          || (activityType == 'game' && value.kind == 'room')
         );
+    }
+
+    function validXpForDifficulty(difficulty, xp) {
+      return xp is int
+        && ((difficulty == 'Easy' && xp == 25)
+          || (difficulty == 'Medium' && xp == 40)
+          || (difficulty == 'Hard' && xp == 60));
     }
 
     function challengeAnswersPass(taskId) {
@@ -270,8 +427,8 @@ service cloud.firestore {
             && request.resource.data.isSystem != true
           )
           || (
-            // Allow seeding known system template docs once (createdBy system)
-            request.resource.data.isSystem == true
+            isAdmin()
+            && request.resource.data.isSystem == true
             && request.resource.data.createdBy == 'system'
           )
         );
@@ -325,7 +482,29 @@ service cloud.firestore {
         && request.resource.data.completions == 0
         && request.resource.data.featured == false
         && request.resource.data.hidden == false
-        && validActivityInteraction(request.resource.data.interaction);
+        && validXpForDifficulty(request.resource.data.difficulty, request.resource.data.xpReward)
+        && request.resource.data.metric == 'manual'
+        && request.resource.data.target == 1
+        && request.resource.data.description is string
+        && request.resource.data.description.size() >= 10
+        && request.resource.data.description.size() <= 500
+        && request.resource.data.goal is string
+        && request.resource.data.goal.size() >= 5
+        && request.resource.data.goal.size() <= 240
+        && request.resource.data.instructions is string
+        && request.resource.data.instructions.size() > 0
+        && request.resource.data.instructions.size() <= 900
+        && request.resource.data.creatorName is string
+        && request.resource.data.creatorName.size() > 0
+        && request.resource.data.creatorName.size() <= 50
+        && request.resource.data.createdAtMs is number
+        && request.resource.data.createdAtMs <= request.time.toMillis() + 60000
+        && request.resource.data.createdAtMs >= request.time.toMillis() - 600000
+        && request.resource.data.startAtMs is number
+        && request.resource.data.startAtMs <= request.time.toMillis()
+        && request.resource.data.endAtMs == request.resource.data.startAtMs + request.resource.data.expiresInDays * 86400000
+        && request.resource.data.endAtMs > request.time.toMillis()
+        && validActivityInteraction(request.resource.data.activityType, request.resource.data.interaction);
       allow update: if signedIn() && (
         isAdmin()
         || (
@@ -343,9 +522,16 @@ service cloud.firestore {
           && request.resource.data.durationMin >= 5
           && request.resource.data.durationMin <= 180
           && request.resource.data.difficulty in ['Easy','Medium','Hard']
+          && validXpForDifficulty(request.resource.data.difficulty, request.resource.data.xpReward)
+          && request.resource.data.metric == 'manual'
+          && request.resource.data.target == 1
           && request.resource.data.endAtMs is number
           && request.resource.data.expiresInDays in [7,14,21,30,40]
-          && (!('interaction' in request.resource.data) || validActivityInteraction(request.resource.data.interaction))
+          && validActivityInteraction(request.resource.data.activityType, request.resource.data.interaction)
+          && request.resource.data.startAtMs == resource.data.startAtMs
+          && request.resource.data.createdAtMs == resource.data.createdAtMs
+          && (request.resource.data.interaction == resource.data.interaction || (resource.data.joins == 0 && resource.data.completions == 0))
+          && request.resource.data.endAtMs == request.resource.data.startAtMs + request.resource.data.expiresInDays * 86400000
         )
       );
       allow delete: if isAdmin() || (signedIn() && resource.data.creatorUid == request.auth.uid);
@@ -372,27 +558,23 @@ service cloud.firestore {
       match /completions/{uid} {
         allow read: if signedIn();
         allow create: if owner(uid)
+          && get(/databases/$(database)/documents/communityTasks/$(taskId)).data.creatorUid != request.auth.uid
           && request.resource.data.uid == request.auth.uid
           && request.resource.data.atMs is number
           && (
             (
               get(/databases/$(database)/documents/communityTasks/$(taskId)).data.activityType == 'build'
-              && (
-                !('interaction' in get(/databases/$(database)/documents/communityTasks/$(taskId)).data)
-                || (
-                  request.resource.data.buildEvidence is map
-                  && request.resource.data.buildEvidence.mechanic is string
-                  && request.resource.data.buildEvidence.mechanic == get(/databases/$(database)/documents/communityTasks/$(taskId)).data.interaction.mechanic
-                  && request.resource.data.buildEvidence.state is string
-                  && request.resource.data.buildEvidence.state.size() >= 2
-                  && request.resource.data.buildEvidence.state.size() <= 1600
-                )
-              )
+              && get(/databases/$(database)/documents/communityTasks/$(taskId)).data.interaction.kind == 'build'
+              && request.resource.data.buildEvidence is map
+              && request.resource.data.buildEvidence.mechanic is string
+              && request.resource.data.buildEvidence.mechanic == get(/databases/$(database)/documents/communityTasks/$(taskId)).data.interaction.mechanic
+              && request.resource.data.buildEvidence.state is string
+              && request.resource.data.buildEvidence.state.size() >= 2
+              && request.resource.data.buildEvidence.state.size() <= 1600
             )
-            || get(/databases/$(database)/documents/communityTasks/$(taskId)).data.activityType == 'game'
-            || !('interaction' in get(/databases/$(database)/documents/communityTasks/$(taskId)).data)
             || (
               get(/databases/$(database)/documents/communityTasks/$(taskId)).data.activityType == 'challenge'
+              && get(/databases/$(database)/documents/communityTasks/$(taskId)).data.interaction.kind == 'challenge'
               && request.resource.data.score is int
               && request.resource.data.score >= 3
               && request.resource.data.score <= 5
@@ -402,17 +584,15 @@ service cloud.firestore {
               && request.resource.data.proofText.size() <= 500
             )
             || (
-              request.resource.data.answerIndex is int
+              get(/databases/$(database)/documents/communityTasks/$(taskId)).data.activityType in ['puzzle','learn']
+              && get(/databases/$(database)/documents/communityTasks/$(taskId)).data.interaction.kind == 'quiz'
+              && request.resource.data.answerIndex is int
               && request.resource.data.answerIndex >= 0
               && request.resource.data.answerIndex <= 3
               && request.resource.data.proofText is string
               && request.resource.data.proofText.size() >= 20
               && request.resource.data.proofText.size() <= 500
-              && (
-                !('interaction' in get(/databases/$(database)/documents/communityTasks/$(taskId)).data)
-                || get(/databases/$(database)/documents/communityTasks/$(taskId)).data.interaction.kind != 'quiz'
-                || request.resource.data.answerIndex == get(/databases/$(database)/documents/communityTasks/$(taskId)).data.interaction.correct
-              )
+              && request.resource.data.answerIndex == get(/databases/$(database)/documents/communityTasks/$(taskId)).data.interaction.correct
             )
           );
         allow update, delete: if false;
