@@ -16,18 +16,18 @@ const dayMs=86400000;
 const C=(id,type,category,title,description,goal,instructions,durationMin,difficulty,cycleDays,icon)=>({id,type,category,title,description,goal,instructions,durationMin,difficulty,cycleDays,icon,source:'catalog'});
 
 const P=[
-['p1','Logic','Pattern Breaker','Find the missing item in 8 number or visual patterns.','Solve at least 6 of 8.','Check differences, ratios, position, repetition and alternating rules before choosing.',15,'Easy',14,'🔢'],
-['p2','Logic','Three Switch Mystery','Work out which switch controls each lamp using one visit.','Give the full mapping and reasoning.','Create extra information before entering; use heat, light state and elimination.',12,'Medium',21,'💡'],
-['p3','Logic','Truth & Lie Cases','Solve short statements where exactly one clue is false.','Solve 8 of 10 cases.','Test every statement against the others and eliminate contradictions.',18,'Medium',14,'🕵️'],
-['p4','Logic','Seat the Team','Place six people using ordering and adjacency clues.','Find one valid arrangement with reasoning.','Translate clues into before, after, next-to and position constraints.',20,'Medium',30,'🪑'],
-['p5','Math Logic','Missing Number Lab','Complete mixed number sequences with different hidden rules.','Solve 9 of 12 sequences.','Try differences, ratios, alternating rules and digit operations.',20,'Easy',14,'🧠'],
-['p6','Word','Word Ladder Sprint','Transform a start word into a target by changing one letter at a time.','Complete 5 ladders.','Every step must be a valid word; change one letter only.',15,'Easy',14,'🔤'],
-['p7','Spatial','Grid Escape','Find the shortest route through blocked grids.','Solve 3 grids and give move counts.','Mark dead ends, count moves and compare candidate paths.',18,'Medium',21,'🗺️'],
-['p8','Logic','Crack the Tiny Code','Infer the rule behind five encoded messages.','Crack 4 of 5.','Compare repeated symbols, positions, shifts and word lengths.',20,'Medium',30,'🔐'],
-['p9','Logic','Calendar Detective','Solve scheduling puzzles from dates and ordering clues.','Solve 6 cases.','Build a small calendar table and eliminate impossible dates first.',20,'Medium',30,'📅'],
-['p10','Probability','Chance or Choice?','Compare the odds of two strategies across short scenarios.','Justify 6 of 8.','List possible outcomes, count equally likely cases and compare ratios.',15,'Medium',21,'🎲'],
-['p11','Logic','Spot the Rule','Find transformations hidden in small input/output tables.','Find 5 rules.','Compare rows, columns and changes between input and output.',18,'Medium',14,'🔍'],
-['p12','Logic','Codebreaker Mini','Deduce a four-symbol secret code from feedback clues.','Solve 3 codes within 8 guesses each.','Separate exact-position clues from correct-symbol clues and keep candidates.',25,'Hard',40,'🧩']
+['p1','Logic','Pattern Breaker','Find the missing item in a number or visual pattern.','Solve the featured pattern and explain the rule.','Check differences, ratios, position, repetition and alternating rules before choosing.',15,'Easy',14,'🔢'],
+['p2','Logic','Three Switch Mystery','Use one visit to identify which switch controls each lamp.','Choose the useful clue and explain the reasoning.','Create extra information before entering; use heat, light state and elimination.',12,'Medium',21,'💡'],
+['p3','Logic','Truth & Lie Case','Use the statements to find the single false clue.','Identify the false statement and explain the contradiction.','Test every statement against the others and eliminate contradictions.',18,'Medium',14,'🕵️'],
+['p4','Logic','Seat the Team','Place people using ordering and adjacency clues.','Find one valid arrangement from the clues.','Translate clues into before, after, next-to and position constraints.',20,'Medium',30,'🪑'],
+['p5','Math Logic','Missing Number Lab','Find the hidden rule in a number sequence.','Choose the missing value and explain the pattern.','Try differences, ratios, alternating rules and digit operations.',20,'Easy',14,'🧠'],
+['p6','Word','Word Ladder Sprint','Transform a start word into a target by changing one letter at a time.','Choose the valid next step in the ladder.','Every step must be a valid word; change one letter only.',15,'Easy',14,'🔤'],
+['p7','Spatial','Grid Escape','Find a shortest route through a blocked grid.','Choose the correct route strategy for the featured grid.','Mark dead ends, count moves and compare candidate paths.',18,'Medium',21,'🗺️'],
+['p8','Logic','Crack the Tiny Code','Infer the rule behind an encoded message.','Choose the decoding rule that fits the example.','Compare repeated symbols, positions, shifts and word lengths.',20,'Medium',30,'🔐'],
+['p9','Logic','Calendar Detective','Use ordering clues to solve a small schedule.','Choose a schedule that satisfies every clue.','Build a small calendar table and eliminate impossible dates first.',20,'Medium',30,'📅'],
+['p10','Probability','Chance or Choice?','Compare the odds of two strategies in a probability scenario.','Choose the correct probability reasoning.','List possible outcomes, count equally likely cases and compare ratios.',15,'Medium',21,'🎲'],
+['p11','Logic','Spot the Rule','Find the transformation hidden in an input/output table.','Choose the rule that predicts the next value.','Compare rows, columns and changes between input and output.',18,'Medium',14,'🔍'],
+['p12','Logic','Codebreaker Mini','Use feedback clues to narrow down a secret code.','Choose the deduction that best fits the clues.','Separate exact-position clues from correct-symbol clues and keep candidates.',25,'Hard',40,'🧩']
 ];
 const B=[
 ['Systems','Build a Reminder Flow','Arrange the pieces of a reminder system from trigger to result.','Create a working flow with the right order and no missing step.','Choose the trigger first, then condition, action and feedback.',25,'Easy',21,'🔔'],
@@ -44,18 +44,18 @@ const B=[
 ['Team','Build a Team Mission','Assign four roles to four people with different strengths and constraints.','Produce one valid team assignment with no conflicting roles.','Match the task requirement to the relevant strength, then resolve the remaining constraints.',25,'Medium',21,'🤝']
 ];
 const L=[
-['Coding','Python Foundations','Practice lists, dictionaries, functions and clean data flow.','Solve 6 small tasks and explain one solution.','Code first, then rewrite one solution with clearer names and functions.',35,'Easy',30,'🐍'],
-['Coding','SQL Joins','Learn INNER, LEFT and multi-table joins through a tiny dataset.','Write 8 correct join queries.','Predict the row count before running each query.',40,'Medium',21,'🗃️'],
-['Math','Statistics Basics','Explore mean, median, range and outliers using a small dataset.','Explain which measure fits 4 scenarios.','Calculate by hand once, then verify with a tool.',30,'Easy',21,'📐'],
-['Math','Vectors Intuition','Learn vectors through movement, direction and simple operations.','Solve 8 vector questions and explain 2 visually.','Think of a vector as a direction plus magnitude before using formulas.',30,'Medium',30,'➡️'],
-['Math','Bayes Intuition','Understand conditional probability with everyday examples.','Explain 3 Bayes-style cases without memorizing a formula.','Separate the prior, evidence and updated belief.',35,'Medium',30,'🎯'],
-['Science','Energy & Motion','Review force, energy and motion using simple everyday cases.','Explain 5 examples correctly.','Tie each idea to a concrete object or movement.',30,'Easy',21,'⚙️'],
-['Technology','How the Web Works','Trace a URL from browser to server and back.','Draw the request path with 7 key steps.','Include DNS, HTTP, server processing and response.',30,'Easy',30,'🌐'],
-['Coding','Async JavaScript','Understand promises, async/await and waiting for data.','Explain and fix 5 async examples.','Predict execution order before reading the output.',35,'Medium',30,'⚡'],
-['Developer','Git Branching','Practice branch, merge, rebase concepts safely with examples.','Complete 8 scenario questions.','Map each action to a commit graph rather than memorizing commands.',30,'Medium',21,'🌿'],
-['ML','Overfitting Intuition','Learn why a model can memorize training data and fail on new data.','Explain overfitting, validation and regularization.','Compare a simple model with an overly flexible one.',35,'Medium',40,'🧠'],
-['AI','Neural Network Basics','Understand layers, weights, activation and training at a conceptual level.','Explain the flow from input to prediction.','Use a tiny toy example and focus on the data flow.',40,'Medium',40,'🕸️'],
-['Communication','Explain It Simply','Learn to explain a complex idea to a beginner.','Give a 2-minute explanation and one analogy.','Remove jargon, then add only terms that are genuinely useful.',20,'Easy',14,'🎤']
+['Coding','Python Foundations','Practice lists, dictionaries, functions and clean data flow.','Pass the knowledge check and explain the concept.','Code first, then rewrite one solution with clearer names and functions.',35,'Easy',30,'🐍'],
+['Coding','SQL Joins','Learn INNER, LEFT and multi-table joins through a tiny dataset.','Pass the knowledge check and explain the concept.','Predict the row count before running each query.',40,'Medium',21,'🗃️'],
+['Math','Statistics Basics','Explore mean, median, range and outliers using a small dataset.','Pass the knowledge check and explain the concept.','Calculate by hand once, then verify with a tool.',30,'Easy',21,'📐'],
+['Math','Vectors Intuition','Learn vectors through movement, direction and simple operations.','Pass the knowledge check and explain the concept.','Think of a vector as a direction plus magnitude before using formulas.',30,'Medium',30,'➡️'],
+['Math','Bayes Intuition','Understand conditional probability with everyday examples.','Pass the knowledge check and explain the concept.','Separate the prior, evidence and updated belief.',35,'Medium',30,'🎯'],
+['Science','Energy & Motion','Review force, energy and motion using simple everyday cases.','Pass the knowledge check and explain the concept.','Tie each idea to a concrete object or movement.',30,'Easy',21,'⚙️'],
+['Technology','How the Web Works','Trace a URL from browser to server and back.','Pass the knowledge check and explain the concept.','Include DNS, HTTP, server processing and response.',30,'Easy',30,'🌐'],
+['Coding','Async JavaScript','Understand promises, async/await and waiting for data.','Pass the knowledge check and explain the concept.','Predict execution order before reading the output.',35,'Medium',30,'⚡'],
+['Developer','Git Branching','Practice branch, merge, rebase concepts safely with examples.','Pass the knowledge check and explain the concept.','Map each action to a commit graph rather than memorizing commands.',30,'Medium',21,'🌿'],
+['ML','Overfitting Intuition','Learn why a model can memorize training data and fail on new data.','Pass the knowledge check and explain the concept.','Compare a simple model with an overly flexible one.',35,'Medium',40,'🧠'],
+['AI','Neural Network Basics','Understand layers, weights, activation and training at a conceptual level.','Pass the knowledge check and explain the concept.','Use a tiny toy example and focus on the data flow.',40,'Medium',40,'🕸️'],
+['Communication','Explain It Simply','Learn to explain a complex idea to a beginner.','Pass the knowledge check and explain the concept.','Remove jargon, then add only terms that are genuinely useful.',20,'Easy',14,'🎤']
 ];
 const Cg=[
 ['Focus','20-Minute Deep Work','Choose one meaningful task and work without switching context.','Complete one defined piece of work in 20 focused minutes.','Write the exact outcome first, start a timer, then stop at 20 minutes.',20,'Easy',14,'🎯'],
