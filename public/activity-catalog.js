@@ -1,7 +1,7 @@
 const DETAILS={
 p1:'Starter: 3, 6, 12, 24, __. Then find two harder patterns of your own.',
 p2:'There are 3 switches outside a room and 3 lamps inside. You may enter once. Work out which switch controls each lamp.',
-p3:'Case: A says “B is lying.” B says “C is lying.” C says “A and B are both truthful.” Exactly one statement is false. Identify it and explain why.',
+p3:'Case: A says “B is lying.” B says “C is lying.” C says “A is truthful.” Exactly one statement is false. Identify it and explain why.',
 p4:'Six seats are in a row. A sits left of B. C is next to D. E is not at an end. F sits right of B. Find one valid arrangement and show the deductions.',
 p5:'Starter: 2, 5, 10, 17, 26, __. Now make one sequence where the rule changes every other step.',
 p6:'Turn COLD into WARM by changing one letter at a time. Every intermediate word must be valid.',
