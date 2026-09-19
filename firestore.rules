@@ -227,6 +227,13 @@ service cloud.firestore {
         && request.resource.data.difficulty in ['Easy','Medium','Hard']
         && request.resource.data.endAtMs is number
         && request.resource.data.expiresInDays in [7,14,21,30,40]
+        && request.resource.data.startAtMs is number
+        && request.resource.data.startAtMs <= request.resource.data.endAtMs
+        && request.resource.data.status == 'active'
+        && request.resource.data.joins == 0
+        && request.resource.data.likes == 0
+        && request.resource.data.comments == 0
+        && request.resource.data.completions == 0
         && request.resource.data.featured == false
         && request.resource.data.hidden == false;
       allow update: if signedIn() && (
