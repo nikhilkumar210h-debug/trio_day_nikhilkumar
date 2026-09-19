@@ -4,7 +4,8 @@ import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'https://www.gst
 import {
   getCommunityTask, joinTask, leaveTask, isMember, toggleLike,
   addComment, listComments, completeTask,
-  setChallengeFeatured, setChallengeHidden, removeChallenge, archiveTask
+  setChallengeFeatured, setChallengeHidden, removeChallenge, archiveTask,
+  submitProof, listSubmissions, reviewSubmission
 } from './gamification/community-tasks.js';
 import { isAdmin } from './gamification/templates.js';
 import { trioCache } from './trio-cache.js';
@@ -101,13 +102,27 @@ async function render() {
   const actions = $('actions');
   const startedKey = me ? `challenge_started_${me.uid}_${taskId}` : '';
   const started = startedKey ? localStorage.getItem(startedKey) === '1' : false;
+  const verificationType = task.verificationType === 'answer' ? 'answer' : 'proof';
+  const proofInstruction = task.proofInstruction || 'Explain what you did and provide enough evidence for the creator to verify it.';
   actions.innerHTML = `
     <button type="button" class="btn primary" id="joinBtn">${joined ? 'REJECT' : 'ACCEPT'}</button>
-    ${joined && !completed ? `<button type="button" class="btn primary" id="startBtn">${started ? 'Continue Solo' : 'Start Solo'}</button>` : ''}
-    <button type="button" class="btn secondary" id="likeBtn">Like</button>
-    <button type="button" class="btn primary" id="completeBtn" ${(!started || completed) ? 'disabled' : ''}>${completed ? 'Completed ✓' : 'Finish Challenge (+XP)'}</button>
-    ${completed ? '<button type="button" class="btn secondary" id="storyBtn">📸 Share to Story</button>' : ''}
-    <button type="button" class="btn secondary" id="followBtn">Follow creator</button>
+    ${joined && !completed ? `<button type="button" class="btn primary" id="startBtn">${started ? 'Continue' : 'Start Challenge'}</button>` : ''}
+    ${joined && started && !completed && verificationType === 'answer' ? `
+      <div class="challenge-submit-box">
+        <strong>Submit your answer</strong>
+        <input id="challengeAnswer" maxlength="200" placeholder="Your answer">
+        <button type="button" class="btn primary" id="submitAnswerBtn">Check answer</button>
+        <small class="muted">You only complete the challenge when the answer is verified.</small>
+      </div>` : ''}
+    ${joined && started && !completed && verificationType === 'proof' ? `
+      <div class="challenge-submit-box">
+        <strong>Proof required</strong>
+        <p class="muted">${esc(proofInstruction)}</p>
+        <textarea id="proofText" rows="4" maxlength="1000" placeholder="Show your reasoning / evidence…"></textarea>
+        <button type="button" class="btn primary" id="submitProofBtn">Submit proof</button>
+        <small class="muted">The creator reviews this before completion is awarded.</small>
+      </div>` : ''}
+    ${completed ? '<div class="challenge-complete-note">Verified completion ✓</div><button type="button" class="btn secondary" id="storyBtn">📸 Share to Story</button>' : ''}
     <a class="btn secondary" href="tasks.html">Back</a>
     ${admin ? `
       <button type="button" class="btn secondary" id="featBtn">${task.featured ? 'Unfeature' : 'Feature'}</button>
@@ -115,6 +130,7 @@ async function render() {
       <button type="button" class="btn secondary" id="archiveBtn">Archive</button>
       <button type="button" class="btn secondary danger-action" id="removeBtn">Remove</button>
     ` : ''}`;
+
 
   $('joinBtn').onclick = async () => {
     if (!me) return alert('Login first');
@@ -166,33 +182,80 @@ async function render() {
     };
   }
 
-  $('completeBtn').onclick = async () => {
-    if (!me) return alert('Login first');
-    const btn = $('completeBtn');
-    const prevText = btn.textContent;
+  $('submitAnswerBtn')?.addEventListener('click', async () => {
+    const answer = $('challengeAnswer').value.trim();
+    if (!answer) return alert('Enter your answer first.');
+    const btn = $('submitAnswerBtn');
     btn.disabled = true;
-    btn.textContent = 'Completing…';
+    btn.textContent = 'Checking…';
     try {
-      const r = await completeTask(taskId, me.uid, profile);
-      if (r.already) {
-        alert('Already completed');
-        btn.textContent = 'Done';
-        btn.disabled = true;
+      const result = await completeTask(taskId, me.uid, profile, { answer });
+      if (result.correct === false) {
+        alert(result.message || 'Not correct yet.');
+        btn.disabled = false;
+        btn.textContent = 'Check answer';
         return;
       }
-      // Optimistic: bump local count immediately before re-render
-      if (task) task.completions = (Number(task.completions) || 0) + 1;
-      await render();
-      // Ensure button reflects done state after render
-      const newBtn = $('completeBtn');
-      if (newBtn) { newBtn.textContent = 'Done'; newBtn.disabled = true; }
+      if (result.verified || result.already) {
+        alert(result.already ? 'Already completed.' : 'Correct — challenge completed ✓');
+        await render();
+      }
     } catch (err) {
-      alert(err.message || 'Failed');
-      btn.textContent = prevText;
+      alert(err.message || 'Could not verify the answer.');
       btn.disabled = false;
+      btn.textContent = 'Check answer';
     }
-  };
+  });
+
+  $('submitProofBtn')?.addEventListener('click', async () => {
+    const proof = $('proofText').value.trim();
+    if (proof.length < 10) return alert('Add enough proof for the creator to review.');
+    const btn = $('submitProofBtn');
+    btn.disabled = true;
+    btn.textContent = 'Submitting…';
+    try {
+      await submitProof(taskId, me.uid, profile, proof);
+      alert('Proof submitted. The creator will review it.');
+      await render();
+    } catch (err) {
+      alert(err.message || 'Could not submit proof.');
+      btn.disabled = false;
+      btn.textContent = 'Submit proof';
+    }
+  });
+
+
   $('followBtn').onclick = () => followCreator(task.creatorUid);
+
+  if (me?.uid === task.creatorUid && !completed) {
+    const submissions = await listSubmissions(taskId);
+    const pending = submissions.filter(x => x.status === 'pending');
+    if (pending.length) {
+      actions.insertAdjacentHTML('beforeend', `
+        <section class="challenge-review-box">
+          <strong>Proof submissions</strong>
+          ${pending.map(x => `<article class="proof-review-item">
+            <div><strong>${esc(x.name || 'Player')}</strong><p>${esc(x.proofText || '')}</p></div>
+            <div class="proof-review-actions">
+              <button type="button" class="btn primary" data-review="approved" data-uid="${esc(x.uid)}">Approve</button>
+              <button type="button" class="btn secondary" data-review="rejected" data-uid="${esc(x.uid)}">Reject</button>
+            </div>
+          </article>`).join('')}
+        </section>`);
+      actions.querySelectorAll('[data-review]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          btn.disabled = true;
+          try {
+            await reviewSubmission(taskId, btn.dataset.uid, btn.dataset.review);
+            await render();
+          } catch (err) {
+            alert(err.message || 'Could not review proof.');
+            btn.disabled = false;
+          }
+        });
+      });
+    }
+  }
 
   if (admin) {
     $('featBtn').onclick = async () => { await setChallengeFeatured(taskId, !task.featured); await render(); };
