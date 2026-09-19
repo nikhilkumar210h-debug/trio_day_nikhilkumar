@@ -1,0 +1,8 @@
+# Trio Day cleanup Worker
+name = "trio-gamification-cron"
+main = "gamification-cron.js"
+compatibility_date = "2024-11-01"
+workers_dev = true
+
+[triggers]
+crons = ["0 * * * *"]
