@@ -54,7 +54,8 @@ export async function listCommunityTasks({ kind = null, status = 'active', max =
     let list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     const now = Date.now();
     list = list.filter(t => {
-      if (t.endAtMs && t.endAtMs <= now) return false;
+      const effectiveEnd = Number(t.endAtMs) || ((Number(t.createdAtMs) || now) + 30 * 86400000);
+      if (effectiveEnd <= now) return false;
       if (!includeHidden && t.hidden) return false;
       return true;
     });
@@ -97,7 +98,7 @@ export async function createCommunityTask(uid, profile, data) {
   if (!uid) throw new Error('Login required to create a challenge');
   const now = Date.now();
   const startAtMs = Number(data.startAtMs) || now;
-  const endAtMs   = Number(data.endAtMs)   || (now + 7 * 86400000);
+  const endAtMs   = Math.min(Number(data.endAtMs) || (now + 14 * 86400000), now + 40 * 86400000);
   const kind = ['community', 'challenge', 'seasonal'].includes(data.kind) ? data.kind : 'challenge';
   const payload = {
     title:        String(data.title       || 'Community challenge').slice(0, 100),
@@ -105,6 +106,12 @@ export async function createCommunityTask(uid, profile, data) {
     icon:         String(data.icon        || '🎯').slice(0, 8),
     kind,
     activityType: ['puzzle','build','learn','challenge','game'].includes(data.activityType) ? data.activityType : (kind === 'challenge' ? 'challenge' : 'game'),
+    category: String(data.category || 'General').slice(0, 60),
+    durationMin: Math.max(5, Math.min(180, Number(data.durationMin) || 20)),
+    difficulty: ['Easy','Medium','Hard'].includes(data.difficulty) ? data.difficulty : 'Medium',
+    goal: String(data.goal || '').slice(0, 240),
+    instructions: String(data.instructions || '').slice(0, 900),
+    expiresInDays: Math.max(7, Math.min(40, Number(data.expiresInDays) || 14)),
     templateId:   data.templateId || null,
     metric:       data.metric     || 'manual',
     target:       Math.max(1, Number(data.target)    || 1),
