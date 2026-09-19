@@ -172,7 +172,8 @@ function renderTemplates() {
   const host = $('creatorTemplates');
   if (!host) return;
   const list = starters();
-  host.innerHTML = list.map(t => {
+  const blankCard = '<button type="button" class="creator-starter creator-starter--blank '+(!selected?'selected':'')+'" data-blank="true"><span class="creator-starter-icon">✦</span><span class="creator-starter-main"><strong>Blank canvas</strong><small>Start with your own idea. No fixed template.</small><span class="creator-starter-foot"><em>FULL CONTROL</em><em>∞</em></span></span><span class="creator-starter-go">+</span></button>';
+  host.innerHTML = blankCard + list.map(t => {
     const mechanic = mechanicInfo(activeType, t.mechanic);
     return '<button type="button" class="creator-starter ' + (selected?.id === t.id ? 'selected' : '') + '" data-starter="' + esc(t.id) + '">' +
       '<span class="creator-starter-icon">' + esc(t.icon || activityTypeInfo(t).icon) + '</span>' +
