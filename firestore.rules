@@ -337,8 +337,17 @@ service cloud.firestore {
           && request.resource.data.uid == request.auth.uid
           && request.resource.data.atMs is number
           && (
-            get(/databases/$(database)/documents/communityTasks/$(taskId)).data.activityType in ['build','game','challenge']
+            get(/databases/$(database)/documents/communityTasks/$(taskId)).data.activityType in ['build','game']
             || !('interaction' in get(/databases/$(database)/documents/communityTasks/$(taskId)).data)
+            || (
+              get(/databases/$(database)/documents/communityTasks/$(taskId)).data.activityType == 'challenge'
+              && request.resource.data.score is int
+              && request.resource.data.score >= 3
+              && request.resource.data.score <= 5
+              && request.resource.data.proofText is string
+              && request.resource.data.proofText.size() >= 20
+              && request.resource.data.proofText.size() <= 500
+            )
             || (
               request.resource.data.answerIndex is int
               && request.resource.data.answerIndex >= 0
