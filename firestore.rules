@@ -314,7 +314,10 @@ service cloud.firestore {
           && request.resource.data.state is map
           && request.resource.data.state.size() <= 30
           && request.resource.data.version is number
-          && request.resource.data.updatedAtMs is number;
+          && request.resource.data.updatedAtMs is number
+          && request.resource.data.activityId is string
+          && request.resource.data.activityId.size() > 0
+          && request.resource.data.activityId.size() <= 80;
         allow delete: if signedIn()
           && get(/databases/$(database)/documents/rooms/$(roomId)).data.hostUid == request.auth.uid;
       }
