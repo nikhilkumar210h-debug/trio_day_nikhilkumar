@@ -602,7 +602,7 @@ document.addEventListener('keydown', e=>{ if(e.key==='Escape' && !$('createChoos
 [$('headerPlus'), $('heroPostBtn'), $('fabBtn'), $('storyPostBtn'), ...document.querySelectorAll('[data-open-post]')]
   .forEach(b => b?.addEventListener('click', () => {
     SoundManager.click();
-    if (b.id === 'storyPostBtn') openStoryModal();
+    if (b.id === 'storyPostBtn') location.href = 'upload.html';
     else openCreateChooser();
   }));
 document.querySelectorAll('[data-open-post]').forEach(b => b?.addEventListener('click', () => { SoundManager.click(); openCreateChooser(); }));
