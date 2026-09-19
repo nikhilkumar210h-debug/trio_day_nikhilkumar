@@ -98,7 +98,7 @@ export async function mountSharedChallengeWorkspace(root, { db, roomId, activity
     if (!state.startedAtMs) {
       body.innerHTML =
         '<div class="room-forge-note">The host starts the challenge when everyone is ready.</div>' +
-        '<div class="room-forge-actions"><button class="room-forge-btn room-forge-btn--primary" id="startChallenge">Start challenge</button></div>';
+        '<div class="room-forge-actions"><button class="room-forge-btn room-forge-btn--primary" id="startChallenge" '+(me.uid===hostUid?'':'disabled')+'>'+(me.uid===hostUid?'Start challenge':'Waiting for host')+'</button></div>';
       body.querySelector('#startChallenge').onclick = async () => {
         if (me.uid !== hostUid) return;
         await write({ startedAtMs: Date.now(), roundEndsAtMs: Date.now() + roundSeconds * 1000, round: 0, scores: {}, answered: {}, finished: false });
