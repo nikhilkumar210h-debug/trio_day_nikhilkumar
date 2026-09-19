@@ -182,6 +182,16 @@ function renderTemplates() {
       '<span class="creator-starter-go">↗</span></button>';
   }).join('');
 
+  host.querySelector('[data-blank]')?.addEventListener('click', () => {
+    selected=null;
+    interactionDraft=blankInteraction(activeType);
+    const base=defaults[activeType]||defaults.game;
+    $('title').value=''; $('description').value=''; $('goal').value=base.goal;
+    $('durationMin').value=String(base.duration); $('difficulty').value=base.difficulty;
+    $('category').value=''; $('instructions').value=''; $('expiresDays').value='14';
+    document.querySelectorAll('#title,#description,#goal').forEach(el=>el.dataset.seeded='false');
+    renderTemplates(); renderInteractionEditor(); renderPreview();
+  });
   host.querySelectorAll('[data-starter]').forEach(btn => btn.addEventListener('click', () => {
     selected = list.find(x => x.id === btn.dataset.starter) || null;
     interactionDraft = sourceConfig(selected);
