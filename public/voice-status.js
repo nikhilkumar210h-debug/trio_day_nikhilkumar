@@ -2,7 +2,7 @@ import { auth, db } from './firebase-init.js';
 import { makeUserId } from './utils.js';
 import { trioCache } from './trio-cache.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
-import { collection, addDoc, serverTimestamp, doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
+import { collection, addDoc, serverTimestamp, doc, getDoc, getDocs, query, limit } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 
 const CLOUD_NAME = 'vyhglthg';
 const UPLOAD_PRESET = 'trio_uploads';
@@ -162,6 +162,16 @@ async function shareVoice(){
     setStatus('Saving post…');
     const now = Date.now();
     // Voice as story — shows in stories strip, auto-deletes after 24h
+    let allowedUids = [];
+    if (privacy === 'friends') {
+      const [followingSnap, followersSnap] = await Promise.all([
+        getDocs(query(collection(db, 'users', currentUser.uid, 'following'), limit(500))),
+        getDocs(query(collection(db, 'users', currentUser.uid, 'followers'), limit(500)))
+      ]);
+      const following = new Set(followingSnap.docs.map(d => d.id));
+      const mutual = followersSnap.docs.map(d => d.id).filter(id => following.has(id));
+      allowedUids = [currentUser.uid, ...mutual].slice(0, 500);
+    }
     await addDoc(collection(db,'posts'), {
       uid: currentUser.uid,
       name: me?.name || currentUser.displayName || 'User',
@@ -174,12 +184,13 @@ async function shareVoice(){
       duration: recordingSeconds,
       message: caption || '🎙️ Voice',
       privacy,
+      allowedUids,
       createdAt: serverTimestamp(),
       createdAtMs: now,
       expiresAt: serverTimestamp(),
       expiresAtMs: now + 24*60*60*1000
     });
-    try{ trioCache.invalidate('feed_recent'); trioCache.invalidate(`posts_${currentUser.uid}`); trioCache.invalidate('feed'); }catch{}
+    try{ trioCache.invalidate(`feed_recent_${currentUser.uid}`); trioCache.invalidate(`posts_${currentUser.uid}`); trioCache.invalidate('feed'); }catch{}
     setStatus('Voice posted ✅ Redirecting…');
     setTimeout(()=>{ location.href='index.html'; }, 2000);
   }catch(err){
