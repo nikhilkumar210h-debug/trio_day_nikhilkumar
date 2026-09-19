@@ -251,6 +251,20 @@ service cloud.firestore {
         allow create: if owner(uid);
         allow update, delete: if false;
       }
+      match /ratings/{ratingUid} {
+        allow read: if signedIn();
+        allow create, update: if owner(ratingUid)
+          && request.resource.data.uid == request.auth.uid
+          && request.resource.data.overall is number
+          && request.resource.data.overall >= 1 && request.resource.data.overall <= 5
+          && request.resource.data.fun is number
+          && request.resource.data.fun >= 1 && request.resource.data.fun <= 5
+          && request.resource.data.useful is number
+          && request.resource.data.useful >= 1 && request.resource.data.useful <= 5
+          && request.resource.data.teamwork is number
+          && request.resource.data.teamwork >= 1 && request.resource.data.teamwork <= 5;
+        allow delete: if owner(ratingUid);
+      }
     }
   }
 
