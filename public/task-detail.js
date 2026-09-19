@@ -150,7 +150,7 @@ async function render() {
   const joined = me ? await isMember(taskId, me.uid) : false;
   const actions = $('actions');
   actions.innerHTML = `
-    <button type="button" class="btn primary" id="joinBtn">${joined ? 'Leave' : 'Join'}</button>\n    <a class="btn primary" href="rooms.html?taskId=${encodeURIComponent(taskId)}">Open a room</a>
+    <button type="button" class="btn primary" id="joinBtn">${joined ? 'Leave' : 'Join'}</button>\n    <a class="btn primary" href="rooms.html?taskId=${encodeURIComponent(taskId)}&source=community">Open a room</a>
     <button type="button" class="btn secondary" id="likeBtn">Like</button>
     <button type="button" class="btn primary" id="completeBtn">Complete (+XP)</button>
     <button type="button" class="btn secondary" id="followBtn">Follow creator</button>
@@ -161,6 +161,17 @@ async function render() {
       <button type="button" class="btn secondary" id="archiveBtn">Archive</button>
       <button type="button" class="btn secondary danger-action" id="removeBtn">Remove</button>
     ` : ''}`;
+
+  if (task.templateId) {
+    const complete = $('completeBtn');
+    if (complete) {
+      const open = document.createElement('a');
+      open.className = 'btn primary';
+      open.href = 'activity.html?id=' + encodeURIComponent(taskId) + '&source=community';
+      open.textContent = 'Open activity';
+      complete.replaceWith(open);
+    }
+  }
 
   $('joinBtn').onclick = async () => {
     if (!me) return alert('Login first');
