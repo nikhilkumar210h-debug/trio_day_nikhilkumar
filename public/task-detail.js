@@ -172,7 +172,7 @@ async function render() {
     }
     await render();
   });
-  $('startBtn')?.addEventListener('click', () => {
+  $('startBtn')?.addEventListener('click', async () => {
     if (!me || !joined || completed) return;
     localStorage.setItem(startedKey, '1');
     await syncChallengePresence(true);
