@@ -101,7 +101,7 @@ export function getCatalogActivity(id){
   const index=Math.max(0,Math.floor((now-epoch)/(cycle*dayMs)));
   const startMs=epoch+index*cycle*dayMs;
   const endAtMs=startMs+cycle*dayMs;
-  return {...item,challengeBrief:DETAILS[item.id]||null,startAtMs, endAtMs, expiresInDays:Math.max(0,Math.ceil((endAtMs-now)/dayMs))};
+  return {...item,challengeBrief:DETAILS[item.id]||null,startAtMs:startMs, endAtMs:endAtMs, expiresInDays:Math.max(0,Math.ceil((endAtMs-now)/dayMs))};
 }
 
 export function activeCatalogActivities(){
