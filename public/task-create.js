@@ -289,8 +289,9 @@ function validateBeforePreview() {
     if (!['order','allocate','grid','assign'].includes(d.mechanic)) return 'Choose how people will build.';
     if (d.mechanic==='order' && (d.items.length<3 || d.items.some(x=>x.length<1))) return 'Add at least 3 clear build steps.';
     if (d.mechanic==='allocate' && (d.items.length<2 || d.items.some(x=>!x[0]))) return 'Add at least 2 budget categories.';
+    if (d.mechanic==='allocate' && d.items.reduce((sum,x)=>sum+Math.max(0,Number(x[1])||0),0) > Number(d.budget||0)) return 'Minimums cannot be higher than the budget.';
     if (d.mechanic==='grid' && (d.required.length<2 || d.required.length>4)) return 'Add 2–4 named zones.';
-    if (d.mechanic==='assign' && (d.people.length!==4 || d.roles.length!==4 || Object.values(d.correct).length!==4)) return 'Complete all 4 people and roles.';
+    if (d.mechanic==='assign' && (d.people.length!==4 || d.roles.length!==4 || new Set(d.people.map(x=>x.toLowerCase())).size!==4 || new Set(d.roles.map(x=>x.toLowerCase())).size!==4 || Object.keys(d.correct).length!==4)) return 'Use four unique people and four unique roles.';
   }
   if (activeType === 'challenge') {
     const d=interactionPayload(), rounds=d.rounds||[];
