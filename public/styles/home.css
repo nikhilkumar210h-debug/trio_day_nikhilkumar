@@ -606,3 +606,4 @@
   .challenge-card { padding: var(--space-2) var(--space-3); }
   .challenge-progress { width: 60px; }
 }
+.today-focus-label{margin-left:auto;font-family:Inter,system-ui,sans-serif;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--color-primary-text);font-weight:800}.today-section-title{width:100%}.focus-activity-wrap{gap:10px}.focus-activity-wrap .activity-card{width:100%}.focus-empty-card{padding:24px;border:1px dashed var(--color-border);border-radius:20px;background:var(--color-glass);text-align:center}.focus-empty-card strong{font-size:15px}.focus-empty-card p{font-size:11px;line-height:1.5;color:var(--color-ink-muted);max-width:480px;margin:6px auto 14px}@media(max-width:640px){.today-focus-label{font-size:8px}}
