@@ -8,6 +8,18 @@ const $ = (id) => document.getElementById(id);
 let me = null;
 let profile = null;
 
+async function hashAnswer(value) {
+  const bytes = new TextEncoder().encode(String(value || '').trim().toLowerCase());
+  const digest = await crypto.subtle.digest('SHA-256', bytes);
+  return [...new Uint8Array(digest)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+function syncVerificationFields() {
+  const type = $('verificationType')?.value || 'answer';
+  $('answerField').hidden = type !== 'answer';
+  $('proofField').hidden = type !== 'proof';
+}
+
 function updatePreview() {
   $('previewIcon').textContent = $('icon')?.value.trim() || '✦';
   $('previewTitle').textContent = $('title')?.value.trim() || 'Your challenge';
@@ -18,11 +30,12 @@ function updatePreview() {
   $('previewTime').textContent = duration >= 60 ? (duration / 60) + ' hr' + (duration > 60 ? 's' : '') : duration + ' min';
 }
 
-['title','objective','icon','category','difficulty','durationMinutes'].forEach((id) => {
+['title','objective','icon','category','difficulty','durationMinutes','verificationType'].forEach((id) => {
   const element = $(id);
   element?.addEventListener('input', updatePreview);
-  element?.addEventListener('change', updatePreview);
+  element?.addEventListener('change', () => { updatePreview(); syncVerificationFields(); });
 });
+syncVerificationFields();
 
 $('submitBtn')?.addEventListener('click', async () => {
   if (!me) { showToast('Please login first', 'error'); return; }
@@ -37,6 +50,24 @@ $('submitBtn')?.addEventListener('click', async () => {
   status.textContent = '';
   try {
     const days = Number($('days').value || 7);
+    const verificationType = $('verificationType').value;
+    const answer = $('answer').value.trim();
+    const proofInstruction = $('proofInstruction').value.trim();
+    if (verificationType === 'answer' && answer.length < 1) {
+      showToast('Add the correct answer so Trio Day can verify the solve.', 'warn');
+      $('answer').focus();
+      button.disabled = false;
+      button.textContent = 'Publish challenge';
+      return;
+    }
+    if (verificationType === 'proof' && proofInstruction.length < 10) {
+      showToast('Explain what counts as proof for this challenge.', 'warn');
+      $('proofInstruction').focus();
+      button.disabled = false;
+      button.textContent = 'Publish challenge';
+      return;
+    }
+    const answerHash = verificationType === 'answer' ? await hashAnswer(answer) : '';
     const id = await createCommunityTask(me.uid, profile, {
       title,
       description: objective,
@@ -48,6 +79,9 @@ $('submitBtn')?.addEventListener('click', async () => {
       metric: $('metric').value || 'manual',
       target: Number($('target').value) || 1,
       xpReward: Number($('xpReward').value) || 50,
+      verificationType,
+      answerHash,
+      proofInstruction,
       startAtMs: Date.now(),
       endAtMs: Date.now() + days * 86400000
     });
