@@ -8,7 +8,6 @@ import {
   orderBy, query, limit, updateDoc
 } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 import { enableOneSignalPush } from './onesignal.js?v=23';
-import { getMyGlobalRank } from './gamification/leaderboards.js';
 
 const el = document.getElementById('authStatus');
 let notificationUnsubs = [];
@@ -155,40 +154,6 @@ function listenForAlerts(user) {
 }
 
 // ── Auth state → render header chip ─────────────────────────────────────────
-// ── Global rank badge above bottom nav ───────────────────────────────────────
-// Renders a compact "🏆 #12" pill above the existing 5-tab bottom nav.
-// Clicking it navigates to leaderboard.html.
-// Does NOT add a sixth nav item — it sits in its own thin strip above the nav.
-
-function removeRankBadge() {
-  document.getElementById('trioRankStrip')?.remove();
-}
-
-async function renderRankBadge(uid) {
-  const rank = await getMyGlobalRank(uid).catch(() => null);
-
-  // Remove stale badge if it exists
-  removeRankBadge();
-
-  // Don't show if not yet ranked
-  if (!rank) return;
-
-  const strip = document.createElement('div');
-  strip.id = 'trioRankStrip';
-  strip.innerHTML = `<a href="leaderboard.html" class="rank-strip-link" aria-label="Your global rank ${rank}">🏆 <strong>#${rank}</strong> Global</a>`;
-
-  // Insert directly above the .bottom-nav element
-  const nav = document.querySelector('.bottom-nav');
-  if (nav) {
-    nav.parentNode.insertBefore(strip, nav);
-  } else {
-    document.body.appendChild(strip);
-  }
-}
-
-// Expose so XP-awarding pages can trigger a rank refresh
-window.trioRefreshRank = (uid) => uid && renderRankBadge(uid).catch(() => {});
-
 onAuthStateChanged(auth, async user => {
   clearNotificationListeners();
   if (!el) return;
@@ -211,15 +176,8 @@ onAuthStateChanged(auth, async user => {
     listenForAlerts(user);
     enableOneSignalPush(user).catch(err => console.warn('OneSignal enable failed', err));
 
-    // ── Rank indicator: inject 🏆 #N above the bottom nav ──────────────────
-    // Cached with SHORT TTL; refreshed here on every page load after auth.
-    // A global CustomEvent 'trio-xp-changed' can trigger a re-render from
-    // any page that awards XP (e.g. tasks.js after manualBump).
-    renderRankBadge(user.uid);
-    window.addEventListener('trio-xp-changed', () => renderRankBadge(user.uid), { once: false });
   } else {
     el.innerHTML = '<a href="login.html" class="auth-login-btn">Login</a>';
-    removeRankBadge();
   }
 });
 
