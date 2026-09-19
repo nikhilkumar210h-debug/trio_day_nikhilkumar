@@ -28,7 +28,13 @@
   <div class="builder-label" style="margin-bottom:12px">02 · Story</div>
   <label class="field"><span class="label-text">Caption</span><textarea id="storyMessage" class="upload-input upload-caption" maxlength="500" placeholder="Say something about this moment…"></textarea></label>
   <div class="upload-expiry"><strong>Expires automatically</strong><span>Stories disappear after 24 hours.<br>They are not added to your permanent profile.</span></div>
-  <div class="builder-label">Who can see it?</div>
+  <div class="builder-label" style="margin-bottom:8px">03 · Quick edit</div>
+  <div class="upload-tools">
+    <label class="field"><span class="label-text">Filter</span><select id="uploadFilter"><option value="none">Normal</option><option value="vivid">Vivid</option><option value="warm">Warm</option><option value="cool">Cool</option><option value="bw">B&amp;W</option><option value="cinematic">Cinematic</option></select></label>
+    <label class="field"><span class="label-text">Overlay text</span><input id="uploadOverlayText" class="upload-input" maxlength="80" placeholder="Optional text on photo"></label>
+    <label class="field"><span class="label-text">Sticker</span><select id="uploadSticker"><option value="">None</option><option>✨</option><option>🔥</option><option>❤️</option><option>😂</option><option>🎉</option><option>💯</option></select></label>
+  </div>
+  <div class="builder-label" style="margin-top:17px">04 · Story</div>
   <div class="upload-privacy" role="radiogroup" aria-label="Story privacy">
     <button type="button" class="active" data-privacy="public">Public</button>
     <button type="button" data-privacy="friends">Friends only</button>
