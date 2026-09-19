@@ -7,7 +7,7 @@ import {
   collection, doc, getDoc, onSnapshot,
   orderBy, query, limit, updateDoc
 } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
-import { enableOneSignalPush } from './onesignal.js?v=23';
+import { enableOneSignalPush } from './onesignal.js?v=24';
 
 const el = document.getElementById('authStatus');
 let notificationUnsubs = [];
