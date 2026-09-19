@@ -70,6 +70,24 @@ async function load(){
  });
 }
 $('messageForm').onsubmit=async e=>{e.preventDefault();const i=$('messageInput'),t=i.value.trim();if(!t)return;await addDoc(collection(db,'rooms',id,'messages'),{uid:me.uid,name:p.name||me.displayName||'User',text:t.slice(0,500),createdAtMs:Date.now()});i.value='';i.focus()};
-$('leaveBtn').onclick=async()=>{if(room?.hostUid===me.uid)return alert('Host must end the room.');await deleteDoc(doc(db,'rooms',id,'members',me.uid));location.href='rooms.html'};
+$('leaveBtn').onclick=async()=>{
+  if(room?.hostUid===me.uid)return alert('Host must end the room.');
+  try{
+    await runTransaction(db,async transaction=>{
+      const roomRef=doc(db,'rooms',id);
+      const memberRef=doc(db,'rooms',id,'members',me.uid);
+      const roomSnap=await transaction.get(roomRef);
+      const memberSnap=await transaction.get(memberRef);
+      if(!roomSnap.exists()||!memberSnap.exists())return;
+      const data=roomSnap.data();
+      const nextCount=Math.max(0,Number(data.memberCount||0)-1);
+      transaction.delete(memberRef);
+      transaction.update(roomRef,{memberCount:nextCount});
+    });
+    location.href='rooms.html';
+  }catch(err){
+    alert(err.message||'Could not leave the room.');
+  }
+};
 $('endBtn').onclick=async()=>{if(room?.hostUid!==me.uid)return;await updateDoc(doc(db,'rooms',id),{status:'closed',endedAtMs:Date.now()});location.href='rooms.html'};
 onAuthStateChanged(auth,async u=>{if(!u)return location.href='login.html?redirect=room.html?id='+encodeURIComponent(id||'');me=u;const s=await getDoc(doc(db,'users',u.uid));p=s.exists()?s.data():{};await load()});
