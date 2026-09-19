@@ -101,7 +101,7 @@ service cloud.firestore {
 
     function validActivityInteraction(value) {
       return value is map
-        && value.size() <= 12
+        && value.size() <= 20
         && (
           (
             value.kind == 'quiz'
@@ -115,7 +115,16 @@ service cloud.firestore {
             && value.correct <= 3
           )
           || (
-            value.kind in ['build','challenge','room']
+            value.kind == 'build'
+            && value.mechanic in ['order','allocate','grid','assign']
+          )
+          || (
+            value.kind == 'challenge'
+            && value.rounds is list
+            && value.rounds.size() == 5
+          )
+          || (
+            value.kind == 'room'
           )
         );
     }
@@ -337,7 +346,21 @@ service cloud.firestore {
           && request.resource.data.uid == request.auth.uid
           && request.resource.data.atMs is number
           && (
-            get(/databases/$(database)/documents/communityTasks/$(taskId)).data.activityType in ['build','game']
+            (
+              get(/databases/$(database)/documents/communityTasks/$(taskId)).data.activityType == 'build'
+              && (
+                !('interaction' in get(/databases/$(database)/documents/communityTasks/$(taskId)).data)
+                || (
+                  request.resource.data.buildEvidence is map
+                  && request.resource.data.buildEvidence.mechanic is string
+                  && request.resource.data.buildEvidence.mechanic == get(/databases/$(database)/documents/communityTasks/$(taskId)).data.interaction.mechanic
+                  && request.resource.data.buildEvidence.state is string
+                  && request.resource.data.buildEvidence.state.size() >= 2
+                  && request.resource.data.buildEvidence.state.size() <= 1600
+                )
+              )
+            )
+            || get(/databases/$(database)/documents/communityTasks/$(taskId)).data.activityType == 'game'
             || !('interaction' in get(/databases/$(database)/documents/communityTasks/$(taskId)).data)
             || (
               get(/databases/$(database)/documents/communityTasks/$(taskId)).data.activityType == 'challenge'
