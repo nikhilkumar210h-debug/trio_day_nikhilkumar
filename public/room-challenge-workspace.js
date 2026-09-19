@@ -10,7 +10,7 @@ const esc = value => {
 export async function mountSharedChallengeWorkspace(root, { db, roomId, activity, me, hostUid }) {
   const rounds = getChallengeRounds((Number(String(activity.id).replace(/\D/g, '')) || 0) % 10, 5);
   const ref = doc(db, 'rooms', roomId, 'state', 'main');
-  const roundSeconds = Math.max(30, Math.round((Number(activity.durationMin || 20) * 60) / rounds.length));
+  const roundSeconds = Math.max(30, Math.min(120, Math.round((Number(activity.durationMin || 20) * 60) / rounds.length)));
   const base = {
     round: 0,
     scores: {},
@@ -133,7 +133,7 @@ export async function mountSharedChallengeWorkspace(root, { db, roomId, activity
             if (!snap.exists()) return;
             const latest = { ...base, ...(snap.data().state || {}) };
             const answered = { ...(latest.answered || {}) };
-            if (latest.finished || answered[me.uid]) return;
+            if (latest.finished || answered[me.uid] || Date.now() >= Number(latest.roundEndsAtMs || 0)) return;
 
             const scores = { ...(latest.scores || {}) };
             scores[me.uid] = Number(scores[me.uid] || 0) + (selected === round.a ? 1 : 0);
