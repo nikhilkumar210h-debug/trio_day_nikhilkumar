@@ -1,0 +1,48 @@
+/* Trio Day — Discover redesign */
+.discover-page{min-height:100vh;background:var(--color-bg)}
+.discover-main{width:min(1180px,100%);margin:0 auto;padding:28px 24px 116px}
+.discover-hero{display:grid;grid-template-columns:1.4fr .6fr;gap:18px;margin-bottom:20px}
+.discover-hero-copy{padding:6px 0}
+.discover-kicker{display:inline-flex;align-items:center;gap:8px;color:var(--color-ink-dim);font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
+.discover-kicker:before{content:"";width:28px;height:1px;background:var(--color-border-strong)}
+.discover-title{font-family:var(--font-display);font-size:clamp(32px,5vw,54px);line-height:1.02;letter-spacing:-.055em;margin:10px 0 12px;color:var(--color-ink)}
+.discover-subtitle{max-width:650px;color:var(--color-ink-muted);font-size:15px;line-height:1.65;margin:0}
+.discover-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;align-self:end}
+.discover-stat{padding:16px;border:1px solid var(--color-border);background:linear-gradient(180deg,var(--color-surface),rgba(255,255,255,.015));border-radius:18px}
+.discover-stat strong{display:block;font:800 22px/1 var(--font-display);letter-spacing:-.04em}
+.discover-stat span{display:block;margin-top:6px;color:var(--color-ink-dim);font-size:10px;text-transform:uppercase;letter-spacing:.08em}
+.discover-toolbar{position:sticky;top:67px;z-index:25;padding:12px;border:1px solid var(--color-border);background:color-mix(in srgb,var(--color-bg-elevated) 90%,transparent);backdrop-filter:blur(18px);border-radius:20px;margin-bottom:18px;box-shadow:var(--shadow-sm)}
+.discover-search-row{display:grid;grid-template-columns:1fr auto;gap:10px}
+.discover-search-row .nkm-search{height:48px;background-color:var(--color-glass)}
+.discover-filter-row{display:flex;gap:8px;overflow:auto;padding-top:9px;scrollbar-width:none}
+.discover-filter-row::-webkit-scrollbar{display:none}
+.discover-filter-row select{min-width:128px;height:36px;padding:0 32px 0 11px;border:1px solid var(--color-border);border-radius:999px;background:var(--color-glass);color:var(--color-ink);font:600 12px var(--font-sans)}
+.discover-resultline{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:4px 2px 13px;color:var(--color-ink-dim);font-size:11px;text-transform:uppercase;letter-spacing:.08em}
+.discover-resultline strong{color:var(--color-ink);font-size:12px}
+.challenge-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.discover-card{position:relative;display:flex;flex-direction:column;min-width:0;overflow:hidden;border-radius:22px;background:linear-gradient(180deg,var(--color-surface),rgba(255,255,255,.02));border:1px solid var(--color-border);box-shadow:var(--shadow-xs);transition:transform .2s var(--ease-out),border-color .2s var(--ease-out),box-shadow .2s var(--ease-out)}
+.discover-card:hover{transform:translateY(-3px);border-color:var(--color-border-strong);box-shadow:var(--shadow-md)}
+.discover-card-link{text-decoration:none;color:inherit;display:block}
+.challenge-art{height:168px;position:relative;display:grid;place-items:center;overflow:hidden;background:
+ radial-gradient(circle at 16% 15%,rgba(255,255,255,.09),transparent 36%),
+ radial-gradient(circle at 82% 80%,rgba(255,255,255,.05),transparent 34%),
+ linear-gradient(135deg,#151922,#0c1017)}
+.challenge-art:after{content:"";position:absolute;inset:auto -30% -45% auto;width:180px;height:180px;border:1px solid rgba(255,255,255,.06);border-radius:50%}
+.challenge-art span{font-size:54px;filter:drop-shadow(0 12px 24px rgba(0,0,0,.38))}
+.challenge-type{position:absolute;left:12px;top:12px;padding:6px 9px;border-radius:999px;background:rgba(0,0,0,.34);backdrop-filter:blur(8px);color:#fff;font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase}
+.challenge-body{padding:15px 15px 13px}
+.challenge-title{font:800 20px/1.15 var(--font-display);letter-spacing:-.03em;margin:0 0 7px}
+.challenge-objective{color:var(--color-ink-muted);font-size:12px;line-height:1.55;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:37px}
+.challenge-meta{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0}
+.pill{font-size:10px;padding:6px 8px;border-radius:999px;background:var(--color-glass);border:1px solid var(--color-border);color:var(--color-ink-muted);font-weight:700}
+.challenge-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding-top:11px;border-top:1px solid var(--color-border)}
+.challenge-stats div{min-width:0;color:var(--color-ink-dim);font-size:9px;text-transform:uppercase;letter-spacing:.05em}
+.challenge-stats strong{display:block;margin-bottom:3px;color:var(--color-ink);font:800 13px/1.1 var(--font-display);letter-spacing:-.02em;text-transform:none}
+.discover-card-footer{padding:0 12px 12px}
+.accept-btn{width:100%;height:42px;border:1px solid var(--color-border-strong);border-radius:13px;background:var(--color-ink);color:var(--color-bg);font-weight:900;letter-spacing:.03em;cursor:pointer;transition:transform .16s var(--ease-out),opacity .16s}
+.accept-btn:hover{transform:translateY(-1px)}
+.accept-btn[data-state="joined"]{background:transparent;color:var(--color-ink);border-color:var(--color-border-strong)}
+.discover-empty{grid-column:1/-1;padding:60px 20px;text-align:center;border:1px dashed var(--color-border-strong);border-radius:22px;color:var(--color-ink-muted)}
+.discover-empty strong{display:block;color:var(--color-ink);font:800 22px var(--font-display);margin-bottom:6px}
+@media(max-width:980px){.discover-hero{grid-template-columns:1fr}.discover-stats{max-width:600px}.challenge-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:680px){.discover-main{padding:18px 14px 104px}.discover-hero{gap:14px}.discover-title{font-size:36px}.discover-toolbar{top:58px;padding:10px;border-radius:17px}.discover-search-row{grid-template-columns:1fr}.discover-search-row .nkm-search{height:46px}.challenge-grid{grid-template-columns:1fr;gap:12px}.challenge-art{height:150px}.discover-stats{grid-template-columns:repeat(3,1fr)}}
