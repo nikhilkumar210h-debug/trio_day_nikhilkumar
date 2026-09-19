@@ -33,7 +33,8 @@ function fillForm(t){
  $('title').value=t.title||'';$('category').value=t.category||'';$('description').value=t.description||'';$('goal').value=t.goal||'';$('instructions').value=t.instructions||'';$('durationMin').value=String(t.durationMin||20);$('difficulty').value=t.difficulty||'Medium';$('expiresDays').value=String(t.cycleDays||14);$('icon').value=t.icon||ACTIVITY_TYPES[activeType].icon;
  updateExpiry();
 }
-function updateExpiry(){$('expiryCopy').textContent=$('expiresDays').value+' days live';}
+function updateExpiry(){$('expiryCopy').textContent=$('expiresDays').value+' days live';renderLivePreview()}
+function renderLivePreview(){const type=ACTIVITY_TYPES[activeType];const title=$('title')?.value.trim()||'Your activity title';const cat=$('category')?.value.trim()||'General';const desc=$('description')?.value.trim()||type.desc;const diff=$('difficulty')?.value||'Medium';const mins=$('durationMin')?.value||20;const days=$('expiresDays')?.value||14;$('creatorLivePreviewCard').innerHTML='<div class="creator-live-preview-card"><div class="creator-live-preview-art">'+escText($('icon')?.value.trim()||type.icon)+'</div><div class="creator-live-preview-body"><div class="creator-template-meta"><span>'+type.label+'</span><span>'+escText(cat)+'</span></div><strong>'+escText(title)+'</strong><p>'+escText(desc)+'</p><div class="creator-live-preview-meta"><span>⏱ '+mins+'m</span><span>'+escText(diff)+'</span><span>⌛ '+days+'d</span></div></div></div>'}
 document.querySelectorAll('#expiresDays').forEach(e=>e.addEventListener('change',updateExpiry));
 $('creatorForm').addEventListener('submit',async e=>{
  e.preventDefault();
@@ -59,5 +60,5 @@ $('creatorForm').addEventListener('submit',async e=>{
 onAuthStateChanged(auth,async u=>{
  me=u;if(!u){location.href='login.html?redirect=task-create.html';return}
  const s=await getDoc(doc(db,'users',u.uid));profile=s.exists()?s.data():{name:u.displayName};
- renderLanes();renderCategorySuggestions();renderTemplates();updateExpiry();
-});
+ renderLanes();renderCategorySuggestions();renderTemplates();updateExpiry();renderLivePreview();
+});\n$('title')?.addEventListener('input',renderLivePreview);$('title')?.addEventListener('change',renderLivePreview);\n$('category')?.addEventListener('input',renderLivePreview);$('category')?.addEventListener('change',renderLivePreview);\n$('description')?.addEventListener('input',renderLivePreview);$('description')?.addEventListener('change',renderLivePreview);\n$('goal')?.addEventListener('input',renderLivePreview);$('goal')?.addEventListener('change',renderLivePreview);\n$('instructions')?.addEventListener('input',renderLivePreview);$('instructions')?.addEventListener('change',renderLivePreview);\n$('durationMin')?.addEventListener('input',renderLivePreview);$('durationMin')?.addEventListener('change',renderLivePreview);\n$('difficulty')?.addEventListener('input',renderLivePreview);$('difficulty')?.addEventListener('change',renderLivePreview);\n$('expiresDays')?.addEventListener('input',renderLivePreview);$('expiresDays')?.addEventListener('change',renderLivePreview);\n$('icon')?.addEventListener('input',renderLivePreview);$('icon')?.addEventListener('change',renderLivePreview);
