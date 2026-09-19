@@ -355,6 +355,7 @@ export async function completeTask(taskId, uid, profile, evidence = null) {
   const safeEvidence = evidence && typeof evidence === 'object'
     ? {
         answerIndex: Number.isInteger(Number(evidence.answerIndex)) ? Number(evidence.answerIndex) : null,
+        score: Number.isInteger(Number(evidence.score)) ? Math.max(0, Math.min(5, Number(evidence.score))) : null,
         proofText: String(evidence.proofText || '').trim().slice(0, 500),
         ...(evidence.buildEvidence && typeof evidence.buildEvidence === 'object'
           ? {
