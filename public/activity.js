@@ -14,34 +14,77 @@ const params=new URLSearchParams(location.search);
 const id=params.get('id');
 const source=params.get('source')||'catalog';
 const $=id=>document.getElementById(id);
-let me=null,profile=null,activity=null,timer=null,remaining=0,activityPassed=false;
+let me=null,profile=null,activity=null,timer=null,remaining=0,activityPassed=false,activityEvidence=null;
 
 function fail(t){$('activityStatus').textContent=t;$('activityStatus').classList.add('error')}
 function setPassed(v){activityPassed=!!v;updateCompleteState()}
 
 function renderQuizWorkspace(root,cfg,isLesson){
+ const normalized={
+   question:String(cfg?.question||''),
+   options:Array.isArray(cfg?.options)?cfg.options.slice(0,4):[],
+   correct:Number(cfg?.correct)||0,
+   lesson:String(cfg?.lesson||''),
+   proofRequired:cfg?.proofRequired!==false,
+   proofPrompt:String(cfg?.proofPrompt||(isLesson?'Explain the idea in your own words or give a small example.':'Show your reasoning. What clue, rule or step led you to this answer?'))
+ };
  root.hidden=false;
- root.innerHTML='<div class="forge-workspace-head"><div><h3>'+ (isLesson?'Learn & Check':'Solve the puzzle') +'</h3><p>Think first, then choose your answer.</p></div><span class="forge-pill">'+(isLesson?'KNOWLEDGE CHECK':'PUZZLE')+'</span></div>'
- +(isLesson?'<div class="forge-lesson">'+esc(cfg.lesson||'Learn the key idea, then test your understanding.')+'</div>':'')
- +'<div class="forge-quiz"><div class="forge-quiz-question">'+esc(cfg.question)+'</div><div class="forge-quiz-options">'+cfg.options.map((o,i)=>'<button type="button" class="forge-option" data-answer="'+i+'">'+esc(o)+'</button>').join('')+'</div></div><div class="forge-result"></div>';
- const result=root.querySelector('.forge-result');
- root.querySelectorAll('[data-answer]').forEach(btn=>btn.onclick=()=>{
-   const selected=Number(btn.dataset.answer);
-   root.querySelectorAll('[data-answer]').forEach(x=>x.disabled=true);
-   if(selected===cfg.correct){
-     btn.classList.add('correct');
-     result.textContent=isLesson?'Correct — concept understood.':'Correct — puzzle solved.';
+ let chosen=false;
+ function paint(){
+   root.innerHTML=
+     '<div class="forge-workspace-head"><div><h3>'+ (isLesson?'Learn + prove it':'Solve + show your work') +'</h3><p>'+ (isLesson?'Understand the idea, answer the check, then explain it in your own words.':'Choose an answer, then give a short reason so your work can be checked.') +'</p></div><span class="forge-pill">'+(isLesson?'LEARN':'PUZZLE')+'</span></div>'+
+     (isLesson?'<div class="forge-lesson">'+esc(normalized.lesson||'Learn the key idea, then test your understanding.')+'</div>':'')+
+     '<div class="forge-quiz"><div class="forge-quiz-question">'+esc(normalized.question)+'</div><div class="forge-quiz-options">'+normalized.options.map((o,i)=>'<button type="button" class="forge-option" data-answer="'+i+'">'+esc(o)+'</button>').join('')+'</div></div>'+
+     '<div class="forge-result"></div><div class="forge-proof" hidden><label class="forge-proof-label">'+esc(normalized.proofPrompt)+'</label><textarea id="forgeProof" maxlength="500" rows="4" placeholder="'+(isLesson?'Explain the concept or give an example…':'Write the clue, rule or steps that justify your answer…')+'"></textarea><div class="forge-proof-footer"><span id="forgeProofCount">0 / 500</span><button type="button" class="forge-check" id="verifyProof">Check my work</button></div></div>';
+   const result=root.querySelector('.forge-result');
+   const proof=root.querySelector('.forge-proof');
+   const proofInput=root.querySelector('#forgeProof');
+   const proofCount=root.querySelector('#forgeProofCount');
+
+   root.querySelectorAll('[data-answer]').forEach(btn=>btn.onclick=()=>{
+     const selectedAnswer=Number(btn.dataset.answer);
+     root.querySelectorAll('[data-answer]').forEach(x=>x.classList.remove('wrong','correct'));
+     root.querySelectorAll('[data-answer]').forEach(x=>x.disabled=true);
+     chosen=selectedAnswer===normalized.correct;
+     if(chosen){
+       activityEvidence={answerIndex:selectedAnswer,proofText:''};
+       btn.classList.add('correct');
+       result.textContent=isLesson?'Correct. Now explain the idea.':'Correct. Now show why it is correct.';
+       result.className='forge-result ok';
+       if(normalized.proofRequired){
+         proof.hidden=false;
+         proofInput?.focus();
+       }else{
+         setPassed(true);
+       }
+     }else{
+       btn.classList.add('wrong');
+       result.textContent='Not quite. Try another option.';
+       result.className='forge-result bad';
+       root.querySelectorAll('[data-answer]').forEach(x=>x.disabled=false);
+     }
+   });
+
+   proofInput?.addEventListener('input',()=>{
+     if(proofCount) proofCount.textContent=proofInput.value.trim().length+' / 500';
+   });
+   root.querySelector('#verifyProof')?.addEventListener('click',()=>{
+     const proofText=proofInput.value.trim();
+     if(!chosen) return;
+     if(activityEvidence) activityEvidence.proofText=proofText;
+     if(proofText.length<20 || proofText.split(/\s+/).filter(Boolean).length<4){
+       result.textContent='Add a little more reasoning (at least 20 characters).';
+       result.className='forge-result bad';
+       proofInput.focus();
+       return;
+     }
+     result.textContent='Work checked. Activity complete.';
      result.className='forge-result ok';
      setPassed(true);
-   }else{
-     btn.classList.add('wrong');
-     result.textContent='Not quite. Try another option.';
-     result.className='forge-result bad';
-     root.querySelectorAll('[data-answer]').forEach(x=>x.disabled=false);
-   }
- });
+   });
+ }
+ paint();
 }
-
 function renderChallengeWorkspace(root){
  const rounds=getChallengeRounds((Number(String(activity.engineId||activity.id).replace(/\D/g,''))||0)%10,5);
  let idx=0,score=0;
@@ -85,7 +128,8 @@ function render(){
 
  const workspace=$('forgeWorkspace');
  const engineId=activity.engineId||activity.id;
- const cfg=getInteractiveConfig(engineId);
+ const customCfg = activity.interaction?.kind === 'quiz' ? activity.interaction : null;
+ const cfg=customCfg || getInteractiveConfig(engineId);
 
  if(activity.type==='build')renderBuildWorkspace(workspace,activity,setPassed);
  else if(activity.type==='puzzle'&&cfg)renderQuizWorkspace(workspace,cfg,false);
@@ -116,7 +160,7 @@ $('completeBtn').onclick=async()=>{
  const b=$('completeBtn');b.disabled=true;b.textContent='Saving…';
  try{
    if(activity.source==='community'){
-     const result=await completeCommunityTask(activity.id,me.uid,profile);
+     const result=await completeCommunityTask(activity.id,me.uid,profile,activityEvidence);
      if(result?.already){$('completionNote').textContent='Already completed ✓';b.textContent='Completed';return}
    }else{
      const cycleKey=activity.id+'_'+activity.startAtMs;

@@ -1,1 +1,112 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0a0f1a"><title>Create — Forge</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap"><link rel="stylesheet" href="styles/tokens.css"><link rel="stylesheet" href="styles/nav.css"><link rel="stylesheet" href="styles/header.css"><link rel="stylesheet" href="styles/components.css"><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="activities.css?v=2"><link rel="stylesheet" href="activity-create.css?v=2"></head><body class="app-page"><header class="topbar"><div class="topbar-inner"><a class="brand" href="all-users.html"><span class="brand-chakra">✦</span><span class="brand-copy"><strong>trio_day</strong><small>FORGE</small></span></a><div id="authStatus" class="auth-status"></div></div></header><main class="creator-shell creator-shell--simple"><section class="creator-hero creator-hero--simple"><div><span class="eyebrow">FORGE · CREATE</span><h1>Make something people can actually do.</h1><p>Pick a starter. Change the idea. Publish. Forge handles the activity mechanics for you.</p></div><div class="creator-hero-orbit" aria-hidden="true"><span class="creator-orbit-dot"></span><span class="creator-orbit-ring"></span></div></section><div class="creator-progress"><div class="creator-progress-step active"><span>1</span><strong>Choose</strong></div><i></i><div class="creator-progress-step"><span>2</span><strong>Start</strong></div><i></i><div class="creator-progress-step"><span>3</span><strong>Publish</strong></div></div><section class="creator-panel creator-step-panel"><div class="creator-step-heading"><div class="creator-step-badge">01</div><div><h2>What are you making?</h2><p>Pick the experience. You can change your mind anytime.</p></div></div><div id="creatorLanes" class="creator-lane-grid"></div></section><section class="creator-panel creator-step-panel"><div class="creator-step-heading"><div class="creator-step-badge">02</div><div><h2>Start with something that already works.</h2><p>These starters come with a real way to solve, build, learn or compete.</p></div></div><div id="creatorTemplates" class="creator-starter-grid"></div></section><section class="creator-builder-grid"><section class="creator-panel creator-step-panel"><div class="creator-step-heading"><div class="creator-step-badge">03</div><div><h2>Make it yours.</h2><p>Only change what matters. Everything else is already set up.</p></div></div><form id="creatorForm" class="creator-form creator-form--simple"><div class="creator-selected-starter" id="creatorSelectedStarter"></div><div class="creator-field"><label>Name it</label><input id="title" maxlength="100" required placeholder="e.g. Crack the hidden pattern"></div><div class="creator-field"><label>Your idea</label><textarea id="description" maxlength="300" required placeholder="What should people actually do? Keep it to one or two sentences."></textarea></div><div class="creator-field-grid"><div class="creator-field"><label>Time</label><select id="durationMin"><option value="10">10 min</option><option value="15">15 min</option><option value="20" selected>20 min</option><option value="30">30 min</option><option value="45">45 min</option></select></div><div class="creator-field"><label>Difficulty</label><select id="difficulty"><option>Easy</option><option selected>Medium</option><option>Hard</option></select></div></div><details class="creator-advanced"><summary>More control</summary><div class="creator-advanced-grid"><div class="creator-field"><label>Topic</label><input id="category" maxlength="60" placeholder="e.g. Logic, SQL, Science"></div><div class="creator-field"><label>Live for</label><select id="expiresDays"><option value="7">7 days</option><option value="14" selected>14 days</option><option value="21">21 days</option><option value="30">30 days</option><option value="40">40 days</option></select></div></div></details><div id="formStatus" class="status"></div><button id="submitBtn" class="nkm-btn nkm-btn--primary creator-submit creator-publish-btn" type="submit"><span>Publish to Forge</span><span>↗</span></button><small class="creator-help">Your activity starts today and leaves active discovery after its cycle ends.</small></form></section><aside class="creator-panel creator-preview-panel"><div class="creator-preview-head"><div><span class="eyebrow">LIVE PREVIEW</span><h2>Looks like this</h2></div><span class="creator-preview-live">LIVE</span></div><div id="creatorLivePreviewCard"></div><div class="creator-preview-hint"><span>✦</span><div><strong>Good activity = clear goal + clear action.</strong><small>People should know what to do within a few seconds.</small></div></div></aside></section></main><script type="module" src="auth-guard.js"></script><script type="module" src="auth-ui.js"></script><script type="module" src="theme.js"></script><script type="module" src="ui/header.js"></script><script type="module" src="ui/nav.js"></script><script type="module" src="task-create.js"></script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a0f1a">
+<title>Create Activity — Trio Day</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="styles/tokens.css">
+<link rel="stylesheet" href="styles/nav.css">
+<link rel="stylesheet" href="styles/header.css">
+<link rel="stylesheet" href="styles/components.css">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="activities.css?v=3">
+<link rel="stylesheet" href="activity-create.css?v=3">
+</head>
+<body class="app-page creator-new-page">
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="brand" href="all-users.html"><span class="brand-chakra">✦</span><span class="brand-copy"><strong>trio_day</strong><small>FORGE</small></span></a>
+    <div id="authStatus" class="auth-status"></div>
+  </div>
+</header>
+
+<main class="creator-shell creator-wizard">
+  <section class="creator-hero creator-hero--simple">
+    <div>
+      <span class="eyebrow">FORGE · CREATE</span>
+      <h1>Create in a minute.</h1>
+      <p>Start from a working idea, change the important parts, and publish. You do not need to learn how Forge works.</p>
+    </div>
+    <div class="creator-hero-orbit" aria-hidden="true"><span class="creator-orbit-dot"></span><span class="creator-orbit-ring"></span></div>
+  </section>
+
+  <div class="creator-progress" id="creatorProgress" aria-label="Create progress">
+    <button type="button" class="creator-progress-step active" data-step="1"><span>1</span><strong>Pick</strong></button>
+    <i></i>
+    <button type="button" class="creator-progress-step" data-step="2"><span>2</span><strong>Make it yours</strong></button>
+    <i></i>
+    <button type="button" class="creator-progress-step" data-step="3"><span>Preview</span></button>
+  </div>
+
+  <section class="creator-panel creator-wizard-step" data-wizard-step="1">
+    <div class="creator-step-heading">
+      <div class="creator-step-badge">01</div>
+      <div><h2>What kind of activity?</h2><p>Choose the lane. Forge handles the complex part.</p></div>
+    </div>
+    <div id="creatorLanes" class="creator-lane-grid"></div>
+    <div class="creator-wizard-actions"><button type="button" id="toStep2" class="nkm-btn nkm-btn--primary">Next →</button></div>
+  </section>
+
+  <section class="creator-panel creator-wizard-step" data-wizard-step="2" hidden>
+    <div class="creator-step-heading">
+      <div class="creator-step-badge">02</div>
+      <div><h2>Start with a working idea</h2><p>Pick one. Then edit only what you care about.</p></div>
+    </div>
+    <div id="creatorTemplates" class="creator-starter-grid"></div>
+
+    <form id="creatorForm" class="creator-form creator-form--simple" novalidate>
+      <div class="creator-selected-starter" id="creatorSelectedStarter"></div>
+
+      <div class="creator-field"><label for="title">Name</label><input id="title" maxlength="100" required placeholder="Give it a fun, clear name"></div>
+      <div class="creator-field"><label for="description">What will people do?</label><textarea id="description" maxlength="300" required rows="3" placeholder="Example: Solve three short clues and explain the final pattern."></textarea></div>
+      <div class="creator-field"><label for="goal">Goal</label><input id="goal" maxlength="240" placeholder="Example: Reach the answer and show your reasoning."></div>
+
+      <div id="customInteraction" class="creator-interaction-editor"></div>
+
+      <details class="creator-advanced">
+        <summary>More control</summary>
+        <div class="creator-advanced-grid">
+          <div class="creator-field"><label for="category">Topic</label><input id="category" maxlength="60" placeholder="Logic, SQL, Science…"></div>
+          <div class="creator-field"><label for="instructions">Extra instructions</label><textarea id="instructions" maxlength="900" rows="3" placeholder="Anything participants should know."></textarea></div>
+          <div class="creator-field"><label for="durationMin">Time</label><select id="durationMin"><option value="10">10 min</option><option value="15">15 min</option><option value="20" selected>20 min</option><option value="30">30 min</option><option value="45">45 min</option></select></div>
+          <div class="creator-field"><label for="difficulty">Difficulty</label><select id="difficulty"><option>Easy</option><option selected>Medium</option><option>Hard</option></select></div>
+          <div class="creator-field"><label for="expiresDays">Live for</label><select id="expiresDays"><option value="7">7 days</option><option value="14" selected>14 days</option><option value="21">21 days</option><option value="30">30 days</option><option value="40">40 days</option></select></div>
+        </div>
+      </details>
+      <div class="creator-wizard-actions">
+        <button type="button" id="backStep1" class="nkm-btn">← Back</button>
+        <button type="button" id="toStep3" class="nkm-btn nkm-btn--primary">Preview →</button>
+      </div>
+    </form>
+  </section>
+
+  <section class="creator-panel creator-wizard-step" data-wizard-step="3" hidden>
+    <div class="creator-step-heading">
+      <div class="creator-step-badge">03</div>
+      <div><h2>Looks good?</h2><p>Check the activity once, then put it in Discover.</p></div>
+    </div>
+    <div class="creator-preview-layout">
+      <div id="creatorLivePreviewCard"></div>
+      <div class="creator-preview-hint">
+        <span>✦</span><div><strong>People must actually do something.</strong><small>Puzzle/Learn asks for an answer plus reasoning. Build uses a real board. Challenge uses multiple rounds. Games run in rooms.</small></div>
+      </div>
+    </div>
+    <div id="formStatus" class="status" aria-live="polite"></div>
+    <div class="creator-wizard-actions">
+      <button type="button" id="backStep2" class="nkm-btn">← Edit</button>
+      <button type="submit" form="creatorForm" id="submitBtn" class="nkm-btn nkm-btn--primary creator-publish-btn"><span>Publish activity</span><span>↗</span></button>
+    </div>
+  </section>
+</main>
+
+<script type="module" src="auth-guard.js"></script>
+<script type="module" src="auth-ui.js"></script>
+<script type="module" src="theme.js"></script>
+<script type="module" src="ui/header.js"></script>
+<script type="module" src="ui/nav.js"></script>
+<script type="module" src="task-create.js"></script>
+</body>
+</html>

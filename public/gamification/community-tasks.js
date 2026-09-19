@@ -97,6 +97,41 @@ export async function getCommunityTask(id) {
 
 // ── Create ────────────────────────────────────────────────────────────────────
 
+function normalizeInteraction(data) {
+  const type = data.activityType;
+  const raw = data.interaction && typeof data.interaction === 'object' ? data.interaction : {};
+
+  if (type === 'puzzle' || type === 'learn') {
+    const options = Array.isArray(raw.options)
+      ? raw.options.slice(0, 4).map(v => String(v || '').trim().slice(0, 180))
+      : [];
+    while (options.length < 4) options.push('Option ' + String.fromCharCode(65 + options.length));
+    return {
+      kind: 'quiz',
+      question: String(raw.question || '').trim().slice(0, 500),
+      options,
+      correct: Math.max(0, Math.min(3, Number(raw.correct) || 0)),
+      lesson: type === 'learn' ? String(raw.lesson || '').trim().slice(0, 900) : '',
+      proofRequired: raw.proofRequired !== false,
+      proofPrompt: String(raw.proofPrompt || (
+        type === 'learn'
+          ? 'Explain the idea in your own words or give a small example.'
+          : 'Show your reasoning. What clue, rule or step led you to this answer?'
+      )).trim().slice(0, 240)
+    };
+  }
+
+  if (type === 'build') {
+    return {
+      kind: 'build',
+      mechanic: String(raw.mechanic || data.mechanic || 'order').slice(0, 40)
+    };
+  }
+
+  if (type === 'challenge') return { kind: 'challenge' };
+  return { kind: 'room' };
+}
+
 export async function createCommunityTask(uid, profile, data) {
   if (!uid) throw new Error('Login required to create a challenge');
   const now = Date.now();
@@ -124,6 +159,7 @@ export async function createCommunityTask(uid, profile, data) {
     metric:       data.metric     || 'manual',
     target:       Math.max(1, Number(data.target)    || 1),
     xpReward:     Math.max(1, Math.min(500, Number(data.xpReward) || 50)),
+    interaction:   normalizeInteraction(data),
     creatorUid:   uid,
     creatorName:  profile?.name     || 'User',
     creatorPhoto: profile?.photoURL || null,
@@ -281,7 +317,7 @@ export async function listComments(taskId, max = 40) {
 
 // ── Complete ──────────────────────────────────────────────────────────────────
 
-export async function completeTask(taskId, uid, profile) {
+export async function completeTask(taskId, uid, profile, evidence = null) {
   const task = await getCommunityTask(taskId);
   if (!task) throw new Error('Task not found');
   if (task.endAtMs && task.endAtMs < Date.now()) throw new Error('Task expired');
@@ -292,10 +328,17 @@ export async function completeTask(taskId, uid, profile) {
 
   // Write completion subcollection doc (client rules: owner create only)
   const atMs = Date.now();
+  const safeEvidence = evidence && typeof evidence === 'object'
+    ? {
+        answerIndex: Number.isInteger(Number(evidence.answerIndex)) ? Number(evidence.answerIndex) : null,
+        proofText: String(evidence.proofText || '').trim().slice(0, 500)
+      }
+    : null;
   await setDoc(cref, {
     uid,
     name:  profile?.name || 'User',
-    atMs
+    atMs,
+    ...(safeEvidence ? safeEvidence : {})
   });
 
   // Bump completions counter server-side
