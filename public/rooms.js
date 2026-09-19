@@ -2,19 +2,35 @@ import{auth,db}from'./firebase-init.js';
 import{onAuthStateChanged}from'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
 import{collection,query,where,limit,onSnapshot,getDoc,doc,addDoc,setDoc,serverTimestamp,getDocs}from'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 import{escapeHtml as esc}from'./utils.js';
-import{activityCardHtml}from'./activity-ui.js';
+import{activityCardHtml,ACTIVITY_TYPES,normalizeActivityType}from'./activity-ui.js';
 const $=id=>document.getElementById(id);
 let me=null,profile={},selectedActivity=null,capacity=3;
 function msg(t,e=false){$('createStatus').textContent=t||'';$('createStatus').classList.toggle('error',e)}
 async function loadActivity(){
  const id=new URLSearchParams(location.search).get('taskId');
- if(!id){$('selectedActivity').innerHTML='<span>Choose an activity from Discover to create an activity room.</span>';return;}
- const s=await getDoc(doc(db,'communityTasks',id));
- if(!s.exists()){msg('Activity not found.',true);return;}
- selectedActivity={id:s.id,...s.data()};
- $('challengeId').value=id;
- $('selectedActivity').innerHTML=activityCardHtml(selectedActivity,{compact:true});
- $('roomTitle').value=(selectedActivity.title||'Activity')+' · Room';
+ if(id){
+   const s=await getDoc(doc(db,'communityTasks',id));
+   if(!s.exists()){msg('Activity not found.',true);return;}
+   selectedActivity={id:s.id,...s.data(),activityType:normalizeActivityType(s.data())};
+   $('challengeId').value=id;
+   $('selectedActivity').innerHTML=activityCardHtml(selectedActivity,{compact:true});
+   $('roomTitle').value=(selectedActivity.title||'Activity')+' · Room';
+   return;
+ }
+ try{
+   const snap=await getDocs(query(collection(db,'communityTasks'),where('status','==','active'),limit(30)));
+   const activities=snap.docs.map(d=>({id:d.id,...d.data()})).filter(t=>!t.hidden&&(!t.endAtMs||t.endAtMs>Date.now())).map(t=>({...t,activityType:normalizeActivityType(t)}));
+   const laneOrder=['puzzle','build','learn','challenge','game'];
+   $('roomActivityPicker').innerHTML=activities.length?laneOrder.map(type=>{
+     const lane=activities.filter(a=>a.activityType===type).slice(0,3);
+     return lane.length?`<div class="room-picker-lane"><div class="room-picker-heading"><span>${ACTIVITY_TYPES[type].icon}</span><strong>${ACTIVITY_TYPES[type].label}</strong></div><div class="room-picker-list">${lane.map(a=>`<button type="button" class="room-picker-card" data-activity-id="${a.id}"><span>${a.icon||ACTIVITY_TYPES[type].icon}</span><span><strong>${esc(a.title||'Activity')}</strong><small>${esc(a.description||ACTIVITY_TYPES[type].desc)}</small></span></button>`).join('')}</div></div>`:'';
+   }).join(''):'<div class="room-empty">No activities available yet.</div>';
+   document.querySelectorAll('[data-activity-id]').forEach(btn=>btn.onclick=()=>{
+     const a=activities.find(x=>x.id===btn.dataset.activityId);if(!a)return;
+     selectedActivity=a;$('challengeId').value=a.id;$('selectedActivity').innerHTML=activityCardHtml(a,{compact:true});$('roomTitle').value=(a.title||'Activity')+' · Room';
+     document.querySelectorAll('[data-activity-id]').forEach(x=>x.classList.toggle('is-selected',x===btn));
+   });
+ }catch(e){msg(e.message||'Could not load activities.',true)}
 }
 function render(rs){
  $('roomStatus').textContent=rs.length?rs.length+' live room'+(rs.length>1?'s':''):'No rooms live yet';
