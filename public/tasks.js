@@ -17,7 +17,8 @@ const $ = id => document.getElementById(id);
 const listEl = $('taskList');
 const statusEl = $('tasksStatus');
 let me = null;
-let tab = 'daily';
+const initialTab = new URLSearchParams(location.search).get('tab');
+let tab = ['daily','weekly','community','challenge','monthly','fun'].includes(initialTab) ? initialTab : 'daily';
 
 function setStatus(t = '', err = false) {
   if (!statusEl) return;
