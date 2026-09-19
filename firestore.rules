@@ -357,7 +357,9 @@ service cloud.firestore {
           && request.resource.data.updatedAtMs is number
           && request.resource.data.activityId is string
           && request.resource.data.activityId.size() > 0
-          && request.resource.data.activityId.size() <= 80;
+          && request.resource.data.activityId.size() <= 80
+          && request.resource.data.activityId == get(/databases/$(database)/documents/rooms/$(roomId)).data.challengeId
+          && request.resource.data.mechanic in ['order','allocate','grid','assign','shared-puzzle','shared-learn','shared-challenge'];
         allow delete: if signedIn()
           && get(/databases/$(database)/documents/rooms/$(roomId)).data.hostUid == request.auth.uid;
       }
