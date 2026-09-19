@@ -99,6 +99,11 @@ service cloud.firestore {
         || resource.data.userId == '';
     }
 
+    match /usersPrivate/{userId} {
+      allow read, create, update: if owner(userId);
+      allow delete: if owner(userId);
+    }
+
     match /users/{userId} {
       allow read: if signedIn();
       allow create: if owner(userId);
