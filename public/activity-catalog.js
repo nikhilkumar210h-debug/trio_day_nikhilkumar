@@ -1,3 +1,17 @@
+const DETAILS={
+p1:'Starter: 3, 6, 12, 24, __. Then find two harder patterns of your own.',
+p2:'There are 3 switches outside a room and 3 lamps inside. You may enter once. Work out which switch controls each lamp.',
+p3:'Case: A says “B is lying.” B says “C is lying.” C says “A and B are both truthful.” Exactly one statement is false. Identify it and explain why.',
+p4:'Six seats are in a row. A sits left of B. C is next to D. E is not at an end. F sits right of B. Find one valid arrangement and show the deductions.',
+p5:'Starter: 2, 5, 10, 17, 26, __. Now make one sequence where the rule changes every other step.',
+p6:'Turn COLD into WARM by changing one letter at a time. Every intermediate word must be valid.',
+p7:'Grid: S . # . . / . . # . # / # . . . . / # # # . . / . . . . G. Find a shortest route from S to G without crossing #.',
+p8:'Example: KHOOR → HELLO. Infer the transformation, then decode “WUXR DAY” and create one encoded five-letter word.',
+p9:'Three study sessions happen Mon, Tue, Wed. Math is before coding. Design is not Monday. Coding is not Wednesday. Find the schedule.',
+p10:'A bag has 3 red, 2 blue and 1 green token. Without replacement, what is the probability the first two draws are different colours? Show your counting.',
+p11:'Input/output: 1→3, 2→6, 3→11, 4→18. Infer the rule and predict 5. Then invent a second rule that matches the first four.',
+p12:'Secret code has four digits. Guess 1234: one digit is correct and well placed. Guess 5678: no digit is correct. Guess 9012: two digits are correct but misplaced. Deduce one possible code and reasoning.'
+};
 const dayMs=86400000;
 const C=(id,type,category,title,description,goal,instructions,durationMin,difficulty,cycleDays,icon)=>({id,type,category,title,description,goal,instructions,durationMin,difficulty,cycleDays,icon,source:'catalog'});
 
@@ -87,7 +101,7 @@ export function getCatalogActivity(id){
   const index=Math.max(0,Math.floor((now-epoch)/(cycle*dayMs)));
   const startMs=epoch+index*cycle*dayMs;
   const endAtMs=startMs+cycle*dayMs;
-  return {...item,startAtMs, endAtMs, expiresInDays:Math.max(0,Math.ceil((endAtMs-now)/dayMs))};
+  return {...item,challengeBrief:DETAILS[item.id]||null,startAtMs, endAtMs, expiresInDays:Math.max(0,Math.ceil((endAtMs-now)/dayMs))};
 }
 
 export function activeCatalogActivities(){
