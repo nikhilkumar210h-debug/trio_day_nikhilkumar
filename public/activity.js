@@ -3,9 +3,9 @@ import{onAuthStateChanged}from'https://www.gstatic.com/firebasejs/10.13.0/fireba
 import{doc,getDoc,setDoc}from'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 import{activeCatalogActivities}from'./activity-catalog.js';
 import{activityTypeInfo}from'./activity-ui.js';
-import{renderBuildWorkspace}from'./forge-engine.js';
+import{renderBuildWorkspace}from'./forge-engine.js?v=20260919-engine2';
 import{getInteractiveConfig,getChallengeRounds}from'./forge-interactions.js';
-import{completeTask as completeCommunityTask}from'./gamification/community-tasks.js';
+import{completeTask as completeCommunityTask}from'./gamification/community-tasks.js?v=20260919-community3';
 import{awardXp}from'./gamification/xp-levels.js';
 import{showAchievement}from'./ui/achievements.js';
 import{escapeHtml as esc}from'./utils.js';
@@ -99,7 +99,30 @@ function renderChallengeWorkspace(root){
      if(answer===q.a){score++;btn.classList.add('correct');result.textContent='Correct.';result.className='forge-result ok'}
      else{btn.classList.add('wrong');result.textContent='Not this time.';result.className='forge-result bad'}
      const next=document.createElement('button');next.type='button';next.className='forge-next';next.textContent=idx===rounds.length-1?'Finish round':'Next round';result.insertAdjacentElement('afterend',next);
-     next.onclick=()=>{if(idx<rounds.length-1){idx++;paint()}else{result.textContent='Final score: '+score+' / '+rounds.length+(score>=3?' · Challenge complete.':' · Try again for 3 or more.');result.className='forge-result '+(score>=3?'ok':'bad');if(score>=3)setPassed(true)}};
+     next.onclick=()=>{
+       if(idx<rounds.length-1){idx++;paint();return}
+       if(score<3){
+         result.textContent='Final score: '+score+' / '+rounds.length+' · Need 3 or more.';
+         result.className='forge-result bad';
+         return;
+       }
+       result.textContent='Final score: '+score+' / '+rounds.length+' · One last step.';
+       result.className='forge-result ok';
+       const proof=document.createElement('div');
+       proof.className='forge-proof';
+       proof.innerHTML='<label class="forge-proof-label">What did you notice while solving these rounds?</label><textarea id="challengeProof" maxlength="500" rows="3" placeholder="Give one short observation or strategy…"></textarea><div class="forge-proof-footer"><span id="challengeProofCount">0 / 500</span><button type="button" class="forge-check" id="verifyChallenge">Finish challenge</button></div>';
+       root.appendChild(proof);
+       const input=proof.querySelector('#challengeProof'),count=proof.querySelector('#challengeProofCount');
+       input.addEventListener('input',()=>{count.textContent=input.value.trim().length+' / 500'});
+       proof.querySelector('#verifyChallenge').onclick=()=>{
+         const proofText=input.value.trim();
+         if(proofText.length<20){result.textContent='Add a little more detail (at least 20 characters).';result.className='forge-result bad';input.focus();return}
+         activityEvidence={score,proofText};
+         result.textContent='Challenge complete.';
+         result.className='forge-result ok';
+         setPassed(true);
+       };
+     };
    });
  }
  paint();

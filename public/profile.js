@@ -79,17 +79,10 @@ async function getCachedUserPosts(uid) {
   // Bound query: limit to 50 most recent, filter server-side where possible
   try {
     // First, let's check what fields exist in posts collection
-    const testSnap = await getDocs(query(collection(db, 'posts'), limit(5)));
-    const samples = testSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-    console.log('[Profile] Sample posts:', samples);
-    console.log('[Profile] Sample post keys:', samples.map(s => Object.keys(s)));
-    
     const snap = await getDocs(
       query(collection(db, 'posts'), where('uid', '==', uid), where('isStory', '==', false), orderBy('createdAtMs', 'desc'), limit(50))
     );
-    console.log('[Profile] Raw docs:', snap.docs.map(d => ({ id: d.id, ...d.data() })));
     const posts = snap.docs.map(d => ({ ...d.data(), _id: d.id })).filter(p => p.type !== 'story');
-    console.log('[Profile] Fetched posts:', posts.length, posts);
     trioCache.set(key, posts, trioCache.TTL.SHORT);
     return posts;
   } catch (err) {
@@ -101,7 +94,7 @@ async function getCachedUserPosts(uid) {
 // ── Load connections panel ───────────────────────────────────────────────────
 async function loadConnections(uid) {
   const box = $('connectionsList'); if (!box) return;
-  box.innerHTML = '';
+  box.innerHTML = '<div class="td-skeleton td-skeleton--card"></div><div class="td-skeleton td-skeleton--card"></div>';
   const ids = await getCachedFollowingIds(uid);
   const filtered = ids.filter(id => id !== uid);
   if (!filtered.length) { box.innerHTML = '<div class="connections-empty">No connections yet.</div>'; return; }
@@ -194,7 +187,7 @@ async function openProfileMenu(userData) {
         <button type="button" class="profile-menu-item" data-action="password">
           <span>🔐</span> Change Password
         </button>
-        <a class="profile-menu-item" href="privacy-policy.html">
+        <a class="profile-menu-item" href="privacy.html">
           <span>🔒</span> Privacy Policy
         </a>
         <label class="profile-menu-item profile-menu-toggle" style="cursor:pointer">
@@ -235,7 +228,7 @@ async function openProfileMenu(userData) {
         // Inline forgot password flow
         try {
           const { sendPasswordResetEmail } = await import('https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js');
-          const userEmail = userData.email;
+          const userEmail = me?.email || userData.email;
           if (!userEmail) {
             const { showToast } = await import('./ui/toast.js');
             showToast('Google account me password change Google se karo', 'error');
@@ -280,12 +273,10 @@ async function loadProfile(uid) {
   $('profileName').textContent = current.name || 'User';
   $('profileUserId').textContent = current.userId || makeUserId(uid);
   const isOwnProfile = me && me.uid === uid;
-  const emailVisible = Boolean(current.email) && !current.emailHidden;
-  if (isOwnProfile) {
-    $('profileEmail').textContent = emailVisible ? current.email : 'Email hidden from public view';
-  } else {
-    $('profileEmail').textContent = emailVisible ? current.email : 'Email hidden';
-  }
+  const ownEmail = isOwnProfile ? (me?.email || current.email || '') : '';
+  $('profileEmail').textContent = isOwnProfile
+    ? (ownEmail ? 'Email connected' : 'Email hidden')
+    : '';
   $('profileBio').textContent = current.bio || 'No bio yet.';
 
   // 2. Follower / following counts — cached
@@ -338,10 +329,9 @@ async function loadProfile(uid) {
   await loadConnections(uid);
 
   // 5. Posts list — cached (story short-term, don't show in profile)
-  const posts = $('postsList'); posts.innerHTML = '<div class="connections-empty">Loading posts…</div>';
+  const posts = $('postsList'); posts.innerHTML = '<div class="td-skeleton td-skeleton--wide"></div>';
   const userPosts = await getCachedUserPosts(uid);
-  console.log('[Profile] User posts after fetch:', userPosts);
-  posts.innerHTML = '';
+   posts.innerHTML = '';
   if (!userPosts.length) {
     posts.innerHTML = '<div class="connections-empty">No posts yet.</div>';
   } else {

@@ -9,6 +9,7 @@ import {
 import { isAdmin } from './gamification/templates.js';
 import { trioCache } from './trio-cache.js';
 import { escapeHtml as esc } from './utils.js';
+import { showToast } from './ui/toast.js';
 
 const $ = id => document.getElementById(id);
 const params = new URLSearchParams(location.search);
@@ -98,7 +99,7 @@ async function followCreator(creatorUid) {
   });
   trioCache.invalidatePrefix(`following_${me.uid}`);
   trioCache.invalidatePrefix(`followers_${creatorUid}`);
-  alert('Following creator ✅');
+  showToast('Following creator ✅');
 }
 
 async function render() {
@@ -174,18 +175,18 @@ async function render() {
   }
 
   $('joinBtn').onclick = async () => {
-    if (!me) return alert('Login first');
+    if (!me) return showToast('Login first', 'error');
     if (joined) await leaveTask(taskId, me.uid);
     else await joinTask(taskId, me.uid, profile);
     await render();
   };
   $('likeBtn').onclick = async () => {
-    if (!me) return alert('Login first');
+    if (!me) return showToast('Login first', 'error');
     await toggleLike(taskId, me.uid);
     await render();
   };
   if ($('completeBtn')) $('completeBtn').onclick = async () => {
-    if (!me) return alert('Login first');
+    if (!me) return showToast('Login first', 'error');
     const btn = $('completeBtn');
     const prevText = btn.textContent;
     btn.disabled = true;
@@ -193,7 +194,7 @@ async function render() {
     try {
       const r = await completeTask(taskId, me.uid, profile);
       if (r.already) {
-        alert('Already completed');
+        showToast('Already completed');
         btn.textContent = 'Done';
         btn.disabled = true;
         return;
@@ -205,7 +206,7 @@ async function render() {
       const newBtn = $('completeBtn');
       if (newBtn) { newBtn.textContent = 'Done'; newBtn.disabled = true; }
     } catch (err) {
-      alert(err.message || 'Failed');
+      showToast(err.message || 'Failed', 'error');
       btn.textContent = prevText;
       btn.disabled = false;
     }
@@ -241,7 +242,7 @@ $('commentBtn').addEventListener('click', async () => {
     await addComment(taskId, me.uid, profile, txt);
     $('commentInput').value = '';
     await render();
-  } catch (err) { alert(err.message || 'Failed'); }
+  } catch (err) { showToast(err.message || 'Failed', 'error'); }
 });
 
 onAuthStateChanged(auth, async user => {
