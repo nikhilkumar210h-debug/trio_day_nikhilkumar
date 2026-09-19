@@ -11,13 +11,18 @@ service cloud.firestore {
 
     match /posts/{postId} {
       allow read: if signedIn() && (
-        resource.data.type == 'post'
-        || resource.data.privacy == 'public'
-        || resource.data.uid == request.auth.uid
+        (resource.data.type == 'post' && resource.data.isStory != true)
         || (
-          resource.data.privacy == 'friends'
-          && resource.data.allowedUids is list
-          && request.auth.uid in resource.data.allowedUids
+          resource.data.isStory == true
+          && (
+            resource.data.privacy == 'public'
+            || resource.data.uid == request.auth.uid
+            || (
+              resource.data.privacy == 'friends'
+              && resource.data.allowedUids is list
+              && request.auth.uid in resource.data.allowedUids
+            )
+          )
         )
       );
       allow create: if signedIn() && request.resource.data.uid == request.auth.uid
