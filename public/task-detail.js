@@ -1,6 +1,6 @@
 import { auth, db } from './firebase-init.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
-import { doc, getDoc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
+import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 import {
   getCommunityTask, joinTask, leaveTask, isMember, toggleLike,
   addComment, listComments, completeTask,
@@ -29,6 +29,16 @@ async function followCreator(creatorUid) {
   trioCache.invalidatePrefix(`following_${me.uid}`);
   trioCache.invalidatePrefix(`followers_${creatorUid}`);
   alert('Following creator ✅');
+}
+
+async function rateChallenge(rating, feedback) {
+  if (!me || !task) return;
+  const value = Math.max(1, Math.min(5, Number(rating)));
+  await setDoc(doc(db, 'communityTasks', taskId, 'ratings', me.uid), { uid: me.uid, rating: value, feedback: String(feedback || '').slice(0, 160), atMs: Date.now() });
+  const count = Number(task.ratingCount || 0);
+  const avg = Number(task.ratingAverage || 0);
+  const nextAvg = ((avg * count) + value) / (count + 1);
+  await updateDoc(doc(db, 'communityTasks', taskId), { ratingAverage: Number(nextAvg.toFixed(2)), ratingCount: count + 1 }).catch(() => {});
 }
 
 async function shareCompletionToStory() {
@@ -66,8 +76,11 @@ async function render() {
     return;
   }
   const ends = task.endAtMs ? new Date(task.endAtMs).toLocaleString() : '—';
+  const duration = Number(task.durationMinutes || 0);
+  const category = task.category || 'Challenge';
+  const difficulty = task.difficulty || 'Medium';
   $('detail').innerHTML = `
-    <span class="eyebrow">${esc(task.kind || 'challenge')} · ${esc(task.status || 'active')}${task.featured ? ' · featured' : ''}${task.hidden ? ' · hidden' : ''}</span>
+    <span class="eyebrow">${esc(category)} · ${esc(difficulty)} · ${duration ? duration + ' min · ' : ''}${esc(task.status || 'active')}${task.featured ? ' · featured' : ''}${task.hidden ? ' · hidden' : ''}</span>
     <h1 style="margin:0.35rem 0">${esc(task.icon || '🏁')} ${esc(task.title)}</h1>
     <p>${esc(task.description || '')}</p>
     <div class="community-stats">
@@ -75,7 +88,7 @@ async function render() {
       <span>${task.likes || 0} likes</span>
       <span>${task.comments || 0} comments</span>
       <span>${task.completions || 0} completed</span>
-      <span>+${task.xpReward || 0} XP</span>
+      <span>+${task.xpReward || 0} XP</span><span>${Number(task.ratingAverage || 0) ? Number(task.ratingAverage).toFixed(1) + ' ★' : 'Not rated'}</span>
     </div>
     <p style="font-size:0.8rem;opacity:0.7;margin-top:0.75rem">
       By <a href="profile.html?uid=${encodeURIComponent(task.creatorUid || '')}">${esc(task.creatorName || 'User')}</a>
@@ -141,6 +154,17 @@ async function render() {
       btn.textContent = '📸 Share to Story';
     }
   });
+
+  if (completed && !document.getElementById('ratingBtn')) {
+    actions.insertAdjacentHTML('beforeend', '<button type="button" class="btn secondary" id="ratingBtn">Rate challenge</button>');
+    $('ratingBtn').onclick = async () => {
+      const value = Number(prompt('Rate this challenge from 1 to 5'));
+      if (!value || value < 1 || value > 5) return;
+      const feedback = prompt('What did you think? (optional)') || '';
+      try { await rateChallenge(value, feedback); alert('Rating saved ✓'); await render(); }
+      catch (e) { alert(e.message || 'Could not save rating'); }
+    };
+  }
 
   $('completeBtn').onclick = async () => {
     if (!me) return alert('Login first');
