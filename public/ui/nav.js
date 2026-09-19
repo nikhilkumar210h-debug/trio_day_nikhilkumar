@@ -26,7 +26,7 @@ function pathKey() {
   if (p === '' || p === 'index.html' || p === 'view_post.html') return 'today';
   if (p === 'all-users.html') return 'discover';
   if (p === 'tasks.html' || p === 'task-create.html' || p === 'leaderboard.html' || p === 'admin-tasks.html') return 'do';
-  if (p === 'task-detail.html' || p === 'activity.html' || p === 'rooms.html' || p === 'room.html') return 'discover';
+  if (p === 'task-detail.html' || p === 'activity.html' || p === 'rooms.html' || p === 'room.html' || p === 'puzzle.html' || p === 'build.html' || p === 'learn.html' || p === 'challenge.html' || p === 'game.html') return 'discover';
   if (p === 'chat.html' || p === 'private-chat.html') return 'chat';
   if (p === 'profile.html') return 'you';
   return 'today';
