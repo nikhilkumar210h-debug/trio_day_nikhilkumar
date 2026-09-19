@@ -219,7 +219,7 @@ service cloud.firestore {
           resource.data.creatorUid == request.auth.uid
           && !request.resource.data.diff(resource.data).affectedKeys()
               .hasAny([
-                'featured', 'hidden', 'joins', 'likes', 'comments', 'completions', 'status',
+                'featured', 'hidden', 'joins', 'solvingNow', 'likes', 'comments', 'completions', 'ratingAverage', 'ratingCount', 'status',
                 'challengeType', 'caseVersion', 'caseData', 'verificationType', 'answerHash'
               ])
         )
