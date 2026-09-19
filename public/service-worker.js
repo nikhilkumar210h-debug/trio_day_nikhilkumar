@@ -1,5 +1,5 @@
 /* Offline cache + efficient cache lifetimes (95 KiB savings fix). OneSignal SW lives under push/onesignal/. */
-const CACHE_NAME = "trio-day-cache-v42";
+const CACHE_NAME = "trio-day-cache-v43";
 const STATIC_CACHE = "trio-static-v38";
 const BASE = "/";
 const FILES_TO_CACHE = [
@@ -36,9 +36,9 @@ const FILES_TO_CACHE = [
   BASE + "activity.html",
   BASE + "activity.js?v=20260919-activity3",
   BASE + "activity-ui.js",
-  BASE + "activity-catalog.js?v=20260919-catalog3",
+  BASE + "activity-catalog.js?v=20260919-catalog4",
   BASE + "forge-engine.js?v=20260919-engine3",
-  BASE + "forge-interactions.js?v=20260919-interactions2",
+  BASE + "forge-interactions.js?v=20260919-interactions3",
   BASE + "forge-lane.js?v=20260919-lane2",
   BASE + "forge-mechanics.js",
   BASE + "rooms.html",
