@@ -265,7 +265,23 @@ service cloud.firestore {
         && request.resource.data.comments == 0
         && request.resource.data.completions == 0
         && request.resource.data.featured == false
-        && request.resource.data.hidden == false;
+        && request.resource.data.hidden == false
+        && request.resource.data.interaction is map
+        && request.resource.data.interaction.size() <= 12
+        && (
+          request.resource.data.activityType in ['build','game','challenge']
+          || (
+            request.resource.data.interaction.kind == 'quiz'
+            && request.resource.data.interaction.question is string
+            && request.resource.data.interaction.question.size() > 0
+            && request.resource.data.interaction.question.size() <= 500
+            && request.resource.data.interaction.options is list
+            && request.resource.data.interaction.options.size() == 4
+            && request.resource.data.interaction.correct is int
+            && request.resource.data.interaction.correct >= 0
+            && request.resource.data.interaction.correct <= 3
+          )
+        );
       allow update: if signedIn() && (
         isAdmin()
         || (
@@ -273,7 +289,7 @@ service cloud.firestore {
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
             'title','description','icon','activityType','category','mechanic',
             'durationMin','difficulty','goal','instructions','expiresInDays',
-            'startAtMs','endAtMs','templateId','metric','target','xpReward'
+            'startAtMs','endAtMs','templateId','metric','target','xpReward','interaction'
           ])
           && request.resource.data.activityType in ['puzzle','build','learn','challenge','game']
           && request.resource.data.category is string
@@ -285,6 +301,10 @@ service cloud.firestore {
           && request.resource.data.difficulty in ['Easy','Medium','Hard']
           && request.resource.data.endAtMs is number
           && request.resource.data.expiresInDays in [7,14,21,30,40]
+          && (
+            !(request.resource.data.interaction is map)
+            || request.resource.data.interaction.size() <= 12
+          )
         )
       );
       allow delete: if isAdmin() || (signedIn() && resource.data.creatorUid == request.auth.uid);
