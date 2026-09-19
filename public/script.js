@@ -16,6 +16,7 @@ import { getMergedTasks, manualBump } from './gamification/progress.js';
 import { listCommunityTasks, isMember } from './gamification/community-tasks.js';
 import { SYSTEM_BADGES } from './gamification/constants.js';
 import { activityCardHtml, normalizeActivityType } from './activity-ui.js';
+import { activeCatalogActivities } from './activity-catalog.js';
 
 const $ = id => document.getElementById(id);
 let currentUser = null;
@@ -278,10 +279,12 @@ async function renderFocusAndContinue(uid) {
       getMergedTasks(uid, 'weekly'),
     ]);
 
-    const meaningful = activitySnap
+    const communityActivities = activitySnap
       .filter(t => !t.hidden)
-      .map(t => ({ ...t, activityType: normalizeActivityType(t) }))
-      .filter(t => ['puzzle','build','learn','challenge'].includes(t.activityType));
+      .map(t => ({ ...t, activityType: normalizeActivityType(t), source:'community' }));
+    const builtIns = activeCatalogActivities();
+    const meaningful = [...builtIns, ...communityActivities]
+      .filter(t => ['puzzle','build','learn','challenge'].includes(t.activityType || t.type));
 
     const focusActivities = meaningful.slice(0, 3);
     const primaryActivity = focusActivities[0];
