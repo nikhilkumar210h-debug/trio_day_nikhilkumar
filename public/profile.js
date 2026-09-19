@@ -7,6 +7,7 @@ import { xpIntoLevel, XP_PER_LEVEL, levelFromXp } from './gamification/constants
 import { SoundManager } from './sound-manager.js';
 import { createSheet } from './ui/sheet.js';
 import { getCachedUser } from './services/userCache.js';
+import { getMyGlobalRank } from './gamification/leaderboards.js';
 import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
 import {
   doc, getDoc, collection, getDocs, query, where, orderBy,
@@ -30,9 +31,10 @@ async function getCachedFollowers(uid) {
   const cached = trioCache.get(key);
   if (cached !== null) return cached;
   // Bound to 500 max (counts don't need exact beyond that for UI)
-  const snap = await getDocs(query(collection(db, 'users', uid, 'followers'), limit(500))).catch(() => ({ size: 0, docs: [] }));
-  trioCache.set(key, snap.size, trioCache.TTL.SHORT);
-  return snap.size;
+  const snap = await getDocs(query(collection(db, 'users', uid, 'followers'), limit(501))).catch(() => ({ size: 0, docs: [] }));
+  const value = snap.size > 500 ? '500+' : snap.size;
+  trioCache.set(key, value, trioCache.TTL.SHORT);
+  return value;
 }
 
 async function getCachedFollowing(uid) {
@@ -40,11 +42,12 @@ async function getCachedFollowing(uid) {
   const cached = trioCache.get(key);
   if (cached !== null) return cached;
   // Bound to 500 max
-  const snap = await getDocs(query(collection(db, 'users', uid, 'following'), limit(500))).catch(() => ({ size: 0, docs: [] }));
+  const snap = await getDocs(query(collection(db, 'users', uid, 'following'), limit(501))).catch(() => ({ size: 0, docs: [] }));
+  const value = snap.size > 500 ? '500+' : snap.size;
   // Also cache the list of IDs (used by connections panel)
-  trioCache.set(key, snap.size, trioCache.TTL.SHORT);
+  trioCache.set(key, value, trioCache.TTL.SHORT);
   trioCache.set(`following_ids_${uid}`, snap.docs.map(d => d.id), trioCache.TTL.SHORT);
-  return snap.size;
+  return value;
 }
 
 async function getCachedFollowingIds(uid) {
@@ -185,7 +188,10 @@ async function openProfileMenu(userData) {
           <span>✏️</span> Edit Profile
         </button>
         <button type="button" class="profile-menu-item" data-action="password">
-          <span>🔐</span> Change Password
+          <span>🔐</span> Account Security
+        </button>
+        <button type="button" class="profile-menu-item" data-action="leaderboard">
+          <span>🏆</span> Leaderboard
         </button>
         <a class="profile-menu-item" href="privacy.html">
           <span>🔒</span> Privacy Policy
@@ -310,9 +316,12 @@ async function loadProfile(uid) {
       if ($('pgXp')) $('pgXp').textContent = xp;
       if ($('pgStreak')) $('pgStreak').textContent = Number(current.streakCurrent) || 0;
       if ($('pgBest')) $('pgBest').textContent = Number(current.streakBest) || 0;
-      if ($('pgXpFill')) $('pgXpFill').style.width = `${(into / XP_PER_LEVEL) * 100}%`;
+      if ($('pgWeekly')) $('pgWeekly').textContent = Number(current.weeklyXp) || 0;
+      if ($('pgMonthly')) $('pgMonthly').textContent = Number(current.monthlyXp) || 0;
+      if ($('pgXpFill')) $('pgXpFill').style.width = ((into / XP_PER_LEVEL) * 100) + '%';
       if ($('pgBadges')) $('pgBadges').innerHTML = renderBadgesHtml(current.badges || []);
-    }
+      const rank = await getMyGlobalRank(me.uid);
+      if ($('pgRank')) $('pgRank').textContent = rank ? ('#' + rank) : '—';    }
   }
 
   // 3. Action buttons (only for other profiles)
