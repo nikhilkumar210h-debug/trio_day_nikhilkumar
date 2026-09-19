@@ -338,6 +338,7 @@ service cloud.firestore {
           && request.resource.data.atMs is number
           && (
             get(/databases/$(database)/documents/communityTasks/$(taskId)).data.activityType in ['build','game','challenge']
+            || !('interaction' in get(/databases/$(database)/documents/communityTasks/$(taskId)).data)
             || (
               request.resource.data.answerIndex is int
               && request.resource.data.answerIndex >= 0
