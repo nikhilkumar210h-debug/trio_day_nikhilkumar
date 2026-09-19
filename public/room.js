@@ -10,7 +10,7 @@ function fail(t){$('roomStatus').textContent=t;$('roomStatus').classList.add('er
 async function load(){
  if(!id)return fail('Missing room id.');
  const s=await getDoc(doc(db,'rooms',id));if(!s.exists())return fail('Room not found.');
- room={id:s.id,...s.data()};if(room.status==='closed'||(room.expiresAtMs&&Number(room.expiresAtMs)<=Date.now()))return fail('This room has expired.');
+ room={id:s.id,...s.data()};if(room.status==='closed'||((Number(room.expiresAtMs)||((Number(room.createdAtMs)||Date.now())+6*60*60*1000))<=Date.now()))return fail('This room has expired.');
  const mine=await getDoc(doc(db,'rooms',id,'members',me.uid));
  if(!mine.exists()){
    const ms=await getDocs(query(collection(db,'rooms',id,'members'),limit(20)));
