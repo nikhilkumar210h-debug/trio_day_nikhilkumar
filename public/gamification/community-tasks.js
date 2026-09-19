@@ -225,33 +225,59 @@ export async function expireOldTasks() {
 // ── Participation ─────────────────────────────────────────────────────────────
 
 export async function joinTask(taskId, uid, profile) {
-  const memberRef = doc(db, 'communityTasks', taskId, 'members', uid);
-  const existing  = await getDoc(memberRef);
-  if (existing.exists()) return false;
-
-  // Write subcollection doc (client rules allow create if owner)
-  await setDoc(memberRef, {
-    uid,
-    name:       profile?.name     || 'User',
-    photoURL:   profile?.photoURL || null,
-    joinedAtMs: Date.now()
-  });
-
-  // Bump counter server-side via Worker
-  await bumpCounter(taskId, 'join');
-
-  trioCache.invalidatePrefix('ctasks_');
-  trioCache.invalidatePrefix('communityTasks_');
-  return true;
+  if (!uid) throw new Error('Login required');
+  try {
+    const user = auth.currentUser;
+    if (!user) throw new Error('Not authenticated');
+    const result = await workerPost('/gamification/membership', { taskId, action: 'join' }, user);
+    trioCache.invalidatePrefix('ctasks_');
+    trioCache.invalidatePrefix('communityTasks_');
+    return !result.already;
+  } catch (err) {
+    // Backward-compatible fallback while an older Worker is being deployed.
+    console.warn('[membership] server join failed, using legacy path:', err.message);
+    const memberRef = doc(db, 'communityTasks', taskId, 'members', uid);
+    const existing = await getDoc(memberRef);
+    if (existing.exists()) return false;
+    await setDoc(memberRef, {
+      uid,
+      name: profile?.name || 'User',
+      photoURL: profile?.photoURL || null,
+      joinedAtMs: Date.now()
+    });
+    await bumpCounter(taskId, 'join');
+    trioCache.invalidatePrefix('ctasks_');
+    trioCache.invalidatePrefix('communityTasks_');
+    return true;
+  }
 }
 
 export async function leaveTask(taskId, uid) {
-  await deleteDoc(doc(db, 'communityTasks', taskId, 'members', uid)).catch(() => {});
+  try {
+    const user = auth.currentUser;
+    if (!user) throw new Error('Not authenticated');
+    const result = await workerPost('/gamification/membership', { taskId, action: 'leave' }, user);
+    trioCache.invalidatePrefix('ctasks_');
+    trioCache.invalidatePrefix('communityTasks_');
+    return !result.already;
+  } catch (err) {
+    console.warn('[membership] server leave failed, using legacy path:', err.message);
+    await deleteDoc(doc(db, 'communityTasks', taskId, 'members', uid)).catch(() => {});
+    await bumpCounter(taskId, 'leave');
+    trioCache.invalidatePrefix('ctasks_');
+    return true;
+  }
+}
 
-  // Decrement counter server-side via Worker
-  await bumpCounter(taskId, 'leave');
-
-  trioCache.invalidatePrefix('ctasks_');
+export async function setChallengePresence(taskId, active) {
+  const user = auth.currentUser;
+  if (!user) return null;
+  try {
+    return await workerPost('/gamification/presence', { taskId, active: !!active }, user);
+  } catch (err) {
+    console.warn('[presence] update failed:', err.message);
+    return null;
+  }
 }
 
 export async function isMember(taskId, uid) {
@@ -343,6 +369,17 @@ export async function submitProof(taskId, uid, profile, proofText) {
 export async function listSubmissions(taskId) {
   const snap = await getDocs(collection(db, 'communityTasks', taskId, 'submissions'));
   return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
+export async function rateChallenge(taskId, uid, rating, feedback = '') {
+  const user = auth.currentUser;
+  if (!user || user.uid !== uid) throw new Error('Not authenticated');
+  const result = await workerPost('/gamification/rate-challenge', {
+    taskId, rating: Number(rating), feedback: String(feedback || '')
+  }, user);
+  trioCache.invalidatePrefix('ctasks_');
+  trioCache.invalidatePrefix('communityTasks_');
+  return result;
 }
 
 export async function reviewSubmission(taskId, uid, status) {
