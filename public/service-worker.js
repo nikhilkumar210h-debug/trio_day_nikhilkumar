@@ -1,5 +1,5 @@
 /* Offline cache + efficient cache lifetimes (95 KiB savings fix). OneSignal SW lives under push/onesignal/. */
-const CACHE_NAME = "trio-day-cache-v38";
+const CACHE_NAME = "trio-day-cache-v39";
 const STATIC_CACHE = "trio-static-v38";
 const BASE = "/";
 const FILES_TO_CACHE = [
@@ -20,7 +20,7 @@ const FILES_TO_CACHE = [
   BASE + "private-chat.css",
   BASE + "ui/tasks.css",
   BASE + "styles/tokens.css",
-  BASE + "script.js",
+  BASE + "script.js?v=20260919-feedfix2",
   BASE + "profile.js?v=20260919-profile2",
   BASE + "chat.js",
   BASE + "private-chat.js",
@@ -34,10 +34,10 @@ const FILES_TO_CACHE = [
   BASE + "challenge.html",
   BASE + "game.html",
   BASE + "activity.html",
-  BASE + "activity.js?v=20260919-activity2",
+  BASE + "activity.js?v=20260919-activity3",
   BASE + "activity-ui.js",
   BASE + "activity-catalog.js",
-  BASE + "forge-engine.js?v=20260919-engine2",
+  BASE + "forge-engine.js?v=20260919-engine3",
   BASE + "forge-interactions.js",
   BASE + "forge-lane.js",
   BASE + "forge-mechanics.js",
@@ -52,7 +52,7 @@ const FILES_TO_CACHE = [
   BASE + "room-quiz-workspace.js",
   BASE + "room-workspace.css",
   BASE + "task-create.html",
-  BASE + "task-create.js?v=20260919-create2",
+  BASE + "task-create.js?v=20260919-create3",
   BASE + "activity-create.css?v=3",
   BASE + "task-detail.html",
   BASE + "task-detail.js",
@@ -62,7 +62,7 @@ const FILES_TO_CACHE = [
   BASE + "firebase-init.js",
   BASE + "firebase-config.js",
   BASE + "image-upload.js",
-  BASE + "onesignal.js?v=34",
+  BASE + "onesignal.js?v=24",
   BASE + "notifications.js",
   BASE + "view_post.js",
   BASE + "ui/toast.js",
@@ -79,7 +79,7 @@ const FILES_TO_CACHE = [
   BASE + "ui/search.js",
   BASE + "ui/skeleton.js",
   BASE + "styles/home.css",
-  BASE + "styles/polish.css?v=2",
+  BASE + "styles/polish.css?v=3",
   BASE + "styles/voice-status.css",
   BASE + "voice-status.html",
   BASE + "voice-status.js",
