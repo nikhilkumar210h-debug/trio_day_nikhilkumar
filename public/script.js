@@ -314,7 +314,17 @@ async function renderFocusAndContinue(uid) {
             <span><strong>${resumable[0] && resumable[0].id === focus.id ? 'RESUME' : 'PICKED FOR TODAY'}</strong></span>
             <span>${type} · ${duration} min · ${escapeHtml(difficulty)}</span>
           </div>
-          ${activityCardHtml(focus)}
+          <div class="today-focus-visual" aria-hidden="true">
+            <div class="today-focus-visual-grid"></div>
+            <div class="today-focus-visual-core">${escapeHtml(focus.icon || '🎯')}</div>
+            <div class="today-focus-visual-copy">
+              <span>YOUR NEXT MOVE</span>
+              <strong>${escapeHtml(focus.title || 'One meaningful move')}</strong>
+              <small>${escapeHtml(type)} · ${duration} min</small>
+            </div>
+            <div class="today-focus-visual-signal"><i></i><i></i><i></i><i></i></div>
+          </div>
+          ${activityCardHtml(focus, {compact:true})}
           <p class="today-focus-note">${escapeHtml(focusNote)}</p>
         </div>`;
 
