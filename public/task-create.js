@@ -8,7 +8,7 @@ import{escapeHtml as esc}from'./utils.js';
 import{showToast}from'./ui/toast.js';
 
 const $=id=>document.getElementById(id);
-let me=null,profile=null,activeType=new URLSearchParams(location.search).get('activity')||'puzzle',selected=null;
+let me=null,profile=null,activeType=new URLSearchParams(location.search).get('activity')||'puzzle',selected;
 
 const validTypes=Object.keys(ACTIVITY_TYPES);
 if(!validTypes.includes(activeType))activeType='puzzle';
@@ -26,7 +26,7 @@ function renderTemplates(){
  const list=ACTIVITY_CATALOG.filter(a=>a.type===activeType).slice(0,12);
  $('creatorTemplates').innerHTML='<button type="button" class="creator-template '+(!selected?'selected':'')+'" data-id="__blank__"><div class="creator-template-art">＋</div><strong>Start blank</strong><small>Make anything in this lane from scratch.</small><div class="creator-template-meta"><span>Custom</span><span>No preset</span></div></button>'+list.map(t=>'<button type="button" class="creator-template '+(selected?.id===t.id?'selected':'')+'" data-id="'+t.id+'"><div class="creator-template-art">'+escText(t.icon)+'</div><strong>'+escText(t.title)+'</strong><small>'+escText(t.category)+' · '+escText(t.description)+'</small><div class="creator-template-meta"><span>⏱ '+Number(t.durationMin)+'m</span><span>'+escText(t.difficulty)+'</span><span>⌛ '+Number(t.cycleDays)+'d</span></div></button>').join('');
  document.querySelectorAll('.creator-template').forEach(b=>b.onclick=()=>{if(b.dataset.id==='__blank__'){selected=null;$('title').value='';$('category').value='';$('description').value='';$('goal').value='';$('instructions').value='';$('durationMin').value='20';$('difficulty').value='Medium';$('expiresDays').value='14';$('icon').value=ACTIVITY_TYPES[activeType].icon;updateExpiry()}else{selected=ACTIVITY_CATALOG.find(t=>t.id===b.dataset.id)||null;fillForm(selected)}renderTemplates()});
- if(!selected||selected.type!==activeType){selected=list[0]||null;if(selected)fillForm(selected)}
+ if(selected===undefined||(selected&&selected.type!==activeType)){selected=list[0]||null;if(selected)fillForm(selected)}
 }
 function fillForm(t){
  if(!t)return;
