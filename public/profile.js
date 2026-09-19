@@ -252,7 +252,6 @@ async function openProfileMenu(userData) {
           showToast(err.message, 'error');
         }
       } else if (action === 'install') {
-      } else if (action === 'install') {
         // Trigger install prompt
         const event = new CustomEvent('app-install-prompt');
         window.dispatchEvent(event);
