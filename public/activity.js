@@ -14,7 +14,7 @@ const params=new URLSearchParams(location.search);
 const id=params.get('id');
 const source=params.get('source')||'catalog';
 const $=id=>document.getElementById(id);
-let me=null,profile=null,activity=null,timer=null,remaining=0,activityPassed=false;
+let me=null,profile=null,activity=null,timer=null,remaining=0,activityPassed=false,activityEvidence=null;
 
 function fail(t){$('activityStatus').textContent=t;$('activityStatus').classList.add('error')}
 function setPassed(v){activityPassed=!!v;updateCompleteState()}
@@ -47,6 +47,7 @@ function renderQuizWorkspace(root,cfg,isLesson){
      root.querySelectorAll('[data-answer]').forEach(x=>x.disabled=true);
      chosen=selectedAnswer===normalized.correct;
      if(chosen){
+       activityEvidence={answerIndex:selectedAnswer,proofText:''};
        btn.classList.add('correct');
        result.textContent=isLesson?'Correct. Now explain the idea.':'Correct. Now show why it is correct.';
        result.className='forge-result ok';
@@ -70,6 +71,7 @@ function renderQuizWorkspace(root,cfg,isLesson){
    root.querySelector('#verifyProof')?.addEventListener('click',()=>{
      const proofText=proofInput.value.trim();
      if(!chosen) return;
+     if(activityEvidence) activityEvidence.proofText=proofText;
      if(proofText.length<20 || proofText.split(/\s+/).filter(Boolean).length<4){
        result.textContent='Add a little more reasoning (at least 20 characters).';
        result.className='forge-result bad';
@@ -158,7 +160,7 @@ $('completeBtn').onclick=async()=>{
  const b=$('completeBtn');b.disabled=true;b.textContent='Saving…';
  try{
    if(activity.source==='community'){
-     const result=await completeCommunityTask(activity.id,me.uid,profile);
+     const result=await completeCommunityTask(activity.id,me.uid,profile,activityEvidence);
      if(result?.already){$('completionNote').textContent='Already completed ✓';b.textContent='Completed';return}
    }else{
      const cycleKey=activity.id+'_'+activity.startAtMs;
