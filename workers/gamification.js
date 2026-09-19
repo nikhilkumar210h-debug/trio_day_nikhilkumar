@@ -94,6 +94,58 @@ function levelFromXp(xp) {
   return Math.floor(Math.max(0, Number(xp) || 0) / XP_PER_LEVEL) + 1;
 }
 
+const CATALOG_MEDIUM = new Set([
+  'p2','p3','p4','p7','p8','p9','p10','p11',
+  'b3','b4','b6','b7','b8','b10','b12',
+  'l2','l4','l5','l8','l9','l10','l11',
+  'c2','c4','c5','c6','c9','c10',
+  'g6','g8','g10','g11'
+]);
+const CATALOG_HARD = new Set(['p12','b11']);
+
+function catalogXp(activityId) {
+  const id = String(activityId || '').trim().toLowerCase();
+  if (!/^[pblcg]\\d+$/.test(id)) return 0;
+  if (CATALOG_HARD.has(id)) return 60;
+  if (CATALOG_MEDIUM.has(id)) return 40;
+  return 25;
+}
+
+function catalogCycleDays(activityId) {
+  const id = String(activityId || '').trim().toLowerCase();
+  if (['p4','p7','p8','p9','p10','p12','b3','b4','b6','b7','b8','b10','b11','b12','l4','l5','l7','l8','l9','l10','l11','c5','c6','c9','c10','g6','g8','g10','g11'].includes(id)) return 30;
+  if (['p2','p5','p6','b1','b2','b5','b9','c1','c3','c7','c8','c11','c12','g1','g2','g3','g4','g5','g7','g9','g12'].includes(id)) return 14;
+  return 21;
+}
+
+function catalogCycleKey(activityId, nowMs) {
+  const days = catalogCycleDays(activityId);
+  const epoch = Date.UTC(2026, 0, 1);
+  const index = Math.max(0, Math.floor((nowMs - epoch) / (days * 86400000)));
+  return activityId + '_' + String(epoch + index * days * 86400000);
+}
+
+async function fsCreateDoc(projectId, accessToken, path, data) {
+  const slash = path.lastIndexOf('/');
+  const parent = path.slice(0, slash);
+  const documentId = path.slice(slash + 1);
+  const url = firestoreBase(projectId) + '/' + parent + '?documentId=' + encodeURIComponent(documentId);
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      Authorization: 'Bearer ' + accessToken,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ fields: toFirestoreFields(data) })
+  });
+  if (res.status === 409) return false;
+  if (!res.ok) {
+    const txt = await res.text();
+    throw new Error('Firestore CREATE ' + path + ' failed: ' + res.status + ' ' + txt);
+  }
+  return true;
+}
+
 // ─── Firebase ID token verification ──────────────────────────────────────────
 
 /**
