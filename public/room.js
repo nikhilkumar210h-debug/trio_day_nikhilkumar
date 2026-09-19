@@ -10,7 +10,7 @@ function fail(t){$('roomStatus').textContent=t;$('roomStatus').classList.add('er
 async function load(){
  if(!id)return fail('Missing room id.');
  const s=await getDoc(doc(db,'rooms',id));if(!s.exists())return fail('Room not found.');
- room={id:s.id,...s.data()};if(room.status==='closed')return fail('This room has ended.');
+ room={id:s.id,...s.data()};if(room.status==='closed'||(room.expiresAtMs&&Number(room.expiresAtMs)<=Date.now()))return fail('This room has expired.');
  const mine=await getDoc(doc(db,'rooms',id,'members',me.uid));
  if(!mine.exists()){
    const ms=await getDocs(query(collection(db,'rooms',id,'members'),limit(20)));
@@ -19,7 +19,7 @@ async function load(){
  }
  $('roomGrid').hidden=false;
  $('roomTitle').textContent=room.title||'Open room';
- $('roomSub').textContent='Open activity room · '+(room.maxPlayers||3)+' people max';
+ $('roomSub').textContent='Open activity room · '+(room.maxPlayers||3)+' people max'+(room.expiresAtMs?' · '+Math.max(0,Math.ceil((Number(room.expiresAtMs)-Date.now())/3600000))+'h remaining':'');
  $('endBtn').hidden=room.hostUid!==me.uid;
  $('roomPeopleBadge').textContent='… / '+(room.maxPlayers||3);
  if(room.challengeId){
