@@ -15,11 +15,11 @@ import { workerPost } from './worker-config.js';
  * action: 'join' | 'leave' | 'like' | 'unlike' | 'comment' | 'complete'
  * Fails silently — counter is best-effort; subcollection doc is the source of truth.
  */
-async function bumpCounter(taskId, action) {
+async function bumpCounter(taskId, action, eventId) {
   const user = auth.currentUser;
-  if (!user) return;
+  if (!user || !eventId) return;
   try {
-    await workerPost('/gamification/counter', { taskId, action }, user);
+    await workerPost('/gamification/counter', { taskId, action, eventId: String(eventId) }, user);
   } catch (err) {
     console.warn(`[counter] ${action} on ${taskId} failed:`, err.message);
   }
@@ -204,15 +204,16 @@ export async function joinTask(taskId, uid, profile) {
   if (existing.exists()) return false;
 
   // Write subcollection doc (client rules allow create if owner)
+  const joinedAtMs = Date.now();
   await setDoc(memberRef, {
     uid,
     name:       profile?.name     || 'User',
     photoURL:   profile?.photoURL || null,
-    joinedAtMs: Date.now()
+    joinedAtMs
   });
 
   // Bump counter server-side via Worker
-  await bumpCounter(taskId, 'join');
+  await bumpCounter(taskId, 'join', joinedAtMs);
 
   trioCache.invalidatePrefix('ctasks_');
   trioCache.invalidatePrefix('communityTasks_');
@@ -220,10 +221,12 @@ export async function joinTask(taskId, uid, profile) {
 }
 
 export async function leaveTask(taskId, uid) {
-  await deleteDoc(doc(db, 'communityTasks', taskId, 'members', uid)).catch(() => {});
-
-  // Decrement counter server-side via Worker
-  await bumpCounter(taskId, 'leave');
+  const memberRef = doc(db, 'communityTasks', taskId, 'members', uid);
+  const existing = await getDoc(memberRef);
+  if (!existing.exists()) return;
+  const joinedAtMs = existing.data()?.joinedAtMs;
+  await deleteDoc(memberRef);
+  await bumpCounter(taskId, 'leave', joinedAtMs);
 
   trioCache.invalidatePrefix('ctasks_');
 }
@@ -240,12 +243,14 @@ export async function toggleLike(taskId, uid) {
   const ref  = doc(db, 'communityTasks', taskId, 'likes', uid);
   const snap = await getDoc(ref);
   if (snap.exists()) {
+    const atMs = snap.data()?.atMs;
     await deleteDoc(ref);
-    await bumpCounter(taskId, 'unlike');
+    await bumpCounter(taskId, 'unlike', atMs);
     return false;
   }
-  await setDoc(ref, { uid, atMs: Date.now() });
-  await bumpCounter(taskId, 'like');
+  const atMs = Date.now();
+  await setDoc(ref, { uid, atMs });
+  await bumpCounter(taskId, 'like', atMs);
   return true;
 }
 
@@ -254,14 +259,14 @@ export async function toggleLike(taskId, uid) {
 export async function addComment(taskId, uid, profile, text) {
   const txt = String(text || '').trim().slice(0, 199);
   if (!txt) throw new Error('Empty comment');
-  await addDoc(collection(db, 'communityTasks', taskId, 'comments'), {
+  const ref = await addDoc(collection(db, 'communityTasks', taskId, 'comments'), {
     uid,
     name:        profile?.name || 'User',
     txt,
     createdAt:   serverTimestamp(),
     createdAtMs: Date.now()
   });
-  await bumpCounter(taskId, 'comment');
+  await bumpCounter(taskId, 'comment', ref.id);
 }
 
 export async function listComments(taskId, max = 40) {
@@ -286,14 +291,15 @@ export async function completeTask(taskId, uid, profile) {
   if (existing.exists()) return { already: true };
 
   // Write completion subcollection doc (client rules: owner create only)
+  const atMs = Date.now();
   await setDoc(cref, {
     uid,
     name:  profile?.name || 'User',
-    atMs:  Date.now()
+    atMs
   });
 
   // Bump completions counter server-side
-  await bumpCounter(taskId, 'complete');
+  await bumpCounter(taskId, 'complete', atMs);
 
   // Auto-join if not already a member
   await joinTask(taskId, uid, profile).catch(() => {});
