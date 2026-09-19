@@ -1,4 +1,4 @@
-import { doc, setDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
+import { doc, setDoc, onSnapshot, runTransaction } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 import { getInteractiveConfig } from './forge-interactions.js';
 
 const esc = value => { const node = document.createElement('div'); node.textContent = String(value ?? ''); return node.innerHTML; };
@@ -15,8 +15,12 @@ export async function mountSharedPuzzleWorkspace(root, { db, roomId, activity, m
   let current = { selectedAnswer: null, passed: false, version: 0 };
 
   const write = async patch => {
-    current = { ...current, ...patch };
-    await setDoc(ref, { state: current, updatedBy: me.uid, updatedAtMs: Date.now(), version: Number(current.version || 0) + 1, activityId: activity.id, mechanic: 'shared-puzzle' }, { merge: true });
+    await runTransaction(db, async tx => {
+      const snap = await tx.get(ref);
+      const latest = snap.exists() ? snap.data() : { state: current, version: 0 };
+      current = { ...(latest.state || {}), ...patch };
+      tx.set(ref, { state: current, updatedBy: me.uid, updatedAtMs: Date.now(), version: Number(latest.version || 0) + 1, activityId: activity.id, mechanic: 'shared-puzzle' }, { merge: true });
+    });
   };
 
   const render = state => {
