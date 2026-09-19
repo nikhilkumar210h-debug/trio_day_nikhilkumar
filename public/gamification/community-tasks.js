@@ -313,7 +313,8 @@ export async function completeTask(taskId, uid, profile, verification = {}) {
     taskId,
     verificationType: task.verificationType || 'proof',
     answer: String(verification.answer || ''),
-    submissionId: verification.submissionId || ''
+    submissionId: verification.submissionId || '',
+    caseSolution: verification.caseSolution || null
   }, user);
 
   trioCache.invalidatePrefix('ctasks_');
