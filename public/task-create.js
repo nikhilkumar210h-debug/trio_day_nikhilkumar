@@ -1,153 +1,59 @@
-import { auth, db } from './firebase-init.js';
-import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
-import { collection, doc, getDoc, getDocs, query, where, limit } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
-import { listActiveTemplates, createTemplate, isAdmin } from './gamification/templates.js';
-import { createCommunityTask } from './gamification/community-tasks.js';
-import { escapeHtml as esc } from './utils.js';
-import { showToast } from './ui/toast.js';
+import{auth,db}from'./firebase-init.js';
+import{onAuthStateChanged}from'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
+import{collection,doc,getDoc,getDocs,query,where,limit}from'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
+import{createCommunityTask}from'./gamification/community-tasks.js';
+import{ACTIVITY_TYPES}from'./activity-ui.js';
+import{ACTIVITY_CATALOG}from'./activity-catalog.js';
+import{escapeHtml as esc}from'./utils.js';
+import{showToast}from'./ui/toast.js';
 
-const $ = id => document.getElementById(id);
-let me = null;
-let profile = null;
-let selected = null;
-let admin = false;
+const $=id=>document.getElementById(id);
+let me=null,profile=null,activeType=new URLSearchParams(location.search).get('activity')||'puzzle',selected=null;
 
+const validTypes=Object.keys(ACTIVITY_TYPES);
+if(!validTypes.includes(activeType))activeType='puzzle';
 
-
-// ── Duplicate check ───────────────────────────────────────────────────────────
-async function checkDuplicate(title) {
-  if (!title) return false;
-  try {
-    const q = query(
-      collection(db, 'communityTasks'),
-      where('status', '==', 'active'),
-      where('title', '==', title.trim()),
-      limit(1)
-    );
-    const snap = await getDocs(q);
-    return !snap.empty;
-  } catch (_) {
-    return false;
-  }
+function escText(v){return esc(String(v||''))}
+function renderLanes(){
+ $('creatorLanes').innerHTML=validTypes.map(type=>{const i=ACTIVITY_TYPES[type];return '<button type="button" class="creator-lane '+(type===activeType?'active':'')+'" data-type="'+type+'">'+i.icon+' '+i.label+'</button>'}).join('');
+ document.querySelectorAll('.creator-lane').forEach(b=>b.onclick=()=>{activeType=b.dataset.type;renderLanes();renderTemplates()});
 }
-
-// ── Template picker ───────────────────────────────────────────────────────────
-function fillFromTemplate(t) {
-  selected = t;
-  $('title').value = t.title || '';
-  $('description').value = t.description || '';
-  $('icon').value = t.icon || '🏁';
-  $('metric').value = t.metric || 'manual';
-  $('target').value = t.target || 1;
-  $('xpReward').value = t.xpReward || 50;
-  document.querySelectorAll('.template-option').forEach(el => {
-    el.classList.toggle('selected', el.dataset.id === t.id);
-  });
+function renderTemplates(){
+ const list=ACTIVITY_CATALOG.filter(a=>a.type===activeType).slice(0,12);
+ $('creatorTemplates').innerHTML=list.map(t=>'<button type="button" class="creator-template '+(selected?.id===t.id?'selected':'')+'" data-id="'+t.id+'"><div class="creator-template-art">'+escText(t.icon)+'</div><strong>'+escText(t.title)+'</strong><small>'+escText(t.category)+' · '+escText(t.description)+'</small><div class="creator-template-meta"><span>⏱ '+Number(t.durationMin)+'m</span><span>'+escText(t.difficulty)+'</span><span>⌛ '+Number(t.cycleDays)+'d</span></div></button>').join('');
+ document.querySelectorAll('.creator-template').forEach(b=>b.onclick=()=>{selected=ACTIVITY_CATALOG.find(t=>t.id===b.dataset.id)||null;fillForm(selected);renderTemplates()});
+ if(!selected||selected.type!==activeType){selected=list[0]||null;if(selected)fillForm(selected)}
 }
-
-async function loadTemplates() {
-  const list = await listActiveTemplates();
-  const box = $('templatePicker');
-  box.innerHTML = list.map(t =>
-    `<button type="button" class="template-option" data-id="${esc(t.id)}">
-      <strong>${esc(t.icon || '✅')} ${esc(t.title)}</strong>
-      <div style="font-size:0.75rem;opacity:0.7">${esc(t.cadence)} · target ${esc(t.target)} · +${esc(t.xpReward)} XP</div>
-    </button>`
-  ).join('');
-  box.querySelectorAll('.template-option').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const t = list.find(x => x.id === btn.dataset.id);
-      if (t) fillFromTemplate(t);
-    });
-  });
-  if (list[0]) fillFromTemplate(list[0]);
+function fillForm(t){
+ if(!t)return;
+ $('title').value=t.title||'';$('category').value=t.category||'';$('description').value=t.description||'';$('goal').value=t.goal||'';$('instructions').value=t.instructions||'';$('durationMin').value=String(t.durationMin||20);$('difficulty').value=t.difficulty||'Medium';$('expiresDays').value=String(t.cycleDays||14);$('icon').value=t.icon||ACTIVITY_TYPES[activeType].icon;
+ updateExpiry();
 }
-
-// ── Submit ────────────────────────────────────────────────────────────────────
-$('submitBtn').addEventListener('click', async () => {
-  if (!me) { showToast('Please login first', 'error'); return; }
-
-  const btn = $('submitBtn');
-  const status = $('formStatus');
-  const title = $('title').value.trim();
-
-  if (!title) {
-    showToast('Please enter a challenge title', 'warn');
-    $('title').focus();
-    return;
-  }
-
-  // Disable immediately — prevents double-submit
-  btn.disabled = true;
-  btn.textContent = 'Saving…';
-  status.textContent = '';
-  status.classList.remove('error');
-
-  try {
-    // Duplicate check
-    const isDuplicate = await checkDuplicate(title);
-    if (isDuplicate) {
-      const proceed = confirm(`A challenge named "${title}" already exists.\n\nCreate anyway?`);
-      if (!proceed) {
-        btn.disabled = false;
-        btn.textContent = 'Publish challenge';
-        return;
-      }
-    }
-
-    status.textContent = 'Publishing…';
-
-    const days = Math.max(1, Number($('days').value) || 7);
-    const id = await createCommunityTask(me.uid, profile, {
-      title,
-      description: $('description').value.trim(),
-      icon: $('icon').value.trim() || '🏁',
-      kind: $('kind').value,
-      activityType: $('activityType').value,
-      templateId: selected?.id || null,
-      metric: $('metric').value,
-      target: Number($('target').value) || 1,
-      xpReward: Number($('xpReward').value) || 50,
-      startAtMs: Date.now(),
-      endAtMs: Date.now() + days * 86400000
-    });
-
-    if ($('alsoTemplate').checked) {
-      await createTemplate(me.uid, {
-        title,
-        description: $('description').value.trim(),
-        icon: $('icon').value.trim(),
-        cadence: 'once',
-        metric: $('metric').value,
-        target: Number($('target').value) || 1,
-        xpReward: Number($('xpReward').value) || 50
-      }, { isAdmin: admin });
-    }
-
-    status.textContent = 'Published ✅';
-    showToast('Challenge published successfully! 🎉');
-
-    // Redirect to tasks.html after toast is visible
-    setTimeout(() => { location.href = 'tasks.html'; }, 1400);
-
-  } catch (err) {
-    console.error(err);
-    const msg = err.message || 'Failed to publish challenge';
-    status.textContent = msg;
-    status.classList.add('error');
-    showToast(msg, 'error');
-    btn.disabled = false;
-    btn.textContent = 'Publish challenge';
-  }
+function updateExpiry(){$('expiryCopy').textContent=$('expiresDays').value+' days live';}
+document.querySelectorAll('#expiresDays').forEach(e=>e.addEventListener('change',updateExpiry));
+$('creatorForm').addEventListener('submit',async e=>{
+ e.preventDefault();
+ if(!me)return showToast('Please login first','error');
+ const btn=$('submitBtn');const status=$('formStatus');const title=$('title').value.trim();
+ if(!title)return showToast('Give the activity a clear title.','warn');
+ if(!$('description').value.trim())return showToast('Add a short activity description.','warn');
+ btn.disabled=true;btn.textContent='Publishing…';status.textContent='';
+ try{
+   const days=Math.min(40,Math.max(7,Number($('expiresDays').value)||14));
+   const start=Date.now(),end=start+days*86400000;
+   const id=await createCommunityTask(me.uid,profile,{
+     title,description:$('description').value.trim(),goal:$('goal').value.trim(),instructions:$('instructions').value.trim(),
+     icon:$('icon').value.trim()||ACTIVITY_TYPES[activeType].icon,kind:activeType==='challenge'?'challenge':'community',activityType:activeType,
+     category:$('category').value.trim()||'General',durationMin:Number($('durationMin').value)||20,difficulty:$('difficulty').value,
+     expiresInDays:days,startAtMs:start,endAtMs:end,target:1,metric:'manual',xpReward:Number($('xpReward')?.value)||40
+   });
+   status.textContent='Published ✓';
+   showToast('Activity published successfully!');
+   setTimeout(()=>{location.href='task-detail.html?id='+encodeURIComponent(id)},700);
+ }catch(err){status.textContent=err.message||'Could not publish activity.';status.classList.add('error');showToast(status.textContent,'error');btn.disabled=false;btn.textContent='Publish activity'}
 });
-
-// ── Auth ──────────────────────────────────────────────────────────────────────
-onAuthStateChanged(auth, async user => {
-  me = user;
-  if (!user) return;
-  const snap = await getDoc(doc(db, 'users', user.uid));
-  profile = snap.exists() ? snap.data() : { name: user.displayName };
-  admin = await isAdmin(user.uid);
-  $('alsoTemplateWrap').hidden = false;
-  await loadTemplates();
+onAuthStateChanged(auth,async u=>{
+ me=u;if(!u){location.href='login.html?redirect=task-create.html';return}
+ const s=await getDoc(doc(db,'users',u.uid));profile=s.exists()?s.data():{name:u.displayName};
+ renderLanes();renderTemplates();updateExpiry();
 });
