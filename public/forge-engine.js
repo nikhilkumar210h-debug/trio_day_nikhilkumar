@@ -8,11 +8,20 @@ export function renderBuildWorkspace(root,activity,onPass){
   grid:{mechanic:'grid',size:4,required:['Start','Work','Check'],blocked:[5,6,9],adjacentPairs:[['Start','Work'],['Work','Check']]},
   assign:{mechanic:'assign',people:['Person 1','Person 2','Person 3','Person 4'],roles:['Planner','Builder','Checker','Presenter'],correct:{'Person 1':'Planner','Person 2':'Builder','Person 3':'Checker','Person 4':'Presenter'}}
  };
+ const custom=activity.interaction?.kind==='build' ? activity.interaction : null;
  const original=getBuildConfig(activity.engineId || activity.id);
- const cfg=selectedMechanic && generic[selectedMechanic] && original?.mechanic!==selectedMechanic ? generic[selectedMechanic] : original;
+ const cfg=custom && ['order','allocate','grid','assign'].includes(custom.mechanic)
+   ? (custom.mechanic==='order'
+      ? {mechanic:'order',items:(custom.items||[]),target:(custom.items||[])}
+      : custom.mechanic==='allocate'
+        ? {mechanic:'allocate',budget:Number(custom.budget)||100,items:(custom.items||[]),mins:(custom.items||[]).map(x=>Number(x?.[1])||0)}
+        : custom.mechanic==='grid'
+          ? {mechanic:'grid',size:4,required:(custom.required||[]),blocked:(custom.blocked||[]),adjacentPairs:(custom.adjacentPairs||[])}
+          : {mechanic:'assign',people:(custom.people||[]),roles:(custom.roles||[]),correct:(custom.correct||{})})
+   : (selectedMechanic && generic[selectedMechanic] && original?.mechanic!==selectedMechanic ? generic[selectedMechanic] : original);
  if(!cfg){root.hidden=true;return null} root.hidden=false; let passed=false;
  const baseOrder=cfg.items?.slice()||[];let order=baseOrder.slice();if(order.length>2){const shift=((activity.engineId || activity.id||'b0').charCodeAt(1)||1)%order.length;order=order.slice(shift).concat(order.slice(0,shift));if(order.every((x,i)=>x===cfg.target?.[i]))order.reverse()}const state={order,alloc:{},selectedTool:null,placed:{},assign:{}};
- const setResult=(text,ok)=>{root.querySelector('.forge-result').textContent=text;root.querySelector('.forge-result').className='forge-result '+(ok?'ok':'bad');if(ok&&!passed){passed=true;onPass?.(true)}};
+ const setResult=(text,ok)=>{root.querySelector('.forge-result').textContent=text;root.querySelector('.forge-result').className='forge-result '+(ok?'ok':'bad');if(ok&&!passed){passed=true;onPass?.(true,{mechanic:cfg.mechanic,state:JSON.stringify({order:state.order,alloc:state.alloc,placed:state.placed,assign:state.assign}).slice(0,1600)})}};
  root.innerHTML='<div class="forge-workspace-head"><div><h3>Forge Board</h3><p>Actually build the solution. Your result is checked against the activity constraints.</p></div><span class="forge-pill">LIVE LOGIC</span></div><div class="forge-board-body"></div><div class="forge-result"></div>';
  const body=root.querySelector('.forge-board-body');
  if(cfg.mechanic==='order'){
