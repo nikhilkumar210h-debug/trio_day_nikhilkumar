@@ -156,3 +156,32 @@ html, body { overflow-x: hidden; }
 .nav-icon svg { display: block; }
 /* Hide skeleton correctly even with flex display */
 .skeleton-stack[hidden], #feedLoading[hidden] { display: none !important; }
+
+/* Secondary page shells must respect the same global desktop rail. */
+@media (min-width: 840px) {
+  .rooms-shell,
+  .room-page-shell,
+  .activity-page-shell {
+    margin-left: 72px;
+    width: calc(100% - 72px);
+    max-width: calc(100% - 72px);
+    box-sizing: border-box;
+  }
+}
+@media (min-width: 1280px) {
+  .rooms-shell,
+  .room-page-shell,
+  .activity-page-shell {
+    margin-left: 240px;
+    width: calc(100% - 240px);
+    max-width: calc(100% - 240px);
+  }
+}
+
+/* Keep global navigation visually secondary to focused workspaces. */
+.nkm-rail {
+  box-shadow: 10px 0 34px rgba(2, 6, 23, .08);
+}
+.bottom-nav {
+  box-shadow: 0 -10px 34px rgba(2, 6, 23, .10);
+}
