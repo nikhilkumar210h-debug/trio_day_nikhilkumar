@@ -69,72 +69,83 @@ async function renderStoryStrip() {
   const wrap = $('heroStories');
   const empty = $('heroStoriesEmpty');
   if (!wrap) return;
+
   wrap.innerHTML = '';
+  if (empty) empty.style.display = 'none';
 
   const addBtn = document.createElement('button');
   addBtn.className = 'hero-story-circle add-story';
   addBtn.title = 'Add story';
   addBtn.setAttribute('aria-label', 'Add story');
-  addBtn.innerHTML = '<span class="hero-story-circle-inner" style="background:var(--primary-soft); color:var(--primary); font-size:28px;">+</span>';
+  addBtn.innerHTML = '<span class="hero-story-circle-inner">+</span>';
   addBtn.addEventListener('click', () => { SoundManager.click(); openStoryModal(); });
   wrap.appendChild(addBtn);
 
   try {
-    const cachedFeed = trioCache.get('feed_recent');
-    if (cachedFeed && cachedFeed.length) {
-      const now = Date.now();
-      const stories = cachedFeed
-        .filter(p => p.isStory && p.createdAtMs && (now - p.createdAtMs) < 24 * 60 * 60 * 1000)
-        .slice(0, 20);
+    const storiesQuery = query(
+      collection(db, 'posts'),
+      orderBy('createdAtMs', 'desc'),
+      limit(50)
+    );
+    const snap = await getDocs(storiesQuery);
+    const now = Date.now();
+    const stories = [];
 
-      if (!stories.length) {
-        if (empty) empty.style.display = 'block';
-        return;
-      }
-      if (empty) empty.style.display = 'none';
+    snap.forEach(d => {
+      const p = { ...d.data(), _id: d.id };
+      if (!p.isStory) return;
+      const expires = Number(p.expiresAtMs) || ((Number(p.createdAtMs) || 0) + 24 * 60 * 60 * 1000);
+      if (expires <= now) return;
+      stories.push(p);
+    });
 
-      stories.forEach(s => {
-        const btn = document.createElement('button');
-        btn.className = 'hero-story-circle';
-        btn.title = s.name || 'Story';
-        btn.setAttribute('aria-label', `Story from ${s.name || 'User'}`);
-        const seenKey = 'seenStories';
-        const seenList = JSON.parse(localStorage.getItem(seenKey) || '[]');
-        if (seenList.includes(s._id)) btn.classList.add('viewed');
-        const inner = document.createElement('span');
-        inner.className = 'hero-story-circle-inner';
-        if (s.photoURL) {
-          const img = document.createElement('img');
-          img.src = s.photoURL;
-          img.alt = '';
-          img.loading = 'lazy';
-          inner.appendChild(img);
-        } else {
-          inner.textContent = (s.name || 'U').charAt(0).toUpperCase();
-          inner.style.background = 'linear-gradient(135deg, var(--primary), var(--primary-strong))';
-        }
-        btn.appendChild(inner);
-        btn.addEventListener('click', () => {
-          SoundManager.storyTap();
-          const cur = JSON.parse(localStorage.getItem(seenKey) || '[]');
-          if (!cur.includes(s._id)) {
-            cur.push(s._id);
-            localStorage.setItem(seenKey, JSON.stringify(cur));
-            btn.classList.add('viewed');
-          }
-          const card = document.querySelector(`[data-postId="${s._id}"]`);
-          if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          else openStoryViewer(s);
-        });
-        wrap.appendChild(btn);
-      });
-    } else {
+    if (!stories.length) {
       if (empty) empty.style.display = 'block';
+      return;
     }
-  } catch {
-    if (empty) empty.style.display = 'block';
+
+    stories.slice(0, 20).forEach(s => {
+      const btn = document.createElement('button');
+      btn.className = 'hero-story-circle';
+      btn.title = s.name || 'Story';
+      btn.setAttribute('aria-label', 'Story from ' + (s.name || 'User'));
+
+      const seenKey = 'seenStories';
+      const seenList = JSON.parse(localStorage.getItem(seenKey) || '[]');
+      if (seenList.includes(s._id)) btn.classList.add('viewed');
+
+      const inner = document.createElement('span');
+      inner.className = 'hero-story-circle-inner';
+      if (s.photoURL) {
+        const img = document.createElement('img');
+        img.src = s.photoURL;
+        img.alt = '';
+        img.loading = 'lazy';
+        inner.appendChild(img);
+      } else {
+        inner.textContent = (s.name || 'U').charAt(0).toUpperCase();
+      }
+
+      btn.appendChild(inner);
+      btn.addEventListener('click', () => {
+        SoundManager.storyTap();
+        const current = JSON.parse(localStorage.getItem(seenKey) || '[]');
+        if (!current.includes(s._id)) {
+          current.push(s._id);
+          localStorage.setItem(seenKey, JSON.stringify(current));
+          btn.classList.add('viewed');
+        }
+        openStoryViewer(s);
+      });
+      wrap.appendChild(btn);
+    });
+  } catch (err) {
+    console.error('Today stories load failed:', err);
+    if (empty) {
+      empty.textContent = 'Stories are unavailable right now.';
+      empty.style.display = 'block';
+    }
   }
-  setTimeout(() => { wrap.scrollLeft = 0; }, 50);
 }
 
 function openStoryViewer(s) {
@@ -373,42 +384,48 @@ async function renderActiveChallenges(uid) {
   const listEl = $('challengesList');
   const emptyEl = $('challengesEmpty');
   const sectionEl = $('challengesSection');
-  if (!listEl) return;
+  if (!listEl || !sectionEl) return;
 
-  listEl.innerHTML = '<div class="nkm-skeleton nkm-skel-row" style="height:92px"></div><div class="nkm-skeleton nkm-skel-row" style="height:92px;margin-top:10px"></div>';
+  sectionEl.hidden = false;
+  listEl.innerHTML =
+    '<div class="nkm-skeleton nkm-skel-row" style="height:92px"></div>' +
+    '<div class="nkm-skeleton nkm-skel-row" style="height:92px;margin-top:10px"></div>';
+  if (emptyEl) emptyEl.hidden = true;
+
+  if (!uid) {
+    listEl.innerHTML = '';
+    if (emptyEl) emptyEl.hidden = false;
+    return;
+  }
 
   try {
     const allChallenges = await listCommunityTasks({ status: 'active', max: 40 });
-    if (!allChallenges.length) {
-      listEl.innerHTML = '';
-      sectionEl.hidden = true;
-      if (emptyEl) emptyEl.hidden = false;
-      return;
-    }
-
-    // Batch membership checks — bounded at 40 reads max
     const membershipResults = await Promise.all(
       allChallenges.map(c => isMember(c.id, uid).then(joined => ({ challenge: c, joined })))
     );
-
-    const joinedChallenges = membershipResults.filter(r => r.joined).map(r => r.challenge);
+    const joinedChallenges = membershipResults
+      .filter(item => item.joined)
+      .map(item => item.challenge);
 
     if (!joinedChallenges.length) {
       listEl.innerHTML = '';
-      sectionEl.hidden = true;
       if (emptyEl) emptyEl.hidden = false;
       return;
     }
 
-    sectionEl.hidden = false;
     if (emptyEl) emptyEl.hidden = true;
-
-    listEl.innerHTML = joinedChallenges.map(c => buildChallengeCard(c)).join('');
+    listEl.innerHTML = joinedChallenges
+      .slice(0, 6)
+      .map(c => buildChallengeCard(c))
+      .join('');
   } catch (err) {
-    console.error('renderActiveChallenges failed', err);
-    listEl.innerHTML = '<div style="padding:16px; text-align:center; color:var(--color-ink-muted);">Could not load challenges</div>';
-    sectionEl.hidden = true;
-    if (emptyEl) emptyEl.hidden = false;
+    console.error('Today active challenges load failed:', err);
+    listEl.innerHTML = '';
+    if (emptyEl) {
+      emptyEl.hidden = false;
+      const p = emptyEl.querySelector('p');
+      if (p) p.textContent = 'Could not load your active challenges right now.';
+    }
   }
 }
 
