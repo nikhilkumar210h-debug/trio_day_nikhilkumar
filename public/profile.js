@@ -123,7 +123,6 @@ async function openEdit(u) {
     <label class="field"><span class="label-text">Name</span><input id="editName" type="text" maxlength="50" value="${esc(u.name || '')}"></label>
     <label class="field"><span class="label-text">Trio ID</span><input id="editUserId" type="text" maxlength="24" value="${esc(u.userId || makeUserId(me.uid))}" placeholder="TRIO-ABC123"><small class="field-help">3–24 characters: letters, numbers, _ or -</small></label>
     <label class="field"><span class="label-text">Bio</span><textarea id="editBio" maxlength="180" rows="4" placeholder="Tell people a little about you…">${esc(u.bio || '')}</textarea></label>
-    <label class="field checkbox-field"><span class="label-text">Privacy</span><label class="check-row"><input id="editEmailHidden" type="checkbox" ${u.emailHidden ? 'checked' : ''}><strong>Hide email from profile</strong></label></label>
     <label class="field"><span class="label-text">Profile photo</span><input id="editPhoto" type="file" accept="image/*"></label>
     <p class="status" id="editStatus"></p>
     <div class="modal-actions"><button class="btn secondary cancel-edit" type="button">Cancel</button><button class="btn primary save-edit" type="button">Save profile</button></div>
@@ -149,8 +148,7 @@ async function openEdit(u) {
         photoURL = await uploadProfileImage(me.uid, f);
       }
       const bio = overlay.querySelector('#editBio').value.trim();
-      const emailHidden = overlay.querySelector('#editEmailHidden').checked;
-      await updateDoc(doc(db, 'users', me.uid), { name, userId, bio, photoURL, emailHidden, updatedAt: serverTimestamp() });
+      await updateDoc(doc(db, 'users', me.uid), { name, userId, bio, photoURL, updatedAt: serverTimestamp() });
       // Invalidate cached profile so the page re-fetches fresh data
       trioCache.invalidate(`user_${me.uid}`);
       await me.reload(); close(); await loadProfile(me.uid);
