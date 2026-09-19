@@ -99,6 +99,27 @@ service cloud.firestore {
         || resource.data.userId == '';
     }
 
+    function validActivityInteraction(value) {
+      return value is map
+        && value.size() <= 12
+        && (
+          (
+            value.kind == 'quiz'
+            && value.question is string
+            && value.question.size() > 0
+            && value.question.size() <= 500
+            && value.options is list
+            && value.options.size() == 4
+            && value.correct is int
+            && value.correct >= 0
+            && value.correct <= 3
+          )
+          || (
+            value.kind in ['build','challenge','room']
+          )
+        );
+    }
+
     match /usersPrivate/{userId} {
       allow read, create, update: if owner(userId);
       allow delete: if owner(userId);
@@ -266,22 +287,7 @@ service cloud.firestore {
         && request.resource.data.completions == 0
         && request.resource.data.featured == false
         && request.resource.data.hidden == false
-        && request.resource.data.interaction is map
-        && request.resource.data.interaction.size() <= 12
-        && (
-          request.resource.data.activityType in ['build','game','challenge']
-          || (
-            request.resource.data.interaction.kind == 'quiz'
-            && request.resource.data.interaction.question is string
-            && request.resource.data.interaction.question.size() > 0
-            && request.resource.data.interaction.question.size() <= 500
-            && request.resource.data.interaction.options is list
-            && request.resource.data.interaction.options.size() == 4
-            && request.resource.data.interaction.correct is int
-            && request.resource.data.interaction.correct >= 0
-            && request.resource.data.interaction.correct <= 3
-          )
-        );
+        && validActivityInteraction(request.resource.data.interaction);
       allow update: if signedIn() && (
         isAdmin()
         || (
@@ -301,10 +307,7 @@ service cloud.firestore {
           && request.resource.data.difficulty in ['Easy','Medium','Hard']
           && request.resource.data.endAtMs is number
           && request.resource.data.expiresInDays in [7,14,21,30,40]
-          && (
-            !(request.resource.data.interaction is map)
-            || request.resource.data.interaction.size() <= 12
-          )
+          && validActivityInteraction(request.resource.data.interaction)
         )
       );
       allow delete: if isAdmin() || (signedIn() && resource.data.creatorUid == request.auth.uid);
@@ -342,6 +345,11 @@ service cloud.firestore {
               && request.resource.data.proofText is string
               && request.resource.data.proofText.size() >= 20
               && request.resource.data.proofText.size() <= 500
+              && (
+                !(get(/databases/$(database)/documents/communityTasks/$(taskId)).data.interaction is map)
+                || get(/databases/$(database)/documents/communityTasks/$(taskId)).data.interaction.kind != 'quiz'
+                || request.resource.data.answerIndex == get(/databases/$(database)/documents/communityTasks/$(taskId)).data.interaction.correct
+              )
             )
           );
         allow update, delete: if false;
