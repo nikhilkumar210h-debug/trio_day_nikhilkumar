@@ -230,18 +230,25 @@ service cloud.firestore {
         && request.resource.data.featured == false
         && request.resource.data.hidden == false;
       allow update: if signedIn() && (
-        // Admins: full moderate (feature / hide / archive / edit)
         isAdmin()
-        // Creator may edit own content but NOT moderation flags or counters
         || (
           resource.data.creatorUid == request.auth.uid
-          && !request.resource.data.diff(resource.data).affectedKeys()
-              .hasAny(['featured', 'hidden', 'joins', 'likes', 'comments', 'completions', 'status'])
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'title','description','icon','activityType','category','mechanic',
+            'durationMin','difficulty','goal','instructions','expiresInDays',
+            'startAtMs','endAtMs','templateId','metric','target','xpReward'
+          ])
+          && request.resource.data.activityType in ['puzzle','build','learn','challenge','game']
+          && request.resource.data.category is string
+          && request.resource.data.category.size() > 0
+          && request.resource.data.category.size() <= 60
+          && request.resource.data.durationMin is number
+          && request.resource.data.durationMin >= 5
+          && request.resource.data.durationMin <= 180
+          && request.resource.data.difficulty in ['Easy','Medium','Hard']
+          && request.resource.data.endAtMs is number
+          && request.resource.data.expiresInDays in [7,14,21,30,40]
         )
-        // No rule allows arbitrary counter/status bumps by a signed-in user.
-        // Counter fields (joins, likes, comments, completions) are updated
-        // server-side when the corresponding subcollection doc is written,
-        // or via a Cloud Function trigger. Direct client writes are denied.
       );
       allow delete: if isAdmin() || (signedIn() && resource.data.creatorUid == request.auth.uid);
 
@@ -297,7 +304,16 @@ service cloud.firestore {
         && request.resource.data.activityType in ['puzzle','build','learn','challenge','game']
         && request.resource.data.expiresAtMs is number
         && request.resource.data.status == 'open';
-      allow update: if signedIn() && resource.data.hostUid == request.auth.uid;
+      allow update: if signedIn()
+        && resource.data.hostUid == request.auth.uid
+        && request.resource.data.hostUid == resource.data.hostUid
+        && request.resource.data.activityType == resource.data.activityType
+        && request.resource.data.activitySource == resource.data.activitySource
+        && request.resource.data.challengeId == resource.data.challengeId
+        && request.resource.data.expiresAtMs == resource.data.expiresAtMs
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'title','status','endedAtMs'
+        ]);
       allow delete: if signedIn() && resource.data.hostUid == request.auth.uid;
       match /members/{memberUid} { allow read: if signedIn(); allow create, delete: if owner(memberUid) && get(/databases/$(database)/documents/rooms/$(roomId)).data.status == 'open'; allow update: if false; }
       match /messages/{messageId} {
