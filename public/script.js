@@ -12,9 +12,7 @@ import {
   getDocs, limit, where
 } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 import { makeUserId, escapeHtml, initials, formatTime, getFilterCSS } from './utils.js';
-import { getMergedTasks, manualBump } from './gamification/progress.js';
 import { listCommunityTasks, isMember } from './gamification/community-tasks.js';
-import { SYSTEM_BADGES } from './gamification/constants.js';
 import { activityCardHtml, normalizeActivityType } from './activity-ui.js';
 import { activeCatalogActivities } from './activity-catalog.js';
 
@@ -264,123 +262,107 @@ async function renderFocusAndContinue(uid) {
   const focusPrimary = $('focusPrimary');
   const focusSecondary = $('focusSecondary');
   const continueList = $('continueList');
-  const continueEmpty = $('continueEmpty');
   const continueSection = $('continueSection');
 
   if (!focusPrimary || !focusSecondary) return;
 
-  focusPrimary.innerHTML = '<div class="focus-skeleton" style="height:180px;border-radius:var(--radius-lg);"></div>';
+  focusPrimary.innerHTML = '<div class="focus-skeleton" style="height:220px;border-radius:var(--radius-lg);"></div>';
   focusSecondary.innerHTML = '';
 
   try {
-    const [activitySnap, dailyTasks, weeklyTasks] = await Promise.all([
-      listCommunityTasks({ status: 'active', max: 24 }),
-      getMergedTasks(uid, 'daily'),
-      getMergedTasks(uid, 'weekly'),
-    ]);
-
-    const communityActivities = activitySnap
+    const activeTasks = await listCommunityTasks({ status: 'active', max: 30 });
+    const candidates = activeTasks
       .filter(t => !t.hidden)
-      .map(t => ({ ...t, activityType: normalizeActivityType(t), source:'community' }));
-    const builtIns = activeCatalogActivities();
-    const meaningful = [...builtIns, ...communityActivities]
-      .filter(t => ['puzzle','build','learn','challenge'].includes(t.activityType || t.type));
+      .map(t => ({ ...t, activityType: normalizeActivityType(t), source: 'community' }));
 
-    const focusIndex = meaningful.length ? Math.floor(Date.now() / 86400000) % meaningful.length : 0;
-    const primaryActivity = meaningful[focusIndex];
-    const focusActivities = primaryActivity ? [primaryActivity] : [];
+    // "Continue" is now based only on activities the user has actually joined
+    // and has not completed. Generic daily/weekly goals are intentionally
+    // kept out of this section because they are not activity progress.
+    const resumeChecks = await Promise.all(candidates.slice(0, 20).map(async task => {
+      const joined = await isMember(task.id, uid).catch(() => false);
+      if (!joined) return null;
+      const done = await getDoc(doc(db, 'communityTasks', task.id, 'completions', uid))
+        .then(s => s.exists()).catch(() => false);
+      return done ? null : task;
+    }));
+    const resumable = resumeChecks.filter(Boolean);
 
-    if (primaryActivity) {
-      focusPrimary.innerHTML = activityCardHtml(primaryActivity);
+    const catalog = activeCatalogActivities()
+      .filter(a => ['puzzle', 'build', 'learn', 'challenge', 'game'].includes(a.type))
+      .map(a => ({ ...a, activityType: a.type, source: 'catalog' }));
+
+    // Prefer something the user has already started. Otherwise use a stable
+    // daily catalog choice rather than a time-dependent/random-looking pick.
+    const dailyIndex = Math.floor(Date.now() / 86400000) % Math.max(1, catalog.length);
+    const focus = resumable[0]
+      || candidates.find(t => t.featured)
+      || catalog[dailyIndex]
+      || catalog[0];
+
+    if (focus) {
+      const type = normalizeActivityType(focus);
+      const duration = Number(focus.durationMin) || 20;
+      const difficulty = focus.difficulty || 'Open';
+      const focusNote = resumable[0] && resumable[0].id === focus.id
+        ? 'Picked up from where you left off.'
+        : 'A clear activity you can finish in one focused session.';
+
+      focusPrimary.innerHTML = `
+        <div class="today-focus-frame">
+          <div class="today-focus-context">
+            <span><strong>${resumable[0] && resumable[0].id === focus.id ? 'RESUME' : 'PICKED FOR TODAY'}</strong></span>
+            <span>${type} · ${duration} min · ${escapeHtml(difficulty)}</span>
+          </div>
+          ${activityCardHtml(focus)}
+          <p class="today-focus-note">${escapeHtml(focusNote)}</p>
+        </div>`;
+
       focusPrimary.classList.add('focus-activity-wrap');
+
       const visualTitle = $('todayVisualTitle');
       const visualMeta = $('todayVisualMeta');
-      if (visualTitle) visualTitle.textContent = primaryActivity.title || 'One meaningful move';
-      if (visualMeta) visualMeta.textContent = primaryActivity.challengeBrief || primaryActivity.goal || 'Start when you are ready.';
+      if (visualTitle) visualTitle.textContent = focus.title || 'One meaningful move';
+      if (visualMeta) visualMeta.textContent = `${type} · ${duration} min · ${focus.source === 'community' ? 'Community' : 'Trio Day'}`;
     } else {
-      focusPrimary.innerHTML = '<div class="focus-empty-card"><strong>Make today count.</strong><p>Pick one real activity from Discover and spend a few minutes solving, learning or building.</p><a class="nkm-btn nkm-btn--primary" href="all-users.html">Explore activities</a></div>';
+      focusPrimary.innerHTML = '<div class="focus-empty-card"><strong>Nothing is ready yet.</strong><p>Open Discover and choose a puzzle, build, lesson, challenge or game.</p><a class="nkm-btn nkm-btn--primary" href="all-users.html">Explore Discover</a></div>';
       focusPrimary.classList.remove('focus-activity-wrap');
+      const visualTitle = $('todayVisualTitle');
+      const visualMeta = $('todayVisualMeta');
+      if (visualTitle) visualTitle.textContent = 'Choose your next move';
+      if (visualMeta) visualMeta.textContent = 'Discover · Pick · Start';
     }
 
-    if (focusSecondary) {
-      focusSecondary.innerHTML = '';
-      focusSecondary.classList.remove('focus-activity-wrap');
+    focusSecondary.innerHTML = '';
+
+    const continueItems = resumable
+      .filter(t => !focus || t.id !== focus.id)
+      .slice(0, 6);
+
+    if (continueItems.length) {
+      continueSection.hidden = false;
+      continueList.innerHTML = continueItems.map(t => `
+        <a class="continue-card continue-card--activity" href="${t.source === 'community' ? 'task-detail.html?id=' + encodeURIComponent(t.id) : 'activity.html?id=' + encodeURIComponent(t.id)}">
+          <div class="continue-icon">${escapeHtml(t.icon || '🎯')}</div>
+          <div class="continue-title">${escapeHtml(t.title || 'Activity')}</div>
+          <div class="continue-meta">
+            <span>${escapeHtml(normalizeActivityType(t))}</span>
+            <span>${Number(t.durationMin) || 20} min</span>
+            <span>Not finished</span>
+          </div>
+        </a>`).join('');
     } else {
-      focusSecondary.classList.remove('focus-activity-wrap');
-    }
-
-    // Personal progress stays useful, but no longer dominates Today's Focus.
-    const allTasks = [...dailyTasks, ...weeklyTasks];
-    const inProgress = allTasks.filter(t => !t.done && (t.count || 0) > 0);
-    if (continueList && inProgress.length) {
-      continueSection.hidden = false;
-      if (continueEmpty) continueEmpty.hidden = true;
-      continueList.innerHTML = inProgress.slice(0, 6).map(t => buildContinueCard(t)).join('');
-    } else if (continueList) {
-      continueSection.hidden = false;
-      if (continueEmpty) continueEmpty.hidden = false;
+      continueSection.hidden = true;
       continueList.innerHTML = '';
     }
   } catch (err) {
     console.error('renderFocusAndContinue failed', err);
-    focusPrimary.innerHTML = '<div class="focus-empty-card"><strong>Focus is loading.</strong><p>Open Discover to choose something meaningful to do today.</p><a class="nkm-btn nkm-btn--primary" href="all-users.html">Open Discover</a></div>';
+    focusPrimary.innerHTML = '<div class="focus-empty-card"><strong>Focus is unavailable right now.</strong><p>Discover is still available while Today reconnects.</p><a class="nkm-btn nkm-btn--primary" href="all-users.html">Open Discover</a></div>';
+    const visualTitle = $('todayVisualTitle');
+    const visualMeta = $('todayVisualMeta');
+    if (visualTitle) visualTitle.textContent = 'Open Discover';
+    if (visualMeta) visualMeta.textContent = 'Today is ready when you are';
+    continueSection.hidden = true;
   }
-}
-
-function buildFocusCard(task, isPrimary) {
-  const progress = Math.min(100, Math.round(((task.count || 0) / Math.max(1, task.target || 1)) * 100));
-  const badge = SYSTEM_BADGES.find(b => b.id === task.badgeId);
-  const icon = task.icon || '🎯';
-  const xp = task.xpReward || 0;
-  const cardClass = isPrimary ? 'focus-card' : 'focus-card';
-  return `
-    <article class="${cardClass}" data-task-id="${task.id}">
-      <div class="focus-icon">${icon}</div>
-      <div class="focus-content">
-        <div class="focus-title">${escapeHtml(task.title || 'Task')}</div>
-        <div class="focus-meta">
-          <span class="metric">${task.count || 0} / ${task.target || 1}</span>
-          ${xp ? `<span class="xp">+${xp} XP</span>` : ''}
-          ${badge ? `<span class="badge">${badge.icon} ${badge.name}</span>` : ''}
-        </div>
-        <div class="focus-progress"><div class="focus-progress-bar" style="width:${progress}%"></div></div>
-      </div>
-      <button type="button" class="focus-cta nkm-btn nkm-btn--primary" ${task.done ? 'disabled' : ''}>${task.done ? 'Done ✓' : 'Start'}</button>
-    </article>
-  `;
-}
-
-function attachFocusCTA(task, uid, btn) {
-  if (!btn || task.done) return;
-  btn.addEventListener('click', async () => {
-    btn.disabled = true;
-    btn.textContent = '…';
-    try {
-      await manualBump(uid, task.id, 1);
-      await renderFocusAndContinue(uid);
-    } catch (e) {
-      btn.disabled = false;
-      btn.textContent = 'Start';
-      alert(e.message || 'Failed to update');
-    }
-  });
-}
-
-function buildContinueCard(task) {
-  const progress = Math.min(100, Math.round(((task.count || 0) / Math.max(1, task.target || 1)) * 100));
-  const icon = task.icon || '🎯';
-  const xp = task.xpReward || 0;
-  return `
-    <article class="continue-card" data-task-id="${task.id}">
-      <div class="continue-icon">${icon}</div>
-      <div class="continue-title">${escapeHtml(task.title || 'Task')}</div>
-      <div class="continue-progress"><div class="continue-progress-bar" style="width:${progress}%"></div></div>
-      <div class="continue-meta">
-        <span>${task.count || 0} / ${task.target || 1}</span>
-        ${xp ? `<span class="xp">+${xp} XP</span>` : ''}
-      </div>
-    </article>
-  `;
 }
 
 async function renderActiveChallenges(uid) {

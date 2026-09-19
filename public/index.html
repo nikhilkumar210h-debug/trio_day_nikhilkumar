@@ -31,7 +31,7 @@
   <link rel="stylesheet" href="styles/header.css">
   <link rel="stylesheet" href="styles/components.css">
   <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="styles/home.css?v=33">
+  <link rel="stylesheet" href="styles/home.css?v=34">
   <link rel="manifest" href="manifest.json">
   <link rel="sitemap" href="sitemap.xml">
 </head>
@@ -54,7 +54,7 @@
       <div class="today-greeting-copy">
         <span class="today-kicker">TODAY</span>
         <h1 class="greeting-main">Good day, <span id="greetingName">Friend</span> <span aria-hidden="true">👋</span></h1>
-        <p class="greeting-sub" id="greetingSub">Your next move is waiting.</p>
+        <p class="greeting-sub" id="greetingSub">One clear move. Then the next.</p>
       </div>
       <div class="today-visual" aria-label="Today's visual summary">
         <div class="today-visual-orbit" aria-hidden="true"><span>☸</span></div>
@@ -75,14 +75,14 @@
 
     <!-- Today's Focus — real task data -->
     <section id="todayFocus" class="today-section" aria-label="Today's Focus">
-      <h2 class="today-section-title">Today's Focus <span class="today-focus-label">Next move</span></h2>
+      <h2 class="today-section-title">Today's Focus <span class="today-focus-label">ONE THING</span></h2>
       <div id="focusPrimary" class="focus-primary"></div>
       <div id="focusSecondary" class="focus-secondary"></div>
     </section>
 
     <!-- Continue — in-progress items -->
     <section id="continueSection" class="today-section" aria-label="Continue" hidden>
-      <h2 class="today-section-title">Continue</h2>
+      <h2 class="today-section-title">Continue <span class="today-focus-label">IN PROGRESS</span></h2>
       <div id="continueList" class="continue-list"></div>
     </section>
 
@@ -316,7 +316,7 @@
   </div>
 
   <script type="module" src="auth-guard.js"></script>
-  <script type="module" src="script.js"></script>
+  <script type="module" src="script.js?v=20260919-focus2"></script>
   <script type="module" src="auth-ui.js"></script>
   <script type="module" src="theme.js"></script>
   <script type="module" src="ui/header.js"></script>
