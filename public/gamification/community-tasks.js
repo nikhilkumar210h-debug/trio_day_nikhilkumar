@@ -355,7 +355,15 @@ export async function completeTask(taskId, uid, profile, evidence = null) {
   const safeEvidence = evidence && typeof evidence === 'object'
     ? {
         answerIndex: Number.isInteger(Number(evidence.answerIndex)) ? Number(evidence.answerIndex) : null,
-        proofText: String(evidence.proofText || '').trim().slice(0, 500)
+        proofText: String(evidence.proofText || '').trim().slice(0, 500),
+        ...(evidence.buildEvidence && typeof evidence.buildEvidence === 'object'
+          ? {
+              buildEvidence: {
+                mechanic: String(evidence.buildEvidence.mechanic || '').slice(0, 40),
+                state: String(evidence.buildEvidence.state || '').slice(0, 1600)
+              }
+            }
+          : {})
       }
     : null;
   await setDoc(cref, {
