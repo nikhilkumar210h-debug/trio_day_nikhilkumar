@@ -4,13 +4,49 @@ import{doc,getDoc,setDoc}from'https://www.gstatic.com/firebasejs/10.13.0/firebas
 import{activeCatalogActivities}from'./activity-catalog.js';
 import{activityTypeInfo}from'./activity-ui.js';
 import{renderBuildWorkspace}from'./forge-engine.js';
+import{getInteractiveConfig,getChallengeRounds}from'./forge-interactions.js';
 import{awardXp}from'./gamification/xp-levels.js';
 import{showAchievement}from'./ui/achievements.js';
 import{escapeHtml as esc}from'./utils.js';
+
 const $=id=>document.getElementById(id),id=new URLSearchParams(location.search).get('id');
 let me=null,activity=null,timer=null,remaining=0,activityPassed=false;
 
 function fail(t){$('activityStatus').textContent=t;$('activityStatus').classList.add('error')}
+function setPassed(v){activityPassed=!!v;updateCompleteState()}
+function renderQuizWorkspace(root,cfg,isLesson){
+ root.hidden=false;
+ root.innerHTML='<div class="forge-workspace-head"><div><h3>'+ (isLesson?'Learn & Check':'Solve the puzzle') +'</h3><p>Think first, then choose your answer.</p></div><span class="forge-pill">'+(isLesson?'KNOWLEDGE CHECK':'PUZZLE')+'</span></div>'
+ +(isLesson?'<div class="forge-lesson">'+esc(cfg.lesson||'Learn the key idea, then test your understanding.')+'</div>':'')
+ +'<div class="forge-quiz"><div class="forge-quiz-question">'+esc(cfg.question)+'</div><div class="forge-quiz-options">'+cfg.options.map((o,i)=>'<button type="button" class="forge-option" data-answer="'+i+'">'+esc(o)+'</button>').join('')+'</div></div><div class="forge-result"></div>';
+ const result=root.querySelector('.forge-result');
+ root.querySelectorAll('[data-answer]').forEach(btn=>btn.onclick=()=>{
+   const selected=Number(btn.dataset.answer);root.querySelectorAll('[data-answer]').forEach(x=>x.disabled=true);
+   if(selected===cfg.correct){btn.classList.add('correct');result.textContent=isLesson?'Correct — concept understood.':'Correct — puzzle solved.';result.className='forge-result ok';setPassed(true)}
+   else{btn.classList.add('wrong');result.textContent='Not quite. Try another option.';result.className='forge-result bad';root.querySelectorAll('[data-answer]').forEach(x=>x.disabled=false)}
+ });
+}
+function renderChallengeWorkspace(root){
+ const rounds=getChallengeRounds((Number(activity.id.replace(/\D/g,''))||0)%10,5);let idx=0,score=0;
+ root.hidden=false;
+ function paint(){
+   const q=rounds[idx];
+   root.innerHTML='<div class="forge-workspace-head"><div><h3>Challenge round</h3><p>Five quick rounds. Score at least 3 to complete.</p></div><span class="forge-pill">TIMED</span></div><div class="forge-scorebar"><span>Round '+(idx+1)+' / '+rounds.length+'</span><strong>Score '+score+'</strong></div><div class="forge-quiz"><div class="forge-quiz-question">'+esc(q.q)+'</div><div class="forge-quiz-options">'+q.o.map((o,i)=>'<button type="button" class="forge-option" data-answer="'+i+'">'+esc(o)+'</button>').join('')+'</div></div><div class="forge-result"></div>';
+   const result=root.querySelector('.forge-result');
+   root.querySelectorAll('[data-answer]').forEach(btn=>btn.onclick=()=>{
+     const answer=Number(btn.dataset.answer);root.querySelectorAll('[data-answer]').forEach(x=>x.disabled=true);
+     if(answer===q.a){score++;btn.classList.add('correct');result.textContent='Correct.';result.className='forge-result ok'}else{btn.classList.add('wrong');result.textContent='Not this time.';result.className='forge-result bad'}
+     const next=document.createElement('button');next.type='button';next.className='forge-next';next.textContent=idx===rounds.length-1?'Finish round':'Next round';result.insertAdjacentElement('afterend',next);
+     next.onclick=()=>{if(idx<rounds.length-1){idx++;paint()}else{result.textContent='Final score: '+score+' / '+rounds.length+(score>=3?' · Challenge complete.':' · Try again for 3 or more.');result.className='forge-result '+(score>=3?'ok':'bad');if(score>=3)setPassed(true)}};
+   });
+ }
+ paint();
+}
+function renderGameWorkspace(root){
+ root.hidden=false;root.innerHTML='<div class="forge-workspace-head"><div><h3>Room game</h3><p>This activity is designed for people to play together in a live room.</p></div><span class="forge-pill">MULTI-PLAYER</span></div><div class="forge-lesson">Open a room, invite people, and play the rounds together. Your room becomes the shared game board.</div>';
+ setPassed(false);
+}
+
 function render(){
  const type=activityTypeInfo(activity);
  $('activityStatus').textContent='';$('activityHero').hidden=false;$('activityGrid').hidden=false;
@@ -27,23 +63,23 @@ function render(){
  remaining=Math.max(60,Number(activity.durationMin||20)*60);paintTimer();
 
  const workspace=$('forgeWorkspace');
- if(activity.type==='build'){
-   activityPassed=false;
-   renderBuildWorkspace(workspace,activity,passed=>{activityPassed=!!passed;updateCompleteState()});
- }else{
-   workspace.hidden=true;
-   activityPassed=true;
- }
+ const cfg=getInteractiveConfig(activity.id);
+ if(activity.type==='build')renderBuildWorkspace(workspace,activity,setPassed);
+ else if(activity.type==='puzzle'&&cfg)renderQuizWorkspace(workspace,cfg,false);
+ else if(activity.type==='learn'&&cfg)renderQuizWorkspace(workspace,cfg,true);
+ else if(activity.type==='challenge')renderChallengeWorkspace(workspace);
+ else if(activity.type==='game')renderGameWorkspace(workspace);
+ else{workspace.hidden=true;setPassed(true)}
  updateCompleteState();
 }
 function updateCompleteState(){
- const b=$('completeBtn');
- if(!b)return;
- const blocked=activity?.type==='build'&&!activityPassed;
+ const b=$('completeBtn');if(!b)return;
+ const blocked=!activityPassed;
  b.disabled=blocked;
- b.textContent=blocked?'Finish the build first': 'Mark complete';
+ if(activity?.type==='game')b.textContent='Play in a room';
+ else b.textContent=blocked?'Finish the activity first':'Mark complete';
 }
 function paintTimer(){const m=Math.floor(remaining/60),s=remaining%60;$('timerDisplay').textContent=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0')}
 $('timerBtn').onclick=()=>{if(timer){clearInterval(timer);timer=null;$('timerBtn').textContent='Resume timer';return}timer=setInterval(()=>{remaining=Math.max(0,remaining-1);paintTimer();if(!remaining){clearInterval(timer);timer=null;$('timerBtn').textContent='Time complete'}},1000);$('timerBtn').textContent='Pause timer'};
-$('completeBtn').onclick=async()=>{if(!me||!activity|| (activity.type==='build'&&!activityPassed))return;const b=$('completeBtn');b.disabled=true;b.textContent='Saving…';try{const cycleKey=activity.id+'_'+activity.startAtMs;const ref=doc(db,'users',me.uid,'activityCompletions',cycleKey);const old=await getDoc(ref);if(old.exists()){$('completionNote').textContent='Already completed in this cycle ✓';b.textContent='Completed';return}await setDoc(ref,{uid:me.uid,activityId:activity.id,cycleKey,title:activity.title,type:activity.type,completedAtMs:Date.now(),cycleEndsAtMs:activity.endAtMs});const xp=activity.difficulty==='Hard'?60:activity.difficulty==='Medium'?40:25;let award=null;try{award=await awardXp(me.uid,xp,{catalogActivityId:activity.id});showAchievement({title:activity.title,subtitle:'+'+xp+' XP',icon:activity.icon||'🎯',leveledUp:award?.leveledUp,level:award?.level,badges:award?.badgesEarned||[]})}catch(xpErr){console.warn('XP award skipped',xpErr)}$('completionNote').innerHTML='<div class="activity-success">Completed ✓ Great job.</div>';b.textContent='Completed'}catch(e){b.disabled=false;updateCompleteState();$('completionNote').textContent=e.message||'Could not save completion.'}};
+$('completeBtn').onclick=async()=>{if(!me||!activity||!activityPassed)return;const b=$('completeBtn');b.disabled=true;b.textContent='Saving…';try{const cycleKey=activity.id+'_'+activity.startAtMs;const ref=doc(db,'users',me.uid,'activityCompletions',cycleKey);const old=await getDoc(ref);if(old.exists()){$('completionNote').textContent='Already completed in this cycle ✓';b.textContent='Completed';return}await setDoc(ref,{uid:me.uid,activityId:activity.id,cycleKey,title:activity.title,type:activity.type,completedAtMs:Date.now(),cycleEndsAtMs:activity.endAtMs});const xp=activity.difficulty==='Hard'?60:activity.difficulty==='Medium'?40:25;let award=null;try{award=await awardXp(me.uid,xp,{catalogActivityId:activity.id});showAchievement({title:activity.title,subtitle:'+'+xp+' XP',icon:activity.icon||'🎯',leveledUp:award?.leveledUp,level:award?.level,badges:award?.badgesEarned||[]})}catch(xpErr){console.warn('XP award skipped',xpErr)}$('completionNote').innerHTML='<div class="activity-success">Completed ✓ Great job.</div>';b.textContent='Completed'}catch(e){b.disabled=false;updateCompleteState();$('completionNote').textContent=e.message||'Could not save completion.'}};
 onAuthStateChanged(auth,u=>{if(!u){location.href='login.html?redirect=activity.html?id='+encodeURIComponent(id||'');return}me=u;activity=activeCatalogActivities().find(x=>x.id===id)||null;if(!activity)return fail('Activity not found or its cycle has ended.');render()});
