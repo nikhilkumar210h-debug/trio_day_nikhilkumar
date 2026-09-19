@@ -2,7 +2,7 @@ import{getBuildConfig}from'./activity-catalog.js';
 const esc=s=>{const d=document.createElement('div');d.textContent=String(s??'');return d.innerHTML};
 export function renderBuildWorkspace(root,activity,onPass){
  const cfg=getBuildConfig(activity.id); if(!cfg){root.hidden=true;return null} root.hidden=false; let passed=false;
- const state={order:cfg.items?.slice()||[],alloc:{},selectedTool:null,placed:{},assign:{}};
+ const baseOrder=cfg.items?.slice()||[];let order=baseOrder.slice();if(order.length>2){const shift=((activity.id||'b0').charCodeAt(1)||1)%order.length;order=order.slice(shift).concat(order.slice(0,shift));if(order.every((x,i)=>x===cfg.target?.[i]))order.reverse()}const state={order,alloc:{},selectedTool:null,placed:{},assign:{}};
  const setResult=(text,ok)=>{root.querySelector('.forge-result').textContent=text;root.querySelector('.forge-result').className='forge-result '+(ok?'ok':'bad');if(ok&&!passed){passed=true;onPass?.(true)}};
  root.innerHTML='<div class="forge-workspace-head"><div><h3>Forge Board</h3><p>Actually build the solution. Your result is checked against the activity constraints.</p></div><span class="forge-pill">LIVE LOGIC</span></div><div class="forge-board-body"></div><div class="forge-result"></div>';
  const body=root.querySelector('.forge-board-body');
