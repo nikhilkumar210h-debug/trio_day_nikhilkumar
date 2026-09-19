@@ -34,7 +34,7 @@
   </header>
   <main class="tasks-main">
     <div id="detail" class="form-card detail-activity-card">
-      <p>Loading…</p>
+      <div class="td-skeleton td-skeleton--wide" aria-label="Loading activity"></div>
     </div>
     <div class="detail-actions" id="actions"></div>
     <section id="ratingSection" class="activity-rating" hidden><div class="rating-head"><div><h3>How was the activity?</h3><p>Your feedback helps people discover useful activities.</p></div><span id="ratingSummary">No ratings yet</span></div><form id="ratingForm"><div class="rating-grid"><label>Overall<select id="ratingOverall"><option value="5">5 — Great</option><option value="4">4 — Good</option><option value="3">3 — Okay</option><option value="2">2 — Needs work</option><option value="1">1 — Poor</option></select></label><label>Fun<select id="ratingFun"><option value="5">5</option><option value="4">4</option><option value="3">3</option><option value="2">2</option><option value="1">1</option></select></label><label>Useful<select id="ratingUseful"><option value="5">5</option><option value="4">4</option><option value="3">3</option><option value="2">2</option><option value="1">1</option></select></label><label>Teamwork<select id="ratingTeamwork"><option value="5">5</option><option value="4">4</option><option value="3">3</option><option value="2">2</option><option value="1">1</option></select></label></div><button class="btn primary" type="submit" id="ratingSubmit">Save rating</button><span id="ratingStatus" class="status"></span></form></section>
