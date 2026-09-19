@@ -103,6 +103,7 @@ $('submitBtn').addEventListener('click', async () => {
       description: $('description').value.trim(),
       icon: $('icon').value.trim() || '🏁',
       kind: $('kind').value,
+      activityType: $('activityType').value,
       templateId: selected?.id || null,
       metric: $('metric').value,
       target: Number($('target').value) || 1,
