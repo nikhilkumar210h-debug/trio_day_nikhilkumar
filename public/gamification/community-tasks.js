@@ -97,6 +97,24 @@ export async function getCommunityTask(id) {
 
 // ── Create ────────────────────────────────────────────────────────────────────
 
+function normalizeBuildEvidenceState(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  const out = {};
+  if (Array.isArray(raw.order)) out.order = raw.order.slice(0, 8).map(v => String(v || '').slice(0, 70));
+  if (Array.isArray(raw.allocation)) out.allocation = raw.allocation.slice(0, 8).map(v => Math.max(0, Number(v) || 0));
+  if (raw.positions && typeof raw.positions === 'object') {
+    out.positions = Object.fromEntries(
+      Object.entries(raw.positions).slice(0, 4).map(([k, v]) => [String(k).slice(0, 40), Number(v)])
+    );
+  }
+  if (raw.assign && typeof raw.assign === 'object') {
+    out.assign = Object.fromEntries(
+      Object.entries(raw.assign).slice(0, 4).map(([k, v]) => [String(k).slice(0, 40), String(v || '').slice(0, 40)])
+    );
+  }
+  return out;
+}
+
 function normalizeInteraction(data) {
   const type = data.activityType;
   const raw = data.interaction && typeof data.interaction === 'object' ? data.interaction : {};
@@ -364,18 +382,7 @@ export async function completeTask(taskId, uid, profile, evidence = null) {
           ? {
               buildEvidence: {
                 mechanic: String(evidence.buildEvidence.mechanic || '').slice(0, 40),
-                state: evidence.buildEvidence.state && typeof evidence.buildEvidence.state === 'object'
-                  ? {
-                      order: Array.isArray(evidence.buildEvidence.state.order) ? evidence.buildEvidence.state.order.slice(0, 8) : undefined,
-                      allocation: Array.isArray(evidence.buildEvidence.state.allocation) ? evidence.buildEvidence.state.allocation.slice(0, 8).map(v => Math.max(0, Number(v) || 0)) : undefined,
-                      positions: evidence.buildEvidence.state.positions && typeof evidence.buildEvidence.state.positions === 'object'
-                        ? Object.fromEntries(Object.entries(evidence.buildEvidence.state.positions).slice(0, 4).map(([k,v]) => [String(k).slice(0, 40), Number(v)]))
-                        : undefined,
-                      assign: evidence.buildEvidence.state.assign && typeof evidence.buildEvidence.state.assign === 'object'
-                        ? Object.fromEntries(Object.entries(evidence.buildEvidence.state.assign).slice(0, 4).map(([k,v]) => [String(k).slice(0, 40), String(v || '').slice(0, 40)]))
-                        : undefined
-                    }
-                  : null
+                state: normalizeBuildEvidenceState(evidence.buildEvidence.state)
               }
             }
           : {})
