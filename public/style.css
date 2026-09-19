@@ -1141,6 +1141,21 @@ h1, h2, h3, .brand strong {
 }
 .profile-game-badges h4 { font-family: var(--font-display); font-size: var(--text-sm); font-weight: var(--font-semibold); color: var(--color-ink-muted); }
 
+.profile-game-row--secondary{margin-top:10px}
+.profile-standing-caption{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:10px 0 6px;color:var(--color-ink-muted);font-size:var(--text-xs)}
+.profile-standing-caption a{color:var(--color-primary);font-weight:var(--font-semibold);text-decoration:none}
+.profile-standing-caption a:hover{text-decoration:underline}
+@media(max-width:520px){
+  .profile-main{padding-left:12px;padding-right:12px}
+  .profile-card{padding:16px}
+  .profile-head{align-items:flex-start}
+  .profile-avatar{width:78px;height:78px}
+  .profile-copy h2{font-size:var(--text-2xl)}
+  .profile-game-row{gap:7px}
+  .profile-game-stat{padding:10px 6px}
+  .profile-game-value{font-size:var(--text-lg)}
+  .profile-game-label{font-size:9px}
+}
 /* ── Profile Menu (in Sheet) ─────────────────────────────────── */
 .profile-menu-list { display: flex; flex-direction: column; gap: 4px; }
 .profile-menu-item {
