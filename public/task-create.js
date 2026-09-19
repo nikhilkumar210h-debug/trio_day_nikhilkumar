@@ -3,9 +3,9 @@ import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.13.0/f
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 import { createCommunityTask } from './gamification/community-tasks.js?v=20260919-community5';
 import { ACTIVITY_TYPES, activityTypeInfo } from './activity-ui.js';
-import { ACTIVITY_CATALOG } from './activity-catalog.js?v=20260919-catalog4';
+import { ACTIVITY_CATALOG, getBuildConfig } from './activity-catalog.js?v=20260919-catalog4';
 import { mechanicInfo, mechanicsFor } from './forge-mechanics.js';
-import { getInteractiveConfig } from './forge-interactions.js?v=20260919-interactions3';
+import { getInteractiveConfig, getChallengeRounds } from './forge-interactions.js?v=20260919-interactions3';
 import { escapeHtml as esc } from './utils.js';
 import { showToast } from './ui/toast.js';
 
@@ -17,6 +17,11 @@ let activeType = ACTIVITY_TYPES[params.get('activity')] ? params.get('activity')
 let selected = null;
 let step = 1;
 let interactionDraft = null;
+let editorStage = 0;
+let startChosen = false;
+let buildCustomizerStage = 0;
+let quizCustomizerStage = 0;
+let challengeRound = 0;
 
 const defaults = {
   puzzle: { duration: 15, difficulty: 'Easy', goal: 'Solve it and show your reasoning.' },
@@ -36,12 +41,31 @@ function currentMechanic() {
 
 function sourceConfig(template) {
   if (!template) return null;
+
+  if (template.type === 'build') {
+    const cfg = getBuildConfig(template.id);
+    if (!cfg) return null;
+    return {
+      kind: 'build',
+      mechanic: cfg.mechanic,
+      config: JSON.parse(JSON.stringify(cfg))
+    };
+  }
+
+  if (template.type === 'challenge') {
+    const rounds = getChallengeRounds(Number(template.id.replace(/\D/g, '')) || 0, 5);
+    return {
+      kind: 'challenge',
+      rounds: rounds.map(r => ({ q: r.q, o: [...r.o], a: Number(r.a) || 0 }))
+    };
+  }
+
   const cfg = getInteractiveConfig(template.id);
   if (!cfg) return null;
   return {
     kind: 'quiz',
-    question: cfg.question,
-    options: [...cfg.options],
+    question: cfg.question || '',
+    options: [...(cfg.options || ['', '', '', ''])],
     correct: Number(cfg.correct) || 0,
     lesson: cfg.lesson || '',
     proofRequired: true,
@@ -52,7 +76,7 @@ function sourceConfig(template) {
 }
 
 function blankInteraction(type) {
-  if (type === 'build') return { kind:'build', mechanic:'order', config:null };
+  if (type === 'build') return { kind:'build', mechanic:null, config:null };
   if (type === 'challenge') return { kind:'challenge', rounds:Array.from({length:5},()=>({q:'',o:['','','',''],a:0})) };
   if (type === 'learn') return { kind:'quiz', question:'', options:['','','',''], correct:0, lesson:'', proofRequired:true, proofPrompt:'Explain the idea in your own words or give a small example.' };
   return { kind:'quiz', question:'', options:['','','',''], correct:0, lesson:'', proofRequired:true, proofPrompt:'Show your reasoning. What clue, rule or step led you to this answer?' };
