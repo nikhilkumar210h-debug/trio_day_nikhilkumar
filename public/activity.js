@@ -17,7 +17,7 @@ const $=id=>document.getElementById(id);
 let me=null,profile=null,activity=null,timer=null,remaining=0,activityPassed=false,activityEvidence=null;
 
 function fail(t){$('activityStatus').textContent=t;$('activityStatus').classList.add('error')}
-function setPassed(v){activityPassed=!!v;updateCompleteState()}
+function setPassed(v,evidence=null){activityPassed=!!v;if(evidence)activityEvidence=evidence;updateCompleteState()}
 
 function renderQuizWorkspace(root,cfg,isLesson){
  const normalized={
@@ -86,12 +86,15 @@ function renderQuizWorkspace(root,cfg,isLesson){
  paint();
 }
 function renderChallengeWorkspace(root){
- const rounds=getChallengeRounds((Number(String(activity.engineId||activity.id).replace(/\D/g,''))||0)%10,5);
+ const customRounds=Array.isArray(activity.interaction?.rounds) && activity.interaction.rounds.length===5
+   ? activity.interaction.rounds.map(r=>({q:String(r.q||''),o:Array.isArray(r.o)?r.o.slice(0,4):[],a:Number(r.a)||0}))
+   : null;
+ const rounds=customRounds || getChallengeRounds((Number(String(activity.engineId||activity.id).replace(/\\D/g,''))||0)%10,5);
  let idx=0,score=0;
  root.hidden=false;
  function paint(){
    const q=rounds[idx];
-   root.innerHTML='<div class="forge-workspace-head"><div><h3>Challenge round</h3><p>Five quick rounds. Score at least 3 to complete.</p></div><span class="forge-pill">TIMED</span></div><div class="forge-scorebar"><span>Round '+(idx+1)+' / '+rounds.length+'</span><strong>Score '+score+'</strong></div><div class="forge-quiz"><div class="forge-quiz-question">'+esc(q.q)+'</div><div class="forge-quiz-options">'+q.o.map((o,i)=>'<button type="button" class="forge-option" data-answer="'+i+'">'+esc(o)+'</button>').join('')+'</div></div><div class="forge-result"></div>';
+   root.innerHTML='<div class="forge-workspace-head"><div><h3>Challenge round</h3><p>Five rounds. Get 3 right, then finish the reflection.</p></div><span class="forge-pill">5 ROUNDS</span></div><div class="forge-scorebar"><span>Round '+(idx+1)+' / '+rounds.length+'</span><strong>Score '+score+'</strong></div><div class="forge-quiz"><div class="forge-quiz-question">'+esc(q.q)+'</div><div class="forge-quiz-options">'+q.o.map((o,i)=>'<button type="button" class="forge-option" data-answer="'+i+'">'+esc(o)+'</button>').join('')+'</div></div><div class="forge-result"></div>';
    const result=root.querySelector('.forge-result');
    root.querySelectorAll('[data-answer]').forEach(btn=>btn.onclick=()=>{
      const answer=Number(btn.dataset.answer);
@@ -101,15 +104,9 @@ function renderChallengeWorkspace(root){
      const next=document.createElement('button');next.type='button';next.className='forge-next';next.textContent=idx===rounds.length-1?'Finish round':'Next round';result.insertAdjacentElement('afterend',next);
      next.onclick=()=>{
        if(idx<rounds.length-1){idx++;paint();return}
-       if(score<3){
-         result.textContent='Final score: '+score+' / '+rounds.length+' · Need 3 or more.';
-         result.className='forge-result bad';
-         return;
-       }
-       result.textContent='Final score: '+score+' / '+rounds.length+' · One last step.';
-       result.className='forge-result ok';
-       const proof=document.createElement('div');
-       proof.className='forge-proof';
+       if(score<3){result.textContent='Final score: '+score+' / '+rounds.length+' · Need 3 or more.';result.className='forge-result bad';return}
+       result.textContent='Final score: '+score+' / '+rounds.length+' · One last step.';result.className='forge-result ok';
+       const proof=document.createElement('div');proof.className='forge-proof';
        proof.innerHTML='<label class="forge-proof-label">What did you notice while solving these rounds?</label><textarea id="challengeProof" maxlength="500" rows="3" placeholder="Give one short observation or strategy…"></textarea><div class="forge-proof-footer"><span id="challengeProofCount">0 / 500</span><button type="button" class="forge-check" id="verifyChallenge">Finish challenge</button></div>';
        root.appendChild(proof);
        const input=proof.querySelector('#challengeProof'),count=proof.querySelector('#challengeProofCount');
@@ -117,17 +114,14 @@ function renderChallengeWorkspace(root){
        proof.querySelector('#verifyChallenge').onclick=()=>{
          const proofText=input.value.trim();
          if(proofText.length<20){result.textContent='Add a little more detail (at least 20 characters).';result.className='forge-result bad';input.focus();return}
-         activityEvidence={score,proofText};
-         result.textContent='Challenge complete.';
-         result.className='forge-result ok';
-         setPassed(true);
+         activityEvidence={score,proofText};setPassed(true,activityEvidence);
+         result.textContent='Challenge complete.';result.className='forge-result ok';
        };
      };
    });
  }
  paint();
 }
-
 function renderGameWorkspace(root){
  root.hidden=false;
  root.innerHTML='<div class="forge-workspace-head"><div><h3>Room game</h3><p>This activity is designed for people to play together in a live room.</p></div><span class="forge-pill">MULTI-PLAYER</span></div><div class="forge-lesson">Open a room, invite people, and play the rounds together. Your room becomes the shared game board.</div>';
