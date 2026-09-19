@@ -31,6 +31,29 @@ async function followCreator(creatorUid) {
   alert('Following creator ✅');
 }
 
+async function shareCompletionToStory() {
+  if (!me || !task) throw new Error('Login required');
+  const userName = profile?.name || me.displayName || 'User';
+  const message = `🏁 Completed: ${task.title}`.slice(0, 500);
+  await setDoc(doc(db, 'posts', `${me.uid}_challenge_${task.id}_${Date.now()}`), {
+    uid: me.uid,
+    name: userName,
+    photoURL: profile?.photoURL || me.photoURL || null,
+    message,
+    type: 'story',
+    isStory: true,
+    privacy: 'public',
+    expiresAtMs: Date.now() + 24 * 60 * 60 * 1000,
+    createdAt: serverTimestamp(),
+    createdAtMs: Date.now(),
+    challengeId: task.id,
+    challengeTitle: task.title,
+    challengeIcon: task.icon || '🏁',
+    challengeCompleted: true,
+    challengeXp: Number(task.xpReward) || 0
+  });
+}
+
 async function render() {
   task = await getCommunityTask(taskId);
   if (!task) {
@@ -60,11 +83,14 @@ async function render() {
     </p>`;
 
   const joined = me ? await isMember(taskId, me.uid) : false;
+  const completionSnap = me ? await getDoc(doc(db, 'communityTasks', taskId, 'completions', me.uid)) : null;
+  const completed = !!completionSnap?.exists();
   const actions = $('actions');
   actions.innerHTML = `
     <button type="button" class="btn primary" id="joinBtn">${joined ? 'Leave' : 'Join'}</button>
     <button type="button" class="btn secondary" id="likeBtn">Like</button>
-    <button type="button" class="btn primary" id="completeBtn">Complete (+XP)</button>
+    <button type="button" class="btn primary" id="completeBtn" ${completed ? 'disabled' : ''}>${completed ? 'Completed ✓' : 'Complete (+XP)'}</button>
+    ${completed ? '<button type="button" class="btn secondary" id="storyBtn">📸 Share to Story</button>' : ''}
     <button type="button" class="btn secondary" id="followBtn">Follow creator</button>
     <a class="btn secondary" href="tasks.html">Back</a>
     ${admin ? `
@@ -85,6 +111,23 @@ async function render() {
     await toggleLike(taskId, me.uid);
     await render();
   };
+  $('storyBtn')?.addEventListener('click', async () => {
+    if (!me || !completed) return;
+    const btn = $('storyBtn');
+    btn.disabled = true;
+    btn.textContent = 'Sharing…';
+    try {
+      await shareCompletionToStory();
+      btn.textContent = 'Shared to Story ✓';
+      alert('Challenge completion shared to your Story 🎉');
+    } catch (err) {
+      console.error(err);
+      alert(err.message || 'Could not share to Story');
+      btn.disabled = false;
+      btn.textContent = '📸 Share to Story';
+    }
+  });
+
   $('completeBtn').onclick = async () => {
     if (!me) return alert('Login first');
     const btn = $('completeBtn');
