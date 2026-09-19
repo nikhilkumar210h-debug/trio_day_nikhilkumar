@@ -121,6 +121,14 @@ service cloud.firestore {
       match /progress/{periodKey} {
         allow read, write: if owner(userId);
       }
+      match /activityCompletions/{activityId} {
+        allow read: if owner(userId);
+        allow create, update: if owner(userId)
+          && request.resource.data.uid == request.auth.uid
+          && request.resource.data.activityId == activityId
+          && request.resource.data.completedAtMs is number;
+        allow delete: if owner(userId);
+      }
     }
 
     match /groupChat/{messageId} {
