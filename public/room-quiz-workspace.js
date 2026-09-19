@@ -8,7 +8,7 @@ const esc = value => {
 };
 
 export async function mountSharedQuizWorkspace(root, { db, roomId, activity, me, mode = 'puzzle', onStateChange }) {
-  const cfg = getInteractiveConfig(activity.id);
+  const cfg = getInteractiveConfig(activity.engineId || activity.id);
 
   if (!cfg) {
     root.innerHTML = '<div class="room-forge-note">This activity does not have a shared question yet. Use the activity page for the solo check.</div>';
