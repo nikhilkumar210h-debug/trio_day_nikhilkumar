@@ -1,8 +1,8 @@
-/* NKM Navigation — Mobile 5-item bottom + Desktop left rail (Phase 3)
-   Canonical: Today / Discover / Do / Chat / You + floating Create.
+/* NKM Navigation — Challenge-first shell
+   Canonical: Today / Discover / Chat / You + floating Create.
    Uses semantic tokens from tokens.css.
    ═══════════════════════════════════════════════════════════════ */
-/* ── Bottom nav (mobile) — 5 equal columns, no Create inside grid ── */
+/* ── Bottom nav (mobile) — 4 equal columns, no Create inside grid ── */
 .bottom-nav {
   position: fixed;
   left: 0;
@@ -19,7 +19,7 @@
   width: min(520px, 100%);
   margin: auto;
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 2px;
   padding: 6px 6px 4px;
   align-items: stretch;
@@ -148,7 +148,7 @@ body { background: var(--color-bg); }
 /* ── Mobile cleanup — hide legacy floating create that collides with new nav ── */
 @media (max-width: 839px) {
   .fab { display: none !important; }
-  #trioRankStrip { bottom: 62px; } /* sit clearly above 5-item nav */
+  #trioRankStrip { bottom: 62px; } /* sit clearly above the 4-item nav */
 }
 /* Avoid horizontal overflow */
 html, body { overflow-x: hidden; }
