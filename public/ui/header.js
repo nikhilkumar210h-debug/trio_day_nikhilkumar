@@ -19,7 +19,8 @@ export function initHeader() {
     back.setAttribute('aria-label','Go back');
     back.innerHTML = '<span aria-hidden="true">←</span><span class="nkm-header-back-label">Back</span>';
     back.addEventListener('click', () => {
-      if (history.length > 1) history.back();
+      const sameApp = document.referrer && (()=>{try{return new URL(document.referrer).origin===location.origin}catch{return false}})();
+      if (history.length > 1 && sameApp) history.back();
       else location.href = page === 'activity.html' || page === 'task-detail.html' || page === 'task-create.html' || page === 'room.html' || page === 'rooms.html' ? 'all-users.html' : 'index.html';
     });
     inner.insertBefore(back, inner.firstChild);
