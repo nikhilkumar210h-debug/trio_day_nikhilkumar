@@ -35,11 +35,11 @@
   </section>
 
   <div class="creator-progress" id="creatorProgress" aria-label="Create progress">
-    <button type="button" class="creator-progress-step active" data-step="1"><span>1</span><strong>Pick</strong></button>
+    <button type="button" class="creator-progress-step active" data-step="1"><span>1</span><strong>Choose</strong></button>
     <i></i>
-    <button type="button" class="creator-progress-step" data-step="2"><span>2</span><strong>Make it yours</strong></button>
+    <button type="button" class="creator-progress-step" data-step="2"><span>2</span><strong>Build</strong></button>
     <i></i>
-    <button type="button" class="creator-progress-step" data-step="3"><span>Preview</span></button>
+    <button type="button" class="creator-progress-step" data-step="3"><span>3</span><strong>Publish</strong></button>
   </div>
 
   <section class="creator-panel creator-wizard-step" data-wizard-step="1">
@@ -54,39 +54,71 @@
   <section class="creator-panel creator-wizard-step" data-wizard-step="2" hidden>
     <div class="creator-step-heading">
       <div class="creator-step-badge">02</div>
-      <div><h2>Make it yours</h2><p>Start blank or borrow an idea. Everything important is editable.</p></div>
+      <div><h2>Build it your way</h2><p id="creatorStageHint">Start with a style. We will only show the choices you need next.</p></div>
     </div>
-    <div id="creatorTemplates" class="creator-starter-grid"></div>
 
-    <div id="creatorCanvasVisual" class="creator-canvas-visual" aria-hidden="true">
+    <div class="creator-stage" id="creatorStage">
+      <div class="creator-stage-step" data-editor-stage="0">
+        <div class="creator-choice-heading">
+          <span class="creator-choice-kicker">STARTING POINT</span>
+          <strong>How do you want to start?</strong>
+          <small>Pick a ready idea or start from a genuinely blank canvas.</small>
+        </div>
+        <div id="creatorTemplates" class="creator-starter-grid"></div>
+      </div>
+
+      <form id="creatorForm" class="creator-form creator-form--simple" novalidate>
+        <div class="creator-stage-step" data-editor-stage="1" hidden>
+          <div class="creator-choice-heading">
+            <span class="creator-choice-kicker">THE IDEA</span>
+            <strong>Give people the big picture</strong>
+            <small>Just three things: name it, explain it, define the finish line.</small>
+          </div>
+          <div class="creator-stage-fields">
+            <div class="creator-field"><label for="title">Name</label><input id="title" maxlength="100" required placeholder="e.g. Decode the Mystery"></div>
+            <div class="creator-field"><label for="description">What will people do?</label><textarea id="description" maxlength="300" required rows="3" placeholder="Describe the activity in one or two clear sentences."></textarea></div>
+            <div class="creator-field"><label for="goal">Goal</label><input id="goal" maxlength="240" placeholder="What counts as finished?"></div>
+          </div>
+        </div>
+
+        <div class="creator-stage-step" data-editor-stage="2" hidden>
+          <div class="creator-choice-heading">
+            <span class="creator-choice-kicker">THE EXPERIENCE</span>
+            <strong>How should people actually do it?</strong>
+            <small>Choose the interaction first. The editor below changes to match it.</small>
+          </div>
+          <div id="customInteraction" class="creator-interaction-editor"></div>
+        </div>
+
+        <div class="creator-stage-step" data-editor-stage="3" hidden>
+          <div class="creator-choice-heading">
+            <span class="creator-choice-kicker">FINAL DETAILS</span>
+            <strong>Set the feel and limits</strong>
+            <small>These are optional controls. Safe defaults are already selected.</small>
+          </div>
+          <div class="creator-advanced-grid creator-details-grid">
+            <div class="creator-field"><label for="category">Topic</label><input id="category" maxlength="60" placeholder="Logic, SQL, Science…"></div>
+            <div class="creator-field"><label for="durationMin">Time</label><select id="durationMin"><option value="10">10 min</option><option value="15">15 min</option><option value="20" selected>20 min</option><option value="30">30 min</option><option value="45">45 min</option></select></div>
+            <div class="creator-field"><label for="difficulty">Difficulty</label><select id="difficulty"><option>Easy</option><option selected>Medium</option><option>Hard</option></select></div>
+            <div class="creator-field"><label for="expiresDays">Live for</label><select id="expiresDays"><option value="7">7 days</option><option value="14" selected>14 days</option><option value="21">21 days</option><option value="30">30 days</option><option value="40">40 days</option></select></div>
+            <div class="creator-field creator-details-wide"><label for="instructions">Extra instructions</label><textarea id="instructions" maxlength="900" rows="4" placeholder="Anything participants should know before starting."></textarea></div>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <div id="creatorCanvasVisual" class="creator-canvas-visual creator-canvas-visual--guided" aria-hidden="true">
       <div class="creator-canvas-grid"></div>
       <div id="creatorCanvasIcon" class="creator-canvas-icon">✦</div>
-      <div class="creator-canvas-copy"><span>LIVE CANVAS</span><strong id="creatorCanvasTitle">Your activity is taking shape</strong><small id="creatorCanvasMeta">Edit the content below — the structure stays clear.</small></div>
-      <div class="creator-canvas-signal"><i></i><i></i><i></i><i></i></div>
+      <div class="creator-canvas-copy"><span>LIVE DRAFT</span><strong id="creatorCanvasTitle">Your activity is taking shape</strong><small id="creatorCanvasMeta">Choose a starting point to begin.</small></div>
+      <div class="creator-canvas-signal"><i></i><i></i><i></i></div>
     </div>
 
-    <form id="creatorForm" class="creator-form creator-form--simple" novalidate>
-      <div class="creator-field"><label for="title">Name</label><input id="title" maxlength="100" required placeholder="Give it a fun, clear name"></div>
-      <div class="creator-field"><label for="description">What will people do?</label><textarea id="description" maxlength="300" required rows="3" placeholder="Example: Solve three short clues and explain the final pattern."></textarea></div>
-      <div class="creator-field"><label for="goal">Goal</label><input id="goal" maxlength="240" placeholder="Example: Reach the answer and show your reasoning."></div>
-
-      <div id="customInteraction" class="creator-interaction-editor"></div>
-
-      <details class="creator-advanced">
-        <summary>More control</summary>
-        <div class="creator-advanced-grid">
-          <div class="creator-field"><label for="category">Topic</label><input id="category" maxlength="60" placeholder="Logic, SQL, Science…"></div>
-          <div class="creator-field"><label for="instructions">Extra instructions</label><textarea id="instructions" maxlength="900" rows="3" placeholder="Anything participants should know."></textarea></div>
-          <div class="creator-field"><label for="durationMin">Time</label><select id="durationMin"><option value="10">10 min</option><option value="15">15 min</option><option value="20" selected>20 min</option><option value="30">30 min</option><option value="45">45 min</option></select></div>
-          <div class="creator-field"><label for="difficulty">Difficulty</label><select id="difficulty"><option>Easy</option><option selected>Medium</option><option>Hard</option></select></div>
-          <div class="creator-field"><label for="expiresDays">Live for</label><select id="expiresDays"><option value="7">7 days</option><option value="14" selected>14 days</option><option value="21">21 days</option><option value="30">30 days</option><option value="40">40 days</option></select></div>
-        </div>
-      </details>
-      <div class="creator-wizard-actions">
-        <button type="button" id="backStep1" class="nkm-btn">← Back</button>
-        <button type="button" id="toStep3" class="nkm-btn nkm-btn--primary">Preview →</button>
-      </div>
-    </form>
+    <div class="creator-wizard-actions creator-stage-actions">
+      <button type="button" id="backStep1" class="nkm-btn">← Back</button>
+      <button type="button" id="creatorStageBack" class="nkm-btn" hidden>← Previous</button>
+      <button type="button" id="creatorStageNext" class="nkm-btn nkm-btn--primary">Continue →</button>
+    </div>
   </section>
 
   <section class="creator-panel creator-wizard-step" data-wizard-step="3" hidden>
@@ -108,11 +140,23 @@
   </section>
 </main>
 
+<div id="creatorPreviewModal" class="creator-preview-modal" hidden aria-hidden="true">
+  <div class="creator-preview-modal-backdrop" data-preview-close></div>
+  <section class="creator-preview-modal-card" role="dialog" aria-modal="true" aria-labelledby="creatorPreviewModalTitle">
+    <div class="creator-preview-modal-head">
+      <div><span>PREVIEW MODE</span><h2 id="creatorPreviewModalTitle">Your activity</h2></div>
+      <button type="button" class="creator-preview-modal-close" data-preview-close aria-label="Close preview">×</button>
+    </div>
+    <div id="creatorPreviewModalBody" class="creator-preview-modal-body"></div>
+    <div class="creator-preview-modal-foot"><small>This is how the activity experience will feel before publishing.</small><button type="button" class="nkm-btn nkm-btn--primary" data-preview-close>Done</button></div>
+  </section>
+</div>
+
 <script type="module" src="auth-guard.js"></script>
 <script type="module" src="auth-ui.js"></script>
 <script type="module" src="theme.js"></script>
 <script type="module" src="ui/header.js"></script>
 <script type="module" src="ui/nav.js"></script>
-<script type="module" src="task-create.js?v=20260919-create6"></script>
+<script type="module" src="task-create.js?v=20260919-create8"></script>
 </body>
 </html>
