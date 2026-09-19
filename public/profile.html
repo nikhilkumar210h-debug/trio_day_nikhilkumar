@@ -21,7 +21,7 @@
   <link rel="preload" href="styles/components.css" as="style" onload="this.onload=null;this.rel='stylesheet'"><noscript><link rel="stylesheet" href="styles/components.css"></noscript>
     <link rel="preload" href="style.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <noscript><link rel="stylesheet" href="style.css">
-<link rel="stylesheet" href="styles/polish.css?v=3"></noscript>
+<link rel="stylesheet" href="styles/polish.css?v=6"></noscript>
     <link rel="preload" href="ui/tasks.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <noscript><link rel="stylesheet" href="ui/tasks.css"></noscript>
     <link rel="icon" href="icons/icon-192.png" type="image/png">
@@ -59,14 +59,29 @@
                     </div>
                     <div class="profile-game-stat">
                         <div class="profile-game-value" id="pgXp">0</div>
-                        <div class="profile-game-label">XP</div>
+                        <div class="profile-game-label">Total XP</div>
+                    </div>
+                    <div class="profile-game-stat">
+                        <div class="profile-game-value" id="pgRank">—</div>
+                        <div class="profile-game-label">Global Rank</div>
+                    </div>
+                </div>
+                <div class="profile-game-row profile-game-row--secondary">
+                    <div class="profile-game-stat">
+                        <div class="profile-game-value" id="pgWeekly">0</div>
+                        <div class="profile-game-label">Weekly XP</div>
+                    </div>
+                    <div class="profile-game-stat">
+                        <div class="profile-game-value" id="pgMonthly">0</div>
+                        <div class="profile-game-label">Monthly XP</div>
                     </div>
                     <div class="profile-game-stat">
                         <div class="profile-game-value" id="pgStreak">0</div>
-                        <div class="profile-game-label">Streak</div>
+                        <div class="profile-game-label">Day Streak</div>
                     </div>
                 </div>
-                <div class="xp-bar" style="margin-top:12px"><i id="pgXpFill" style="width:0%"></i></div>
+                <div class="profile-standing-caption"><span>Your progress</span><a href="leaderboard.html">Open leaderboard →</a></div>
+                <div class="xp-bar" aria-label="Progress to next level"><i id="pgXpFill" style="width:0%"></i></div>
                 <div class="profile-game-badges">
                     <h4 style="margin:12px 0 8px;font-size:0.85rem;opacity:0.8">Badges</h4>
                     <div id="pgBadges"></div>
