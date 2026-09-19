@@ -44,7 +44,7 @@ async function load(){
  if(room.challengeId){
    let activity=null;
    if(room.activitySource==='catalog') activity=activeCatalogActivities().find(x=>x.id===room.challengeId)||null;
-   else {const ts=await getDoc(doc(db,'communityTasks',room.challengeId));if(ts.exists()){const data=ts.data();activity={id:ts.id,...data,source:'community',engineId:data.templateId||null};}}
+   else {const ts=await getDoc(doc(db,'communityTasks',room.challengeId));if(ts.exists()){const data=ts.data();activity={id:ts.id,...data,type:data.activityType,source:'community',engineId:data.templateId||null};}}
    if(activity){
      $('roomActivity').innerHTML=activityCardHtml(activity,{compact:true});
      $('workspaceTitle').textContent=activity.title||'Activity workspace';
