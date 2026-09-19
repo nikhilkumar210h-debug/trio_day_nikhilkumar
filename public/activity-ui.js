@@ -48,7 +48,7 @@ export function activityCardHtml(task, { compact=false } = {}){
       <div class="activity-card-body">
         <div class="activity-card-top">
           <div class="activity-chips">
-            <span class="activity-chip">${type.label}</span>${featured}
+            <span class="activity-chip">${type.label}</span><span class="activity-chip activity-chip--sub">${esc(task.category || "General")}</span>${featured}
           </div>
           <span class="activity-arrow">↗</span>
         </div>
