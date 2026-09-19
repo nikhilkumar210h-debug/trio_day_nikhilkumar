@@ -633,82 +633,95 @@ function evaluateBadgesDelta(currentBadges, xp, streakCurrent, extraTemplateId) 
  * writes user doc, updates all leaderboards, evaluates badges.
  */
 async function handleAwardXp(uid, body, env) {
-  const amount = Math.max(0, Math.min(MAX_XP_AWARD, Math.round(Number(body.amount) || 0)));
-  if (amount <= 0) throw new Error('amount must be 1–500');
+  const meta = body?.meta || {};
+  const communityTaskId = String(meta.communityTaskId || '').trim();
+  const catalogActivityId = String(meta.catalogActivityId || '').trim().toLowerCase();
+  if (!communityTaskId && !catalogActivityId) throw new Error('activity context required');
 
-  const meta = body.meta || {};
   const projectId = env.FIREBASE_PROJECT_ID;
   const token = await getAccessToken(env);
+  const now = Date.now();
+  let amount = 0;
+  let grantKey = '';
 
-  // Read authoritative user doc
-  const userData = await fsGet(projectId, token, `users/${uid}`) || {};
+  if (communityTaskId) {
+    const task = await fsGet(projectId, token, 'communityTasks/' + communityTaskId);
+    if (!task || task.status !== 'active') throw new Error('Community activity is not active');
+    const completion = await fsGet(projectId, token, 'communityTasks/' + communityTaskId + '/completions/' + uid);
+    if (!completion) throw new Error('Completion record not found');
+    amount = Math.max(1, Math.min(MAX_XP_AWARD, Math.round(Number(task.xpReward) || 50)));
+    grantKey = 'community_' + communityTaskId;
+  } else {
+    amount = catalogXp(catalogActivityId);
+    if (!amount) throw new Error('Unknown catalog activity');
+    const expectedKey = catalogCycleKey(catalogActivityId, now);
+    const completionKey = String(meta.catalogCycleKey || '');
+    if (completionKey !== expectedKey) throw new Error('Invalid catalog cycle');
+    const completion = await fsGet(projectId, token, 'users/' + uid + '/activityCompletions/' + completionKey);
+    if (!completion || completion.activityId !== catalogActivityId) throw new Error('Completion record not found');
+    grantKey = 'catalog_' + expectedKey;
+  }
 
-  const weekKey   = localWeekKey();
-  const monthKey  = localMonthKey();
-  const prevXp    = Number(userData.xp) || 0;
-  const newXp     = prevXp + amount;
-  const newLevel  = levelFromXp(newXp);
+  const grantPath = 'users/' + uid + '/xpAwards/' + grantKey.replace(/[^A-Za-z0-9_-]/g, '_');
+  const created = await fsCreateDoc(projectId, token, grantPath, { uid, grantKey, amount, createdAtMs: now });
+  if (!created) {
+    const current = await fsGet(projectId, token, 'users/' + uid) || {};
+    return {
+      ok: true,
+      xp: Number(current.xp) || 0,
+      level: Number(current.level) || 1,
+      leveledUp: false,
+      awarded: 0,
+      alreadyAwarded: true,
+      badgesEarned: []
+    };
+  }
 
-  let weeklyXp   = Number(userData.weeklyXp)   || 0;
-  let monthlyXp  = Number(userData.monthlyXp)  || 0;
-  if (userData.weeklyXpKey  !== weekKey)  weeklyXp  = 0;
+  const userData = await fsGet(projectId, token, 'users/' + uid) || {};
+  const weekKey = localWeekKey();
+  const monthKey = localMonthKey();
+  const prevXp = Number(userData.xp) || 0;
+  const newXp = prevXp + amount;
+  const newLevel = levelFromXp(newXp);
+
+  let weeklyXp = Number(userData.weeklyXp) || 0;
+  let monthlyXp = Number(userData.monthlyXp) || 0;
+  if (userData.weeklyXpKey !== weekKey) weeklyXp = 0;
   if (userData.monthlyXpKey !== monthKey) monthlyXp = 0;
-  weeklyXp  += amount;
+  weeklyXp += amount;
   monthlyXp += amount;
 
-  const patch = {
-    xp:           newXp,
-    level:        newLevel,
-    weeklyXp,
-    monthlyXp,
-    weeklyXpKey:  weekKey,
-    monthlyXpKey: monthKey
-  };
+  await fsPatch(projectId, token, 'users/' + uid,
+    { xp:newXp, level:newLevel, weeklyXp, monthlyXp, weeklyXpKey:weekKey, monthlyXpKey:monthKey },
+    ['xp','level','weeklyXp','monthlyXp','weeklyXpKey','monthlyXpKey']);
 
-  await fsPatch(projectId, token, `users/${uid}`, patch,
-    ['xp', 'level', 'weeklyXp', 'monthlyXp', 'weeklyXpKey', 'monthlyXpKey']);
-
-  // Build verified row for leaderboard
   const verified = {
     uid,
-    name:           userData.name      || 'User',
-    photoURL:       userData.photoURL  || null,
-    level:          newLevel,
-    xp:             newXp,
+    name: userData.name || 'User',
+    photoURL: userData.photoURL || null,
+    level: newLevel,
+    xp: newXp,
     weeklyXp,
     monthlyXp,
-    streakCurrent:  Number(userData.streakCurrent) || 0
+    streakCurrent: Number(userData.streakCurrent) || 0
   };
-
-  // Update all 4 leaderboards (best-effort, non-blocking failures tolerated)
   const boards = [
-    { id: 'global',                         key: 'xp' },
-    { id: `weekly_${weekKey}`,              key: 'weeklyXp' },
-    { id: `monthly_${monthKey}`,            key: 'monthlyXp' },
-    { id: 'streak',                         key: 'streakCurrent' }
+    { id:'global', key:'xp' },
+    { id:'weekly_' + weekKey, key:'weeklyXp' },
+    { id:'monthly_' + monthKey, key:'monthlyXp' },
+    { id:'streak', key:'streakCurrent' }
   ];
   await Promise.allSettled(boards.map(b =>
     fsTransactionUpdateLeaderboard(projectId, token, b.id, uid, verified, b.key)
   ));
 
-  // Evaluate badges
   const currentBadges = Array.isArray(userData.badges) ? userData.badges : [];
-  const streakCurrent = Number(userData.streakCurrent) || 0;
-  const earned = evaluateBadgesDelta(currentBadges, newXp, streakCurrent, meta.templateId);
-
-  if (earned.length > 0) {
-    const newBadges = [...currentBadges, ...earned];
-    await fsPatch(projectId, token, `users/${uid}`, { badges: newBadges }, ['badges']);
+  const earned = evaluateBadgesDelta(currentBadges, newXp, Number(userData.streakCurrent) || 0, meta.templateId);
+  if (earned.length) {
+    await fsPatch(projectId, token, 'users/' + uid, { badges:[...currentBadges, ...earned] }, ['badges']);
   }
 
-  return {
-    ok: true,
-    xp:          newXp,
-    level:       newLevel,
-    leveledUp:   newLevel > levelFromXp(prevXp),
-    awarded:     amount,
-    badgesEarned: earned
-  };
+  return { ok:true, xp:newXp, level:newLevel, leveledUp:newLevel > levelFromXp(prevXp), awarded:amount, badgesEarned:earned };
 }
 
 /**
