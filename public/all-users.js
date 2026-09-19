@@ -2,6 +2,7 @@ import{auth,db}from'./firebase-init.js';
 import{onAuthStateChanged}from'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
 import{collection,query,where,limit,getDocs,getDoc,doc}from'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 import{ACTIVITY_TYPES,activityCardHtml,activityCategoryCard,roomCardHtml,normalizeActivityType}from'./activity-ui.js';
+import{activeCatalogActivities}from'./activity-catalog.js';
 const $=id=>document.getElementById(id);
 let activities=[],active=new URLSearchParams(location.search).get('activity')||'all',activeSub='all';
 const categories=Object.keys(ACTIVITY_TYPES);
