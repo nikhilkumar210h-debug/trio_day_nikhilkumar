@@ -87,10 +87,10 @@ function render(){
  const engineId=activity.engineId||activity.id;
  const cfg=getInteractiveConfig(engineId);
 
- if(activity.type==='build'&&cfg)renderBuildWorkspace(workspace,activity,setPassed);
+ if(activity.type==='build')renderBuildWorkspace(workspace,activity,setPassed);
  else if(activity.type==='puzzle'&&cfg)renderQuizWorkspace(workspace,cfg,false);
  else if(activity.type==='learn'&&cfg)renderQuizWorkspace(workspace,cfg,true);
- else if(activity.type==='challenge'&&cfg)renderChallengeWorkspace(workspace);
+ else if(activity.type==='challenge')renderChallengeWorkspace(workspace);
  else if(activity.type==='game')renderGameWorkspace(workspace);
  else{workspace.hidden=true;setPassed(true)}
  updateCompleteState();
