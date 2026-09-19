@@ -1,7 +1,7 @@
 {
   "name": "Trio Day",
   "short_name": "Trio Day",
-  "description": "Trio Day - post, comment, aur chat karo",
+  "description": "Trio Day - discover, accept, solve and finish challenges",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
