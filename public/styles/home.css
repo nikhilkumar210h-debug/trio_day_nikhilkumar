@@ -693,3 +693,14 @@
 @media(prefers-reduced-motion:reduce){
   .today-visual,.today-visual-orbit,.today-visual-bars i,.today-section{animation:none!important}
 }
+
+/* Today focus polish — keep the main homepage visual language, but make the
+   selected activity and resume state easier to scan. */
+.today-focus-frame{display:grid;gap:8px}
+.today-focus-context{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 2px;font-size:9px;color:var(--color-ink-dim);text-transform:uppercase;letter-spacing:.08em}
+.today-focus-context strong{color:var(--color-primary-text);font-weight:900}
+.today-focus-note{margin:0 4px;font-size:10px;line-height:1.45;color:var(--color-ink-muted)}
+.continue-card--activity{display:grid;gap:7px;text-decoration:none}
+.continue-card--activity .continue-meta{display:flex;gap:6px;flex-wrap:wrap}
+.continue-card--activity .continue-meta span{font-size:9px}
+@media(max-width:640px){.today-focus-context{align-items:flex-start;flex-direction:column;gap:3px}}
