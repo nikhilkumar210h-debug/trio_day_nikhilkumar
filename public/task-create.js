@@ -114,7 +114,7 @@ function renderBuildCustomizer(host) {
     if(Object.prototype.hasOwnProperty.call(c.correct,oldName)){c.correct[newName]=c.correct[oldName];delete c.correct[oldName];}
     c.people[i]=newName;
   }));
-  host.querySelectorAll('[data-role-name]').forEach(el=>el.addEventListener('input',()=>{
+  host.querySelectorAll('[data-role-name]').forEach(el=>el.addEventListener('change',()=>{
     const i=Number(el.dataset.roleName), oldRole=c.roles[i], newRole=el.value;
     Object.keys(c.correct).forEach(p=>{if(c.correct[p]===oldRole)c.correct[p]=newRole;});
     c.roles[i]=newRole;
@@ -315,7 +315,7 @@ function renderPreview() {
   const mechanic = activeType === 'build'
     ? mechanicInfo('build', interactionDraft?.mechanic || currentMechanic())
     : mechanicInfo(activeType, selected?.mechanic);
-  const template = selected || starters()[0];
+  const template = selected || null;
   const title = $('title')?.value.trim() || template?.title || 'Your activity';
   const desc = $('description')?.value.trim() || template?.description || type.desc;
   const goal = $('goal')?.value.trim() || defaults[activeType].goal;
