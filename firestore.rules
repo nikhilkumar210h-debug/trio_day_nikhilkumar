@@ -307,7 +307,15 @@ service cloud.firestore {
         && request.resource.data.maxPlayers in [2,3,4,6]
         && request.resource.data.activitySource in ['catalog','community']
         && request.resource.data.activityType in ['puzzle','build','learn','challenge','game']
+        && request.resource.data.challengeId is string
+        && request.resource.data.challengeId.size() > 0
+        && request.resource.data.challengeId.size() <= 120
+        && request.resource.data.activityTitle is string
+        && request.resource.data.activityTitle.size() > 0
+        && request.resource.data.activityTitle.size() <= 100
+        && request.resource.data.memberCount == 1
         && request.resource.data.expiresAtMs is number
+        && request.resource.data.expiresAtMs > request.time.toMillis()
         && request.resource.data.status == 'open';
       allow update: if signedIn() && (
         (
