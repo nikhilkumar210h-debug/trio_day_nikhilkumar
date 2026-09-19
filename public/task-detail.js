@@ -5,7 +5,7 @@ import {
   getCommunityTask, joinTask, leaveTask, isMember, toggleLike,
   addComment, listComments, completeTask,
   setChallengeFeatured, setChallengeHidden, removeChallenge, archiveTask
-} from './gamification/community-tasks.js?v=20260919-community4';
+} from './gamification/community-tasks.js?v=20260919-community5';
 import { isAdmin } from './gamification/templates.js';
 import { trioCache } from './trio-cache.js';
 import { escapeHtml as esc } from './utils.js';
