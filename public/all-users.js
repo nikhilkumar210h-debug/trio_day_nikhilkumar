@@ -20,8 +20,10 @@ async function load(){try{
  syncFilters();render();
  const rooms=await getDocs(query(collection(db,'rooms'),where('status','==','open'),limit(8))).catch(()=>null);
  if(!rooms){$('liveRooms').innerHTML='<div class="room-empty">Live rooms are unavailable right now. Explore activities instead.</div>';return;}
- const live=await Promise.all(rooms.docs.map(async d=>{const r={id:d.id,...d.data()};const m=await getDocs(query(collection(db,'rooms',d.id,'members'),limit(20)));return {...r,memberCount:m.size}}));
- $('liveRooms').innerHTML=live.length?live.map(roomCardHtml).join(''):'<div class="room-empty">No live rooms yet — start one from an activity.</div>';
+ const now=Date.now();
+ const live=await Promise.all(rooms.docs.map(async d=>{const r={id:d.id,...d.data()};const expires=Number(r.expiresAtMs)||((Number(r.createdAtMs)||now)+6*60*60*1000);if(expires<=now)return null;const m=await getDocs(query(collection(db,'rooms',d.id,'members'),limit(20)));return {...r,memberCount:m.size,expiresAtMs:expires}}));
+ const activeLive=live.filter(Boolean);
+ $('liveRooms').innerHTML=activeLive.length?activeLive.map(roomCardHtml).join(''):'<div class="room-empty">No live rooms yet — start one from an activity.</div>';
 }catch(e){$('activityStatus').textContent=e.message||'Could not load activities.'}}
 $('activitySearch').addEventListener('input',render);
 renderCategories();
