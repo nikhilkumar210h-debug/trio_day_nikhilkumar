@@ -3,31 +3,33 @@ import{onAuthStateChanged}from'https://www.gstatic.com/firebasejs/10.13.0/fireba
 import{collection,query,where,limit,onSnapshot,getDoc,doc,addDoc,setDoc,serverTimestamp,getDocs}from'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 import{escapeHtml as esc}from'./utils.js';
 import{activityCardHtml,ACTIVITY_TYPES,normalizeActivityType}from'./activity-ui.js';
+import{activeCatalogActivities}from'./activity-catalog.js';
 const $=id=>document.getElementById(id);
 let me=null,profile={},selectedActivity=null,capacity=3;
 function msg(t,e=false){$('createStatus').textContent=t||'';$('createStatus').classList.toggle('error',e)}
 async function loadActivity(){
  const id=new URLSearchParams(location.search).get('taskId');
+ const source=new URLSearchParams(location.search).get('source');
  if(id){
-   const s=await getDoc(doc(db,'communityTasks',id));
-   if(!s.exists()){msg('Activity not found.',true);return;}
-   selectedActivity={id:s.id,...s.data(),activityType:normalizeActivityType(s.data())};
-   $('challengeId').value=id;
-   $('selectedActivity').innerHTML=activityCardHtml(selectedActivity,{compact:true});
-   $('roomTitle').value=(selectedActivity.title||'Activity')+' · Room';
-   return;
+   let a=null;
+   if(source==='catalog')a=activeCatalogActivities().find(x=>x.id===id)||null;
+   else{const s=await getDoc(doc(db,'communityTasks',id));if(s.exists())a={id:s.id,...s.data(),source:'community',activityType:normalizeActivityType(s.data())};}
+   if(!a){msg('Activity not found.',true);return;}
+   selectedActivity=a;$('challengeId').value=a.id;$('selectedActivity').innerHTML=activityCardHtml(a,{compact:true});$('roomTitle').value=(a.title||'Activity')+' · Room';return;
  }
  try{
-   const snap=await getDocs(query(collection(db,'communityTasks'),where('status','==','active'),limit(30)));
-   const activities=snap.docs.map(d=>({id:d.id,...d.data()})).filter(t=>!t.hidden&&(!t.endAtMs||t.endAtMs>Date.now())).map(t=>({...t,activityType:normalizeActivityType(t)}));
+   const snap=await getDocs(query(collection(db,'communityTasks'),where('status','==','active'),limit(40))).catch(()=>null);
+   const community=snap?snap.docs.map(d=>({id:d.id,...d.data(),source:'community',activityType:normalizeActivityType(d.data())})):[]; 
+   const communityActive=community.filter(t=>!t.hidden&&((t.endAtMs||((t.createdAtMs||Date.now())+30*86400000))>Date.now()));
+   const activities=[...activeCatalogActivities(),...communityActive];
    const laneOrder=['puzzle','build','learn','challenge','game'];
    $('roomActivityPicker').innerHTML=activities.length?laneOrder.map(type=>{
-     const lane=activities.filter(a=>a.activityType===type).slice(0,3);
-     return lane.length?`<div class="room-picker-lane"><div class="room-picker-heading"><span>${ACTIVITY_TYPES[type].icon}</span><strong>${ACTIVITY_TYPES[type].label}</strong></div><div class="room-picker-list">${lane.map(a=>`<button type="button" class="room-picker-card" data-activity-id="${a.id}"><span>${a.icon||ACTIVITY_TYPES[type].icon}</span><span><strong>${esc(a.title||'Activity')}</strong><small>${esc(a.description||ACTIVITY_TYPES[type].desc)}</small></span></button>`).join('')}</div></div>`:'';
+     const lane=activities.filter(a=>a.activityType===type||a.type===type).slice(0,5);
+     return lane.length?`<div class="room-picker-lane"><div class="room-picker-heading"><span>${ACTIVITY_TYPES[type].icon}</span><strong>${ACTIVITY_TYPES[type].label}</strong></div><div class="room-picker-list">${lane.map(a=>`<button type="button" class="room-picker-card" data-activity-id="${a.id}" data-source="${a.source||'catalog'}"><span>${esc(a.icon||ACTIVITY_TYPES[type].icon)}</span><span><strong>${esc(a.title||'Activity')}</strong><small>${esc(a.category||'General')} · ${esc(a.description||ACTIVITY_TYPES[type].desc)}</small></span></button>`).join('')}</div></div>`:'';
    }).join(''):'<div class="room-empty">No activities available yet.</div>';
    document.querySelectorAll('[data-activity-id]').forEach(btn=>btn.onclick=()=>{
      const a=activities.find(x=>x.id===btn.dataset.activityId);if(!a)return;
-     selectedActivity=a;$('challengeId').value=a.id;$('selectedActivity').innerHTML=activityCardHtml(a,{compact:true});$('roomTitle').value=(a.title||'Activity')+' · Room';
+     selectedActivity=a;$('challengeId').value=a.id;$('selectedActivity').innerHTML=activityCardHtml(a,{compact:true});$('roomTitle').value=(a.title||'Activity')+' · Room';$('roomForm').dataset.source=a.source||'catalog';
      document.querySelectorAll('[data-activity-id]').forEach(x=>x.classList.toggle('is-selected',x===btn));
    });
  }catch(e){msg(e.message||'Could not load activities.',true)}
@@ -43,7 +45,7 @@ $('roomForm').onsubmit=async e=>{
  const title=$('roomTitle').value.trim();if(!title)return msg('Give the room a name.',true);
  const b=e.target.querySelector('.room-create-btn');b.disabled=true;
  try{
-  const ref=await addDoc(collection(db,'rooms'),{title:title.slice(0,80),maxPlayers:capacity,hostUid:me.uid,hostName:profile.name||me.displayName||'User',challengeId:selectedActivity.id,activityTitle:selectedActivity.title||'Activity',activityType:selectedActivity.activityType||null,status:'open',memberCount:1,createdAt:serverTimestamp(),createdAtMs:Date.now()});
+  const ref=await addDoc(collection(db,'rooms'),{title:title.slice(0,80),maxPlayers:capacity,hostUid:me.uid,hostName:profile.name||me.displayName||'User',challengeId:selectedActivity.id,activityTitle:selectedActivity.title||'Activity',activityType:selectedActivity.activityType||selectedActivity.type||null,activitySource:selectedActivity.source||'community',activityCategory:selectedActivity.category||'General',status:'open',memberCount:1,createdAt:serverTimestamp(),createdAtMs:Date.now()});
   await setDoc(doc(db,'rooms',ref.id,'members',me.uid),{uid:me.uid,name:profile.name||me.displayName||'User',photoURL:profile.photoURL||me.photoURL||null,joinedAtMs:Date.now()});
   location.href='room.html?id='+ref.id;
  }catch(err){msg(err.message||'Could not create room.',true)}finally{b.disabled=false}
