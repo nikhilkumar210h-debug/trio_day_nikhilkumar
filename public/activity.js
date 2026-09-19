@@ -91,6 +91,7 @@ function renderChallengeWorkspace(root){
    : null;
  const rounds=customRounds || getChallengeRounds((Number(String(activity.engineId||activity.id).replace(/\\D/g,''))||0)%10,5);
  let idx=0,score=0;
+ const answers=[];
  root.hidden=false;
  function paint(){
    const q=rounds[idx];
@@ -98,6 +99,7 @@ function renderChallengeWorkspace(root){
    const result=root.querySelector('.forge-result');
    root.querySelectorAll('[data-answer]').forEach(btn=>btn.onclick=()=>{
      const answer=Number(btn.dataset.answer);
+     answers[idx]=answer;
      root.querySelectorAll('[data-answer]').forEach(x=>x.disabled=true);
      if(answer===q.a){score++;btn.classList.add('correct');result.textContent='Correct.';result.className='forge-result ok'}
      else{btn.classList.add('wrong');result.textContent='Not this time.';result.className='forge-result bad'}
@@ -114,7 +116,7 @@ function renderChallengeWorkspace(root){
        proof.querySelector('#verifyChallenge').onclick=()=>{
          const proofText=input.value.trim();
          if(proofText.length<20){result.textContent='Add a little more detail (at least 20 characters).';result.className='forge-result bad';input.focus();return}
-         activityEvidence={score,proofText};setPassed(true,activityEvidence);
+         activityEvidence={score,answers:answers.slice(0,5),proofText};setPassed(true,activityEvidence);
          result.textContent='Challenge complete.';result.className='forge-result ok';
        };
      };
