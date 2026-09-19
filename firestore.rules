@@ -304,18 +304,42 @@ service cloud.firestore {
         && request.resource.data.activityType in ['puzzle','build','learn','challenge','game']
         && request.resource.data.expiresAtMs is number
         && request.resource.data.status == 'open';
-      allow update: if signedIn()
-        && resource.data.hostUid == request.auth.uid
-        && request.resource.data.hostUid == resource.data.hostUid
-        && request.resource.data.activityType == resource.data.activityType
-        && request.resource.data.activitySource == resource.data.activitySource
-        && request.resource.data.challengeId == resource.data.challengeId
-        && request.resource.data.expiresAtMs == resource.data.expiresAtMs
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-          'title','status','endedAtMs'
-        ]);
+      allow update: if signedIn() && (
+        (
+          resource.data.hostUid == request.auth.uid
+          && request.resource.data.hostUid == resource.data.hostUid
+          && request.resource.data.activityType == resource.data.activityType
+          && request.resource.data.activitySource == resource.data.activitySource
+          && request.resource.data.challengeId == resource.data.challengeId
+          && request.resource.data.expiresAtMs == resource.data.expiresAtMs
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['title','status','endedAtMs'])
+        )
+        || (
+          get(/databases/$(database)/documents/rooms/$(roomId)/members/$(request.auth.uid)).exists()
+          && request.resource.data.hostUid == resource.data.hostUid
+          && request.resource.data.activityType == resource.data.activityType
+          && request.resource.data.activitySource == resource.data.activitySource
+          && request.resource.data.challengeId == resource.data.challengeId
+          && request.resource.data.expiresAtMs == resource.data.expiresAtMs
+          && request.resource.data.status == resource.data.status
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['memberCount'])
+          && (
+            request.resource.data.memberCount == resource.data.memberCount + 1
+            || request.resource.data.memberCount == resource.data.memberCount - 1
+          )
+          && request.resource.data.memberCount >= 0
+          && request.resource.data.memberCount <= request.resource.data.maxPlayers
+        )
+      );
       allow delete: if signedIn() && resource.data.hostUid == request.auth.uid;
-      match /members/{memberUid} { allow read: if signedIn(); allow create, delete: if owner(memberUid) && get(/databases/$(database)/documents/rooms/$(roomId)).data.status == 'open'; allow update: if false; }
+      match /members/{memberUid} {
+        allow read: if signedIn();
+        allow create: if owner(memberUid)
+          && get(/databases/$(database)/documents/rooms/$(roomId)).data.status == 'open'
+          && get(/databases/$(database)/documents/rooms/$(roomId)).data.memberCount < get(/databases/$(database)/documents/rooms/$(roomId)).data.maxPlayers;
+        allow delete: if owner(memberUid);
+        allow update: if false;
+      }
       match /messages/{messageId} {
         allow read: if signedIn() && exists(/databases/$(database)/documents/rooms/$(roomId)/members/$(request.auth.uid));
         allow create: if signedIn() && request.resource.data.uid == request.auth.uid && exists(/databases/$(database)/documents/rooms/$(roomId)/members/$(request.auth.uid)) && request.resource.data.text is string && request.resource.data.text.size() > 0 && request.resource.data.text.size() <= 500;
