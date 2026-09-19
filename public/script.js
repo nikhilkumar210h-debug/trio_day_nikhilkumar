@@ -233,6 +233,16 @@ function openStoryViewer(s) {
     sendBtn.disabled = true; sendBtn.textContent = '…';
     try {
       const me = await getMyProfile(currentUser.uid);
+      let allowedUids = [currentUser.uid];
+      if (storyPrivacy === 'friends') {
+        const [followingSnap, followersSnap] = await Promise.all([
+          getDocs(query(collection(db, 'users', currentUser.uid, 'following'), limit(500))),
+          getDocs(query(collection(db, 'users', currentUser.uid, 'followers'), limit(500)))
+        ]);
+        const following = new Set(followingSnap.docs.map(d => d.id));
+        const mutual = followersSnap.docs.map(d => d.id).filter(id => following.has(id));
+        allowedUids = [currentUser.uid, ...mutual].slice(0, 500);
+      }
       const chatId = [currentUser.uid, s.uid].sort().join('_');
       await addDoc(collection(db, 'privateChats', chatId, 'messages'), {
         uid: currentUser.uid,
