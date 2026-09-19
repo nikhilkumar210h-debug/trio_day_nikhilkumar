@@ -3,7 +3,7 @@ import{onAuthStateChanged}from'https://www.gstatic.com/firebasejs/10.13.0/fireba
 import{collection,query,where,limit,getDocs,getDoc,doc}from'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 import{ACTIVITY_TYPES,activityCardHtml,activityCategoryCard,roomCardHtml}from'./activity-ui.js';
 const $=id=>document.getElementById(id);
-let activities=[],active='all';
+let activities=[],active=new URLSearchParams(location.search).get('activity')||'all';
 const categories=Object.keys(ACTIVITY_TYPES);
 function renderCategories(){ $('activityCategories').innerHTML=categories.map(activityCategoryCard).join('');document.querySelectorAll('[data-activity-filter]').forEach(b=>b.onclick=()=>{active=b.dataset.activityFilter;syncFilters();render()})}
 function syncFilters(){$('activityFilters').innerHTML='<button class="activity-filter-btn '+(active==='all'?'is-active':'')+'" data-filter="all">All</button>'+categories.map(k=>'<button class="activity-filter-btn '+(active===k?'is-active':'')+'" data-filter="'+k+'">'+ACTIVITY_TYPES[k].icon+' '+ACTIVITY_TYPES[k].label+'</button>').join('');document.querySelectorAll('[data-filter]').forEach(b=>b.onclick=()=>{active=b.dataset.filter;syncFilters();render()});document.querySelectorAll('[data-activity-filter]').forEach(b=>b.classList.toggle('is-active',b.dataset.activityFilter===active))}
