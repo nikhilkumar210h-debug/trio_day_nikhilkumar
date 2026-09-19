@@ -115,6 +115,9 @@ export async function createCommunityTask(uid, profile, data) {
     metric:       data.metric     || 'manual',
     target:       Math.max(1, Number(data.target)    || 1),
     xpReward:     Math.max(1, Math.min(500, Number(data.xpReward) || 50)),
+    verificationType: data.verificationType === 'answer' ? 'answer' : 'proof',
+    proofInstruction: String(data.proofInstruction || 'Explain what you did and provide enough evidence for the creator to verify it.').slice(0, 500),
+    answerHash: String(data.answerHash || '').slice(0, 128),
     creatorUid:   uid,
     creatorName:  profile?.name     || 'User',
     creatorPhoto: profile?.photoURL || null,
@@ -270,46 +273,53 @@ export async function listComments(taskId, max = 40) {
 
 // ── Complete ──────────────────────────────────────────────────────────────────
 
-export async function completeTask(taskId, uid, profile) {
+export async function completeTask(taskId, uid, profile, verification = {}) {
   const task = await getCommunityTask(taskId);
   if (!task) throw new Error('Task not found');
   if (task.endAtMs && task.endAtMs < Date.now()) throw new Error('Task expired');
+  const user = auth.currentUser;
+  if (!user || user.uid !== uid) throw new Error('Not authenticated');
 
-  const cref     = doc(db, 'communityTasks', taskId, 'completions', uid);
-  const existing = await getDoc(cref);
-  if (existing.exists()) return { already: true };
-
-  // Write completion subcollection doc (client rules: owner create only)
-  await setDoc(cref, {
-    uid,
-    name:  profile?.name || 'User',
-    atMs:  Date.now()
-  });
-
-  // Bump completions counter server-side
-  await bumpCounter(taskId, 'complete');
-
-  // Auto-join if not already a member
-  await joinTask(taskId, uid, profile).catch(() => {});
-
-  // Award XP via Worker (xp-levels.js → Worker → Firestore)
-  const xp    = Number(task.xpReward) || 50;
-  const award = await awardXp(uid, xp, { communityTaskId: taskId, templateId: task.templateId });
-
-  try {
-    showAchievement({
-      title:    task.title,
-      subtitle: `+${xp} XP`,
-      icon:     task.icon || '🎯',
-      leveledUp: award?.leveledUp,
-      level:     award?.level,
-      badges:    award?.badgesEarned || []
-    });
-  } catch (_) { /* ignore */ }
+  const result = await workerPost('/gamification/complete-challenge', {
+    taskId,
+    verificationType: task.verificationType || 'proof',
+    answer: String(verification.answer || ''),
+    submissionId: verification.submissionId || ''
+  }, user);
 
   trioCache.invalidatePrefix('ctasks_');
   trioCache.invalidatePrefix('communityTasks_');
   trioCache.invalidatePrefix('tasks_');
   trioCache.invalidate(`communityTask_${taskId}`);
-  return { already: false, award };
+  return result;
+}
+
+export async function submitProof(taskId, uid, profile, proofText) {
+  const task = await getCommunityTask(taskId);
+  if (!task) throw new Error('Task not found');
+  const text = String(proofText || '').trim().slice(0, 1000);
+  if (text.length < 10) throw new Error('Proof should be at least 10 characters.');
+  await setDoc(doc(db, 'communityTasks', taskId, 'submissions', uid), {
+    uid,
+    name: profile?.name || 'User',
+    proofText: text,
+    status: 'pending',
+    createdAtMs: Date.now(),
+    reviewedAtMs: null
+  });
+  return { pending: true };
+}
+
+export async function listSubmissions(taskId) {
+  const snap = await getDocs(collection(db, 'communityTasks', taskId, 'submissions'));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
+export async function reviewSubmission(taskId, uid, status) {
+  const value = status === 'approved' ? 'approved' : 'rejected';
+  await updateDoc(doc(db, 'communityTasks', taskId, 'submissions', uid), {
+    status: value,
+    reviewedAtMs: Date.now()
+  });
+  return value;
 }
