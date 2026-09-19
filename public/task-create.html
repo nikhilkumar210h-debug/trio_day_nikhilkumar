@@ -12,7 +12,7 @@
 <link rel="stylesheet" href="styles/header.css">
 <link rel="stylesheet" href="styles/components.css">
 <link rel="stylesheet" href="style.css">
-<link rel="stylesheet" href="styles/polish.css?v=2">
+<link rel="stylesheet" href="styles/polish.css?v=3">
 <link rel="stylesheet" href="activities.css?v=3">
 <link rel="stylesheet" href="activity-create.css?v=3">
 </head>
@@ -54,13 +54,18 @@
   <section class="creator-panel creator-wizard-step" data-wizard-step="2" hidden>
     <div class="creator-step-heading">
       <div class="creator-step-badge">02</div>
-      <div><h2>Start with a working idea</h2><p>Pick one. Then edit only what you care about.</p></div>
+      <div><h2>Make it yours</h2><p>Start blank or borrow an idea. Everything important is editable.</p></div>
     </div>
     <div id="creatorTemplates" class="creator-starter-grid"></div>
 
-    <form id="creatorForm" class="creator-form creator-form--simple" novalidate>
-      <div class="creator-selected-starter" id="creatorSelectedStarter"></div>
+    <div id="creatorCanvasVisual" class="creator-canvas-visual" aria-hidden="true">
+      <div class="creator-canvas-grid"></div>
+      <div id="creatorCanvasIcon" class="creator-canvas-icon">✦</div>
+      <div class="creator-canvas-copy"><span>LIVE CANVAS</span><strong id="creatorCanvasTitle">Your activity is taking shape</strong><small id="creatorCanvasMeta">Edit the content below — the structure stays clear.</small></div>
+      <div class="creator-canvas-signal"><i></i><i></i><i></i><i></i></div>
+    </div>
 
+    <form id="creatorForm" class="creator-form creator-form--simple" novalidate>
       <div class="creator-field"><label for="title">Name</label><input id="title" maxlength="100" required placeholder="Give it a fun, clear name"></div>
       <div class="creator-field"><label for="description">What will people do?</label><textarea id="description" maxlength="300" required rows="3" placeholder="Example: Solve three short clues and explain the final pattern."></textarea></div>
       <div class="creator-field"><label for="goal">Goal</label><input id="goal" maxlength="240" placeholder="Example: Reach the answer and show your reasoning."></div>
@@ -108,6 +113,6 @@
 <script type="module" src="theme.js"></script>
 <script type="module" src="ui/header.js"></script>
 <script type="module" src="ui/nav.js"></script>
-<script type="module" src="task-create.js?v=20260919-create2"></script>
+<script type="module" src="task-create.js?v=20260919-create3"></script>
 </body>
 </html>

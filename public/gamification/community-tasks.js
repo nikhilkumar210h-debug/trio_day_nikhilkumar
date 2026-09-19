@@ -122,13 +122,37 @@ function normalizeInteraction(data) {
   }
 
   if (type === 'build') {
-    return {
-      kind: 'build',
-      mechanic: String(raw.mechanic || data.mechanic || 'order').slice(0, 40)
-    };
+    const mechanic = String(raw.mechanic || data.mechanic || 'order').slice(0, 40);
+    const out = { kind:'build', mechanic };
+    if (mechanic === 'order') {
+      out.items = Array.isArray(raw.items) ? raw.items.slice(0,8).map(v=>String(v||'').trim().slice(0,70)).filter(Boolean) : [];
+    } else if (mechanic === 'allocate') {
+      out.budget = Math.max(1, Math.min(100000, Number(raw.budget) || 100));
+      out.items = Array.isArray(raw.items) ? raw.items.slice(0,8).map(v=>[
+        String(v?.[0]||'').trim().slice(0,50),
+        Math.max(0, Number(v?.[1]) || 0)
+      ]) : [];
+    } else if (mechanic === 'grid') {
+      out.size=4;
+      out.required=Array.isArray(raw.required) ? raw.required.slice(0,4).map(v=>String(v||'').trim().slice(0,40)).filter(Boolean) : [];
+      out.blocked=Array.isArray(raw.blocked) ? raw.blocked.filter(v=>Number.isInteger(v)&&v>=0&&v<16).slice(0,8) : [];
+      out.adjacentPairs=Array.isArray(raw.adjacentPairs) ? raw.adjacentPairs.slice(0,3).map(p=>Array.isArray(p)?p.slice(0,2).map(v=>String(v||'').slice(0,40)):[]).filter(p=>p.length===2) : [];
+    } else if (mechanic === 'assign') {
+      out.people=Array.isArray(raw.people) ? raw.people.slice(0,4).map(v=>String(v||'').trim().slice(0,40)) : [];
+      out.roles=Array.isArray(raw.roles) ? raw.roles.slice(0,4).map(v=>String(v||'').trim().slice(0,40)) : [];
+      out.correct=raw.correct && typeof raw.correct==='object' ? Object.fromEntries(Object.entries(raw.correct).slice(0,4).map(([k,v])=>[String(k).slice(0,40),String(v||'').slice(0,40)])) : {};
+    }
+    return out;
   }
 
-  if (type === 'challenge') return { kind: 'challenge' };
+  if (type === 'challenge') {
+    const rounds=Array.isArray(raw.rounds)?raw.rounds.slice(0,5).map(r=>({
+      q:String(r?.q||'').trim().slice(0,240),
+      o:Array.isArray(r?.o)?r.o.slice(0,4).map(v=>String(v||'').trim().slice(0,160)):[],
+      a:Math.max(0,Math.min(3,Number(r?.a)||0))
+    })):[]; 
+    return { kind:'challenge', rounds };
+  }
   return { kind: 'room' };
 }
 
@@ -331,7 +355,19 @@ export async function completeTask(taskId, uid, profile, evidence = null) {
   const safeEvidence = evidence && typeof evidence === 'object'
     ? {
         answerIndex: Number.isInteger(Number(evidence.answerIndex)) ? Number(evidence.answerIndex) : null,
-        proofText: String(evidence.proofText || '').trim().slice(0, 500)
+        score: Number.isInteger(Number(evidence.score)) ? Math.max(0, Math.min(5, Number(evidence.score))) : null,
+        answers: Array.isArray(evidence.answers)
+          ? evidence.answers.slice(0,5).map(v=>Math.max(0,Math.min(3,Number(v)||0)))
+          : null,
+        proofText: String(evidence.proofText || '').trim().slice(0, 500),
+        ...(evidence.buildEvidence && typeof evidence.buildEvidence === 'object'
+          ? {
+              buildEvidence: {
+                mechanic: String(evidence.buildEvidence.mechanic || '').slice(0, 40),
+                state: String(evidence.buildEvidence.state || '').slice(0, 1600)
+              }
+            }
+          : {})
       }
     : null;
   await setDoc(cref, {

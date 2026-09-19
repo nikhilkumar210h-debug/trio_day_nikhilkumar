@@ -1,11 +1,11 @@
 import { auth, db } from './firebase-init.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
-import { createCommunityTask } from './gamification/community-tasks.js?v=20260919-community3';
+import { createCommunityTask } from './gamification/community-tasks.js?v=20260919-community4';
 import { ACTIVITY_TYPES, activityTypeInfo } from './activity-ui.js';
-import { ACTIVITY_CATALOG } from './activity-catalog.js';
+import { ACTIVITY_CATALOG } from './activity-catalog.js?v=20260919-catalog2';
 import { mechanicInfo, mechanicsFor } from './forge-mechanics.js';
-import { getInteractiveConfig } from './forge-interactions.js';
+import { getInteractiveConfig } from './forge-interactions.js?v=20260919-interactions2';
 import { escapeHtml as esc } from './utils.js';
 import { showToast } from './ui/toast.js';
 
@@ -51,6 +51,95 @@ function sourceConfig(template) {
   };
 }
 
+function blankInteraction(type) {
+  if (type === 'build') return { kind:'build', mechanic:'order', config:null };
+  if (type === 'challenge') return { kind:'challenge', rounds:Array.from({length:5},()=>({q:'',o:['','','',''],a:0})) };
+  if (type === 'learn') return { kind:'quiz', question:'', options:['','','',''], correct:0, lesson:'', proofRequired:true, proofPrompt:'Explain the idea in your own words or give a small example.' };
+  return { kind:'quiz', question:'', options:['','','',''], correct:0, lesson:'', proofRequired:true, proofPrompt:'Show your reasoning. What clue, rule or step led you to this answer?' };
+}
+
+function ensureBuildConfig() {
+  if (!interactionDraft || interactionDraft.kind !== 'build') interactionDraft=blankInteraction('build');
+  const m=interactionDraft.mechanic||'order';
+  if (m==='order') interactionDraft.config ||= {items:['Step 1','Step 2','Step 3','Finish']};
+  if (m==='allocate') interactionDraft.config ||= {budget:100,items:[['Core',30],['Support',20],['Backup',10],['Extra',5]]};
+  if (m==='grid') interactionDraft.config ||= {size:4,required:['Start','Work','Check'],blocked:[5,6,9]};
+  if (m==='assign') interactionDraft.config ||= {people:['Person 1','Person 2','Person 3','Person 4'],roles:['Planner','Builder','Checker','Presenter'],correct:{'Person 1':'Planner','Person 2':'Builder','Person 3':'Checker','Person 4':'Presenter'}};
+  return interactionDraft.config;
+}
+
+function renderBuildCustomizer(host) {
+  ensureBuildConfig();
+  const d=interactionDraft, c=d.config, m=d.mechanic;
+  let html='<div class="creator-interaction-head"><div><span class="eyebrow">🛠️ Build</span><strong>Design the actual board</strong><small>Pick one mechanic, then edit the pieces. The participant must solve your setup.</small></div><span>YOUR RULES</span></div>';
+  html+='<div class="creator-mechanic-grid">'+mechanicsFor('build').filter(x=>['order','grid','allocate','assign'].includes(x.id)).map(x=>'<button type="button" class="creator-mechanic-card '+(m===x.id?'selected':'')+'" data-mechanic="'+esc(x.id)+'"><strong>'+esc(x.icon)+' '+esc(x.label)+'</strong><small>'+esc(x.desc)+'</small></button>').join('')+'</div>';
+  if(m==='order'){
+    html+='<div class="creator-build-editor"><div class="creator-editor-title">Winning order</div><div class="creator-repeat-list">';
+    c.items.forEach((v,i)=>{html+='<label><span>'+(i+1)+'</span><input maxlength="70" data-build-item="'+i+'" value="'+esc(v)+'" placeholder="Step '+(i+1)+'"></label>';});
+    html+='</div><button type="button" class="creator-add-row" id="addBuildItem">+ Add step</button><small class="creator-interaction-note">Players will see these steps shuffled and must arrange them into your saved winning order.</small></div>';
+  } else if(m==='allocate'){
+    html+='<div class="creator-build-editor"><div class="creator-inline-fields"><label><span>Total budget</span><input id="buildBudget" type="number" min="1" max="100000" value="'+Number(c.budget||100)+'"></label></div><div class="creator-repeat-list">';
+    c.items.forEach((v,i)=>{html+='<label class="build-alloc-row"><span>'+(i+1)+'</span><input maxlength="50" data-build-name="'+i+'" value="'+esc(v[0])+'"><input type="number" min="0" max="100000" data-build-min="'+i+'" value="'+Number(v[1]||0)+'" aria-label="Minimum '+(i+1)+'"></label>';});
+    html+='</div><button type="button" class="creator-add-row" id="addBuildAlloc">+ Add category</button><small class="creator-interaction-note">Players must cover every minimum without crossing your budget.</small></div>';
+  } else if(m==='grid'){
+    html+='<div class="creator-build-editor"><div class="creator-repeat-list">';
+    c.required.forEach((v,i)=>{html+='<label><span>'+(i+1)+'</span><input maxlength="40" data-grid-name="'+i+'" value="'+esc(v)+'" placeholder="Zone '+(i+1)+'"></label>';});
+    html+='</div><div class="creator-grid-editor"><span class="creator-editor-title">Blocked cells</span><div class="creator-mini-grid">';
+    for(let i=0;i<16;i++) html+='<button type="button" class="'+(c.blocked.includes(i)?'blocked':'')+'" data-block-cell="'+i+'">'+(i+1)+'</button>';
+    html+='</div></div><small class="creator-interaction-note">Tap cells to block them. Players must place every zone safely and keep related zones adjacent.</small></div>';
+  } else if(m==='assign'){
+    html+='<div class="creator-build-editor"><div class="creator-repeat-list">';
+    c.people.forEach((p,i)=>{const role=c.correct[p]||c.roles[i]||''; html+='<div class="creator-assign-editor"><input maxlength="40" data-person-name="'+i+'" value="'+esc(p)+'" placeholder="Person '+(i+1)+'"><select data-person-role="'+i+'">'+c.roles.map(r=>'<option '+(role===r?'selected':'')+'>'+esc(r)+'</option>').join('')+'</select></div>';});
+    html+='</div><div class="creator-repeat-list creator-role-edit">';
+    c.roles.forEach((r,i)=>html+='<label><span>'+(i+1)+'</span><input maxlength="40" data-role-name="'+i+'" value="'+esc(r)+'" placeholder="Role '+(i+1)+'"></label>');
+    html+='</div><small class="creator-interaction-note">Each person gets one role. The participant must reproduce your valid mapping.</small></div>';
+  }
+  host.innerHTML=html;
+  host.querySelectorAll('[data-mechanic]').forEach(btn=>btn.addEventListener('click',()=>{
+    d.mechanic=btn.dataset.mechanic;
+    d.config=null;
+    renderBuildCustomizer(host);
+    renderPreview();
+  }));
+  host.querySelectorAll('[data-build-item]').forEach(el=>el.addEventListener('input',()=>c.items[Number(el.dataset.buildItem)]=el.value));
+  $('addBuildItem')?.addEventListener('click',()=>{if(c.items.length<8)c.items.push('New step');renderBuildCustomizer(host)});
+  $('buildBudget')?.addEventListener('input',e=>c.budget=Math.max(1,Number(e.target.value)||1));
+  host.querySelectorAll('[data-build-name]').forEach(el=>el.addEventListener('input',()=>{const i=Number(el.dataset.buildName);c.items[i][0]=el.value}));
+  host.querySelectorAll('[data-build-min]').forEach(el=>el.addEventListener('input',()=>{const i=Number(el.dataset.buildMin);c.items[i][1]=Math.max(0,Number(el.value)||0)}));
+  $('addBuildAlloc')?.addEventListener('click',()=>{if(c.items.length<8)c.items.push(['New category',0]);renderBuildCustomizer(host)});
+  host.querySelectorAll('[data-grid-name]').forEach(el=>el.addEventListener('input',()=>c.required[Number(el.dataset.gridName)]=el.value));
+  host.querySelectorAll('[data-block-cell]').forEach(el=>el.addEventListener('click',()=>{const i=Number(el.dataset.blockCell);c.blocked=c.blocked.includes(i)?c.blocked.filter(x=>x!==i):[...c.blocked,i];renderBuildCustomizer(host);}));
+  host.querySelectorAll('[data-person-name]').forEach(el=>el.addEventListener('input',()=>{
+    const i=Number(el.dataset.personName), oldName=c.people[i], newName=el.value;
+    if(Object.prototype.hasOwnProperty.call(c.correct,oldName)){c.correct[newName]=c.correct[oldName];delete c.correct[oldName];}
+    c.people[i]=newName;
+  }));
+  host.querySelectorAll('[data-role-name]').forEach(el=>el.addEventListener('change',()=>{
+    const i=Number(el.dataset.roleName), oldRole=c.roles[i], newRole=el.value;
+    Object.keys(c.correct).forEach(p=>{if(c.correct[p]===oldRole)c.correct[p]=newRole;});
+    c.roles[i]=newRole;
+    renderBuildCustomizer(host);
+  }));
+  host.querySelectorAll('[data-person-role]').forEach(el=>el.addEventListener('change',()=>{const i=Number(el.dataset.personRole);c.correct[c.people[i]]=el.value;}));
+}
+
+function renderChallengeCustomizer(host){
+  if(!interactionDraft || interactionDraft.kind!=='challenge') interactionDraft=blankInteraction('challenge');
+  const d=interactionDraft;
+  let html='<div class="creator-interaction-head"><div><span class="eyebrow">⚡ Challenge</span><strong>Write the five rounds</strong><small>Players need 3 / 5 correct, then a short reflection.</small></div><span>5 ROUNDS</span></div><div class="creator-challenge-rounds">';
+  d.rounds.forEach((r,i)=>{
+    html+='<article class="creator-round-card"><div class="creator-round-head"><strong>Round '+(i+1)+'</strong><button type="button" data-clear-round="'+i+'">Clear</button></div><textarea maxlength="240" data-round-q="'+i+'" rows="2" placeholder="Question or prompt">'+esc(r.q)+'</textarea><div class="creator-answer-grid">';
+    [0,1,2,3].forEach(j=>html+='<label class="creator-answer-row"><span>'+String.fromCharCode(65+j)+'</span><input maxlength="160" data-round-o="'+i+':'+j+'" value="'+esc(r.o[j]||'')+'" placeholder="Answer '+String.fromCharCode(65+j)+'"></label>');
+    html+='</div><div class="creator-correct-row"><span>Correct</span><div>'+[0,1,2,3].map(j=>'<button type="button" class="creator-correct '+(r.a===j?'selected':'')+'" data-round-a="'+i+':'+j+'">'+String.fromCharCode(65+j)+'</button>').join('')+'</div></div></article>';
+  });
+  html+='</div><small class="creator-interaction-note">Make each round different. No fixed catalog questions are required.</small>';
+  host.innerHTML=html;
+  host.querySelectorAll('[data-round-q]').forEach(el=>el.addEventListener('input',()=>d.rounds[Number(el.dataset.roundQ)].q=el.value));
+  host.querySelectorAll('[data-round-o]').forEach(el=>el.addEventListener('input',()=>{const [i,j]=el.dataset.roundO.split(':').map(Number);d.rounds[i].o[j]=el.value}));
+  host.querySelectorAll('[data-round-a]').forEach(el=>el.addEventListener('click',()=>{const [i,j]=el.dataset.roundA.split(':').map(Number);d.rounds[i].a=j;renderChallengeCustomizer(host)}));
+  host.querySelectorAll('[data-clear-round]').forEach(el=>el.addEventListener('click',()=>{const i=Number(el.dataset.clearRound);d.rounds[i]={q:'',o:['','','',''],a:0};renderChallengeCustomizer(host)}));
+}
+
 function setStep(next) {
   step = Math.max(1, Math.min(3, next));
   document.querySelectorAll('[data-wizard-step]').forEach(panel => {
@@ -92,7 +181,8 @@ function renderTemplates() {
   const host = $('creatorTemplates');
   if (!host) return;
   const list = starters();
-  host.innerHTML = list.map(t => {
+  const blankCard = '<button type="button" class="creator-starter creator-starter--blank '+(!selected?'selected':'')+'" data-blank="true"><span class="creator-starter-icon">✦</span><span class="creator-starter-main"><strong>Blank canvas</strong><small>Start with your own idea. No fixed template.</small><span class="creator-starter-foot"><em>FULL CONTROL</em><em>∞</em></span></span><span class="creator-starter-go">+</span></button>';
+  host.innerHTML = blankCard + list.map(t => {
     const mechanic = mechanicInfo(activeType, t.mechanic);
     return '<button type="button" class="creator-starter ' + (selected?.id === t.id ? 'selected' : '') + '" data-starter="' + esc(t.id) + '">' +
       '<span class="creator-starter-icon">' + esc(t.icon || activityTypeInfo(t).icon) + '</span>' +
@@ -101,6 +191,16 @@ function renderTemplates() {
       '<span class="creator-starter-go">↗</span></button>';
   }).join('');
 
+  host.querySelector('[data-blank]')?.addEventListener('click', () => {
+    selected=null;
+    interactionDraft=blankInteraction(activeType);
+    const base=defaults[activeType]||defaults.game;
+    $('title').value=''; $('description').value=''; $('goal').value=base.goal;
+    $('durationMin').value=String(base.duration); $('difficulty').value=base.difficulty;
+    $('category').value=''; $('instructions').value=''; $('expiresDays').value='14';
+    document.querySelectorAll('#title,#description,#goal').forEach(el=>el.dataset.seeded='false');
+    renderTemplates(); renderInteractionEditor(); renderPreview();
+  });
   host.querySelectorAll('[data-starter]').forEach(btn => btn.addEventListener('click', () => {
     selected = list.find(x => x.id === btn.dataset.starter) || null;
     interactionDraft = sourceConfig(selected);
@@ -136,96 +236,47 @@ function fillFormFromStarter(forceTitle) {
 }
 
 function renderInteractionEditor() {
-  const host = $('customInteraction');
-  if (!host) return;
-  const info = ACTIVITY_TYPES[activeType];
-
-  if (activeType === 'puzzle' || activeType === 'learn') {
-    if (!interactionDraft || interactionDraft.kind !== 'quiz') interactionDraft = {
-      kind: 'quiz', question: '', options: ['', '', '', ''], correct: 0, lesson: '', proofRequired: true,
-      proofPrompt: activeType === 'learn'
-        ? 'Explain the idea in your own words or give a small example.'
-        : 'Show your reasoning. What clue, rule or step led you to this answer?'
-    };
-    const d = interactionDraft;
-    let html = '<div class="creator-interaction-head"><div><span class="eyebrow">' + info.icon + ' ' + info.label + ' interaction</span><strong>Make the actual task yours</strong></div><span>Required</span></div>';
-    if (activeType === 'learn') html += '<label class="creator-field"><span>Mini lesson</span><textarea id="interactionLesson" maxlength="900" rows="3" placeholder="Teach the idea in a few simple lines."></textarea></label>';
-    html += '<label class="creator-field"><span>Question</span><textarea id="interactionQuestion" maxlength="500" rows="3" placeholder="What should people solve?"></textarea></label>';
-    html += '<div class="creator-answer-grid">';
-    [0,1,2,3].forEach(i => {
-      html += '<label class="creator-answer-row"><span>' + String.fromCharCode(65 + i) + '</span><input data-answer-index="' + i + '" maxlength="180" placeholder="Answer ' + String.fromCharCode(65 + i) + '"></label>';
-    });
-    html += '</div>';
-    html += '<div class="creator-correct-row"><span>Correct answer</span><div>';
-    [0,1,2,3].forEach(i => html += '<button type="button" class="creator-correct ' + (d.correct === i ? 'selected' : '') + '" data-correct="' + i + '">' + String.fromCharCode(65 + i) + '</button>');
-    html += '</div></div>';
-    html += '<label class="creator-field"><span>Proof prompt</span><input id="proofPrompt" maxlength="240" placeholder="Ask for reasoning or an example."></label>';
-    html += '<small class="creator-interaction-note">A correct click is not enough. Participants must also submit a short explanation before completion is unlocked.</small>';
-    host.innerHTML = html;
-
-    if (activeType === 'learn' && $('interactionLesson')) $('interactionLesson').value = d.lesson || '';
-    $('interactionQuestion').value = d.question || '';
-    host.querySelectorAll('[data-answer-index]').forEach(input => { input.value = d.options[Number(input.dataset.answerIndex)] || ''; });
-    $('proofPrompt').value = d.proofPrompt || '';
-
-    host.querySelectorAll('[data-correct]').forEach(btn => btn.addEventListener('click', () => {
-      d.correct = Number(btn.dataset.correct);
-      host.querySelectorAll('[data-correct]').forEach(x => x.classList.toggle('selected', x === btn));
-    }));
-    if ($('interactionQuestion')) $('interactionQuestion').addEventListener('input', e => { d.question = e.target.value; renderPreview(); });
-    if ($('proofPrompt')) $('proofPrompt').addEventListener('input', e => { d.proofPrompt = e.target.value; renderPreview(); });
-    if ($('interactionLesson')) $('interactionLesson').addEventListener('input', e => { d.lesson = e.target.value; renderPreview(); });
-    host.querySelectorAll('[data-answer-index]').forEach(input => input.addEventListener('input', e => {
-      d.options[Number(input.dataset.answerIndex)] = e.target.value;
-    }));
-    return;
+  const host=$('customInteraction'); if(!host)return;
+  const info=ACTIVITY_TYPES[activeType];
+  if(activeType==='build'){ if(!interactionDraft || interactionDraft.kind!=='build') interactionDraft=sourceConfig(selected)||blankInteraction('build'); renderBuildCustomizer(host); return; }
+  if(activeType==='challenge'){ interactionDraft=selected?.id ? {kind:'challenge',rounds:(interactionDraft?.rounds?.length===5?interactionDraft.rounds:blankInteraction('challenge').rounds)} : blankInteraction('challenge'); renderChallengeCustomizer(host); return; }
+  if(activeType==='puzzle' || activeType==='learn'){
+    if(!interactionDraft || interactionDraft.kind!=='quiz') interactionDraft=sourceConfig(selected)||blankInteraction(activeType);
+    const d=interactionDraft;
+    let html='<div class="creator-interaction-head"><div><span class="eyebrow">'+info.icon+' '+info.label+'</span><strong>Write the part people actually solve</strong><small>Templates are only a starting point. Change every answer and the proof prompt.</small></div><span>YOUR CONTENT</span></div>';
+    if(activeType==='learn') html+='<label class="creator-field"><span>Mini lesson</span><textarea id="interactionLesson" maxlength="900" rows="4" placeholder="Teach the idea in a few simple lines."></textarea></label>';
+    html+='<label class="creator-field"><span>Question</span><textarea id="interactionQuestion" maxlength="500" rows="3" placeholder="What should people solve?"></textarea></label><div class="creator-answer-grid">';
+    [0,1,2,3].forEach(i=>html+='<label class="creator-answer-row"><span>'+String.fromCharCode(65+i)+'</span><input data-answer-index="'+i+'" maxlength="180" placeholder="Answer '+String.fromCharCode(65+i)+'"></label>');
+    html+='</div><div class="creator-correct-row"><span>Correct answer</span><div>'+[0,1,2,3].map(i=>'<button type="button" class="creator-correct '+(d.correct===i?'selected':'')+'" data-correct="'+i+'">'+String.fromCharCode(65+i)+'</button>').join('')+'</div></div><label class="creator-field"><span>Proof prompt</span><input id="proofPrompt" maxlength="240" placeholder="Ask for reasoning or an example."></label>';
+    html+='<small class="creator-interaction-note">People must answer correctly and add a short explanation before completion.</small>';
+    host.innerHTML=html;
+    if(activeType==='learn'&&$('interactionLesson'))$('interactionLesson').value=d.lesson||'';
+    $('interactionQuestion').value=d.question||'';
+    host.querySelectorAll('[data-answer-index]').forEach(input=>input.value=d.options[Number(input.dataset.answerIndex)]||'');
+    $('proofPrompt').value=d.proofPrompt||'';
+    host.querySelectorAll('[data-correct]').forEach(btn=>btn.addEventListener('click',()=>{d.correct=Number(btn.dataset.correct);host.querySelectorAll('[data-correct]').forEach(x=>x.classList.toggle('selected',x===btn));}));
+    $('interactionQuestion')?.addEventListener('input',e=>{d.question=e.target.value;renderPreview()});
+    $('proofPrompt')?.addEventListener('input',e=>{d.proofPrompt=e.target.value;renderPreview()});
+    $('interactionLesson')?.addEventListener('input',e=>{d.lesson=e.target.value;renderPreview()});
+    host.querySelectorAll('[data-answer-index]').forEach(input=>input.addEventListener('input',e=>{d.options[Number(input.dataset.answerIndex)]=e.target.value;}));
+  } else {
+    interactionDraft={kind:'room'};
+    host.innerHTML='<div class="creator-interaction-head"><div><span class="eyebrow">🎮 Game</span><strong>Make a room activity</strong><small>Players use the shared room to complete the objective.</small></div><span>MULTIPLAYER</span></div>';
   }
-
-  if (activeType === 'build') {
-    if (!interactionDraft || interactionDraft.kind !== 'build') interactionDraft = { kind: 'build', mechanic: currentMechanic() };
-    const mechanics = mechanicsFor('build').filter(m => ['order','grid','allocate','assign'].includes(m.id));
-    let html = '<div class="creator-interaction-head"><div><span class="eyebrow">🛠️ Build interaction</span><strong>Pick how people will build</strong></div><span>Real board</span></div><div class="creator-mechanic-grid">';
-    mechanics.forEach(m => {
-      html += '<button type="button" class="creator-mechanic-card ' + (interactionDraft.mechanic === m.id ? 'selected' : '') + '" data-mechanic="' + esc(m.id) + '"><strong>' + esc(m.icon) + ' ' + esc(m.label) + '</strong><small>' + esc(m.desc) + '</small></button>';
-    });
-    html += '</div><small class="creator-interaction-note">The participant must manipulate the board and pass its constraints. A single button cannot complete it.</small>';
-    host.innerHTML = html;
-    host.querySelectorAll('[data-mechanic]').forEach(btn => btn.addEventListener('click', () => {
-      interactionDraft.mechanic = btn.dataset.mechanic;
-      selected = { ...(selected || {}), mechanic: interactionDraft.mechanic };
-      host.querySelectorAll('[data-mechanic]').forEach(x => x.classList.toggle('selected', x === btn));
-      renderPreview();
-    }));
-    return;
-  }
-
-  if (activeType === 'challenge') {
-    interactionDraft = { kind: 'challenge' };
-    host.innerHTML = '<div class="creator-interaction-head"><div><span class="eyebrow">⚡ Challenge</span><strong>Five quick rounds</strong></div><span>3 / 5 to pass</span></div>' +
-      '<div class="creator-challenge-preview"><strong>How it works</strong><p>Participants answer five rounds. At least three correct answers are required before the activity can be completed.</p></div>' +
-      '<small class="creator-interaction-note">Your title, goal, topic and instructions define the challenge. The multi-round engine handles the scoring.</small>';
-    return;
-  }
-
-  interactionDraft = { kind: 'room' };
-  host.innerHTML = '<div class="creator-interaction-head"><div><span class="eyebrow">🎮 Game</span><strong>Play together in a room</strong></div><span>Multiplayer</span></div>' +
-    '<div class="creator-challenge-preview"><strong>Shared activity</strong><p>People join a live room and play around one shared objective.</p></div>';
 }
-
 function interactionPayload() {
-  if (!interactionDraft) return { kind: activeType === 'game' ? 'room' : activeType };
-  if (interactionDraft.kind !== 'quiz') return { ...interactionDraft };
-  return {
-    kind: 'quiz',
-    question: String(interactionDraft.question || '').trim().slice(0, 500),
-    options: interactionDraft.options.map(x => String(x || '').trim().slice(0, 180)),
-    correct: Number(interactionDraft.correct) || 0,
-    lesson: String(interactionDraft.lesson || '').trim().slice(0, 900),
-    proofRequired: true,
-    proofPrompt: String(interactionDraft.proofPrompt || '').trim().slice(0, 240)
-  };
+  if(!interactionDraft) return {kind:activeType==='game'?'room':activeType};
+  if(interactionDraft.kind==='build'){
+    const c=interactionDraft.config||{};
+    if(interactionDraft.mechanic==='order') return {kind:'build',mechanic:'order',items:(c.items||[]).map(x=>String(x||'').trim()).filter(Boolean).slice(0,8)};
+    if(interactionDraft.mechanic==='allocate') return {kind:'build',mechanic:'allocate',budget:Number(c.budget)||100,items:(c.items||[]).slice(0,8).map(x=>[String(x[0]||'').trim().slice(0,50),Math.max(0,Number(x[1])||0)])};
+    if(interactionDraft.mechanic==='grid') return {kind:'build',mechanic:'grid',size:4,required:(c.required||[]).map(x=>String(x||'').trim()).filter(Boolean).slice(0,4),blocked:[...(c.blocked||[])].filter(x=>Number.isInteger(x)&&x>=0&&x<16).slice(0,8),adjacentPairs:(c.required||[]).length>=2?[[String(c.required[0]),String(c.required[1])],...(((c.required||[]).length>=3)?[[String(c.required[1]),String(c.required[2])]]:[])]:[]};
+    if(interactionDraft.mechanic==='assign') return {kind:'build',mechanic:'assign',people:(c.people||[]).map(x=>String(x||'').trim()).filter(Boolean).slice(0,4),roles:(c.roles||[]).map(x=>String(x||'').trim()).filter(Boolean).slice(0,4),correct:{...(c.correct||{})}};
+  }
+  if(interactionDraft.kind==='challenge') return {kind:'challenge',rounds:(interactionDraft.rounds||[]).slice(0,5).map(r=>({q:String(r.q||'').trim().slice(0,240),o:r.o.slice(0,4).map(x=>String(x||'').trim().slice(0,160)),a:Math.max(0,Math.min(3,Number(r.a)||0))}))};
+  if(interactionDraft.kind!=='quiz') return {...interactionDraft};
+  return {kind:'quiz',question:String(interactionDraft.question||'').trim().slice(0,500),options:interactionDraft.options.map(x=>String(x||'').trim().slice(0,180)),correct:Number(interactionDraft.correct)||0,lesson:String(interactionDraft.lesson||'').trim().slice(0,900),proofRequired:true,proofPrompt:String(interactionDraft.proofPrompt||'').trim().slice(0,240)};
 }
-
 function validateBeforePreview() {
   const title = $('title').value.trim();
   const desc = $('description').value.trim();
@@ -233,6 +284,20 @@ function validateBeforePreview() {
   if (title.length < 3) return 'Give the activity a clear name.';
   if (desc.length < 10) return 'Tell people what they are going to do.';
   if (goal.length < 5) return 'Add a simple goal.';
+  if (activeType === 'build') {
+    const d=interactionPayload(), c=d;
+    if (!['order','allocate','grid','assign'].includes(d.mechanic)) return 'Choose how people will build.';
+    if (d.mechanic==='order' && (d.items.length<3 || d.items.some(x=>x.length<1))) return 'Add at least 3 clear build steps.';
+    if (d.mechanic==='allocate' && (d.items.length<2 || d.items.some(x=>!x[0]))) return 'Add at least 2 budget categories.';
+    if (d.mechanic==='allocate' && d.items.reduce((sum,x)=>sum+Math.max(0,Number(x[1])||0),0) > Number(d.budget||0)) return 'Minimums cannot be higher than the budget.';
+    if (d.mechanic==='grid' && (d.required.length<2 || d.required.length>4)) return 'Add 2–4 named zones.';
+    if (d.mechanic==='assign' && (d.people.length!==4 || d.roles.length!==4 || new Set(d.people.map(x=>x.toLowerCase())).size!==4 || new Set(d.roles.map(x=>x.toLowerCase())).size!==4 || Object.keys(d.correct).length!==4)) return 'Use four unique people and four unique roles.';
+  }
+  if (activeType === 'challenge') {
+    const d=interactionPayload(), rounds=d.rounds||[];
+    if(rounds.length!==5) return 'Create all 5 challenge rounds.';
+    for(let i=0;i<rounds.length;i++){if(rounds[i].q.length<8)return 'Add a question for round '+(i+1)+'.';if(rounds[i].o.some(x=>x.length<1))return 'Fill all answers for round '+(i+1)+'.';if(new Set(rounds[i].o.map(x=>x.toLowerCase())).size<4)return 'Make the answers different in round '+(i+1)+'.';}
+  }
   if (activeType === 'puzzle' || activeType === 'learn') {
     const d = interactionPayload();
     if (d.question.length < 10) return 'Write a real question for the activity.';
@@ -248,10 +313,18 @@ function renderPreview() {
   const host = $('creatorLivePreviewCard');
   if (!host) return;
   const type = ACTIVITY_TYPES[activeType];
+  const canvas=$('creatorCanvasVisual');
+  if(canvas){
+    canvas.dataset.tone=type.tone;
+    const icon=$('creatorCanvasIcon'), titleEl=$('creatorCanvasTitle'), metaEl=$('creatorCanvasMeta');
+    if(icon)icon.textContent=type.icon;
+    if(titleEl)titleEl.textContent=title || 'Your activity';
+    if(metaEl)metaEl.textContent=(selected?'Starter adapted':'Blank canvas')+' · '+type.label;
+  }
   const mechanic = activeType === 'build'
     ? mechanicInfo('build', interactionDraft?.mechanic || currentMechanic())
     : mechanicInfo(activeType, selected?.mechanic);
-  const template = selected || starters()[0];
+  const template = selected || null;
   const title = $('title')?.value.trim() || template?.title || 'Your activity';
   const desc = $('description')?.value.trim() || template?.description || type.desc;
   const goal = $('goal')?.value.trim() || defaults[activeType].goal;

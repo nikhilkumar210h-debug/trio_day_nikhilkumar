@@ -148,8 +148,8 @@ async function renderStoryStrip(uid) {
 function openStoryViewer(s) {
   const ov = document.createElement('div');
   ov.className = 'story-viewer-overlay';
-  const safeN = (s.name || 'Story').replace(/</g, '<');
-  const safeM = (s.message || '').slice(0, 120).replace(/</g, '<');
+  const safeN = escapeHtml(s.name || 'Story');
+  const safeM = escapeHtml((s.message || '').slice(0, 120));
   const isOwn = s.uid && currentUser && s.uid === currentUser.uid;
   const isVoice = s.isVoice || s.type === 'voice';
   const mediaTag = isVoice
@@ -314,7 +314,17 @@ async function renderFocusAndContinue(uid) {
             <span><strong>${resumable[0] && resumable[0].id === focus.id ? 'RESUME' : 'PICKED FOR TODAY'}</strong></span>
             <span>${type} · ${duration} min · ${escapeHtml(difficulty)}</span>
           </div>
-          ${activityCardHtml(focus)}
+          <div class="today-focus-visual" aria-hidden="true">
+            <div class="today-focus-visual-grid"></div>
+            <div class="today-focus-visual-core">${escapeHtml(focus.icon || '🎯')}</div>
+            <div class="today-focus-visual-copy">
+              <span>YOUR NEXT MOVE</span>
+              <strong>${escapeHtml(focus.title || 'One meaningful move')}</strong>
+              <small>${escapeHtml(type)} · ${duration} min</small>
+            </div>
+            <div class="today-focus-visual-signal"><i></i><i></i><i></i><i></i></div>
+          </div>
+          ${activityCardHtml(focus, {compact:true})}
           <p class="today-focus-note">${escapeHtml(focusNote)}</p>
         </div>`;
 
@@ -411,7 +421,7 @@ async function renderActiveChallenges(uid) {
 
 function buildChallengeCard(c) {
   const progress = Math.min(100, Math.round(((c.completions || 0) / Math.max(1, c.target || 1)) * 100));
-  const icon = c.icon || '🎯';
+  const icon = escapeHtml(c.icon || '🎯');
   const xp = c.xpReward || 0;
   const members = c.joins || 0;
   return `
