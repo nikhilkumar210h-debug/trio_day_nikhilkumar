@@ -58,6 +58,20 @@ export function initHeader() {
     }
   }
 
+  // Help is always one tap away from the top-right.
+  if (!inner.querySelector('.nkm-help-btn')) {
+    const helpBtn = document.createElement('a');
+    helpBtn.className = 'nkm-help-btn';
+    helpBtn.href = 'help.html';
+    helpBtn.setAttribute('aria-label','Help Center');
+    helpBtn.innerHTML = '<span class="nkm-help-mark">?</span><span class="nkm-help-label">Help</span>';
+    const actions = inner.querySelector('.topbar-actions');
+    const authEl = document.getElementById('authStatus');
+    if (actions) actions.insertBefore(helpBtn, authEl || null);
+    else if (authEl) inner.insertBefore(helpBtn, authEl);
+    else inner.appendChild(helpBtn);
+  }
+
   // Notifications/chat intentionally live in dedicated navigation now.
   // Keep the header visually quiet; bottom navigation already exposes Chat.
   
