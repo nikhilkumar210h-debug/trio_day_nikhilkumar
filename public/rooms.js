@@ -35,9 +35,11 @@ async function loadActivity(){
  }catch(e){msg(e.message||'Could not load activities.',true)}
 }
 function render(rs){
- const visible=filterActivityId?rs.filter(r=>r.challengeId===filterActivityId):rs;
+ const now=Date.now();
+ const activeRooms=rs.filter(r=>!r.expiresAtMs||Number(r.expiresAtMs)>now);
+ const visible=filterActivityId?activeRooms.filter(r=>r.challengeId===filterActivityId):activeRooms;
  $('roomStatus').textContent=visible.length?visible.length+' live room'+(visible.length>1?'s':''):(filterActivityId?'No room is open for this activity yet':'No rooms live yet');
- $('roomList').innerHTML=visible.length?visible.map(r=>`<a class="room-card" href="room.html?id=${encodeURIComponent(r.id)}"><span class="room-orb">✦</span><span class="room-card-main"><span class="room-card-title">${esc(r.title||'Open room')}</span><span class="room-card-meta"><span class="room-live">● LIVE</span><span>${Number(r.memberCount)||0}/${Number(r.maxPlayers)||6} people</span><span>${esc(r.activityTitle||'Open activity')}</span></span></span><span>↗</span></a>`).join(''):'<div class="room-empty">No open rooms. Start one around an activity and let people join.</div>';
+ $('roomList').innerHTML=visible.length?visible.map(r=>`<a class="room-card" href="room.html?id=${encodeURIComponent(r.id)}"><span class="room-orb">✦</span><span class="room-card-main"><span class="room-card-title">${esc(r.title||'Open room')}</span><span class="room-card-meta"><span class="room-live">● LIVE</span><span>${Number(r.memberCount)||0}/${Number(r.maxPlayers)||6} people</span><span>${esc(r.activityTitle||'Open activity')}</span><span>${r.expiresAtMs?'⌛ '+Math.max(0,Math.ceil((Number(r.expiresAtMs)-Date.now())/3600000))+'h left':''}</span></span></span><span>↗</span></a>`).join(''):'<div class="room-empty">No open rooms. Start one around an activity and let people join.</div>';
 }
 document.querySelectorAll('[data-cap]').forEach(b=>b.onclick=()=>{capacity=Number(b.dataset.cap);document.querySelectorAll('[data-cap]').forEach(x=>x.classList.toggle('is-active',x===b));});
 $('roomForm').onsubmit=async e=>{
@@ -46,7 +48,7 @@ $('roomForm').onsubmit=async e=>{
  const title=$('roomTitle').value.trim();if(!title)return msg('Give the room a name.',true);
  const b=e.target.querySelector('.room-create-btn');b.disabled=true;
  try{
-  const ref=await addDoc(collection(db,'rooms'),{title:title.slice(0,80),maxPlayers:capacity,hostUid:me.uid,hostName:profile.name||me.displayName||'User',challengeId:selectedActivity.id,activityTitle:selectedActivity.title||'Activity',activityType:selectedActivity.activityType||selectedActivity.type||null,activitySource:selectedActivity.source||'community',activityCategory:selectedActivity.category||'General',status:'open',memberCount:1,createdAt:serverTimestamp(),createdAtMs:Date.now()});
+  const ref=await addDoc(collection(db,'rooms'),{title:title.slice(0,80),maxPlayers:capacity,hostUid:me.uid,hostName:profile.name||me.displayName||'User',challengeId:selectedActivity.id,activityTitle:selectedActivity.title||'Activity',activityType:selectedActivity.activityType||selectedActivity.type||null,activitySource:selectedActivity.source||'community',activityCategory:selectedActivity.category||'General',status:'open',memberCount:1,expiresAtMs:Date.now()+6*60*60*1000,createdAt:serverTimestamp(),createdAtMs:Date.now()});
   await setDoc(doc(db,'rooms',ref.id,'members',me.uid),{uid:me.uid,name:profile.name||me.displayName||'User',photoURL:profile.photoURL||me.photoURL||null,joinedAtMs:Date.now()});
   location.href='room.html?id='+ref.id;
  }catch(err){msg(err.message||'Could not create room.',true)}finally{b.disabled=false}
