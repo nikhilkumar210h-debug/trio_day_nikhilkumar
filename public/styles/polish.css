@@ -258,3 +258,45 @@ button:disabled,.nkm-btn:disabled,.btn:disabled{cursor:not-allowed;opacity:.55;t
 [data-theme="light"] .creator-canvas-icon{background:rgba(255,255,255,.82);color:var(--color-ink);border-color:rgba(99,102,241,.18);box-shadow:0 12px 28px rgba(15,23,42,.10)}
 [data-theme="light"] .creator-canvas-grid{opacity:.18;background-image:linear-gradient(rgba(15,23,42,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(15,23,42,.05) 1px,transparent 1px)}
 [data-theme="light"] .creator-canvas-copy span{color:#4f46e5}
+
+
+/* Today current-mode picker */
+.today-focus-heading{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:16px;
+  flex-wrap:wrap;
+}
+.today-mode-picker{
+  display:flex;
+  gap:6px;
+  flex-wrap:wrap;
+  justify-content:flex-end;
+}
+.today-mode-picker button{
+  appearance:none;
+  border:1px solid var(--border);
+  background:var(--surface);
+  color:var(--ink-muted);
+  border-radius:999px;
+  padding:7px 10px;
+  font:600 12px/1 Inter,sans-serif;
+  cursor:pointer;
+  transition:transform .16s ease,border-color .16s ease,background .16s ease,color .16s ease;
+}
+.today-mode-picker button:hover{
+  transform:translateY(-1px);
+  color:var(--ink);
+  border-color:var(--primary);
+}
+.today-mode-picker button.active{
+  color:var(--ink);
+  background:var(--primary-soft);
+  border-color:var(--primary);
+}
+@media (max-width:720px){
+  .today-focus-heading{align-items:flex-start}
+  .today-mode-picker{justify-content:flex-start;width:100%;overflow:auto;flex-wrap:nowrap;padding-bottom:3px}
+  .today-mode-picker button{flex:0 0 auto}
+}
