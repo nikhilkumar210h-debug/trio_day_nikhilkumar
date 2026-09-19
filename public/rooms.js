@@ -5,7 +5,7 @@ import{escapeHtml as esc}from'./utils.js';
 import{activityCardHtml,ACTIVITY_TYPES,normalizeActivityType}from'./activity-ui.js';
 import{activeCatalogActivities}from'./activity-catalog.js';
 const $=id=>document.getElementById(id);
-let me=null,profile={},selectedActivity=null,capacity=3;
+let me=null,profile={},selectedActivity=null,capacity=3,filterActivityId=new URLSearchParams(location.search).get('taskId');
 function msg(t,e=false){$('createStatus').textContent=t||'';$('createStatus').classList.toggle('error',e)}
 async function loadActivity(){
  const id=new URLSearchParams(location.search).get('taskId');
@@ -35,8 +35,9 @@ async function loadActivity(){
  }catch(e){msg(e.message||'Could not load activities.',true)}
 }
 function render(rs){
- $('roomStatus').textContent=rs.length?rs.length+' live room'+(rs.length>1?'s':''):'No rooms live yet';
- $('roomList').innerHTML=rs.length?rs.map(r=>`<a class="room-card" href="room.html?id=${encodeURIComponent(r.id)}"><span class="room-orb">✦</span><span class="room-card-main"><span class="room-card-title">${esc(r.title||'Open room')}</span><span class="room-card-meta"><span class="room-live">● LIVE</span><span>${Number(r.memberCount)||0}/${Number(r.maxPlayers)||6} people</span><span>${esc(r.activityTitle||'Open activity')}</span></span></span><span>↗</span></a>`).join(''):'<div class="room-empty">No open rooms. Start one around an activity and let people join.</div>';
+ const visible=filterActivityId?rs.filter(r=>r.challengeId===filterActivityId):rs;
+ $('roomStatus').textContent=visible.length?visible.length+' live room'+(visible.length>1?'s':''):(filterActivityId?'No room is open for this activity yet':'No rooms live yet');
+ $('roomList').innerHTML=visible.length?rs.map(r=>`<a class="room-card" href="room.html?id=${encodeURIComponent(r.id)}"><span class="room-orb">✦</span><span class="room-card-main"><span class="room-card-title">${esc(r.title||'Open room')}</span><span class="room-card-meta"><span class="room-live">● LIVE</span><span>${Number(r.memberCount)||0}/${Number(r.maxPlayers)||6} people</span><span>${esc(r.activityTitle||'Open activity')}</span></span></span><span>↗</span></a>`).join(''):'<div class="room-empty">No open rooms. Start one around an activity and let people join.</div>';
 }
 document.querySelectorAll('[data-cap]').forEach(b=>b.onclick=()=>{capacity=Number(b.dataset.cap);document.querySelectorAll('[data-cap]').forEach(x=>x.classList.toggle('is-active',x===b));});
 $('roomForm').onsubmit=async e=>{
