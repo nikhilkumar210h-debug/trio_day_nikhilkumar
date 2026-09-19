@@ -1,6 +1,6 @@
 import{auth,db}from'./firebase-init.js';
 import{onAuthStateChanged}from'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
-import{collection,query,where,limit,onSnapshot,getDoc,doc,addDoc,setDoc,serverTimestamp,getDocs}from'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
+import{collection,query,where,limit,onSnapshot,getDoc,doc,addDoc,setDoc,serverTimestamp,getDocs,writeBatch,collection}from'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 import{escapeHtml as esc}from'./utils.js';
 import{activityCardHtml,ACTIVITY_TYPES,normalizeActivityType}from'./activity-ui.js';
 import{activeCatalogActivities}from'./activity-catalog.js';
@@ -48,19 +48,21 @@ $('roomForm').onsubmit=async e=>{
  const title=$('roomTitle').value.trim();if(!title)return msg('Give the room a name.',true);
  const b=e.target.querySelector('.room-create-btn');b.disabled=true;
  try{
-  const ref=await addDoc(collection(db,'rooms'),{title:title.slice(0,80),maxPlayers:capacity,hostUid:me.uid,hostName:profile.name||me.displayName||'User',challengeId:selectedActivity.id,activityTitle:selectedActivity.title||'Activity',activityType:selectedActivity.activityType||selectedActivity.type||null,activitySource:selectedActivity.source||'community',activityCategory:selectedActivity.category||'General',status:'open',memberCount:1,expiresAtMs:Date.now()+6*60*60*1000,createdAt:serverTimestamp(),createdAtMs:Date.now()});
-  await setDoc(doc(db,'rooms',ref.id,'members',me.uid),{uid:me.uid,name:profile.name||me.displayName||'User',photoURL:profile.photoURL||me.photoURL||null,joinedAtMs:Date.now()});
-  location.href='room.html?id='+ref.id;
+  const roomRef=doc(collection(db,'rooms'));
+  const batch=writeBatch(db);
+  const now=Date.now();
+  batch.set(roomRef,{title:title.slice(0,80),maxPlayers:capacity,hostUid:me.uid,hostName:profile.name||me.displayName||'User',challengeId:selectedActivity.id,activityTitle:selectedActivity.title||'Activity',activityType:selectedActivity.activityType||selectedActivity.type||null,activitySource:selectedActivity.source||'community',activityCategory:selectedActivity.category||'General',status:'open',memberCount:1,expiresAtMs:now+6*60*60*1000,createdAt:serverTimestamp(),createdAtMs:now});
+  batch.set(doc(db,'rooms',roomRef.id,'members',me.uid),{uid:me.uid,name:profile.name||me.displayName||'User',photoURL:profile.photoURL||me.photoURL||null,joinedAtMs:now});
+  await batch.commit();
+  location.href='room.html?id='+roomRef.id;
  }catch(err){msg(err.message||'Could not create room.',true)}finally{b.disabled=false}
 };
 onAuthStateChanged(auth,async u=>{
  if(!u){location.href='login.html?redirect=rooms.html';return}
  me=u;const s=await getDoc(doc(db,'users',u.uid));profile=s.exists()?s.data():{};
  await loadActivity();
- onSnapshot(query(collection(db,'rooms'),where('status','==','open'),limit(30)),async snap=>{
-  const rooms=await Promise.all(snap.docs.map(async d=>{
-   const r={id:d.id,...d.data()};const ms=await getDocs(query(collection(db,'rooms',d.id,'members'),limit(20)));return {...r,memberCount:ms.size};
-  }));
+ onSnapshot(query(collection(db,'rooms'),where('status','==','open'),limit(30)),snap=>{
+  const rooms=snap.docs.map(d=>({id:d.id,...d.data(),memberCount:Number(d.data().memberCount)||0}));
   render(rooms.sort((a,b)=>(b.createdAtMs||0)-(a.createdAtMs||0)));
  },e=>$('roomStatus').textContent=e.message);
 });
