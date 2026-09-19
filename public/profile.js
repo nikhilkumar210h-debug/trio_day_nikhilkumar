@@ -94,7 +94,7 @@ async function getCachedUserPosts(uid) {
 // ── Load connections panel ───────────────────────────────────────────────────
 async function loadConnections(uid) {
   const box = $('connectionsList'); if (!box) return;
-  box.innerHTML = '';
+  box.innerHTML = '<div class="td-skeleton td-skeleton--card"></div><div class="td-skeleton td-skeleton--card"></div>';
   const ids = await getCachedFollowingIds(uid);
   const filtered = ids.filter(id => id !== uid);
   if (!filtered.length) { box.innerHTML = '<div class="connections-empty">No connections yet.</div>'; return; }
@@ -329,7 +329,7 @@ async function loadProfile(uid) {
   await loadConnections(uid);
 
   // 5. Posts list — cached (story short-term, don't show in profile)
-  const posts = $('postsList'); posts.innerHTML = '<div class="connections-empty">Loading posts…</div>';
+  const posts = $('postsList'); posts.innerHTML = '<div class="td-skeleton td-skeleton--wide"></div>';
   const userPosts = await getCachedUserPosts(uid);
    posts.innerHTML = '';
   if (!userPosts.length) {
