@@ -193,11 +193,8 @@ onAuthStateChanged(auth, async user => {
   clearNotificationListeners();
   if (!el) return;
   if (user) {
-    el.innerHTML = `
-      <div class="notification-wrap">
-        <button id="notificationButton" class="notification-btn" type="button" aria-label="Notifications" aria-haspopup="true">🔔<span id="notificationBadge" class="notification-badge" hidden></span></button>
-        <div id="notificationMenu" class="notification-menu" hidden></div>
-      </div>`;
+    el.innerHTML = '<div class="auth-chip"><a class="auth-avatar-fallback" href="profile.html" aria-label="Profile">◉</a></div>';
+
 
     // Header logout removed — now only in Profile section. Keep handler for profile page.
     const profileLogout = document.getElementById('profileLogoutBtn');
