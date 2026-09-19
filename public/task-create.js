@@ -313,20 +313,20 @@ function renderPreview() {
   const host = $('creatorLivePreviewCard');
   if (!host) return;
   const type = ACTIVITY_TYPES[activeType];
+  const template = selected || null;
+  const title = $('title')?.value.trim() || template?.title || 'Your activity';
+  const desc = $('description')?.value.trim() || template?.description || type.desc;
   const canvas=$('creatorCanvasVisual');
   if(canvas){
     canvas.dataset.tone=type.tone;
     const icon=$('creatorCanvasIcon'), titleEl=$('creatorCanvasTitle'), metaEl=$('creatorCanvasMeta');
     if(icon)icon.textContent=type.icon;
-    if(titleEl)titleEl.textContent=title || 'Your activity';
+    if(titleEl)titleEl.textContent=title;
     if(metaEl)metaEl.textContent=(selected?'Starter adapted':'Blank canvas')+' · '+type.label;
   }
   const mechanic = activeType === 'build'
     ? mechanicInfo('build', interactionDraft?.mechanic || currentMechanic())
     : mechanicInfo(activeType, selected?.mechanic);
-  const template = selected || null;
-  const title = $('title')?.value.trim() || template?.title || 'Your activity';
-  const desc = $('description')?.value.trim() || template?.description || type.desc;
   const goal = $('goal')?.value.trim() || defaults[activeType].goal;
   host.innerHTML =
     '<article class="creator-preview-activity"><div class="creator-preview-art"><span>' + esc(template?.icon || type.icon) + '</span><i></i><b></b></div>' +
