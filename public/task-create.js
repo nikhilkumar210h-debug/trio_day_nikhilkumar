@@ -19,7 +19,6 @@ let step = 1;
 let interactionDraft = null;
 let editorStage = 0;
 let startChosen = false;
-let buildCustomizerStage = 0;
 let quizCustomizerStage = 0;
 let challengeRound = 0;
 
@@ -105,7 +104,6 @@ function renderBuildCustomizer(host) {
     host.querySelectorAll('[data-mechanic]').forEach(btn => btn.addEventListener('click', () => {
       d.mechanic = btn.dataset.mechanic;
       d.config = null;
-      buildCustomizerStage = 1;
       renderBuildCustomizer(host);
       renderPreview();
     }));
@@ -139,7 +137,7 @@ function renderBuildCustomizer(host) {
   }
 
   host.innerHTML=html;
-  host.querySelector('#changeBuildMechanic')?.addEventListener('click',()=>{d.mechanic=null;d.config=null;buildCustomizerStage=0;renderBuildCustomizer(host);renderPreview();});
+  host.querySelector('#changeBuildMechanic')?.addEventListener('click',()=>{d.mechanic=null;d.config=null;renderBuildCustomizer(host);renderPreview();});
   host.querySelectorAll('[data-build-item]').forEach(el=>el.addEventListener('input',()=>{c.items[Number(el.dataset.buildItem)]=el.value;renderPreview();}));
   host.querySelector('#addBuildItem')?.addEventListener('click',()=>{if(c.items.length<8)c.items.push('New step');renderBuildCustomizer(host);});
   host.querySelector('#buildBudget')?.addEventListener('input',e=>{c.budget=Math.max(1,Number(e.target.value)||1);renderPreview();});
@@ -614,7 +612,6 @@ onAuthStateChanged(auth, async user => {
   startChosen = false;
   interactionDraft = null;
   editorStage = 0;
-  buildCustomizerStage = 0;
   quizCustomizerStage = 0;
   challengeRound = 0;
   resetLaneDraft();
