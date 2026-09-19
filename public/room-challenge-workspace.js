@@ -7,10 +7,10 @@ const esc = value => {
   return node.innerHTML;
 };
 
-export async function mountSharedChallengeWorkspace(root, { db, roomId, activity, me }) {
+export async function mountSharedChallengeWorkspace(root, { db, roomId, activity, me, hostUid }) {
   const rounds = getChallengeRounds((Number(String(activity.id).replace(/\D/g, '')) || 0) % 10, 5);
   const ref = doc(db, 'rooms', roomId, 'state', 'main');
-  const roundSeconds = 45;
+  const roundSeconds = Math.max(30, Math.round((Number(activity.durationMin || 20) * 60) / rounds.length));
   const base = {
     round: 0,
     scores: {},
@@ -100,7 +100,7 @@ export async function mountSharedChallengeWorkspace(root, { db, roomId, activity
         '<div class="room-forge-note">The host starts the challenge when everyone is ready.</div>' +
         '<div class="room-forge-actions"><button class="room-forge-btn room-forge-btn--primary" id="startChallenge">Start challenge</button></div>';
       body.querySelector('#startChallenge').onclick = async () => {
-        if (me.uid !== activity.hostUid && activity.hostUid) return;
+        if (me.uid !== hostUid) return;
         await write({ startedAtMs: Date.now(), roundEndsAtMs: Date.now() + roundSeconds * 1000, round: 0, scores: {}, answered: {}, finished: false });
       };
     } else if (state.finished) {
