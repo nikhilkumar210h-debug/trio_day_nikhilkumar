@@ -40,7 +40,7 @@ onAuthStateChanged(auth, async user => {
 
 async function initTodayScreen(uid) {
   renderGreeting();
-  await renderStoryStrip();
+  await renderStoryStrip(uid);
   if (uid) {
     await Promise.all([
       renderFocusAndContinue(uid),
@@ -72,7 +72,7 @@ function renderGreeting() {
   }
 }
 
-async function renderStoryStrip() {
+async function renderStoryStrip(uid) {
   const wrap = $('heroStories');
   const empty = $('heroStoriesEmpty');
   if (!wrap) return;
@@ -87,7 +87,8 @@ async function renderStoryStrip() {
   wrap.appendChild(addBtn);
 
   try {
-    const cachedFeed = trioCache.get('feed_recent');
+    const cacheKey = uid ? `feed_recent_${uid}` : null;
+    const cachedFeed = cacheKey ? trioCache.get(cacheKey) : null;
     if (cachedFeed && cachedFeed.length) {
       const now = Date.now();
       const stories = cachedFeed
@@ -931,6 +932,16 @@ form?.addEventListener('submit', async e => {
       }
       mediaUrl = await uploadPostImage(currentUser.uid, fileToUpload); setStatus('Uploading…');
     }
+    let allowedUids = [];
+    if (storyPrivacy === 'friends') {
+      const [followingSnap, followersSnap] = await Promise.all([
+        getDocs(query(collection(db, 'users', currentUser.uid, 'following'), limit(500))),
+        getDocs(query(collection(db, 'users', currentUser.uid, 'followers'), limit(500)))
+      ]);
+      const following = new Set(followingSnap.docs.map(d => d.id));
+      const mutual = followersSnap.docs.map(d => d.id).filter(id => following.has(id));
+      allowedUids = [currentUser.uid, ...mutual].slice(0, 500);
+    }
     await addDoc(collection(db, 'posts'), {
       name: me?.name || currentUser.displayName || 'User',
       userId: me?.userId || makeUserId(currentUser.uid),
@@ -983,6 +994,7 @@ storyForm?.addEventListener('submit', async e => {
         expiresAt, expiresAtMs,
         isStory: true,
         privacy: storyPrivacy,
+        allowedUids,
         editorMeta: {
           filter: editorState.filter,
           filterIntensity: editorState.filterIntensity,
@@ -1471,23 +1483,49 @@ function renderHighlightsFeed(posts) {
   postsToRender.forEach(p => feed.appendChild(buildFeedItem(p)));
 }
 
-function initHighlightsFeed() {
-  if (!feed) return;
-  // Phase 0: limit + orderBy to cut reads (was full collection scan). Cache-first render uses trio-cache feed_recent if available.
-  const cachedFeed = trioCache.get('feed_recent');
-  if (cachedFeed && cachedFeed.length) renderHighlightsFeed(cachedFeed);
-  const feedQuery = query(collection(db, 'posts'), orderBy('createdAtMs', 'desc'), limit(20));
-  onSnapshot(feedQuery, snap => {
-    const posts = [];
-    snap.forEach(d => { const p = d.data(); posts.push({ ...p, _id: d.id }); });
-    trioCache.set('feed_recent', posts, trioCache.TTL.SHORT);
+function initHighlightsFeed(uid) {
+  if (!feed || !uid) return;
+  const cacheKey = `feed_recent_${uid}`;
+  const cachedFeed = trioCache.get(cacheKey);
+  if (cachedFeed && cachedFeed.length) {
+    renderHighlightsFeed(cachedFeed);
+    renderStoryStrip(uid);
+  }
+
+  const streams = { posts: [], publicStories: [], friendStories: [] };
+  const redraw = () => {
+    const posts = [...streams.posts, ...streams.publicStories, ...streams.friendStories]
+      .filter(Boolean)
+      .sort((a, b) => (b.createdAtMs || 0) - (a.createdAtMs || 0))
+      .slice(0, 20);
+    trioCache.set(cacheKey, posts, trioCache.TTL.SHORT);
     if (feedError) feedError.hidden = true;
     renderHighlightsFeed(posts);
-  }, err => {
-    console.error(err);
-    if (feedLoading) feedLoading.hidden = true;
-    if (feedError) { feedError.hidden = false; feedError.textContent = 'Could not load posts. Check Firestore rules.'; }
-  });
+    renderStoryStrip(uid);
+  };
+
+  const handle = (key) => snap => {
+    streams[key] = snap.docs.map(d => ({ ...d.data(), _id: d.id }));
+    redraw();
+  };
+
+  onSnapshot(
+    query(collection(db, 'posts'), where('type', '==', 'post'), orderBy('createdAtMs', 'desc'), limit(20)),
+    handle('posts'),
+    err => { console.error('Public posts feed:', err); }
+  );
+
+  onSnapshot(
+    query(collection(db, 'posts'), where('privacy', '==', 'public'), orderBy('createdAtMs', 'desc'), limit(20)),
+    handle('publicStories'),
+    err => { console.error('Public stories feed:', err); }
+  );
+
+  onSnapshot(
+    query(collection(db, 'posts'), where('privacy', '==', 'friends'), where('allowedUids', 'array-contains', uid), orderBy('createdAtMs', 'desc'), limit(20)),
+    handle('friendStories'),
+    err => { console.error('Friends stories feed:', err); }
+  );
 }
 
 document.addEventListener('click', e => {
