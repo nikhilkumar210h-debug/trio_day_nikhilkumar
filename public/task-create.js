@@ -1,7 +1,7 @@
 import { auth, db } from './firebase-init.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
-import { createCommunityTask } from './gamification/community-tasks.js';
+import { createCommunityTask } from './gamification/community-tasks.js?v=20260919-community3';
 import { ACTIVITY_TYPES, activityTypeInfo } from './activity-ui.js';
 import { ACTIVITY_CATALOG } from './activity-catalog.js';
 import { mechanicInfo, mechanicsFor } from './forge-mechanics.js';
