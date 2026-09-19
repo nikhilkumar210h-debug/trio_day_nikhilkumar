@@ -208,6 +208,7 @@ onAuthStateChanged(auth,async u=>{
    const start=Number(data.startAtMs)||Number(data.createdAtMs)||0;
    const end=Number(data.endAtMs)||start+(Number(data.expiresInDays)||14)*86400000;
    if(start>Date.now()||end<=Date.now())return fail('Activity is not active right now.');
+   if(data.activityType !== 'game' && !data.interaction && !data.templateId) return fail('This activity has no interactive setup yet.');
    activity={id:snap.id,...data,type:data.activityType,source:'community',engineId:data.templateId||null,expiresInDays:Math.max(0,Math.ceil((end-Date.now())/86400000)),endAtMs:end,startAtMs:start};
  }else{
    activity=activeCatalogActivities().find(x=>x.id===id)||null;
