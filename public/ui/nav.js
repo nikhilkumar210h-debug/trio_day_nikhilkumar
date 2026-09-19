@@ -35,14 +35,9 @@ function pathKey() {
 const AUTH_PAGES = new Set(['login.html', '404.html', 'sitemap.html', 'offline.html']);
 
 function createHandler() {
-  // Single shared Create trigger → existing FAB / headerPlus / chooser,
-  // otherwise navigate to the full-page creator.
+  // One-way Create action: open the existing chooser when present,
+  // otherwise open the full activity creator. Never click the FAB itself.
   const chooser = document.getElementById('createChooser');
-  const fab = document.getElementById('fabBtn');
-  const headerPlus = document.getElementById('headerPlus');
-  if (chooser && !chooser.hidden) return;
-  if (fab) { fab.click(); return; }
-  if (headerPlus) { headerPlus.click(); return; }
   if (chooser) { chooser.hidden = false; document.body.style.overflow = 'hidden'; return; }
   location.href = 'task-create.html';
 }
