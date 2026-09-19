@@ -48,7 +48,7 @@ async function initTodayScreen(uid) {
       renderPeople(uid),
     ]);
   }
-  initHighlightsFeed();
+  initHighlightsFeed(uid);
 }
 
 function renderGreeting() {
