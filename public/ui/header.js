@@ -9,6 +9,22 @@ export function initHeader() {
   const inner = document.querySelector('.topbar-inner');
   if (!topbar || !inner) return;
 
+  // Shared page back button — keeps secondary pages easy to exit.
+  const page = (location.pathname.split('/').pop() || 'index.html').toLowerCase();
+  const noBack = new Set(['index.html','login.html','signup.html','404.html','offline.html']);
+  if (!noBack.has(page) && !inner.querySelector('.nkm-header-back')) {
+    const back = document.createElement('button');
+    back.type = 'button';
+    back.className = 'nkm-header-back';
+    back.setAttribute('aria-label','Go back');
+    back.innerHTML = '<span aria-hidden="true">←</span><span class="nkm-header-back-label">Back</span>';
+    back.addEventListener('click', () => {
+      if (history.length > 1) history.back();
+      else location.href = page === 'activity.html' || page === 'task-detail.html' || page === 'task-create.html' || page === 'room.html' || page === 'rooms.html' ? 'all-users.html' : 'index.html';
+    });
+    inner.insertBefore(back, inner.firstChild);
+  }
+
   // Inject header search slot (desktop inline, mobile via sheet)
   if (!document.querySelector('.nkm-header-search')) {
     const searchSlot = document.createElement('div');
