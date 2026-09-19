@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0a0f12">
+<title>Share Story — Trio Day</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'"><noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
+<script>!function(){try{var t=localStorage.getItem('trio-theme')||localStorage.getItem('trio_theme');if(t!=='dark'&&t!=='light')t=matchMedia('(prefers-color-scheme:light)').matches?'light':'dark';document.documentElement.setAttribute('data-theme',t)}catch(e){}}()</script>
+<link rel="stylesheet" href="styles/tokens.css"><link rel="stylesheet" href="styles/skeleton.css"><link rel="stylesheet" href="styles/sheet.css"><link rel="stylesheet" href="styles/nav.css"><link rel="stylesheet" href="styles/header.css"><link rel="stylesheet" href="styles/components.css"><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="styles/upload.css?v=1"><link rel="manifest" href="manifest.json">
+</head>
+<body class="upload-page">
+<div class="tricolor-strip"><span></span><span></span><span></span></div>
+<header class="topbar"><div class="topbar-inner"><a class="brand" href="index.html"><span class="brand-chakra">☸</span><span class="brand-copy"><strong>trio_day</strong><small>STORY</small></span></a><div id="authStatus" class="auth-status"></div></div></header>
+<main class="upload-main">
+<div class="upload-head"><div><a class="btn secondary" href="index.html">← Today</a><span class="eyebrow" style="margin-left:8px">24-hour story</span><h1>Share your moment.</h1><p>Upload a photo or short video, add a caption, choose who can see it, and publish.</p></div></div>
+<div class="upload-shell">
+<section class="upload-preview-card">
+  <div class="upload-stage" id="storyPreview">
+    <div class="upload-placeholder" id="uploadPlaceholder"><div class="mark">✦</div><strong>Your Story</strong><span>Your selected photo or video will appear here.</span></div>
+  </div>
+  <div class="upload-preview-footer"><span class="upload-live">Live for 24h</span><span id="mediaMeta">No media selected</span></div>
+</section>
+<section class="upload-form-card">
+  <div class="builder-label" style="margin-bottom:12px">01 · Media</div>
+  <div class="upload-drop">
+    <label class="upload-choice"><input id="storyMedia" type="file" accept="image/*,video/*" hidden><b>＋</b><span>Choose photo or video</span></label>
+    <label class="upload-choice"><input id="storyCamera" type="file" accept="image/*" capture="environment" hidden><b>◉</b><span>Open camera</span></label>
+  </div>
+  <div class="builder-label" style="margin-bottom:12px">02 · Story</div>
+  <label class="field"><span class="label-text">Caption</span><textarea id="storyMessage" class="upload-input upload-caption" maxlength="500" placeholder="Say something about this moment…"></textarea></label>
+  <div class="upload-expiry"><strong>Expires automatically</strong><span>Stories disappear after 24 hours.<br>They are not added to your permanent profile.</span></div>
+  <div class="builder-label">Who can see it?</div>
+  <div class="upload-privacy" role="radiogroup" aria-label="Story privacy">
+    <button type="button" class="active" data-privacy="public">Public</button>
+    <button type="button" data-privacy="friends">Friends only</button>
+  </div>
+  <div id="storyFormStatus" class="upload-status" aria-live="polite"></div>
+  <div style="display:flex;gap:8px"><a class="btn secondary" href="index.html" style="flex:1">Cancel</a><button id="storySubmitBtn" class="btn primary upload-submit" type="button" style="flex:1">Share Story</button></div>
+  <p class="upload-note">Images keep their original quality up to 12MB. Videos can be up to 100MB.</p>
+</section>
+</div>
+</main>
+<script type="module" src="auth-guard.js"></script><script type="module" src="auth-ui.js"></script><script type="module" src="upload.js?v=1"></script><script type="module" src="theme.js"></script><script type="module" src="ui/header.js"></script>
+</body></html>
