@@ -149,6 +149,19 @@ async function fsCreateDoc(projectId, accessToken, path, data) {
   }
   return true;
 }
+async function fsDelete(projectId, accessToken, path) {
+  const url = firestoreBase(projectId) + '/' + path;
+  const res = await fetch(url, {
+    method:'DELETE',
+    headers:{ Authorization:'Bearer ' + accessToken }
+  });
+  if (res.status === 404) return false;
+  if (!res.ok) {
+    const txt = await res.text();
+    throw new Error('Firestore DELETE ' + path + ' failed: ' + res.status + ' ' + txt);
+  }
+  return true;
+}
 
 // ─── Firebase ID token verification ──────────────────────────────────────────
 
