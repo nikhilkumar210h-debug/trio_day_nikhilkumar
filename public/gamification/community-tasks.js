@@ -104,6 +104,7 @@ export async function createCommunityTask(uid, profile, data) {
     description:  String(data.description || '').slice(0, 500),
     icon:         String(data.icon        || '🎯').slice(0, 8),
     kind,
+    activityType: ['puzzle','build','learn','challenge','game'].includes(data.activityType) ? data.activityType : (kind === 'challenge' ? 'challenge' : 'game'),
     templateId:   data.templateId || null,
     metric:       data.metric     || 'manual',
     target:       Math.max(1, Number(data.target)    || 1),
