@@ -105,7 +105,7 @@ const CATALOG_HARD = new Set(['p12','b11']);
 
 function catalogXp(activityId) {
   const id = String(activityId || '').trim().toLowerCase();
-  if (!/^[pblcg]\\d+$/.test(id)) return 0;
+  if (!/^[pblcg]\d+$/.test(id)) return 0;
   if (CATALOG_HARD.has(id)) return 60;
   if (CATALOG_MEDIUM.has(id)) return 40;
   return 25;
