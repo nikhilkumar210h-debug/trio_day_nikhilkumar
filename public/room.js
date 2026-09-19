@@ -4,8 +4,9 @@ import{collection,query,orderBy,limit,onSnapshot,getDoc,getDocs,doc,setDoc,delet
 import{escapeHtml as esc,avatarHtml}from'./utils.js';
 import{activityCardHtml}from'./activity-ui.js';
 import{activeCatalogActivities}from'./activity-catalog.js';
+import{mountSharedBuildWorkspace}from'./room-workspace.js';
 const $=id=>document.getElementById(id),id=new URLSearchParams(location.search).get('id');
-let me=null,p={},room=null;
+let me=null,p={},room=null,stopSharedWorkspace=()=>{};
 function fail(t){$('roomStatus').textContent=t;$('roomStatus').classList.add('error')}
 async function load(){
  if(!id)return fail('Missing room id.');
@@ -31,6 +32,10 @@ async function load(){
      $('workspaceTitle').textContent=activity.title||'Activity workspace';
      $('workspaceBrief').textContent=activity.challengeBrief||activity.goal||activity.description||'Work together on the activity and use room chat to compare ideas.';
      $('challengeLink').href=activity.source==='catalog'?'activity.html?id='+encodeURIComponent(room.challengeId):'task-detail.html?id='+encodeURIComponent(room.challengeId);
+     stopSharedWorkspace();
+     if(activity.type==='build' && room.activitySource==='catalog'){
+       stopSharedWorkspace=await mountSharedBuildWorkspace($('roomWorkspace'),{db,roomId:id,activity,me,onStateChange:(result)=>{if(result?.passed)$('workspaceBrief').textContent='Shared build complete ✓ Everyone reached a valid solution.'}});
+     }
    }
  }
  onSnapshot(query(collection(db,'rooms',id,'members'),orderBy('joinedAtMs','asc'),limit(20)),s=>{
