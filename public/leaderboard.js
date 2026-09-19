@@ -34,10 +34,14 @@ async function load() {
     const ids = currentBoardIds();
     if (board === 'friends') {
       if (!me) { renderRows([]); return; }
-      const snap = await getDocs(collection(db, 'users', me.uid, 'following'));
-      const idsFollow = snap.docs.map(d => d.id);
+      const [followingSnap, followersSnap] = await Promise.all([
+        getDocs(collection(db, 'users', me.uid, 'following')),
+        getDocs(collection(db, 'users', me.uid, 'followers'))
+      ]);
+      const following = new Set(followingSnap.docs.map(d => d.id));
+      const friendIds = followersSnap.docs.map(d => d.id).filter(id => following.has(id));
       const valueKey = 'xp';
-      const entries = await friendsLeaderboard(me.uid, idsFollow, valueKey);
+      const entries = await friendsLeaderboard(me.uid, friendIds, valueKey);
       renderRows(entries, 'XP');
     } else {
       const map = {
