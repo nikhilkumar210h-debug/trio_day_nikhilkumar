@@ -40,7 +40,7 @@ export function pushUrl({ type, actorUid, postId, urlPath }) {
       : `${APP_BASE}/all-users.html`;
   }
   if (['task_reminder', 'challenge_reminder', 'streak_warning', 'task_complete'].includes(type)) {
-    return `${APP_BASE}/tasks.html`;
+    return `${APP_BASE}/all-users.html`;
   }
   if (type === 'badge_earned') return `${APP_BASE}/profile.html`;
   if (postId) return `${APP_BASE}/view_post.html?postId=${encodeURIComponent(postId)}`;
