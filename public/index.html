@@ -77,7 +77,7 @@
     <!-- Today's Focus — real task data -->
     <section id="todayFocus" class="today-section" aria-label="Today's Focus">
       <h2 class="today-section-title">Today's Focus <span class="today-focus-label">ONE THING</span></h2>
-      <div id="focusPrimary" class="focus-primary"></div>
+      <div id="focusPrimary" class="focus-primary"><div class="td-skeleton td-skeleton--wide" aria-hidden="true"></div></div>
       <div id="focusSecondary" class="focus-secondary"></div>
     </section>
 
@@ -101,7 +101,7 @@
 
     <!-- Highlights — activity highlights (compact feed) -->
     <section id="highlightsSection" class="today-section" aria-label="Highlights">
-      <h2 class="today-section-title">Highlights</h2>
+      <h2 class="today-section-title">Latest</h2>
       <div id="feedLoading" class="skeleton-stack">
         <div class="skeleton-card"></div>
         <div class="skeleton-card"></div>
@@ -110,7 +110,7 @@
       <div id="feedEmpty" class="empty-state" hidden>
         <div class="empty-chakra">☸</div>
         <h3>Nothing here yet</h3>
-        <p>Start the conversation — share a thought or moment.</p>
+        <p>Share a thought or moment.</p>
         <button class="nkm-btn nkm-btn--primary" type="button" data-open-post style="margin-top:8px">Create Something</button>
       </div>
       <div id="feedError" class="banner-error" hidden></div>
