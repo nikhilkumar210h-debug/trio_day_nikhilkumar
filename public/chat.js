@@ -47,23 +47,27 @@ function renderInbox(filter = '') {
   list.innerHTML = '';
 
   const rows = users
-    .filter(u => u.uid && u.uid !== currentUser.uid && conversations.has(u.uid))
+    .filter(u => u.uid && u.uid !== currentUser.uid)
     .filter(u => {
       const latest = conversations.get(u.uid)?.latest;
+      const hasConversation = conversations.has(u.uid);
       const text = `${nameOf(u)} ${u.userId || u.uid} ${previewText(latest)}`.toLowerCase();
-      return !qText || text.includes(qText);
+      return qText ? text.includes(qText) : hasConversation;
     })
-    .sort((a, b) =>
-      (conversations.get(b.uid)?.latest?.createdAtMs || 0) -
-      (conversations.get(a.uid)?.latest?.createdAtMs || 0)
-    )
-    .slice(0, 20);
+    .sort((a, b) => {
+      const bc = conversations.has(b.uid) ? 1 : 0;
+      const ac = conversations.has(a.uid) ? 1 : 0;
+      if (bc !== ac) return bc - ac;
+      return (conversations.get(b.uid)?.latest?.createdAtMs || 0) -
+        (conversations.get(a.uid)?.latest?.createdAtMs || 0);
+    })
+    .slice(0, qText ? 20 : 30);
 
   const countBadge = $('conversationCount');
   if (countBadge) countBadge.textContent = String(rows.length);
 
   if (!rows.length) {
-    list.innerHTML = `<div class="nkm-chat-empty"><span>✉</span><p>No conversations yet.</p><a class="nkm-btn nkm-btn--primary nkm-btn--sm" href="all-users.html">Start a Conversation</a></div>`;
+    list.innerHTML = `<div class="nkm-chat-empty"><span>✉</span><p>${qText ? 'No people matched your search.' : 'No conversations yet.'}</p><a class="nkm-btn nkm-btn--primary nkm-btn--sm" href="search.html">Find people</a></div>`;
     return;
   }
 
@@ -135,7 +139,7 @@ async function loadUsers() {
   if (cached) {
     users = cached;
   } else {
-    const snap = await getDocs(query(collection(db, 'users'), limit(20)));
+    const snap = await getDocs(query(collection(db, 'users'), limit(80)));
     users = snap.docs.map(d => ({ ...d.data(), uid: d.data().uid || d.id }));
     trioCache.set(cacheKey, users, trioCache.TTL.LONG);
     users.forEach(u => {
