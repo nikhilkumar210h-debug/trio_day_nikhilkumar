@@ -1532,9 +1532,18 @@ function initHighlightsFeed(uid) {
   );
 
   onSnapshot(
-    query(collection(db, 'posts'), where('allowedUids', 'array-contains', uid), limit(50)),
+    query(
+      collection(db, 'posts'),
+      where('privacy', '==', 'friends'),
+      where('allowedUids', 'array-contains', uid),
+      limit(50)
+    ),
     handle('friendStories'),
-    err => { console.error('Friends stories feed:', err); }
+    err => {
+      console.error('Friends stories feed:', err);
+      streams.friendStories = [];
+      redraw();
+    }
   );
 }
 
