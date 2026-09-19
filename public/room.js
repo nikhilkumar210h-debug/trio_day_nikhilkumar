@@ -29,6 +29,7 @@ async function load(){
    if(activity){
      $('roomActivity').innerHTML=activityCardHtml(activity,{compact:true});
      $('workspaceTitle').textContent=activity.title||'Activity workspace';
+     $('workspaceBrief').textContent=activity.challengeBrief||activity.goal||activity.description||'Work together on the activity and use room chat to compare ideas.';
      $('challengeLink').href=activity.source==='catalog'?'activity.html?id='+encodeURIComponent(room.challengeId):'task-detail.html?id='+encodeURIComponent(room.challengeId);
    }
  }
