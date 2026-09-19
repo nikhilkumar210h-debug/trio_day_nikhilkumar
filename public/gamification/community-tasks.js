@@ -356,6 +356,9 @@ export async function completeTask(taskId, uid, profile, evidence = null) {
     ? {
         answerIndex: Number.isInteger(Number(evidence.answerIndex)) ? Number(evidence.answerIndex) : null,
         score: Number.isInteger(Number(evidence.score)) ? Math.max(0, Math.min(5, Number(evidence.score))) : null,
+        answers: Array.isArray(evidence.answers)
+          ? evidence.answers.slice(0,5).map(v=>Math.max(0,Math.min(3,Number(v)||0)))
+          : null,
         proofText: String(evidence.proofText || '').trim().slice(0, 500),
         ...(evidence.buildEvidence && typeof evidence.buildEvidence === 'object'
           ? {
