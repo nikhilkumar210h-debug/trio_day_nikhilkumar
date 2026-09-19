@@ -53,6 +53,7 @@ const FILES_TO_CACHE = [
   BASE + "room-workspace.css",
   BASE + "task-create.html",
   BASE + "task-create.js",
+  BASE + "activity-create.css?v=3",
   BASE + "task-detail.html",
   BASE + "task-detail.js",
   BASE + "utils.js",
