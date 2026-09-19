@@ -284,6 +284,79 @@ service cloud.firestore {
         );
     }
 
+    function gridAdjacent(a, b) {
+      return (a + 1 == b && a != 3 && a != 7 && a != 11)
+        || (b + 1 == a && b != 3 && b != 7 && b != 11)
+        || a + 4 == b
+        || b + 4 == a;
+    }
+
+    function validAllocationSolution(taskId, state) {
+      let d = get(/databases/$(database)/documents/communityTasks/$(taskId)).data;
+      let items = d.interaction.items;
+      let a = state.allocation;
+      return a is list
+        && a.size() == items.size()
+        && a[0] is number && a[0] >= items[0][1]
+        && a[1] is number && a[1] >= items[1][1]
+        && (items.size() < 3 || (a[2] is number && a[2] >= items[2][1]))
+        && (items.size() < 4 || (a[3] is number && a[3] >= items[3][1]))
+        && (items.size() < 5 || (a[4] is number && a[4] >= items[4][1]))
+        && (items.size() < 6 || (a[5] is number && a[5] >= items[5][1]))
+        && (items.size() < 7 || (a[6] is number && a[6] >= items[6][1]))
+        && (items.size() < 8 || (a[7] is number && a[7] >= items[7][1]))
+        && a[0] + a[1]
+          + (items.size() >= 3 ? a[2] : 0)
+          + (items.size() >= 4 ? a[3] : 0)
+          + (items.size() >= 5 ? a[4] : 0)
+          + (items.size() >= 6 ? a[5] : 0)
+          + (items.size() >= 7 ? a[6] : 0)
+          + (items.size() >= 8 ? a[7] : 0)
+          <= d.interaction.budget;
+    }
+
+    function validGridSolution(taskId, state) {
+      let d = get(/databases/$(database)/documents/communityTasks/$(taskId)).data;
+      let r = d.interaction.required;
+      let p = state.positions;
+      return p is map
+        && p[r[0]] is int && p[r[0]] >= 0 && p[r[0]] < 16
+        && p[r[1]] is int && p[r[1]] >= 0 && p[r[1]] < 16
+        && p[r[0]] != p[r[1]]
+        && !(p[r[0]] in d.interaction.blocked)
+        && !(p[r[1]] in d.interaction.blocked)
+        && gridAdjacent(p[r[0]], p[r[1]])
+        && (r.size() < 3 || (
+          p[r[2]] is int && p[r[2]] >= 0 && p[r[2]] < 16
+          && p[r[2]] != p[r[0]] && p[r[2]] != p[r[1]]
+          && !(p[r[2]] in d.interaction.blocked)
+          && gridAdjacent(p[r[1]], p[r[2]])
+        ))
+        && (r.size() < 4 || (
+          p[r[3]] is int && p[r[3]] >= 0 && p[r[3]] < 16
+          && p[r[3]] != p[r[0]] && p[r[3]] != p[r[1]] && p[r[3]] != p[r[2]]
+          && !(p[r[3]] in d.interaction.blocked)
+          && gridAdjacent(p[r[2]], p[r[3]])
+        ));
+    }
+
+    function validBuildCompletion(taskId) {
+      let d = get(/databases/$(database)/documents/communityTasks/$(taskId)).data;
+      let e = request.resource.data.buildEvidence;
+      let s = e.state;
+      return e is map
+        && e.mechanic is string
+        && e.mechanic == d.interaction.mechanic
+        && s is map
+        && s.size() <= 4
+        && (
+          (e.mechanic == 'order' && s.order is list && s.order == d.interaction.items)
+          || (e.mechanic == 'allocate' && validAllocationSolution(taskId, s))
+          || (e.mechanic == 'grid' && validGridSolution(taskId, s))
+          || (e.mechanic == 'assign' && s.assign is map && s.assign == d.interaction.correct)
+        );
+    }
+
     function validXpForDifficulty(difficulty, xp) {
       return xp is int
         && ((difficulty == 'Easy' && xp == 25)
@@ -575,12 +648,7 @@ service cloud.firestore {
             (
               get(/databases/$(database)/documents/communityTasks/$(taskId)).data.activityType == 'build'
               && get(/databases/$(database)/documents/communityTasks/$(taskId)).data.interaction.kind == 'build'
-              && request.resource.data.buildEvidence is map
-              && request.resource.data.buildEvidence.mechanic is string
-              && request.resource.data.buildEvidence.mechanic == get(/databases/$(database)/documents/communityTasks/$(taskId)).data.interaction.mechanic
-              && request.resource.data.buildEvidence.state is string
-              && request.resource.data.buildEvidence.state.size() >= 2
-              && request.resource.data.buildEvidence.state.size() <= 1600
+              && validBuildCompletion(taskId)
             )
             || (
               get(/databases/$(database)/documents/communityTasks/$(taskId)).data.activityType == 'challenge'
