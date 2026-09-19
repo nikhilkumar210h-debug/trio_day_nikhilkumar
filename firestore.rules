@@ -298,9 +298,9 @@ service cloud.firestore {
         && request.resource.data.status == 'open';
       allow update: if signedIn() && resource.data.hostUid == request.auth.uid;
       allow delete: if signedIn() && resource.data.hostUid == request.auth.uid;
-      match /members/{memberUid} { allow read: if signedIn(); allow create, delete: if owner(memberUid); allow update: if false; }
+      match /members/{memberUid} { allow read: if signedIn(); allow create, delete: if owner(memberUid) && get(/databases/$(database)/documents/rooms/$(roomId)).data.status == 'open'; allow update: if false; }
       match /messages/{messageId} {
-        allow read: if signedIn();
+        allow read: if signedIn() && exists(/databases/$(database)/documents/rooms/$(roomId)/members/$(request.auth.uid));
         allow create: if signedIn() && request.resource.data.uid == request.auth.uid && exists(/databases/$(database)/documents/rooms/$(roomId)/members/$(request.auth.uid)) && request.resource.data.text is string && request.resource.data.text.size() > 0 && request.resource.data.text.size() <= 500;
         allow update, delete: if false;
       }
