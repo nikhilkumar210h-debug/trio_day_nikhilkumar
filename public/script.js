@@ -594,11 +594,7 @@ function closeStoryModal() {
 function openCreateChooser(){ const c=$('createChooser'); if(!c) return; c.hidden=false; document.body.style.overflow='hidden'; }
 function closeCreateChooser(){ const c=$('createChooser'); if(!c) return; c.hidden=true; if($('storyOverlay')?.hidden && $('modalOverlay')?.hidden) document.body.style.overflow=''; }
 $('chooserStory')?.addEventListener('click', ()=>{ closeCreateChooser(); openStoryModal(); });
-$('chooserPost')?.addEventListener('click', ()=>{ closeCreateChooser(); openModal(); });
-$('chooserVoice')?.addEventListener('click', () => {
-  closeCreateChooser();
-  location.href = 'voice-status.html';
-});
+$('chooserPost')?.addEventListener('click', ()=>{ closeCreateChooser(); location.href = 'task-create.html'; });
 $('chooserCancel')?.addEventListener('click', closeCreateChooser);
 $('createChooser')?.addEventListener('click', e=>{ if(e.target===$('createChooser')) closeCreateChooser(); });
 document.addEventListener('keydown', e=>{ if(e.key==='Escape' && !$('createChooser')?.hidden) closeCreateChooser(); });
