@@ -10,7 +10,16 @@ service cloud.firestore {
     }
 
     match /posts/{postId} {
-      allow read: if signedIn();
+      allow read: if signedIn() && (
+        resource.data.type == 'post'
+        || resource.data.privacy == 'public'
+        || resource.data.uid == request.auth.uid
+        || (
+          resource.data.privacy == 'friends'
+          && resource.data.allowedUids is list
+          && request.auth.uid in resource.data.allowedUids
+        )
+      );
       allow create: if signedIn() && request.resource.data.uid == request.auth.uid
         && request.resource.data.name is string && request.resource.data.name.size() <= 50
         && request.resource.data.message is string && request.resource.data.message.size() > 0
@@ -22,6 +31,14 @@ service cloud.firestore {
             request.resource.data.isStory == true
             && request.resource.data.privacy in ['public', 'friends']
             && request.resource.data.expiresAtMs is number
+            && (
+              request.resource.data.privacy == 'public'
+              || (
+                request.resource.data.allowedUids is list
+                && request.resource.data.allowedUids.size() <= 500
+                && request.auth.uid in request.resource.data.allowedUids
+              )
+            )
           )
           || (
             request.resource.data.type == 'voice'
@@ -32,6 +49,14 @@ service cloud.firestore {
             && request.resource.data.privacy in ['public', 'friends']
             && request.resource.data.expiresAtMs is number
             && request.resource.data.mediaUrl is string
+            && (
+              request.resource.data.privacy == 'public'
+              || (
+                request.resource.data.allowedUids is list
+                && request.resource.data.allowedUids.size() <= 500
+                && request.auth.uid in request.resource.data.allowedUids
+              )
+            )
           )
         );
       allow update: if false;
@@ -227,6 +252,13 @@ service cloud.firestore {
         && request.resource.data.difficulty in ['Easy','Medium','Hard']
         && request.resource.data.endAtMs is number
         && request.resource.data.expiresInDays in [7,14,21,30,40]
+        && request.resource.data.startAtMs is number
+        && request.resource.data.startAtMs <= request.resource.data.endAtMs
+        && request.resource.data.status == 'active'
+        && request.resource.data.joins == 0
+        && request.resource.data.likes == 0
+        && request.resource.data.comments == 0
+        && request.resource.data.completions == 0
         && request.resource.data.featured == false
         && request.resource.data.hidden == false;
       allow update: if signedIn() && (
@@ -300,7 +332,15 @@ service cloud.firestore {
         && request.resource.data.maxPlayers in [2,3,4,6]
         && request.resource.data.activitySource in ['catalog','community']
         && request.resource.data.activityType in ['puzzle','build','learn','challenge','game']
+        && request.resource.data.challengeId is string
+        && request.resource.data.challengeId.size() > 0
+        && request.resource.data.challengeId.size() <= 120
+        && request.resource.data.activityTitle is string
+        && request.resource.data.activityTitle.size() > 0
+        && request.resource.data.activityTitle.size() <= 100
+        && request.resource.data.memberCount == 1
         && request.resource.data.expiresAtMs is number
+        && request.resource.data.expiresAtMs > request.time.toMillis()
         && request.resource.data.status == 'open';
       allow update: if signedIn() && (
         (
