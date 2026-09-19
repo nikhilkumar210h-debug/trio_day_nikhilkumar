@@ -317,7 +317,7 @@ export async function listComments(taskId, max = 40) {
 
 // ── Complete ──────────────────────────────────────────────────────────────────
 
-export async function completeTask(taskId, uid, profile) {
+export async function completeTask(taskId, uid, profile, evidence = null) {
   const task = await getCommunityTask(taskId);
   if (!task) throw new Error('Task not found');
   if (task.endAtMs && task.endAtMs < Date.now()) throw new Error('Task expired');
@@ -328,10 +328,17 @@ export async function completeTask(taskId, uid, profile) {
 
   // Write completion subcollection doc (client rules: owner create only)
   const atMs = Date.now();
+  const safeEvidence = evidence && typeof evidence === 'object'
+    ? {
+        answerIndex: Number.isInteger(Number(evidence.answerIndex)) ? Number(evidence.answerIndex) : null,
+        proofText: String(evidence.proofText || '').trim().slice(0, 500)
+      }
+    : null;
   await setDoc(cref, {
     uid,
     name:  profile?.name || 'User',
-    atMs
+    atMs,
+    ...(safeEvidence ? safeEvidence : {})
   });
 
   // Bump completions counter server-side
