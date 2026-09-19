@@ -330,7 +330,21 @@ service cloud.firestore {
       }
       match /completions/{uid} {
         allow read: if signedIn();
-        allow create: if owner(uid);
+        allow create: if owner(uid)
+          && request.resource.data.uid == request.auth.uid
+          && request.resource.data.atMs is number
+          && (
+            get(/databases/$(database)/documents/communityTasks/$(taskId)).data.activityType in ['build','game','challenge']
+            || (
+              request.resource.data.answerIndex is int
+              && request.resource.data.answerIndex >= 0
+              && request.resource.data.answerIndex <= 3
+              && request.resource.data.answerIndex == get(/databases/$(database)/documents/communityTasks/$(taskId)).data.interaction.correct
+              && request.resource.data.proofText is string
+              && request.resource.data.proofText.size() >= 20
+              && request.resource.data.proofText.size() <= 500
+            )
+          );
         allow update, delete: if false;
       }
       match /ratings/{ratingUid} {
