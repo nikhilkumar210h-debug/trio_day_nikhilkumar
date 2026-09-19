@@ -41,38 +41,9 @@ export function initHeader() {
     }
   }
 
-  // Notification bell with unread dot (presence only, not count)
-  if (!document.querySelector('#headerNotifBtn')) {
-    const notifBtn = document.createElement('a');
-    notifBtn.id = 'headerNotifBtn';
-    notifBtn.className = 'nkm-header-chat notification-bell';
-    notifBtn.href = 'notifications.html';
-    notifBtn.setAttribute('aria-label', 'Notifications');
-    notifBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="nav-dot" id="headerNotifDot" hidden aria-hidden="true"></span>`;
-    const actions = inner.querySelector('.topbar-actions');
-    const authEl = document.getElementById('authStatus');
-    if (actions) {
-      if (authEl) actions.insertBefore(notifBtn, authEl);
-      else actions.prepend(notifBtn);
-    }
-  }
-
-  // Mobile Chat — single intentional access point near Notification (mobile only, desktop uses rail)
-  if (!document.querySelector('#headerChatBtn')) {
-    const chatBtn = document.createElement('a');
-    chatBtn.id = 'headerChatBtn';
-    chatBtn.className = 'nkm-header-chat';
-    chatBtn.href = 'chat.html';
-    chatBtn.setAttribute('aria-label', 'Chat');
-    chatBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span class="nav-chat-dot" id="headerChatDot" hidden aria-hidden="true"></span>`;
-    const actions = inner.querySelector('.topbar-actions');
-    const authEl = document.getElementById('authStatus');
-    if (actions) {
-      if (authEl) actions.insertBefore(chatBtn, authEl);
-      else actions.prepend(chatBtn);
-    }
-  }
-
+  // Notifications/chat intentionally live in dedicated navigation now.
+  // Keep the header visually quiet; bottom navigation already exposes Chat.
+  
   // Mobile search button (opens search page)
   if (!document.querySelector('.nkm-header-search-btn')) {
     const btn = document.createElement('button');
