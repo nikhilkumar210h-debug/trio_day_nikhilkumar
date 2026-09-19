@@ -28,7 +28,7 @@
  radial-gradient(circle at 82% 80%,rgba(255,255,255,.05),transparent 34%),
  linear-gradient(135deg,#151922,#0c1017)}
 .challenge-art:after{content:"";position:absolute;inset:auto -30% -45% auto;width:180px;height:180px;border:1px solid rgba(255,255,255,.06);border-radius:50%}
-.challenge-art span{font-size:54px;filter:drop-shadow(0 12px 24px rgba(0,0,0,.38))}
+.challenge-art > span:first-child{font-size:54px;filter:drop-shadow(0 12px 24px rgba(0,0,0,.38))}.challenge-art .challenge-type{font-size:10px;filter:none}
 .challenge-type{position:absolute;left:12px;top:12px;padding:6px 9px;border-radius:999px;background:rgba(0,0,0,.34);backdrop-filter:blur(8px);color:#fff;font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase}
 .challenge-body{padding:15px 15px 13px}
 .challenge-title{font:800 20px/1.15 var(--font-display);letter-spacing:-.03em;margin:0 0 7px}
