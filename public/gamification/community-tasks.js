@@ -100,7 +100,7 @@ export async function getCommunityTask(id) {
 export async function createCommunityTask(uid, profile, data) {
   if (!uid) throw new Error('Login required to create a challenge');
   const now = Date.now();
-  const startAtMs = Math.max(now, Number(data.startAtMs) || now);
+  const startAtMs = now;
   const requestedDays = Number(data.expiresInDays) || 14;
   const expiresInDays = [7,14,21,30,40].includes(requestedDays) ? requestedDays : 14;
   const minimumEnd = startAtMs + expiresInDays * 86400000;
