@@ -248,8 +248,24 @@ service cloud.firestore {
       }
       match /completions/{uid} {
         allow read: if signedIn();
-        allow create: if owner(uid);
-        allow update, delete: if false;
+        allow create, update, delete: if false;
+      }
+      match /submissions/{uid} {
+        allow read: if signedIn() && (
+          request.auth.uid == uid
+          || get(/databases/$(database)/documents/communityTasks/$(taskId)).data.creatorUid == request.auth.uid
+        );
+        allow create: if owner(uid)
+          && request.resource.data.uid == request.auth.uid
+          && request.resource.data.proofText is string
+          && request.resource.data.proofText.size() >= 10
+          && request.resource.data.proofText.size() <= 1000
+          && request.resource.data.status == 'pending';
+        allow update: if signedIn()
+          && get(/databases/$(database)/documents/communityTasks/$(taskId)).data.creatorUid == request.auth.uid
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','reviewedAtMs'])
+          && request.resource.data.status in ['approved','rejected'];
+        allow delete: if owner(uid);
       }
       match /ratings/{uid} {
         allow read: if signedIn();
