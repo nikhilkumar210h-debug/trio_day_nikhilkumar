@@ -1,3 +1,71 @@
+/* Challenge-first Today hero */
+.today-hero{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:18px;
+  padding:20px;
+  border:1px solid var(--color-border);
+  border-radius:24px;
+  background:
+    radial-gradient(circle at 85% 15%, rgba(99,102,241,.18), transparent 38%),
+    linear-gradient(135deg, rgba(255,255,255,.045), rgba(255,255,255,.015));
+  box-shadow:var(--shadow-sm);
+}
+.today-hero-copy{min-width:0}
+.today-hero-copy h1{
+  margin:6px 0 6px;
+  font-family:var(--font-display);
+  font-size:clamp(1.6rem,5vw,2.35rem);
+  line-height:1.08;
+  letter-spacing:-.035em;
+}
+.today-hero-name{
+  margin-left:4px;
+  background:linear-gradient(135deg,var(--color-primary),var(--color-primary-strong));
+  -webkit-background-clip:text;
+  background-clip:text;
+  -webkit-text-fill-color:transparent;
+}
+.today-hero-copy p{
+  margin:0;
+  color:var(--color-ink-muted);
+  font-size:var(--text-sm);
+  line-height:1.5;
+}
+.today-hero-cta{
+  flex:none;
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  min-height:42px;
+  padding:0 14px;
+  border-radius:14px;
+  border:1px solid var(--color-border-strong);
+  background:var(--color-surface);
+  color:var(--color-ink);
+  font-size:var(--text-sm);
+  font-weight:var(--font-semibold);
+  text-decoration:none;
+  white-space:nowrap;
+}
+.today-hero-cta:hover{border-color:var(--color-primary);transform:translateY(-1px)}
+.today-section{
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+  padding:4px 0;
+}
+.today-section-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
+.today-section-title{margin:0}
+.today-section-sub{margin:0;color:var(--color-ink-muted);font-size:var(--text-xs)}
+.today-section-head .nkm-btn{flex:none}
+
+@media(max-width:620px){
+  .today-hero{flex-direction:column;align-items:stretch;padding:16px}
+  .today-hero-cta{width:100%;justify-content:center}
+}
+
 /* Home / Today — Phase 4: Greeting → Stories → Focus → Continue → Challenges → People → Highlights
    Uses semantic tokens from tokens.css only. Mobile-first, no px-only spacing.
    ═════════════════════════════════════════════════════════════════════════════════ */
