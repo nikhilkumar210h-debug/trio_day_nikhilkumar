@@ -104,7 +104,7 @@ export function renderMysteryInvestigation(caseData, started, completed, taskId)
     '</div>';
 }
 
-export function bindMysteryInteractions(taskId) {
+export function bindMysteryInteractions(taskId, caseData = {}) {
   document.querySelectorAll('[data-clue-toggle]').forEach(function(btn) {
     btn.addEventListener('click', function() {
       const id = btn.dataset.clueToggle;
@@ -125,7 +125,6 @@ export function bindMysteryInteractions(taskId) {
       if (index !== current) return;
       localStorage.setItem(key, String(current + 1));
       const output = document.getElementById('caseHintOutput');
-      const caseData = window.__trioMysteryCaseData;
       const hint = caseData?.hints?.[index];
       if (output && hint) output.textContent = hint.text || '';
       document.querySelectorAll('[data-hint-index]').forEach(function(item) {
