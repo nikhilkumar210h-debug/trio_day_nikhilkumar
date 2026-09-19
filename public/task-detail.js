@@ -184,7 +184,7 @@ async function render() {
     await toggleLike(taskId, me.uid);
     await render();
   };
-  $('completeBtn').onclick = async () => {
+  if ($('completeBtn')) $('completeBtn').onclick = async () => {
     if (!me) return alert('Login first');
     const btn = $('completeBtn');
     const prevText = btn.textContent;
