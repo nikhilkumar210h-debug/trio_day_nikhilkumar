@@ -421,7 +421,7 @@ async function renderActiveChallenges(uid) {
 
 function buildChallengeCard(c) {
   const progress = Math.min(100, Math.round(((c.completions || 0) / Math.max(1, c.target || 1)) * 100));
-  const icon = c.icon || '🎯';
+  const icon = escapeHtml(c.icon || '🎯');
   const xp = c.xpReward || 0;
   const members = c.joins || 0;
   return `
