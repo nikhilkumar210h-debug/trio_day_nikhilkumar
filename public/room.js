@@ -49,13 +49,13 @@ async function load(){
    if(activity){
      $('roomActivity').innerHTML=activityCardHtml(activity,{compact:true});
      $('workspaceTitle').textContent=activity.title||'Activity workspace';
-     $('workspaceBrief').textContent=activity.challengeBrief||activity.goal||activity.description||'Work together on the activity and use room chat to compare ideas.';
+     $('roomWorkspaceStatus').textContent=activity.challengeBrief||activity.goal||activity.description||'Work together on the activity and use room chat to compare ideas.';
      $('challengeLink').href=activity.source==='catalog'?'activity.html?id='+encodeURIComponent(room.challengeId):'task-detail.html?id='+encodeURIComponent(room.challengeId);
      stopSharedWorkspace();
      if(activity.type==='build' && (room.activitySource==='catalog'||activity.engineId)){
-       stopSharedWorkspace=await mountSharedBuildWorkspace($('roomWorkspace'),{db,roomId:id,activity,me,onStateChange:(result)=>{if(result?.passed)$('workspaceBrief').textContent='Shared build complete ✓ Everyone reached a valid solution.'}});
+       stopSharedWorkspace=await mountSharedBuildWorkspace($('roomWorkspace'),{db,roomId:id,activity,me,onStateChange:(result)=>{if(result?.passed)$('roomWorkspaceStatus').textContent='Shared build complete ✓ Everyone reached a valid solution.'}});
      }else if((activity.type==='puzzle'||activity.type==='learn') && (room.activitySource==='catalog'||activity.engineId)){
-       stopSharedWorkspace=await mountSharedQuizWorkspace($('roomWorkspace'),{db,roomId:id,activity,me,mode:activity.type,onStateChange:(result)=>{if(result?.passed)$('workspaceBrief').textContent=activity.type==='learn'?'Concept understood by the room ✓':'Shared puzzle solved ✓'}});
+       stopSharedWorkspace=await mountSharedQuizWorkspace($('roomWorkspace'),{db,roomId:id,activity,me,mode:activity.type,onStateChange:(result)=>{if(result?.passed)$('roomWorkspaceStatus').textContent=activity.type==='learn'?'Concept understood by the room ✓':'Shared puzzle solved ✓'}});
      }else if(activity.type==='challenge' && (room.activitySource==='catalog'||activity.engineId)){
        stopSharedWorkspace=await mountSharedChallengeWorkspace($('roomWorkspace'),{db,roomId:id,activity,me,hostUid:room.hostUid});
      }
