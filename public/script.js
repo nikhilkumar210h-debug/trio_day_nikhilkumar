@@ -20,6 +20,44 @@ const $ = id => document.getElementById(id);
 let currentUser = null;
 let storyPrivacy = 'public';
 
+const FOCUS_MODES = {
+  surprise: { label: 'Surprise' },
+  quick: { label: 'Quick' },
+  think: { label: 'Think' },
+  make: { label: 'Make' },
+  learn: { label: 'Learn' },
+  social: { label: 'Social' }
+};
+
+function getFocusMode(uid = '') {
+  const saved = localStorage.getItem('trio_focus_mode');
+  if (saved && FOCUS_MODES[saved]) return saved;
+  const seed = Array.from(String(uid || 'guest')).reduce((n, ch) => n + ch.charCodeAt(0), 0);
+  const modes = ['quick', 'think', 'make', 'learn', 'social'];
+  return modes[Math.floor((Math.floor(Date.now() / 86400000) + seed) % modes.length)];
+}
+
+function setFocusMode(mode) {
+  if (!FOCUS_MODES[mode]) return;
+  localStorage.setItem('trio_focus_mode', mode);
+  document.querySelectorAll('[data-focus-mode]').forEach(btn => {
+    const active = btn.dataset.focusMode === mode;
+    btn.classList.toggle('active', active);
+    btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+  });
+  if (currentUser) renderFocusAndContinue(currentUser.uid);
+}
+
+function initFocusModePicker(uid) {
+  const mode = getFocusMode(uid);
+  document.querySelectorAll('[data-focus-mode]').forEach(btn => {
+    const active = btn.dataset.focusMode === mode;
+    btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+    btn.classList.toggle('active', active);
+    btn.addEventListener('click', () => setFocusMode(btn.dataset.focusMode));
+  });
+}
+
 // Theme is global (theme.js); no per-page lock here.
 SoundManager.init();
 
@@ -40,6 +78,7 @@ onAuthStateChanged(auth, async user => {
 
 async function initTodayScreen(uid) {
   renderGreeting();
+  initFocusModePicker(uid || '');
   await renderStoryStrip(uid);
   if (uid) {
     await Promise.all([
@@ -302,13 +341,35 @@ async function renderFocusAndContinue(uid) {
       .filter(a => ['puzzle', 'build', 'learn', 'challenge', 'game'].includes(a.type))
       .map(a => ({ ...a, activityType: a.type, source: 'catalog' }));
 
-    // Prefer something the user has already started. Otherwise use a stable
-    // daily catalog choice rather than a time-dependent/random-looking pick.
-    const dailyIndex = Math.floor(Date.now() / 86400000) % Math.max(1, catalog.length);
-    const focus = resumable[0]
-      || candidates.find(t => t.featured)
-      || catalog[dailyIndex]
-      || catalog[0];
+    const selectedMode = getFocusMode(uid);
+    const pool = [...candidates, ...catalog];
+    const seen = new Set();
+    const modeCycleType = ['puzzle', 'build', 'learn', 'challenge', 'game'][
+      Math.floor((Date.now() / 86400000 + uid.length) % 5)
+    ];
+    const ranked = pool
+      .filter(t => {
+        if (!t?.id || seen.has(t.id)) return false;
+        seen.add(t.id);
+        return true;
+      })
+      .map(t => {
+        const type = normalizeActivityType(t);
+        const duration = Number(t.durationMin) || 20;
+        let score = 0;
+        if (selectedMode === 'quick') score += duration <= 20 ? 8 : duration <= 30 ? 3 : 0;
+        if (selectedMode === 'think') score += type === 'puzzle' ? 8 : type === 'challenge' ? 4 : 1;
+        if (selectedMode === 'make') score += type === 'build' ? 8 : 1;
+        if (selectedMode === 'learn') score += type === 'learn' ? 8 : type === 'puzzle' ? 3 : 1;
+        if (selectedMode === 'social') score += type === 'game' ? 8 : type === 'challenge' ? 5 : (t.source === 'community' ? 2 : 0);
+        if (selectedMode === 'surprise') score += type === modeCycleType ? 5 : 0;
+        if (t.featured) score += 2;
+        if (t.source === 'community') score += 1;
+        score += Math.max(0, 2 - Math.abs(20 - duration) / 20);
+        return { task: t, score };
+      })
+      .sort((a, b) => b.score - a.score);
+    const focus = resumable[0] || ranked[0]?.task || catalog[0];
 
     if (focus) {
       const type = normalizeActivityType(focus);
