@@ -1,6 +1,6 @@
 import { auth, db } from './firebase-init.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
-import { doc, getDoc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
+import { collection, doc, getDoc, getDocs, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 import {
   getCommunityTask, joinTask, leaveTask, isMember, toggleLike,
   addComment, listComments, completeTask,
@@ -17,6 +17,65 @@ let me = null;
 let profile = null;
 let task = null;
 let admin = false;
+
+async function renderRatings() {
+  const section = $('ratingSection');
+  if (!section || !me) return;
+  section.hidden = false;
+  const status = $('ratingStatus');
+  try {
+    const snap = await getDocs(collection(db, 'communityTasks', taskId, 'ratings'));
+    const rows = snap.docs.map(d => d.data()).filter(r => Number(r.overall) >= 1);
+    if (rows.length) {
+      const avg = rows.reduce((sum, r) => sum + Number(r.overall), 0) / rows.length;
+      $('ratingSummary').textContent = avg.toFixed(1) + ' / 5 · ' + rows.length + ' rating' + (rows.length === 1 ? '' : 's');
+    } else {
+      $('ratingSummary').textContent = 'No ratings yet';
+    }
+    const mine = snap.docs.find(d => d.id === me.uid)?.data();
+    if (mine) {
+      ['Overall','Fun','Useful','Teamwork'].forEach(k => {
+        const el = $('rating' + k);
+        const v = mine[k.toLowerCase()];
+        if (el && Number(v) >= 1) el.value = String(v);
+      });
+      $('ratingSubmit').textContent = 'Update rating';
+      status.textContent = 'You have already rated this activity.';
+    } else {
+      status.textContent = '';
+    }
+  } catch (e) {
+    console.error('renderRatings failed', e);
+  }
+}
+
+async function saveRating(e) {
+  e.preventDefault();
+  if (!me || !task) return;
+  const btn = $('ratingSubmit');
+  const status = $('ratingStatus');
+  btn.disabled = true;
+  btn.textContent = 'Saving…';
+  try {
+    await setDoc(doc(db, 'communityTasks', taskId, 'ratings', me.uid), {
+      uid: me.uid,
+      overall: Number($('ratingOverall').value),
+      fun: Number($('ratingFun').value),
+      useful: Number($('ratingUseful').value),
+      teamwork: Number($('ratingTeamwork').value),
+      updatedAtMs: Date.now(),
+      createdAt: serverTimestamp()
+    }, { merge: true });
+    status.textContent = 'Rating saved ✓';
+    await renderRatings();
+  } catch (err) {
+    status.textContent = err.message || 'Could not save rating.';
+    status.classList.add('error');
+  } finally {
+    btn.disabled = false;
+    if (btn.textContent === 'Saving…') btn.textContent = 'Save rating';
+  }
+}
 
 async function followCreator(creatorUid) {
   if (!me || !creatorUid || me.uid === creatorUid) return;
@@ -124,11 +183,15 @@ async function render() {
     };
   }
 
+  await renderRatings();
+
   const comments = await listComments(taskId);
   $('commentsList').innerHTML = comments.length
     ? comments.map(c => `<li><strong><a href="profile.html?uid=${encodeURIComponent(c.uid || '')}">${esc(c.name)}</a></strong> ${esc(c.txt)}</li>`).join('')
     : '<li class="muted">No comments yet.</li>';
 }
+
+$('ratingForm')?.addEventListener('submit', saveRating);
 
 $('commentBtn').addEventListener('click', async () => {
   if (!me) return alert('Login first');
