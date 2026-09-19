@@ -1510,19 +1510,19 @@ function initHighlightsFeed(uid) {
   };
 
   onSnapshot(
-    query(collection(db, 'posts'), where('type', '==', 'post'), orderBy('createdAtMs', 'desc'), limit(20)),
+    query(collection(db, 'posts'), where('type', '==', 'post'), limit(50)),
     handle('posts'),
     err => { console.error('Public posts feed:', err); }
   );
 
   onSnapshot(
-    query(collection(db, 'posts'), where('privacy', '==', 'public'), orderBy('createdAtMs', 'desc'), limit(20)),
+    query(collection(db, 'posts'), where('privacy', '==', 'public'), limit(50)),
     handle('publicStories'),
     err => { console.error('Public stories feed:', err); }
   );
 
   onSnapshot(
-    query(collection(db, 'posts'), where('privacy', '==', 'friends'), where('allowedUids', 'array-contains', uid), orderBy('createdAtMs', 'desc'), limit(20)),
+    query(collection(db, 'posts'), where('allowedUids', 'array-contains', uid), limit(50)),
     handle('friendStories'),
     err => { console.error('Friends stories feed:', err); }
   );
