@@ -251,6 +251,14 @@ service cloud.firestore {
         allow create: if owner(uid);
         allow update, delete: if false;
       }
+      match /ratings/{uid} {
+        allow read: if signedIn();
+        allow create, update: if owner(uid)
+          && request.resource.data.rating is number
+          && request.resource.data.rating >= 1
+          && request.resource.data.rating <= 5;
+        allow delete: if owner(uid);
+      }
     }
   }
 }
