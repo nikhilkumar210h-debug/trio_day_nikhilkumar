@@ -272,6 +272,7 @@ service cloud.firestore {
       match /ratings/{ratingUid} {
         allow read: if signedIn();
         allow create, update: if owner(ratingUid)
+          && exists(/databases/$(database)/documents/communityTasks/$(taskId)/completions/$(request.auth.uid))
           && request.resource.data.uid == request.auth.uid
           && request.resource.data.overall is number
           && request.resource.data.overall >= 1 && request.resource.data.overall <= 5
