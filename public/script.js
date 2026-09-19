@@ -293,6 +293,10 @@ async function renderFocusAndContinue(uid) {
     if (primaryActivity) {
       focusPrimary.innerHTML = activityCardHtml(primaryActivity);
       focusPrimary.classList.add('focus-activity-wrap');
+      const visualTitle = $('todayVisualTitle');
+      const visualMeta = $('todayVisualMeta');
+      if (visualTitle) visualTitle.textContent = primaryActivity.title || 'One meaningful move';
+      if (visualMeta) visualMeta.textContent = primaryActivity.challengeBrief || primaryActivity.goal || 'Start when you are ready.';
     } else {
       focusPrimary.innerHTML = '<div class="focus-empty-card"><strong>Make today count.</strong><p>Pick one real activity from Discover and spend a few minutes solving, learning or building.</p><a class="nkm-btn nkm-btn--primary" href="all-users.html">Explore activities</a></div>';
       focusPrimary.classList.remove('focus-activity-wrap');

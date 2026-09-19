@@ -4,14 +4,12 @@ import { SoundManager } from './sound-manager.js';
 import { escapeHtml as esc, avatarHtml, nameOf, timeOf, chatId } from './utils.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
 import {
-  collection, addDoc, onSnapshot, query, orderBy,
-  getDocs, doc, deleteDoc, limit
+  collection, getDocs, query, orderBy, limit
 } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 
 const $ = id => document.getElementById(id);
 let currentUser = null;
 let users = [];
-let groupUnsub = null;
 const conversations = new Map();
 const params = new URLSearchParams(location.search);
 
@@ -83,45 +81,6 @@ async function watchInbox() {
   renderInbox($('userSearch')?.value || '');
 }
 
-async function deleteGroupMessage(msgDocId) {
-  if (!currentUser) return;
-  if (!window.confirm('Yeh message delete karna chahte ho? Group se hata diya jayega.')) return;
-  SoundManager.delete();
-  try { await deleteDoc(doc(db, 'groupChat', msgDocId)); }
-  catch (err) { console.error('Group delete failed:', err); alert('Message delete nahi hua: ' + (err?.message || err)); }
-}
-const trashSvg = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`;
-
-function renderGroup() {
-  const q = query(collection(db, 'groupChat'), orderBy('createdAtMs', 'asc'), limit(50));
-  groupUnsub?.();
-  groupUnsub = onSnapshot(q, snap => {
-    const box = $('groupMessages'); if (!box) return;
-    box.innerHTML = '';
-    if(snap.empty){ box.innerHTML='<div class="nkm-chat-empty"><p>No group messages yet.</p><p>Be first to say hi.</p></div>'; return; }
-    snap.forEach(d => {
-      const m = d.data(), msgDocId = d.id, mine = m.uid === currentUser.uid;
-      const displayText = m.text ?? m.message ?? m.content ?? '';
-      if (!displayText || !String(displayText).trim()) return;
-      const row = document.createElement('div'); row.className = 'msg' + (mine ? ' mine' : ''); row.dataset.msgId = msgDocId;
-      const peer = users.find(u=>u.uid===m.uid);
-      const ava = `<span style="width:28px;height:28px;border-radius:50%;flex:none;display:grid;place-items:center;overflow:hidden;background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;font-weight:700;font-size:11px">${peer ? avatarHtml(peer) : esc((m.name||'U')[0])}</span>`;
-      // Single row: avatar + name + message together inside msg-bubble — always show text
-      row.innerHTML = `${ava}<div class="msg-bubble">
-        <a class="msg-name msg-user-link" href="profile.html?uid=${encodeURIComponent(m.uid || '')}">${esc(m.name || 'User')}</a><div class="msg-id">${esc(m.userId || '')}</div>
-        <div class="msg-text">${esc(displayText)}</div>
-        <div class="msg-footer"><span class="msg-time">${esc(timeOf(m.createdAtMs))}</span>
-        ${mine ? `<button class="msg-delete-btn" data-id="${esc(msgDocId)}" title="Delete message" aria-label="Delete message">${trashSvg}</button>` : ''}
-        </div></div>`;
-      box.appendChild(row);
-    });
-    box.querySelectorAll('.msg-delete-btn').forEach(btn => {
-      btn.addEventListener('click', e => { e.stopPropagation(); deleteGroupMessage(btn.dataset.id); });
-    });
-    box.scrollTop = box.scrollHeight;
-  }, err => console.error('Group listener:', err));
-}
-
 async function loadUsers() {
   const cacheKey = 'allUsers';
   const cached = trioCache.get(cacheKey);
@@ -138,37 +97,9 @@ async function loadUsers() {
   await watchInbox();
 }
 
-function setChatMode(mode = 'private') {
-  const next = mode === 'group' ? 'group' : 'private';
-  document.querySelectorAll('.chat-mode-btn').forEach(btn => btn.classList.toggle('is-active', btn.dataset.mode === next));
-  document.querySelectorAll('.chat-mode-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.mode === next));
-  $('privateInbox').hidden = next !== 'private';
-  $('groupPanel').hidden = next !== 'group';
-  if (next === 'group') renderGroup();
-  if (next === 'private') renderInbox($('userSearch')?.value || '');
-}
-
 $('userSearch')?.addEventListener('input', e => renderInbox(e.target.value));
-document.querySelectorAll('.chat-mode-btn').forEach(btn => btn.addEventListener('click', () => { SoundManager.click(); setChatMode(btn.dataset.mode); }));
 window.addEventListener('trio-chat-unread-change', () => renderInbox($('userSearch')?.value || ''));
-window.addEventListener('storage', (e)=>{ if(e.key && e.key.startsWith('trio_chat_seen_')) renderInbox($('userSearch')?.value || ''); });
-
-$('groupForm')?.addEventListener('submit', async e => {
-  e.preventDefault();
-  const input = $('groupInput'), sendBtn = $('groupForm')?.querySelector('button[type="submit"]');
-  const text = input.value.trim(); if (!text) return;
-  if (sendBtn) sendBtn.disabled = true;
-  try {
-    await addDoc(collection(db, 'groupChat'), {
-      uid: currentUser.uid, name: nameOf(currentUser),
-      userId: users.find(u => u.uid === currentUser.uid)?.userId || currentUser.uid,
-      text, createdAt: Date.now(), createdAtMs: Date.now()
-    });
-    SoundManager.send();
-    input.value = ''; input.focus();
-  } catch (err) { console.error(err); alert('Message send nahi hua.'); }
-  finally { if (sendBtn) sendBtn.disabled = false; }
-});
+window.addEventListener('storage', (e)=>{ if(e.key && e.key.startsWith('trio_chat_seen_')) renderInbox($('userSearch')?.value || '') });
 
 onAuthStateChanged(auth, async u => {
   if (!u) { location.href = 'login.html?redirect=chat.html'; return; }
@@ -177,5 +108,5 @@ onAuthStateChanged(auth, async u => {
   const openUid = new URLSearchParams(location.search).get('uid');
   if (openUid && openUid !== u.uid) { location.replace(`private-chat.html?uid=${encodeURIComponent(openUid)}`); return; }
   await loadUsers();
-  setChatMode('private');
+  renderInbox($('userSearch')?.value || '');
 });

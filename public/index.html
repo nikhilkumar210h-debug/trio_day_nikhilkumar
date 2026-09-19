@@ -51,8 +51,20 @@
   <main class="app-main nkm-home">
     <!-- Greeting -->
     <section class="today-greeting" aria-label="Greeting">
-      <h1 class="greeting-main">Good day, <span id="greetingName">Friend</span> <span aria-hidden="true">👋</span></h1>
-      <p class="greeting-sub" id="greetingSub">Small steps create big results.</p>
+      <div class="today-greeting-copy">
+        <span class="today-kicker">TODAY</span>
+        <h1 class="greeting-main">Good day, <span id="greetingName">Friend</span> <span aria-hidden="true">👋</span></h1>
+        <p class="greeting-sub" id="greetingSub">Your next move is waiting.</p>
+      </div>
+      <div class="today-visual" aria-label="Today's visual summary">
+        <div class="today-visual-orbit" aria-hidden="true"><span>☸</span></div>
+        <div class="today-visual-copy">
+          <span class="today-visual-eyebrow">RIGHT NOW</span>
+          <strong id="todayVisualTitle">One meaningful move</strong>
+          <span id="todayVisualMeta">Choose something and start.</span>
+        </div>
+        <div class="today-visual-bars" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+      </div>
     </section>
 
     <!-- Stories strip (preserves heroStories id) -->
@@ -63,7 +75,7 @@
 
     <!-- Today's Focus — real task data -->
     <section id="todayFocus" class="today-section" aria-label="Today's Focus">
-      <h2 class="today-section-title">Today's Focus <span class="today-focus-label">Do one meaningful thing</span></h2>
+      <h2 class="today-section-title">Today's Focus <span class="today-focus-label">Next move</span></h2>
       <div id="focusPrimary" class="focus-primary"></div>
       <div id="focusSecondary" class="focus-secondary"></div>
     </section>
