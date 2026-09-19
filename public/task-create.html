@@ -21,12 +21,21 @@
   <noscript><link rel="stylesheet" href="style.css"></noscript>
   <link rel="preload" href="ui/tasks.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
   <noscript><link rel="stylesheet" href="ui/tasks.css"></noscript>
-</head>
+<style>
+.create-builder{display:grid;gap:22px}
+.challenge-preview{display:flex;gap:16px;align-items:center;padding:18px;border:1px solid var(--border);border-radius:20px;background:linear-gradient(135deg,rgba(99,102,241,.12),rgba(255,255,255,.025))}
+.preview-art{width:68px;height:68px;display:grid;place-items:center;border-radius:18px;background:rgba(255,255,255,.07);font-size:32px;flex:none}
+.preview-copy{min-width:0}.preview-copy h2{margin:4px 0 4px;font-size:24px}.preview-copy p{margin:0;color:var(--color-ink-dim);line-height:1.5}.preview-meta{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}.preview-meta span{font-size:12px;padding:5px 9px;border-radius:999px;background:rgba(255,255,255,.07);color:var(--color-ink-dim)}
+.builder-section{display:grid;gap:12px}.builder-label{font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--color-ink-dim)}
+.builder-grid,.advanced-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.advanced-create{border-top:1px solid var(--border);padding-top:14px}.advanced-create summary{cursor:pointer;font-weight:700;padding:8px 0}.advanced-grid{margin-top:14px}
+@media(max-width:650px){.builder-grid,.advanced-grid{grid-template-columns:1fr}.challenge-preview{align-items:flex-start}.preview-copy h2{font-size:20px}}
+</style></head>
 <body class="app-page">
   <div class="tricolor-strip"><span></span><span></span><span></span></div>
   <header class="topbar">
     <div class="topbar-inner">
-      <a class="brand" href="tasks.html"><span class="brand-chakra">☸</span><span class="brand-copy"><strong>trio_day</strong><small>CREATE CHALLENGE</small></span></a>
+      <a class="brand" href="index.html"><span class="brand-chakra">☸</span><span class="brand-copy"><strong>trio_day</strong><small>CREATE CHALLENGE</small></span></a>
       <div id="authStatus" class="auth-status"></div>
     </div>
   </header>
@@ -34,45 +43,62 @@
     <a class="btn secondary" href="tasks.html" style="display:inline-flex;align-items:center;gap:0.4rem;margin-bottom:0.75rem">← Back</a>
     <span class="eyebrow">Open to everyone</span>
     <h1>Create a challenge</h1>
-    <p class="muted">Any logged-in user can pick a template, customize it, and publish a community challenge. Admins only moderate (feature / hide / remove).</p>
+    <p class="muted">Create something people will actually want to solve. Start with the idea; advanced mechanics stay out of the way.</p>
 
-    <div class="form-card" style="margin-top:1rem">
-      <label class="field"><span class="label-text">Start from template</span></label>
-      <div id="templatePicker" class="template-picker"></div>
+    <div class="form-card create-builder">
+      <div class="challenge-preview" id="challengePreview">
+        <div class="preview-art" id="previewIcon">✦</div>
+        <div class="preview-copy">
+          <span class="eyebrow">Challenge preview</span>
+          <h2 id="previewTitle">Your challenge</h2>
+          <p id="previewObjective">Describe what people should do.</p>
+          <div class="preview-meta"><span id="previewCategory">Reasoning</span><span id="previewDifficulty">Medium</span><span id="previewTime">15 min</span></div>
+        </div>
+      </div>
 
-      <label class="field"><span class="label-text">Kind</span>
-        <select id="kind">
-          <option value="challenge" selected>Challenge</option>
-          <option value="community">Community</option>
-          <option value="seasonal">Seasonal</option>
-        </select>
-      </label>
-      <label class="field"><span class="label-text">Title</span><input id="title" maxlength="100" required></label>
-      <label class="field"><span class="label-text">Description</span><textarea id="description" rows="3" maxlength="500"></textarea></label>
-      <label class="field"><span class="label-text">Icon</span><input id="icon" maxlength="8" value="🏁"></label>
-      <label class="field"><span class="label-text">Metric</span>
-        <select id="metric">
-          <option value="manual">Manual complete</option>
-          <option value="drink_water">Drink water</option>
-          <option value="read_minutes">Read minutes</option>
-          <option value="comment_posts">Comment posts</option>
-          <option value="give_likes">Give likes</option>
-          <option value="get_likes">Get likes</option>
-          <option value="create_post">Create post</option>
-          <option value="custom">Custom</option>
-        </select>
-      </label>
-      <label class="field"><span class="label-text">Target</span><input id="target" type="number" min="1" max="999" value="1"></label>
-      <label class="field"><span class="label-text">XP reward</span><input id="xpReward" type="number" min="1" max="500" value="50"></label>
-      <label class="field"><span class="label-text">Ends in (days)</span><input id="days" type="number" min="1" max="90" value="7"></label>
+      <div class="builder-section">
+        <div class="builder-label">What is the challenge?</div>
+        <label class="field"><span class="label-text">Title</span><input id="title" maxlength="100" placeholder="e.g. Spot the pattern" required></label>
+        <label class="field"><span class="label-text">What should people do?</span><textarea id="objective" rows="3" maxlength="180" placeholder="One clear objective. Keep it simple and meaningful."></textarea></label>
+      </div>
 
-      <label class="field" id="alsoTemplateWrap" hidden>
-        <span class="label-text"><input type="checkbox" id="alsoTemplate"> Also save as personal template</span>
-      </label>
+      <div class="builder-grid">
+        <label class="field"><span class="label-text">Category</span>
+          <select id="category">
+            <option>Logic</option><option>Observation</option><option>Speed</option><option selected>Reasoning</option><option>Memory</option><option>Decision</option><option>Knowledge</option>
+          </select>
+        </label>
+        <label class="field"><span class="label-text">Difficulty</span>
+          <select id="difficulty"><option>Easy</option><option selected>Medium</option><option>Hard</option></select>
+        </label>
+        <label class="field"><span class="label-text">Time</span>
+          <select id="durationMinutes"><option value="5">5 min</option><option value="10">10 min</option><option value="15" selected>15 min</option><option value="30">30 min</option><option value="60">60 min</option><option value="120">2 hours</option><option value="180">3 hours</option></select>
+        </label>
+        <label class="field"><span class="label-text">Active for</span>
+          <select id="days"><option value="3">3 days</option><option value="7" selected>7 days</option><option value="12">12 days</option><option value="20">20 days</option><option value="30">30 days</option></select>
+        </label>
+      </div>
+
+      <details class="advanced-create">
+        <summary>Customize challenge</summary>
+        <div class="advanced-grid">
+          <label class="field"><span class="label-text">Icon</span><input id="icon" maxlength="8" value="✦"></label>
+          <label class="field"><span class="label-text">Target</span><input id="target" type="number" min="1" max="999" value="1"></label>
+          <label class="field"><span class="label-text">XP reward</span><input id="xpReward" type="number" min="1" max="500" value="50"></label>
+          <label class="field"><span class="label-text">Mechanic</span>
+            <select id="metric"><option value="manual" selected>Finish manually</option><option value="custom">Custom</option></select>
+          </label>
+        </div>
+        <p class="muted">More mechanics can be added later without making the main creator flow complicated.</p>
+      </details>
+
+      <input id="description" type="hidden" value="">
+      <input id="kind" type="hidden" value="challenge">
+      <input id="alsoTemplate" type="checkbox" hidden>
 
       <p id="formStatus" class="status"></p>
       <div class="modal-actions">
-        <a class="btn secondary" href="tasks.html">Cancel</a>
+        <a class="btn secondary" href="all-users.html">Cancel</a>
         <button type="button" class="btn primary" id="submitBtn">Publish challenge</button>
       </div>
     </div>
