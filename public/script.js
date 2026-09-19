@@ -295,7 +295,7 @@ async function renderFocusAndContinue(uid) {
       const cta = focusPrimary.querySelector('.focus-cta');
       if (cta) { cta.classList.add('completed'); cta.textContent = 'Done ✓'; cta.disabled = true; }
     } else {
-      focusPrimary.innerHTML = '<div style="padding:16px; text-align:center; color:var(--color-ink-muted);">No tasks today — create one in <a href="tasks.html" style="color:var(--primary);">Do</a></div>';
+      focusPrimary.innerHTML = '<div style="padding:16px; text-align:center; color:var(--color-ink-muted);">No tasks today — create one in <a href="all-users.html" style="color:var(--primary);">Do</a></div>';
     }
 
     // Secondary: up to 3 other incomplete tasks
