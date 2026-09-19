@@ -10,6 +10,7 @@ import {
 import { isAdmin } from './gamification/templates.js';
 import { trioCache } from './trio-cache.js';
 import { escapeHtml as esc } from './utils.js';
+import { renderMysteryInvestigation, bindMysteryInteractions } from './mystery-case.js';
 
 const $ = id => document.getElementById(id);
 const params = new URLSearchParams(location.search);
@@ -102,19 +103,29 @@ async function render() {
   const actions = $('actions');
   const startedKey = me ? `challenge_started_${me.uid}_${taskId}` : '';
   const started = startedKey ? localStorage.getItem(startedKey) === '1' : false;
+  const isMystery = task.challengeType === 'mystery';
   const verificationType = task.verificationType === 'answer' ? 'answer' : 'proof';
   const proofInstruction = task.proofInstruction || 'Explain what you did and provide enough evidence for the creator to verify it.';
+  if (isMystery) {
+    const existingCase = $('mysteryCaseMount');
+    if (existingCase) existingCase.remove();
+    const mount = document.createElement('div');
+    mount.id = 'mysteryCaseMount';
+    mount.innerHTML = renderMysteryInvestigation(task.caseData || {}, started, completed, taskId);
+    $('detail').appendChild(mount);
+  }
+
   actions.innerHTML = `
     <button type="button" class="btn primary" id="joinBtn">${joined ? 'REJECT' : 'ACCEPT'}</button>
     ${joined && !completed ? `<button type="button" class="btn primary" id="startBtn">${started ? 'Continue' : 'Start Challenge'}</button>` : ''}
-    ${joined && started && !completed && verificationType === 'answer' ? `
+    ${joined && started && !completed && !isMystery && verificationType === 'answer' ? `
       <div class="challenge-submit-box">
         <strong>Submit your answer</strong>
         <input id="challengeAnswer" maxlength="200" placeholder="Your answer">
         <button type="button" class="btn primary" id="submitAnswerBtn">Check answer</button>
         <small class="muted">You only complete the challenge when the answer is verified.</small>
       </div>` : ''}
-    ${joined && started && !completed && verificationType === 'proof' ? `
+    ${joined && started && !completed && !isMystery && verificationType === 'proof' ? `
       <div class="challenge-submit-box">
         <strong>Proof required</strong>
         <p class="muted">${esc(proofInstruction)}</p>
@@ -122,6 +133,7 @@ async function render() {
         <button type="button" class="btn primary" id="submitProofBtn">Submit proof</button>
         <small class="muted">The creator reviews this before completion is awarded.</small>
       </div>` : ''}
+    ${isMystery && joined && !started && !completed ? '<span class="muted">Accept this case to begin.</span>' : ''}
     ${completed ? '<div class="challenge-complete-note">Verified completion ✓</div><button type="button" class="btn secondary" id="storyBtn">📸 Share to Story</button>' : ''}
     <a class="btn secondary" href="tasks.html">Back</a>
     ${admin ? `
@@ -132,7 +144,7 @@ async function render() {
     ` : ''}`;
 
 
-  $('joinBtn').onclick = async () => {
+  $('joinBtn')?.addEventListener('click', async () => {
     if (!me) return alert('Login first');
     if (joined) {
       const ok = confirm('Reject this challenge? Your accepted state will be removed.');
@@ -143,7 +155,7 @@ async function render() {
       await joinTask(taskId, me.uid, profile);
     }
     await render();
-  };
+  });
   $('startBtn')?.addEventListener('click', () => {
     if (!me || !joined || completed) return;
     localStorage.setItem(startedKey, '1');
@@ -250,10 +262,14 @@ async function render() {
     }
   }
 
+  if (isMystery && started && !completed) {
+    bindMysteryInteractions(taskId, task.caseData || {});
+  }
+
   if (admin) {
     $('featBtn').onclick = async () => { await setChallengeFeatured(taskId, !task.featured); await render(); };
     $('hideBtn').onclick = async () => { await setChallengeHidden(taskId, !task.hidden); await render(); };
-    $('archiveBtn').onclick = async () => { await archiveTask(taskId); location.href = 'tasks.html'; };
+    $('archiveBtn').onclick = async () => { await archiveTask(taskId); location.href = 'all-users.html'; };
     $('removeBtn').onclick = async () => {
       if (!confirm('Permanently remove this challenge?')) return;
       await removeChallenge(taskId);
