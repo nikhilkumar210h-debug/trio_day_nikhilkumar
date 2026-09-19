@@ -90,14 +90,14 @@ const BUILD_CONFIG={
  b1:{mechanic:'order',items:['Trigger','Condition','Action','Feedback'],target:['Trigger','Condition','Action','Feedback']},
  b2:{mechanic:'order',items:['Hard topic','Break','Easy topic','Practice','Review','Plan tomorrow'],target:['Hard topic','Break','Easy topic','Practice','Review','Plan tomorrow']},
  b3:{mechanic:'order',items:['Start','Stop A','Stop B','Stop C','Destination'],target:['Start','Stop A','Stop B','Stop C','Destination']},
- b4:{mechanic:'allocate',budget:5000,items:[['Venue',1500],['Food',1800],['Travel',900],['Backup',800]]},
- b5:{mechanic:'grid',size:4,required:['Desk','Lamp','Notebook'],blocked:[5,6,9]},
+ b4:{mechanic:'allocate',budget:5000,items:[['Venue',1000],['Food',1500],['Travel',500],['Backup',300]],mins:[1000,1500,500,300]},
+ b5:{mechanic:'grid',size:4,required:['Desk','Lamp','Notebook'],blocked:[5,6,9,10],adjacentPairs:[['Lamp','Desk'],['Notebook','Desk']]},
  b6:{mechanic:'order',items:['Receive issue','Verify','Investigate','Resolve','Follow up'],target:['Receive issue','Verify','Investigate','Resolve','Follow up']},
  b7:{mechanic:'order',items:['Key metric','Trend','Breakdown','Detail'],target:['Key metric','Trend','Breakdown','Detail']},
  b8:{mechanic:'order',items:['Foundations','Core skill','Application','Practice','Review'],target:['Foundations','Core skill','Application','Practice','Review']},
- b9:{mechanic:'allocate',budget:10,items:[['Water',3],['Food',3],['Navigation',2],['Contingency',2]]},
+ b9:{mechanic:'allocate',budget:12,items:[['Water',2],['Food',3],['Navigation',2],['Contingency',1]],mins:[2,3,2,1]},
  b10:{mechanic:'order',items:['Understand problem','Stabilize','Choose fix','Apply','Verify'],target:['Understand problem','Stabilize','Choose fix','Apply','Verify']},
- b11:{mechanic:'grid',size:4,required:['Focus','Reference','Write','Tools'],blocked:[3,7,12]},
+ b11:{mechanic:'grid',size:4,required:['Focus','Reference','Write','Tools'],blocked:[3,7,12],adjacentPairs:[['Focus','Write'],['Reference','Tools']]},
  b12:{mechanic:'assign',people:['Ava','Ben','Cara','Dev'],roles:['Planner','Builder','Checker','Presenter'],correct:{Ava:'Planner',Ben:'Builder',Cara:'Checker',Dev:'Presenter'}}
 };
 export function getBuildConfig(id){return BUILD_CONFIG[id]||null}
