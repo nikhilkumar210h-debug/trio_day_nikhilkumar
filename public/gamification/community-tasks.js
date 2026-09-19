@@ -74,7 +74,8 @@ export async function listCommunityTasks({ kind = null, status = 'active', max =
     const now = Date.now();
     list = list.filter(t => {
       if (t.status !== status) return false;
-      if (t.endAtMs && t.endAtMs <= now) return false;
+      const effectiveEnd = Number(t.endAtMs) || ((Number(t.createdAtMs) || now) + 30 * 86400000);
+      if (effectiveEnd <= now) return false;
       if (!includeHidden && t.hidden) return false;
       if (kind && t.kind !== kind) return false;
       return true;
