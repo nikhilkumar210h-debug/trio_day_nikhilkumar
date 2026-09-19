@@ -135,7 +135,7 @@ async function render() {
       </div>` : ''}
     ${isMystery && joined && !started && !completed ? '<span class="muted">Accept this case to begin.</span>' : ''}
     ${completed ? '<div class="challenge-complete-note">Verified completion ✓</div><button type="button" class="btn secondary" id="storyBtn">📸 Share to Story</button>' : ''}
-    <a class="btn secondary" href="tasks.html">Back</a>
+    <a class="btn secondary" href="all-users.html">Back to Discover</a>
     ${admin ? `
       <button type="button" class="btn secondary" id="featBtn">${task.featured ? 'Unfeature' : 'Feature'}</button>
       <button type="button" class="btn secondary" id="hideBtn">${task.hidden ? 'Unhide' : 'Hide'}</button>
@@ -293,6 +293,8 @@ $('commentBtn').addEventListener('click', async () => {
     await render();
   } catch (err) { alert(err.message || 'Failed'); }
 });
+
+window.addEventListener('trio-mystery-complete', () => { render().catch(console.error); });
 
 onAuthStateChanged(auth, async user => {
   me = user;
