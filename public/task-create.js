@@ -3,9 +3,9 @@ import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.13.0/f
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 import { createCommunityTask } from './gamification/community-tasks.js?v=20260919-community4';
 import { ACTIVITY_TYPES, activityTypeInfo } from './activity-ui.js';
-import { ACTIVITY_CATALOG } from './activity-catalog.js?v=20260919-catalog2';
+import { ACTIVITY_CATALOG } from './activity-catalog.js?v=20260919-catalog4';
 import { mechanicInfo, mechanicsFor } from './forge-mechanics.js';
-import { getInteractiveConfig } from './forge-interactions.js?v=20260919-interactions2';
+import { getInteractiveConfig } from './forge-interactions.js?v=20260919-interactions3';
 import { escapeHtml as esc } from './utils.js';
 import { showToast } from './ui/toast.js';
 
@@ -285,18 +285,57 @@ function validateBeforePreview() {
   if (desc.length < 10) return 'Tell people what they are going to do.';
   if (goal.length < 5) return 'Add a simple goal.';
   if (activeType === 'build') {
-    const d=interactionPayload(), c=d;
+    const d=interactionPayload();
     if (!['order','allocate','grid','assign'].includes(d.mechanic)) return 'Choose how people will build.';
-    if (d.mechanic==='order' && (d.items.length<3 || d.items.some(x=>x.length<1))) return 'Add at least 3 clear build steps.';
-    if (d.mechanic==='allocate' && (d.items.length<2 || d.items.some(x=>!x[0]))) return 'Add at least 2 budget categories.';
-    if (d.mechanic==='allocate' && d.items.reduce((sum,x)=>sum+Math.max(0,Number(x[1])||0),0) > Number(d.budget||0)) return 'Minimums cannot be higher than the budget.';
-    if (d.mechanic==='grid' && (d.required.length<2 || d.required.length>4)) return 'Add 2–4 named zones.';
-    if (d.mechanic==='assign' && (d.people.length!==4 || d.roles.length!==4 || new Set(d.people.map(x=>x.toLowerCase())).size!==4 || new Set(d.roles.map(x=>x.toLowerCase())).size!==4 || Object.keys(d.correct).length!==4)) return 'Use four unique people and four unique roles.';
+    if (d.mechanic==='order') {
+      if (d.items.length<3 || d.items.length>8 || d.items.some(x=>x.length<1)) return 'Add 3–8 clear build steps.';
+      if (new Set(d.items.map(x=>x.toLowerCase())).size !== d.items.length) return 'Make every build step unique so the solution is unambiguous.';
+    }
+    if (d.mechanic==='allocate') {
+      const names=d.items.map(x=>x[0].toLowerCase());
+      const mins=d.items.map(x=>Number(x[1])||0);
+      if (d.items.length<2 || d.items.length>8 || d.items.some(x=>!x[0])) return 'Add 2–8 budget categories.';
+      if (new Set(names).size !== names.length) return 'Make every budget category unique.';
+      if (mins.some(v=>v<=0)) return 'Give every required budget category a positive minimum.';
+      if (mins.reduce((sum,v)=>sum+v,0) > Number(d.budget||0)) return 'Minimums cannot be higher than the budget.';
+    }
+    if (d.mechanic==='grid') {
+      if (d.required.length<2 || d.required.length>4) return 'Add 2–4 named zones.';
+      if (new Set(d.required.map(x=>x.toLowerCase())).size !== d.required.length) return 'Make every grid zone unique.';
+      if (d.blocked.length >= 13) return 'Leave enough open cells for the required zones.';
+      const size=4, blocked=new Set(d.blocked), req=d.required;
+      const adjacent=(a,b)=>Math.abs(a-b)===1&&Math.floor(a/size)===Math.floor(b/size)||Math.abs(a-b)===size;
+      const cells=[...Array(16).keys()].filter(i=>!blocked.has(i));
+      const used=new Set();
+      let possible=false;
+      const walk=(i,last)=>{
+        if(i===req.length){possible=true;return;}
+        for(const cell of cells){
+          if(used.has(cell))continue;
+          if(i>0 && !adjacent(last,cell))continue;
+          used.add(cell);walk(i+1,cell);used.delete(cell);
+          if(possible)return;
+        }
+      };
+      walk(0,-1);
+      if(!possible) return 'This grid has no valid solution. Unblock some cells or change the zones.';
+    }
+    if (d.mechanic==='assign') {
+      const people=d.people.map(x=>x.toLowerCase()), roles=d.roles.map(x=>x.toLowerCase()), mapped=d.people.map(p=>String(d.correct[p]||'').toLowerCase());
+      if (d.people.length!==4 || d.roles.length!==4 || new Set(people).size!==4 || new Set(roles).size!==4) return 'Use four unique people and four unique roles.';
+      if (mapped.some(x=>!x) || mapped.some(x=>!roles.includes(x)) || new Set(mapped).size!==4) return 'Assign each unique role exactly once.';
+    }
   }
   if (activeType === 'challenge') {
     const d=interactionPayload(), rounds=d.rounds||[];
     if(rounds.length!==5) return 'Create all 5 challenge rounds.';
-    for(let i=0;i<rounds.length;i++){if(rounds[i].q.length<8)return 'Add a question for round '+(i+1)+'.';if(rounds[i].o.some(x=>x.length<1))return 'Fill all answers for round '+(i+1)+'.';if(new Set(rounds[i].o.map(x=>x.toLowerCase())).size<4)return 'Make the answers different in round '+(i+1)+'.';}
+    if(new Set(rounds.map(r=>r.q.toLowerCase())).size!==5) return 'Make all five challenge questions different.';
+    for(let i=0;i<rounds.length;i++){
+      if(rounds[i].q.length<8)return 'Add a question for round '+(i+1)+'.';
+      if(rounds[i].o.length!==4 || rounds[i].o.some(x=>x.length<1))return 'Fill all four answers for round '+(i+1)+'.';
+      if(new Set(rounds[i].o.map(x=>x.toLowerCase())).size!==4)return 'Make the answers different in round '+(i+1)+'.';
+      if(rounds[i].a<0||rounds[i].a>3)return 'Choose the correct answer for round '+(i+1)+'.';
+    }
   }
   if (activeType === 'puzzle' || activeType === 'learn') {
     const d = interactionPayload();
