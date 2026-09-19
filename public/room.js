@@ -5,6 +5,7 @@ import{escapeHtml as esc,avatarHtml}from'./utils.js';
 import{activityCardHtml}from'./activity-ui.js';
 import{activeCatalogActivities}from'./activity-catalog.js';
 import{mountSharedBuildWorkspace}from'./room-workspace.js';
+import{mountSharedPuzzleWorkspace}from'./room-puzzle-workspace.js';
 const $=id=>document.getElementById(id),id=new URLSearchParams(location.search).get('id');
 let me=null,p={},room=null,stopSharedWorkspace=()=>{};
 function fail(t){$('roomStatus').textContent=t;$('roomStatus').classList.add('error')}
@@ -35,6 +36,8 @@ async function load(){
      stopSharedWorkspace();
      if(activity.type==='build' && room.activitySource==='catalog'){
        stopSharedWorkspace=await mountSharedBuildWorkspace($('roomWorkspace'),{db,roomId:id,activity,me,onStateChange:(result)=>{if(result?.passed)$('workspaceBrief').textContent='Shared build complete ✓ Everyone reached a valid solution.'}});
+     }else if(activity.type==='puzzle' && room.activitySource==='catalog'){
+       stopSharedWorkspace=await mountSharedPuzzleWorkspace($('roomWorkspace'),{db,roomId:id,activity,me,onStateChange:(result)=>{if(result?.passed)$('workspaceBrief').textContent='Shared puzzle solved ✓'}});
      }
    }
  }
