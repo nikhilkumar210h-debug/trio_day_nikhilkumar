@@ -9,6 +9,7 @@ const $=id=>document.getElementById(id);
 function renderCatalog(){
   const host=$('doNowList'),section=$('doNow');if(!host||!section)return;
   const items=activeCatalogActivities().filter(a=>['puzzle','build','learn','challenge','game'].includes(a.type)).slice(0,6);
+  const loader=$('doLoading'); if(loader) loader.hidden=true;
   section.hidden=!items.length;
   host.innerHTML=items.map(a=>activityCardHtml({...a,source:'catalog',activityType:a.type})).join('');
 }
@@ -26,6 +27,7 @@ async function renderCommunity(){
       :'<div class="do-empty">No community activities are live yet. Create the first one.</div>';
   }catch(e){
     console.warn('Community activities unavailable',e);
+
     section.hidden=false;
     host.innerHTML='<div class="do-empty">Community activities are temporarily unavailable.</div>';
   }
