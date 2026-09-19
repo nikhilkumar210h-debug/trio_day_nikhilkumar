@@ -339,7 +339,6 @@ service cloud.firestore {
               request.resource.data.answerIndex is int
               && request.resource.data.answerIndex >= 0
               && request.resource.data.answerIndex <= 3
-              && request.resource.data.answerIndex == get(/databases/$(database)/documents/communityTasks/$(taskId)).data.interaction.correct
               && request.resource.data.proofText is string
               && request.resource.data.proofText.size() >= 20
               && request.resource.data.proofText.size() <= 500
