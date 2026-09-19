@@ -86,12 +86,13 @@ export function roomCardHtml(room){
   const people = Number(room.memberCount) || 0;
   const max = Number(room.maxPlayers) || 6;
   const id = encodeURIComponent(room.id || '');
+  const expiry = room.expiresAtMs ? Math.max(0, Math.ceil((Number(room.expiresAtMs)-Date.now())/3600000)) + 'h left' : 'short room';
   return `
     <a class="live-room-card" href="room.html?id=${id}">
       <span class="live-room-pulse"><i></i></span>
       <span class="live-room-copy">
         <strong>${title}</strong>
-        <small><span class="live-dot">LIVE</span> ${people}/${max} people · ${activity}</small>
+        <small><span class="live-dot">LIVE</span> ${people}/${max} people · ${activity} · ${expiry}</small>
       </span>
       <span class="live-room-arrow">↗</span>
     </a>`;
