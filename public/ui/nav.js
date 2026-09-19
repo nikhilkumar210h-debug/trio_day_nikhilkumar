@@ -52,8 +52,15 @@ export function renderNav() {
   const active = pathKey();
 
   // ── Bottom nav (mobile) — 5-item, no Create inside grid ──
-  const bottom = document.querySelector('.bottom-nav');
-  if (bottom) {
+  let bottom = document.querySelector('.bottom-nav');
+  if (!bottom) {
+    bottom = document.createElement('nav');
+    bottom.className = 'bottom-nav';
+    bottom.setAttribute('aria-label','Primary navigation');
+    bottom.innerHTML = '<div class="nav-row"></div>';
+    document.body.appendChild(bottom);
+  }
+  {
     const row = bottom.querySelector('.nav-row') || bottom;
     const existing = row.querySelectorAll('[data-nav]');
     const hasCorrectStructure = existing.length === ITEMS.length && [...existing].every((el, idx) => el.dataset.nav === ITEMS[idx].key);
