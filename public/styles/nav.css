@@ -1,5 +1,5 @@
 /* NKM Navigation — Mobile 5-item bottom + Desktop left rail (Phase 3)
-   Canonical: Today / Discover / Do / Chat / You + floating Create.
+   Canonical: Today / Discover / Do / Chat / You.
    Uses semantic tokens from tokens.css.
    ═══════════════════════════════════════════════════════════════ */
 /* ── Bottom nav (mobile) — 5 equal columns, no Create inside grid ── */
@@ -60,7 +60,6 @@
 .nkm-rail { display: none; }
 @media (min-width: 840px) {
   .bottom-nav { display: none; }
-  .nkm-create-fab { display: none; }
   .nkm-rail {
     display: flex;
     flex-direction: column;
