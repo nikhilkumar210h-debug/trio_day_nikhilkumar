@@ -35,6 +35,7 @@ const ALLOWED_NOTIFICATION_TYPES = [
   "challenge_reminder",
   "streak_warning",
   "task_complete",
+  "room_invite",
 ];
 
 function b64urlDecode(str) {
@@ -476,6 +477,7 @@ function pushCopy({ type, actorName, text, title }) {
       title: title || "Task complete",
       body: text || "Nice work!",
     },
+    room_invite: { title: title || "Live room invite", body: text || `${who} invited you to join a live room` },
   };
   return (
     map[type] || {
@@ -489,6 +491,7 @@ function pushUrl({ type, actorUid, postId, urlPath }) {
   if (urlPath) return `${APP_BASE}/${String(urlPath).replace(/^\//, "")}`;
   if (type === "message")
     return `${APP_BASE}/chat.html?uid=${encodeURIComponent(actorUid || "")}`;
+  if (type === "room_invite") return urlPath ? `${APP_BASE}/${String(urlPath).replace(/^\//, "")}` : `${APP_BASE}/rooms.html`;
   if (type === "connect") {
     return actorUid
       ? `${APP_BASE}/profile.html?uid=${encodeURIComponent(actorUid)}`
