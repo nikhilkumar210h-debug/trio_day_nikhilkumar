@@ -366,3 +366,21 @@ button:disabled,.nkm-btn:disabled,.btn:disabled{cursor:not-allowed;opacity:.55;t
 .today-focus-visual-cta{position:relative;z-index:2;align-self:flex-end;justify-self:end;padding:8px 10px;border:1px solid rgba(165,180,252,.18);border-radius:999px;background:rgba(5,10,22,.42);font-size:9px;font-weight:900;color:#c7d2fe;white-space:nowrap}
 .today-page .today-focus-visual .today-focus-visual-copy strong{max-width:none}
 @media(max-width:600px){.today-focus-visual-cta{padding:7px 8px;font-size:8px}.today-page .today-focus-visual{grid-template-columns:auto minmax(0,1fr) auto}}
+
+
+/* Profile desktop rail clearance — style.css has a later base margin rule, so keep the focused profile shell clear of the nav rail. */
+@media(min-width:840px){
+  .profile-main{
+    margin-left:calc(72px + max(16px,(100% - 72px - 760px)/2) + 24px)!important;
+    margin-right:0!important;
+    width:min(760px,calc(100% - 72px - 56px))!important;
+    max-width:none!important;
+    box-sizing:border-box;
+  }
+}
+@media(min-width:1280px){
+  .profile-main{
+    margin-left:calc(240px + max(16px,(100% - 240px - 760px)/2) + 24px)!important;
+    width:min(760px,calc(100% - 240px - 56px))!important;
+  }
+}
