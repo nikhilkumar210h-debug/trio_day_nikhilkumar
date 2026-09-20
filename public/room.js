@@ -11,7 +11,7 @@ import{mountSharedQuizWorkspace}from'./room-quiz-workspace.js';
 import{mountSharedChallengeWorkspace}from'./room-challenge-workspace.js';
 const $=id=>document.getElementById(id),id=new URLSearchParams(location.search).get('id');
 let me=null,p={},room=null,stopSharedWorkspace=()=>{};
-const voicePeers=new Map(),voicePCs=new Map(),voiceAudio=new Map();let localStream=null,voiceReady=false,micEnabled=false;let rtcUnsubs=[];
+const voicePeers=new Map(),voicePCs=new Map(),voiceAudio=new Map(),pendingCandidates=new Map();let localStream=null,voiceReady=false,micEnabled=false;let rtcUnsubs=[];
 function fail(t){$('roomStatus').textContent=t;$('roomStatus').classList.add('error')}
 function pairId(a,b){return [a,b].sort().join('__')}
 async function loadFriends(){
@@ -47,9 +47,9 @@ function voicePc(uid){
  voicePCs.set(uid,pc);return pc
 }
 async function watchVoicePeer(uid){
- const ref=doc(db,'rooms',id,'rtc',pairId(me.uid,uid));const pc=voicePc(uid);
- const stop=onSnapshot(ref,async s=>{if(!s.exists())return;const d=s.data();try{if(d.offer&&d.offerFrom!==me.uid&&!pc.currentRemoteDescription){await pc.setRemoteDescription(d.offer);const ans=await pc.createAnswer();await pc.setLocalDescription(ans);await setDoc(ref,{answer:{type:ans.type,sdp:ans.sdp},answerFrom:me.uid,updatedAtMs:Date.now()},{merge:true})}else if(d.answer&&d.answerFrom!==me.uid&&!pc.currentRemoteDescription&&pc.localDescription){await pc.setRemoteDescription(d.answer)}}catch(e){console.warn('voice signalling',e)}});rtcUnsubs.push(stop);
- const cand=onSnapshot(query(collection(db,'rooms',id,'rtc',pairId(me.uid,uid),'candidates'),orderBy('createdAtMs','asc'),limit(100)),s=>s.docChanges().forEach(ch=>{const d=ch.doc.data();if(ch.type==='added'&&d.from!==me.uid)pc.addIceCandidate(d.candidate).catch(()=>{})}));rtcUnsubs.push(cand);
+ const ref=doc(db,'rooms',id,'rtc',pairId(me.uid,uid));const pc=voicePc(uid);pendingCandidates.set(uid,pendingCandidates.get(uid)||[]);
+ const stop=onSnapshot(ref,async s=>{if(!s.exists())return;const d=s.data();try{if(d.offer&&d.offerFrom!==me.uid&&!pc.currentRemoteDescription){await pc.setRemoteDescription(d.offer);for(const candidate of pendingCandidates.get(uid)||[])await pc.addIceCandidate(candidate).catch(()=>{});pendingCandidates.set(uid,[]);const ans=await pc.createAnswer();await pc.setLocalDescription(ans);await setDoc(ref,{answer:{type:ans.type,sdp:ans.sdp},answerFrom:me.uid,updatedAtMs:Date.now()},{merge:true})}else if(d.answer&&d.answerFrom!==me.uid&&!pc.currentRemoteDescription&&pc.localDescription){await pc.setRemoteDescription(d.answer)}}catch(e){console.warn('voice signalling',e)}});rtcUnsubs.push(stop);
+ const cand=onSnapshot(query(collection(db,'rooms',id,'rtc',pairId(me.uid,uid),'candidates'),orderBy('createdAtMs','asc'),limit(100)),s=>s.docChanges().forEach(ch=>{const d=ch.doc.data();if(ch.type==='added'&&d.from!==me.uid){const candidate=new RTCIceCandidate(d.candidate);if(pc.remoteDescription)pc.addIceCandidate(candidate).catch(()=>{});else pendingCandidates.get(uid)?.push(candidate)}}));rtcUnsubs.push(cand);
  if(me.uid<uid){try{const offer=await pc.createOffer();await pc.setLocalDescription(offer);await setDoc(ref,{offer:{type:offer.type,sdp:offer.sdp},offerFrom:me.uid,updatedAtMs:Date.now()},{merge:true})}catch(e){}}
 }
 async function connectVoicePeers(){for(const uid of voicePeers.keys())if(uid!==me.uid&&!voicePCs.has(uid))await watchVoicePeer(uid)}
@@ -58,7 +58,7 @@ function renderVoiceMembers(s){
  s.docs.forEach(d=>{const m=d.data();if(m.uid!==me.uid)voicePeers.set(m.uid,{...m,speakerMuted:voicePeers.get(m.uid)?.speakerMuted||false})});
  if(voiceReady)connectVoicePeers();
  const list=$('memberList');if(!list)return;
- list.querySelectorAll('.room-member').forEach(row=>{const name=row.querySelector('.room-member-name')?.textContent;const m=[...voicePeers.entries()].find(x=>(x[1].name||'User')===name);if(!m||row.querySelector('[data-speaker]'))return;const b=document.createElement('button');b.type='button';b.className='room-member-speaker';b.dataset.speaker=m[0];b.textContent=voicePeers.get(m[0]).speakerMuted?'🔇':'🔊';b.onclick=()=>{const x=voicePeers.get(m[0]);x.speakerMuted=!x.speakerMuted;const a=voiceAudio.get(m[0]);if(a)a.muted=x.speakerMuted;b.textContent=x.speakerMuted?'🔇':'🔊'};row.appendChild(b)})
+ list.querySelectorAll('.room-member').forEach(row=>{const uid=row.dataset.uid;const m=uid?([uid,voicePeers.get(uid)]):null;if(!m||!m[1]||row.querySelector('[data-speaker]'))return;const b=document.createElement('button');b.type='button';b.className='room-member-speaker';b.dataset.speaker=m[0];b.textContent=m[1].speakerMuted?'🔇':'🔊';b.onclick=()=>{const x=voicePeers.get(m[0]);x.speakerMuted=!x.speakerMuted;const a=voiceAudio.get(m[0]);if(a)a.muted=x.speakerMuted;b.textContent=x.speakerMuted?'🔇':'🔊'};row.appendChild(b)})
 }
 async function load(){
  if(!id)return fail('Missing room id.');
@@ -91,7 +91,7 @@ async function load(){
  $('roomSub').textContent='Open activity room · '+(room.maxPlayers||3)+' people max'+(room.expiresAtMs?' · '+Math.max(0,Math.ceil((Number(room.expiresAtMs)-Date.now())/3600000))+'h remaining':'');
  $('endBtn').hidden=room.hostUid!==me.uid;
  $('roomPeopleBadge').textContent='… / '+(room.maxPlayers||3);
- if(room.hostUid===me.uid)loadFriends();
+ if(room.hostUid===me.uid){loadFriends();$('inviteBtn').hidden=false}else $('inviteBtn').hidden=true;
  if(room.challengeId){
    let activity=null;
    if(room.activitySource==='catalog') activity=activeCatalogActivities().find(x=>x.id===room.challengeId)||null;
@@ -113,7 +113,7 @@ async function load(){
  }
  onSnapshot(query(collection(db,'rooms',id,'members'),orderBy('joinedAtMs','asc'),limit(20)),s=>{
    $('roomPeopleBadge').textContent=s.size+' / '+(room.maxPlayers||3);
-   $('memberList').innerHTML=s.docs.map(d=>{const m=d.data();return '<div class="room-member"><span class="room-member-avatar">'+avatarHtml({name:m.name,photoURL:m.photoURL})+'</span><span class="room-member-name">'+esc(m.name||'User')+'</span><span class="room-member-role">'+(m.uid===room.hostUid?'Host':'Member')+'</span></div>'}).join('');
+   $('memberList').innerHTML=s.docs.map(d=>{const m=d.data();return '<div class="room-member" data-uid="'+esc(m.uid)+'"><span class="room-member-avatar">'+avatarHtml({name:m.name,photoURL:m.photoURL})+'</span><span class="room-member-name">'+esc(m.name||'User')+'</span><span class="room-member-role">'+(m.uid===room.hostUid?'Host':'Member')+'</span></div>'}).join('');
  });
  onSnapshot(query(collection(db,'rooms',id,'members'),orderBy('joinedAtMs','asc'),limit(20)),renderVoiceMembers);
  onSnapshot(query(collection(db,'rooms',id,'messages'),orderBy('createdAtMs','asc'),limit(100)),s=>{
@@ -145,5 +145,6 @@ $('endBtn').onclick=async()=>{if(room?.hostUid!==me.uid)return;await updateDoc(d
 $('inviteBtn')?.addEventListener('click',async()=>{const panel=$('invitePanel');if(!panel)return;panel.hidden=!panel.hidden;if(!panel.hidden)await loadFriends()});
 $('closeInviteBtn')?.addEventListener('click',()=>$('invitePanel').hidden=true);
 $('micBtn')?.addEventListener('click',async()=>{if(!voiceReady)await startVoice();if(!voiceReady)return;micEnabled=!micEnabled;localStream.getAudioTracks().forEach(t=>t.enabled=micEnabled);$('micBtn').textContent=micEnabled?'🎙️ Mic on':'🎙️ Mic off';$('micBtn').classList.toggle('is-on',micEnabled);$('voiceStatus').textContent=micEnabled?'Others can hear you':'You can hear others'});
-$('chatToggleBtn')?.addEventListener('click',()=>document.querySelector('.room-chat')?.classList.toggle('is-collapsed'));
+$('chatToggleBtn')?.addEventListener('click',()=>{const chat=document.querySelector('.room-chat');const btn=$('chatToggleBtn');if(!chat||!btn)return;const collapsed=chat.classList.toggle('is-collapsed');btn.textContent=collapsed?'Chat':'Hide';btn.setAttribute('aria-expanded',String(!collapsed));});
 onAuthStateChanged(auth,async u=>{if(!u)return location.href='login.html?redirect=room.html?id='+encodeURIComponent(id||'');me=u;const s=await getDoc(doc(db,'users',u.uid));p=s.exists()?s.data():{};await load()});
+window.addEventListener('beforeunload',()=>{rtcUnsubs.forEach(fn=>fn());voicePCs.forEach(pc=>pc.close());voiceAudio.forEach(a=>a.remove());localStream?.getTracks().forEach(t=>t.stop());stopSharedWorkspace?.();});
