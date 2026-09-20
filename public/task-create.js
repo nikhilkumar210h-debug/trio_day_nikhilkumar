@@ -3,7 +3,7 @@ import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.13.0/f
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 import { createCommunityTask } from './gamification/community-tasks.js?v=20260919-community5';
 import { ACTIVITY_TYPES, activityTypeInfo } from './activity-ui.js';
-import { ACTIVITY_CATALOG, getBuildConfig } from './activity-catalog.js?v=20260919-catalog4';
+import { ACTIVITY_CATALOG, getBuildConfig } from './activity-catalog.js?v=20260920-audit2';
 import { mechanicInfo, mechanicsFor } from './forge-mechanics.js';
 import { getInteractiveConfig, getChallengeRounds } from './forge-interactions.js?v=20260919-interactions3';
 import { escapeHtml as esc } from './utils.js';
