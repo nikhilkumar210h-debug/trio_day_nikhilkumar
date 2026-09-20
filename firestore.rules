@@ -25,6 +25,17 @@ service cloud.firestore {
           )
         )
       );
+
+      // Subcollections visibility helper.
+      function canReadPost(postId) {
+        let p = get(/databases/$(database)/documents/posts/$(postId)).data;
+        return (p.type == 'post' && p.isStory != true)
+          || (p.isStory == true && (
+            p.privacy == 'public'
+            || p.uid == request.auth.uid
+            || (p.privacy == 'friends' && p.allowedUids is list && request.auth.uid in p.allowedUids)
+          ));
+      }
       allow create: if signedIn() && request.resource.data.uid == request.auth.uid
         && request.resource.data.name is string && request.resource.data.name.size() <= 50
         && request.resource.data.message is string && request.resource.data.message.size() > 0
@@ -67,21 +78,21 @@ service cloud.firestore {
       allow update: if false;
       allow delete: if owner(resource.data.uid);
       match /comments/{commentId} {
-        allow read: if signedIn();
-        allow create: if signedIn() && request.resource.data.uid == request.auth.uid
+        allow read: if signedIn() && canReadPost(postId);
+        allow create: if signedIn() && canReadPost(postId) && request.resource.data.uid == request.auth.uid
           && request.resource.data.txt is string && request.resource.data.txt.size() > 0
           && request.resource.data.txt.size() < 200 && request.resource.data.name is string;
         allow update, delete: if false;
       }
       match /likes/{likeUid} {
-        allow read: if signedIn();
-        allow create: if owner(likeUid) && request.resource.data.uid == request.auth.uid;
+        allow read: if signedIn() && canReadPost(postId);
+        allow create: if owner(likeUid) && canReadPost(postId) && request.resource.data.uid == request.auth.uid;
         allow delete: if owner(likeUid);
         allow update: if false;
       }
       match /moods/{moodUid} {
-        allow read: if signedIn();
-        allow create: if owner(moodUid) && request.resource.data.uid == request.auth.uid && request.resource.data.mood is string;
+        allow read: if signedIn() && canReadPost(postId);
+        allow create: if owner(moodUid) && canReadPost(postId) && request.resource.data.uid == request.auth.uid && request.resource.data.mood is string;
         allow delete: if owner(moodUid);
         allow update: if owner(moodUid);
       }
@@ -424,38 +435,25 @@ service cloud.firestore {
       }
       match /notifications/{notificationId} {
         allow read, update: if owner(userId);
-        // Peer social notifications OR self system/gamification notifications
-        allow create: if signedIn()
-          && request.resource.data.actorUid == request.auth.uid
-          && request.resource.data.actorName is string
-          && request.resource.data.actorName.size() > 0
-          && request.resource.data.actorName.size() <= 50
-          && request.resource.data.type in [
-            'like', 'comment', 'share', 'connect', 'message',
-            'badge_earned', 'task_reminder', 'challenge_reminder',
-            'streak_warning', 'task_complete'
-          ]
-          && request.resource.data.read == false
-          && request.resource.data.createdAtMs is number
-          && (
-            userId != request.auth.uid
-            || request.resource.data.type in [
-              'badge_earned', 'task_reminder', 'challenge_reminder',
-              'streak_warning', 'task_complete'
-            ]
-          );
+        // Notification creation is server-authoritative. Client code must use the
+        // authenticated notification Worker, which verifies the triggering action.
+        allow create: if false;
         allow delete: if owner(userId);
       }
       // Progress-only storage (one doc per period, not per task)
       match /progress/{periodKey} {
         allow read, write: if owner(userId);
       }
-      match /activityCompletions/{activityId} {
+      match /activityCompletions/{completionId} {
         allow read: if owner(userId);
         allow create, update: if owner(userId)
           && request.resource.data.uid == request.auth.uid
-          && request.resource.data.activityId == activityId
-          && request.resource.data.completedAtMs is number;
+          && request.resource.data.activityId is string
+          && request.resource.data.cycleKey == completionId
+          && request.resource.data.cycleEndsAtMs is number
+          && request.resource.data.completedAtMs is number
+          && request.resource.data.completedAtMs <= request.time.toMillis()
+          && request.resource.data.cycleEndsAtMs > request.time.toMillis();
         allow delete: if owner(userId);
       }
     }
@@ -497,7 +495,7 @@ service cloud.firestore {
     }
 
     match /taskTemplates/{templateId} {
-      allow read: if signedIn();
+      allow read: if signedIn() && (resource.data.isSystem == true || resource.data.createdBy == request.auth.uid);
       // Users create personal templates; admins (or first-time system seed via merge) manage system ones
       allow create: if signedIn()
         && request.resource.data.title is string
