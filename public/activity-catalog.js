@@ -133,6 +133,23 @@ function makeChallenge15(x,i){
  const instructions=long ? x[3]+' '+x[5] : x[3];
  return C('c'+(i+1),'challenge',x[0],x[1],x[2],win,instructions,duration,difficulty,cycle,icon,{lane:'challenge',roles:['Player 1','Player 2','Judge'],flow:['Start round','Lock answer','Reveal score','Defend one choice'],win,fun:'Fast decisions, live reveals and a visible score chase.',premise:x[2],rules});
 }
+const PUZZLE_ROLE_SETS=[
+ ['Clue keeper','Contradiction hunter','Timeline mapper','Final caller'],
+ ['Route scout','Distance checker','Trade-off caller','Route captain'],
+ ['Evidence hunter','Sceptic','Source checker','Verdict caller'],
+ ['Cipher decoder','Chunk checker','Message mapper','Reply maker'],
+ ['Venue owner','Food owner','Travel owner','Buffer keeper'],
+ ['North-zone scout','South-zone scout','Route mapper','Route caller'],
+ ['Calendar owner A','Calendar owner B','Dependency checker','Schedule caller'],
+ ['Variable checker','Control checker','Twist hunter','Experiment judge'],
+ ['Outcome counter A','Outcome counter B','Assumption checker','Strategy caller'],
+ ['Input tracker','Dependency tracer','Fix designer','Verifier'],
+ ['Constraint checker','Option advocate','Trade-off judge','Final caller'],
+ ['Exact-position keeper','Misplaced-clue keeper','Elimination keeper','Code caller'],
+ ['Fragment owner A','Fragment owner B','Timeline mapper','Heist caller'],
+ ['Symbol key owner','Pattern checker','Message mapper','Signal caller'],
+ ['Layer 1 solver','Layer 2 solver','Layer 3 solver','Escape caller']
+];
 const BUILD_ROLE_SETS=[
  ['Product lead','Designer','Reviewer'],
  ['Copywriter','Event planner','Visual editor'],
@@ -172,7 +189,7 @@ function makeLearn15(x,i){
 }
 const LEARN15=L.map(makeLearn15);
 const CHALLENGE15=Cg.map((x,i)=>C('c'+(i+1),'challenge',x[0],x[1],x[2],x.length===10?x[4]:x[4],x.length===10?x[3]+' '+x[5]:x[3],x.length===10?x[6]:x[5],x.length===10?x[7]:x[6],x.length===10?x[8]:x[7],x.length===10?x[9]:x[8],{lane:'challenge',roles:['Player 1','Player 2','Judge'],flow:['Start round','Lock answer','Reveal score','Defend one choice'],win:x[4],fun:'Fast decisions, live reveals and a visible score chase.',premise:x[2],rules:x[3]}));
-const PUZZLE15=P.map((x,i)=>C('p'+(i+1),'puzzle',x[1],x[2],x[3],x[5],x[6],x[7],x[8],x[9],x[10],{lane:'puzzle',roles:(x[4]||'Clue Keeper, Sceptic, Mapper, Final Caller').split(/\s*,\s*/),flow:['Split clues','Share deductions','Challenge the theory','Lock the solution'],win:x[5],fun:'No single player gets the whole picture.',premise:x[3]}));
+const PUZZLE15=P.map((x,i)=>C('p'+(i+1),'puzzle',x[1],x[2],x[3],x[5],x[6],x[7],x[8],x[9],x[10],{lane:'puzzle',roles:PUZZLE_ROLE_SETS[i],flow:['Split clues','Share deductions','Challenge the theory','Lock the solution'],win:x[5],fun:'No single player gets the whole picture.',premise:x[3]}));
 export const ACTIVITY_CATALOG=[...PUZZLE15,...BUILD15,...LEARN15,...CHALLENGE15];
 
 export function getCatalogActivity(id){
