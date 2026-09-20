@@ -384,3 +384,24 @@ button:disabled,.nkm-btn:disabled,.btn:disabled{cursor:not-allowed;opacity:.55;t
     width:min(760px,calc(100% - 240px - 56px))!important;
   }
 }
+
+
+/* Profile refresh */
+.profile-today-card{position:relative;overflow:hidden;background:linear-gradient(145deg,rgba(99,102,241,.08),var(--color-surface));}
+.profile-today-glow{position:absolute;width:180px;height:180px;border-radius:50%;right:-60px;top:-80px;background:radial-gradient(circle,rgba(99,102,241,.2),transparent 68%);animation:profileGlow 5s ease-in-out infinite;pointer-events:none}
+.profile-today-head{position:relative;display:flex;justify-content:space-between;gap:16px;align-items:flex-start}
+.profile-section-kicker{font-size:9px;letter-spacing:.16em;font-weight:900;color:var(--color-primary-text)}
+.profile-today-head h3{margin:4px 0 3px}
+.profile-today-head p{margin:0;color:var(--color-ink-muted);font-size:11px;max-width:430px}
+.profile-today-icon{width:42px;height:42px;border-radius:14px;display:grid;place-items:center;background:rgba(99,102,241,.12);border:1px solid rgba(129,140,248,.2);font-size:21px;animation:profileFloat 3.5s ease-in-out infinite}
+.profile-today-actions{position:relative;display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.profile-today-action{display:grid;grid-template-columns:38px 1fr;column-gap:9px;align-items:center;padding:11px;border:1px solid var(--color-border);border-radius:16px;background:rgba(255,255,255,.018);color:inherit;text-decoration:none;transition:transform .18s ease,border-color .18s ease,background .18s ease}
+.profile-today-action:hover{transform:translateY(-2px);border-color:rgba(129,140,248,.3);background:rgba(99,102,241,.06)}
+.profile-today-action>span{grid-row:1/3;width:38px;height:38px;border-radius:12px;display:grid;place-items:center;background:rgba(99,102,241,.1);font-size:18px}
+.profile-today-action strong{font-size:11px}.profile-today-action small{font-size:9px;color:var(--color-ink-muted)}
+@keyframes profileGlow{50%{transform:scale(1.12);opacity:.72}}@keyframes profileFloat{50%{transform:translateY(-3px) rotate(3deg)}}
+@media(max-width:560px){.profile-today-actions{grid-template-columns:1fr}.profile-today-action{grid-template-columns:34px 1fr}.profile-today-action>span{width:34px;height:34px}}
+@media(prefers-reduced-motion:reduce){.profile-today-glow,.profile-today-icon{animation:none}}
+/* Shared soft visual treatment */
+.profile-card,.profile-section,.connection-row{transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease}
+.profile-section:hover{box-shadow:var(--td-shadow)}
