@@ -644,11 +644,13 @@ function evaluateBadgesDelta(currentBadges, xp, streakCurrent, extraTemplateId) 
     { id: 'badge_xp_1000',        ok: xp >= 1000 }
   ];
   const templateMap = {
-    verified_first_post: 'badge_first_post'
+    verified_first_post: 'badge_first_post',
+    verified_monthly_engage: 'badge_engager'
   };
-  if (extraTemplateId && templateMap[extraTemplateId]) {
-    checks.push({ id: templateMap[extraTemplateId], ok: true });
-  }
+  const verifiedExtras = Array.isArray(extraTemplateId) ? extraTemplateId : [extraTemplateId];
+  verifiedExtras.filter(Boolean).forEach(id => {
+    if (templateMap[id]) checks.push({ id: templateMap[id], ok: true });
+  });
 
   const earned = [];
   for (const c of checks) {
@@ -851,11 +853,18 @@ async function handleAwardBadges(uid, _body, env) {
     limit: 1
   };
   const hasPost = (await fsRunQuery(projectId, token, postQuery).catch(() => [])).length > 0;
+  const monthKey = localMonthKey();
+  const monthProgress = await fsGet(projectId, token, `users/${uid}/progress/m_${monthKey}`).catch(() => null);
+  const monthlyDone = !!monthProgress?.completions?.sys_monthly_engage?.done;
+  const verifiedBadges = [];
+  if (hasPost) verifiedBadges.push('verified_first_post');
+  if (monthlyDone) verifiedBadges.push('verified_monthly_engage');
+
   const earned = evaluateBadgesDelta(
     currentBadges,
     Number(userData.xp) || 0,
     Number(userData.streakCurrent) || 0,
-    hasPost ? 'verified_first_post' : null
+    verifiedBadges
   );
   if (earned.length > 0) {
     const newBadges = [...currentBadges, ...earned];
