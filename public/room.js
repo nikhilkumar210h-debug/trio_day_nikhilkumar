@@ -18,10 +18,9 @@ async function loadFriends(){
  const host=$('friendList'); if(!host)return;
  try{
   const a=await getDocs(collection(db,'users',me.uid,'following')); const b=await getDocs(collection(db,'users',me.uid,'followers'));
-  const following=new Set(a.docs.map(d=>d.id)); const ids=b.docs.map(d=>d.id).filter(x=>following.has(x)&&x!==me.uid);
+  const following=new Set(a.docs.map(d=>d.id)); const ids=b.docs.map(d=>d.id).filter(x=>following.has(x)&&x!==me.uid); const memberSnap=await getDocs(collection(db,'rooms',id,'members')); const joined=new Set(memberSnap.docs.map(d=>d.id));
   if(!ids.length){host.innerHTML='<div class="room-empty">No connected friends yet.</div>';return}
   const rows=await Promise.all(ids.slice(0,30).map(async uid=>{const s=await getDoc(doc(db,'users',uid));return s.exists()?{uid,...s.data()}:null}));
-  const joined=new Set([me.uid,...voicePeers.keys()]);
   host.innerHTML=rows.filter(Boolean).map(f=>'<div class="room-friend"><span class="room-friend-avatar">'+avatarHtml(f)+'</span><span class="room-friend-info"><strong>'+esc(f.name||f.userId||'Friend')+'</strong><small>'+(joined.has(f.uid)?'Already here':'Connected friend')+'</small></span><button type="button" data-invite="'+f.uid+'" '+(joined.has(f.uid)?'disabled':'')+'>'+(joined.has(f.uid)?'Joined':'Invite')+'</button></div>').join('');
   host.querySelectorAll('[data-invite]').forEach(b=>b.onclick=()=>inviteFriend(b.dataset.invite,b));
  }catch(e){host.innerHTML='<div class="room-empty">Could not load friends.</div>'}
@@ -32,7 +31,7 @@ async function inviteFriend(uid,btn){
  try{await setDoc(doc(db,'rooms',id,'invites',uid),{targetUid:uid,hostUid:me.uid,hostName:p.name||me.displayName||'User',roomTitle:room.title||'Live room',roomId:id,status:'pending',createdAtMs:Date.now()});
   await createNotificationViaWorker(uid,{type:'room_invite',actorName:p.name||me.displayName||'User',text:(p.name||'A friend')+' invited you to '+(room.title||'a live room'),title:'Join '+(room.title||'live room'),urlPath:'room.html?id='+encodeURIComponent(id),roomId:id});
   btn.textContent='Invited ✓';
- }catch(e){btn.disabled=false;btn.textContent='Invite';showToast(e.message||'Invite failed.','error')}
+ }catch(e){try{await deleteDoc(doc(db,'rooms',id,'invites',uid))}catch(_){}btn.disabled=false;btn.textContent='Invite';showToast(e.message||'Invite failed.','error')}
 }
 async function startVoice(){
  if(voiceReady)return;
