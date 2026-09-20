@@ -344,7 +344,7 @@ async function loadProfile(uid) {
   try {
     const [catalogSnap, communitySnap] = await Promise.all([
       getDocs(query(collection(db, 'users', uid, 'activityCompletions'), orderBy('completedAtMs', 'desc'), limit(24))).catch(() => null),
-      getDocs(query(collectionGroup(db, 'completions'), where('uid', '==', uid), orderBy('atMs', 'desc'), limit(24))).catch(() => null)
+      getDocs(query(collectionGroup(db, 'completions'), where('uid', '==', uid), limit(24))).catch(() => null)
     ]);
 
     if (catalogSnap) {
