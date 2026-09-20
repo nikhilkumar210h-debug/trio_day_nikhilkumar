@@ -653,7 +653,8 @@ async function handleAwardXp(uid, body, env) {
   const meta = body?.meta || {};
   const communityTaskId = String(meta.communityTaskId || '').trim();
   const catalogActivityId = String(meta.catalogActivityId || '').trim().toLowerCase();
-  if (!communityTaskId && !catalogActivityId) throw new Error('activity context required');
+  const templateId = String(meta.templateId || '').trim();
+  if (!communityTaskId && !catalogActivityId && !templateId) throw new Error('activity context required');
 
   const projectId = env.FIREBASE_PROJECT_ID;
   const token = await getAccessToken(env);
@@ -664,11 +665,12 @@ async function handleAwardXp(uid, body, env) {
   if (communityTaskId) {
     const task = await fsGet(projectId, token, 'communityTasks/' + communityTaskId);
     if (!task || task.status !== 'active') throw new Error('Community activity is not active');
+    if (task.creatorUid === uid) throw new Error('Creators cannot earn XP from their own activity');
     const completion = await fsGet(projectId, token, 'communityTasks/' + communityTaskId + '/completions/' + uid);
     if (!completion) throw new Error('Completion record not found');
     amount = Math.max(1, Math.min(MAX_XP_AWARD, Math.round(Number(task.xpReward) || 50)));
     grantKey = 'community_' + communityTaskId;
-  } else {
+  } else if (catalogActivityId) {
     amount = catalogXp(catalogActivityId);
     if (!amount) throw new Error('Unknown catalog activity');
     const expectedKey = catalogCycleKey(catalogActivityId, now);
@@ -677,6 +679,20 @@ async function handleAwardXp(uid, body, env) {
     const completion = await fsGet(projectId, token, 'users/' + uid + '/activityCompletions/' + completionKey);
     if (!completion || completion.activityId !== catalogActivityId) throw new Error('Completion record not found');
     grantKey = 'catalog_' + expectedKey;
+  } else {
+    const template = await fsGet(projectId, token, 'taskTemplates/' + templateId);
+    if (!template || template.active !== true) throw new Error('Template is not active');
+    if (template.createdBy !== 'system' && template.createdBy !== uid) throw new Error('Template access denied');
+    const cadence = String(template.cadence || 'once');
+    const periodKey = cadence === 'daily' ? 'd_' + localDateKey()
+      : cadence === 'weekly' ? 'w_' + localWeekKey()
+      : cadence === 'monthly' ? 'm_' + localMonthKey()
+      : 'o_' + localDateKey();
+    const progress = await fsGet(projectId, token, 'users/' + uid + '/progress/' + periodKey);
+    const completion = progress?.completions?.[templateId];
+    if (!completion?.done) throw new Error('Template completion not found');
+    amount = Math.max(1, Math.min(MAX_XP_AWARD, Math.round(Number(template.xpReward) || 25)));
+    grantKey = 'template_' + templateId + '_' + periodKey;
   }
 
   const grantPath = 'users/' + uid + '/xpAwards/' + grantKey.replace(/[^A-Za-z0-9_-]/g, '_');
