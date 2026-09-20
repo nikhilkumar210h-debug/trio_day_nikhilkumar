@@ -161,9 +161,7 @@ html, body { overflow-x: hidden; }
 @media (min-width: 840px) {
   .rooms-shell,
   .room-page-shell,
-  .activity-page-shell,
-  .discover-shell,
-  .do-shell {
+  .activity-page-shell {
     margin-left: calc(72px + max(16px, (100% - 72px - 1040px) / 2));
     margin-right: 0;
     width: min(1040px, calc(100% - 72px - 32px));
@@ -174,9 +172,7 @@ html, body { overflow-x: hidden; }
 @media (min-width: 1280px) {
   .rooms-shell,
   .room-page-shell,
-  .activity-page-shell,
-  .discover-shell,
-  .do-shell {
+  .activity-page-shell {
     margin-left: calc(240px + max(16px, (100% - 240px - 1040px) / 2));
     margin-right: 0;
     width: min(1040px, calc(100% - 240px - 32px));
