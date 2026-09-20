@@ -1,0 +1,76 @@
+/* Trio global visual system — theme-aware and page-agnostic */
+:root{
+  --trio-glow: rgba(99,102,241,.18);
+  --trio-card-gradient: linear-gradient(145deg,rgba(255,255,255,.045),rgba(255,255,255,.018));
+  --trio-page-gradient: radial-gradient(circle at 12% 8%,rgba(99,102,241,.10),transparent 30%),radial-gradient(circle at 88% 18%,rgba(6,182,212,.07),transparent 28%);
+}
+html,body{background:var(--color-bg)!important;color:var(--color-ink)}
+body{background-image:var(--trio-page-gradient)}
+main{position:relative}
+main section,.rooms-panel,.do-featured,.discover-surface,.activity-detail-card,.profile-card{
+  border-color:var(--color-border)!important;
+}
+.activity-card,.do-action,.discover-lane-card,.room-card,.room-main-card,.room-side-card,.rooms-panel,.profile-card,.activity-detail-card{
+  box-shadow:0 12px 38px color-mix(in srgb,var(--color-ink) 6%,transparent);
+}
+.activity-card,.do-action,.discover-lane-card,.room-card{transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease}
+.activity-card:hover,.discover-lane-card:hover,.do-action:hover,.room-card:hover{transform:translateY(-3px)}
+.nkm-btn{transition:transform .14s ease,box-shadow .14s ease,background .14s ease,border-color .14s ease}
+.nkm-btn:hover{transform:translateY(-1px)}
+input,textarea,select{background:var(--color-bg-elevated)!important;color:var(--color-ink)!important;border-color:var(--color-border)!important}
+::selection{background:var(--color-primary);color:#fff}
+
+/* Light theme: remove legacy dark surfaces/gradients left by older page styles. */
+[data-theme="light"]{
+  --trio-page-gradient:radial-gradient(circle at 12% 8%,rgba(99,102,241,.08),transparent 30%),radial-gradient(circle at 88% 18%,rgba(6,182,212,.06),transparent 28%);
+}
+[data-theme="light"] .topbar,
+[data-theme="light"] .room-main-card,
+[data-theme="light"] .room-side-card,
+[data-theme="light"] .rooms-panel,
+[data-theme="light"] .do-action,
+[data-theme="light"] .do-featured,
+[data-theme="light"] .discover-surface,
+[data-theme="light"] .discover-lane-card,
+[data-theme="light"] .activity-detail-card,
+[data-theme="light"] .profile-card,
+[data-theme="light"] .nkm-sheet,
+[data-theme="light"] .nkm-scrim + .nkm-sheet{
+  background:var(--color-surface)!important;
+  color:var(--color-ink)!important;
+}
+[data-theme="light"] .nkm-rail{
+  background:linear-gradient(180deg,#ffffff,#f8fafc)!important;
+  box-shadow:12px 0 34px rgba(15,23,42,.08)!important;
+}
+[data-theme="light"] .nkm-rail .nav-btn{color:#475569}
+[data-theme="light"] .nkm-rail .nav-btn.active{background:rgba(99,102,241,.10);color:#3730a3;border-color:rgba(79,70,229,.18)}
+[data-theme="light"] .nkm-top-icon{background:rgba(255,255,255,.88)!important;color:#0f172a!important;box-shadow:0 8px 24px rgba(15,23,42,.09)}
+[data-theme="light"] .nkm-top-profile{background:#fff!important;box-shadow:0 8px 24px rgba(15,23,42,.10)}
+[data-theme="light"] .workspace-placeholder,
+[data-theme="light"] .room-workspace,
+[data-theme="light"] .room-chat,
+[data-theme="light"] .forge-workspace,
+[data-theme="light"] .selected-activity,
+[data-theme="light"] .do-note{
+  background:var(--color-surface)!important;
+  color:var(--color-ink)!important;
+}
+[data-theme="light"] .do-hero,
+[data-theme="light"] .forge-brand-hero,
+[data-theme="light"] .activity-detail-hero{
+  background-color:#fff!important;
+}
+[data-theme="light"] .activity-card-art,
+[data-theme="light"] .creator-preview-art{filter:saturate(.96)}
+[data-theme="light"] .muted,
+[data-theme="light"] small{color:var(--color-ink-muted)}
+[data-theme="light"] .notification-overlay{background:rgba(15,23,42,.18)!important}
+[data-theme="light"] .notification-modal,
+[data-theme="light"] .notification-menu,
+[data-theme="light"] .modal,
+[data-theme="light"] .sheet,
+[data-theme="light"] .search-sheet{background:#fff!important;color:#0f172a!important}
+
+/* Creator/activity visuals */
+.creator-preview-activity,.preview-modal-hero{background:var(--trio-card-gradient)}
