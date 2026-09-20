@@ -33,5 +33,6 @@
 .activity-timer.is-running .activity-timer-display{color:var(--color-primary-text);text-shadow:0 0 18px var(--color-primary-glow)}
 .activity-timer.is-running .activity-timer-state{color:var(--color-primary-text)}
 
-<style>.activity-detail-hero{background-image:linear-gradient(90deg,rgba(8,12,27,.97) 0%,rgba(8,12,27,.78) 50%,rgba(8,12,27,.38) 100%),url('assets/activity-hero.svg')!important;background-size:cover!important;background-position:center!important}</style>
+
+.activity-detail-hero{background-image:linear-gradient(90deg,rgba(8,12,27,.97) 0%,rgba(8,12,27,.78) 50%,rgba(8,12,27,.38) 100%),url('assets/activity-hero.svg')!important;background-size:cover!important;background-position:center!important}
 .activity-detail-hero{background-image:linear-gradient(90deg,rgba(8,12,27,.97) 0%,rgba(8,12,27,.78) 50%,rgba(8,12,27,.38) 100%),url('assets/activity-hero.svg')!important;background-size:cover!important;background-position:center!important}
