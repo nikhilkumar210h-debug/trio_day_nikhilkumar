@@ -95,17 +95,16 @@ function levelFromXp(xp) {
 }
 
 const CATALOG_MEDIUM = new Set([
-  'p2','p3','p4','p7','p8','p9','p10','p11',
-  'b3','b4','b6','b7','b8','b10','b12',
-  'l2','l4','l5','l8','l9','l10','l11',
-  'c2','c4','c5','c6','c9','c10',
-  'g6','g8','g10','g11'
+  'p1','p2','p3','p4','p5','p6','p7','p8','p9','p10','p11','p14',
+  'b1','b3','b4','b7','b10','b11','b12','b14',
+  'l1','l6','l7','l8','l10','l11','l13','l15',
+  'c2','c3','c5','c6','c7','c9','c11','c12','c15'
 ]);
-const CATALOG_HARD = new Set(['p12','b11']);
+const CATALOG_HARD = new Set(['p12','p13','p15','b15']);
 
 function catalogXp(activityId) {
   const id = String(activityId || '').trim().toLowerCase();
-  if (!/^[pblcg]\d+$/.test(id)) return 0;
+  if (!/^[pblc]\d+$/.test(id)) return 0;
   if (CATALOG_HARD.has(id)) return 60;
   if (CATALOG_MEDIUM.has(id)) return 40;
   return 25;
@@ -113,11 +112,10 @@ function catalogXp(activityId) {
 
 function catalogCycleDays(activityId) {
   const cycles = {
-    p1:14,p2:21,p3:14,p4:30,p5:14,p6:14,p7:21,p8:30,p9:30,p10:21,p11:14,p12:40,
-    b1:21,b2:14,b3:21,b4:30,b5:21,b6:30,b7:30,b8:21,b9:14,b10:21,b11:30,b12:21,
-    l1:30,l2:21,l3:21,l4:30,l5:30,l6:21,l7:30,l8:30,l9:21,l10:40,l11:40,l12:14,
-    c1:14,c2:21,c3:14,c4:30,c5:21,c6:30,c7:14,c8:21,c9:21,c10:30,c11:14,c12:21,
-    g1:14,g2:14,g3:21,g4:14,g5:14,g6:21,g7:14,g8:21,g9:14,g10:21,g11:14,g12:21
+    p1:14,p2:21,p3:14,p4:30,p5:14,p6:21,p7:30,p8:30,p9:21,p10:21,p11:30,p12:40,p13:30,p14:21,p15:40,
+    b1:21,b2:14,b3:30,b4:30,b5:14,b6:21,b7:30,b8:21,b9:14,b10:21,b11:30,b12:21,b13:21,b14:30,b15:40,
+    l1:21,l2:21,l3:30,l4:21,l5:21,l6:30,l7:21,l8:21,l9:14,l10:30,l11:40,l12:21,l13:30,l14:21,l15:30,
+    c1:14,c2:21,c3:21,c4:14,c5:30,c6:21,c7:21,c8:14,c9:30,c10:14,c11:21,c12:30,c13:14,c14:14,c15:21
   };
   return cycles[String(activityId || '').trim().toLowerCase()] || 21;
 }
@@ -129,618 +127,78 @@ function catalogCycleKey(activityId, nowMs) {
   return activityId + '_' + String(epoch + index * days * 86400000);
 }
 
-async function fsCreateDoc(projectId, accessToken, path, data) {
-  const slash = path.lastIndexOf('/');
-  const parent = path.slice(0, slash);
-  const documentId = path.slice(slash + 1);
-  const url = firestoreBase(projectId) + '/' + parent + '?documentId=' + encodeURIComponent(documentId);
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: {
-      Authorization: 'Bearer ' + accessToken,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ fields: toFirestoreFields(data) })
-  });
-  if (res.status === 409) return false;
-  if (!res.ok) {
-    const txt = await res.text();
-    throw new Error('Firestore CREATE ' + path + ' failed: ' + res.status + ' ' + txt);
-  }
-  return true;
-}
-async function fsDelete(projectId, accessToken, path) {
-  const url = firestoreBase(projectId) + '/' + path;
-  const res = await fetch(url, {
-    method:'DELETE',
-    headers:{ Authorization:'Bearer ' + accessToken }
-  });
-  if (res.status === 404) return false;
-  if (!res.ok) {
-    const txt = await res.text();
-    throw new Error('Firestore DELETE ' + path + ' failed: ' + res.status + ' ' + txt);
-  }
-  return true;
-}
-
-// ─── Firebase ID token verification ──────────────────────────────────────────
-
-/**
- * Decode a base64url-encoded string to a Uint8Array.
- */
-function b64urlDecode(str) {
-  const b64 = str.replace(/-/g, '+').replace(/_/g, '/');
-  const pad = (4 - (b64.length % 4)) % 4;
-  const padded = b64 + '='.repeat(pad);
-  const binary = atob(padded);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-  return bytes;
-}
-
-/**
- * Fetch and cache Firebase public keys. Returns a Map<kid, CryptoKey>.
- * Keys are cached for 1 hour (Cache API).
- */
-async function getFirebasePublicKeys(cacheStorage) {
-  const cacheKey = 'https://firebase-pubkeys.internal/v1';
-  let certMap = null;
-
-  // Cache the raw Google certificate map, not CryptoKey objects (CryptoKey is not JSON-serializable).
-  try {
-    const cached = await cacheStorage.match(cacheKey);
-    if (cached) certMap = await cached.json();
-  } catch (_) { /* ignore corrupt cache */ }
-
-  if (!certMap || typeof certMap !== 'object') {
-    const res = await fetch(FIREBASE_PUBLIC_KEYS_URL);
-    if (!res.ok) throw new Error(`Firebase public key fetch failed: ${res.status}`);
-    certMap = await res.json();
-    try {
-      await cacheStorage.put(
-        cacheKey,
-        new Response(JSON.stringify(certMap), {
-          headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=3600' }
-        })
-      );
-    } catch (_) { /* cache is optional */ }
-  }
-
-  // Convert PEM certs to CryptoKey objects for signature verification.
-  const result = {};
-  for (const [kid, pem] of Object.entries(certMap)) {
-    try {
-      // Extract the base64 DER from PEM certificate
-      const pemBody = pem
-        .replace('-----BEGIN CERTIFICATE-----', '')
-        .replace('-----END CERTIFICATE-----', '')
-        .replace(/\s/g, '');
-      const derBytes = b64urlDecode(pemBody);
-      // Import as a certificate (X.509 SubjectPublicKeyInfo extraction via importKey)
-      const cryptoKey = await crypto.subtle.importKey(
-        'spki',
-        // We need to extract the public key from the certificate DER
-        // Use a workaround: parse the certificate to get the public key
-        extractPublicKeyFromCert(derBytes),
-        { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
-        false,
-        ['verify']
-      );
-      result[kid] = cryptoKey;
-    } catch (_) { /* skip invalid keys */ }
-  }
-  return result;
-}
-
-/**
- * Extract SubjectPublicKeyInfo from an X.509 DER certificate.
- * This is a minimal DER parser — handles the standard Firebase cert structure.
- */
-function extractPublicKeyFromCert(derBytes) {
-  // Walk the DER: SEQUENCE { ... TBSCertificate { ... SubjectPublicKeyInfo } ... }
-  // TBSCertificate is the first element of the outer SEQUENCE
-  let offset = 0;
-
-  function readTag(buf, off) {
-    return { tag: buf[off], next: off + 1 };
-  }
-
-  function readLength(buf, off) {
-    if (buf[off] < 0x80) return { len: buf[off], next: off + 1 };
-    const numBytes = buf[off] & 0x7f;
-    let len = 0;
-    for (let i = 0; i < numBytes; i++) len = (len << 8) | buf[off + 1 + i];
-    return { len, next: off + 1 + numBytes };
-  }
-
-  function skipField(buf, off) {
-    const { next: afterTag } = readTag(buf, off);
-    const { len, next: afterLen } = readLength(buf, afterTag);
-    return afterLen + len;
-  }
-
-  function enterSequence(buf, off) {
-    const { next: afterTag } = readTag(buf, off); // skip tag
-    const { next: afterLen } = readLength(buf, afterTag); // skip length
-    return afterLen;
-  }
-
-  // Outer SEQUENCE
-  offset = enterSequence(derBytes, offset);
-  // TBSCertificate SEQUENCE — enter it
-  offset = enterSequence(derBytes, offset);
-  // version [0] EXPLICIT INTEGER — skip if present (tag 0xa0)
-  if (derBytes[offset] === 0xa0) offset = skipField(derBytes, offset);
-  // serialNumber INTEGER — skip
-  offset = skipField(derBytes, offset);
-  // signature AlgorithmIdentifier — skip
-  offset = skipField(derBytes, offset);
-  // issuer Name — skip
-  offset = skipField(derBytes, offset);
-  // validity Validity — skip
-  offset = skipField(derBytes, offset);
-  // subject Name — skip
-  offset = skipField(derBytes, offset);
-  // subjectPublicKeyInfo — this is what we need, return it as a slice
-  const { next: afterTag } = readTag(derBytes, offset);
-  const { len, next: afterLen } = readLength(derBytes, afterTag);
-  const end = afterLen + len;
-  return derBytes.slice(offset, end).buffer;
-}
-
-/**
- * Verify a Firebase ID token. Returns the payload object or throws.
- */
-async function verifyFirebaseIdToken(token, projectId) {
-  const parts = token.split('.');
-  if (parts.length !== 3) throw new Error('Invalid token format');
-
-  let header, payload;
-  try {
-    header = JSON.parse(new TextDecoder().decode(b64urlDecode(parts[0])));
-    payload = JSON.parse(new TextDecoder().decode(b64urlDecode(parts[1])));
-  } catch (_) {
-    throw new Error('Token decode failed');
-  }
-
-  if (header.alg !== 'RS256') throw new Error('Unsupported algorithm');
-
-  const now = Math.floor(Date.now() / 1000);
-  if (payload.exp <= now)       throw new Error('Token expired');
-  if (payload.iat > now + 60)   throw new Error('Token issued in future');
-  if (payload.aud !== projectId) throw new Error('Token audience mismatch');
-  if (payload.iss !== `https://securetoken.google.com/${projectId}`)
-    throw new Error('Token issuer mismatch');
-  if (!payload.sub)             throw new Error('Missing subject');
-
-  // Fetch public keys and verify signature
-  const keys = await getFirebasePublicKeys(caches.default);
-  const publicKey = keys[header.kid];
-  if (!publicKey) throw new Error('Unknown key id');
-
-  const signingInput = new TextEncoder().encode(`${parts[0]}.${parts[1]}`);
-  const signature = b64urlDecode(parts[2]);
-
-  const valid = await crypto.subtle.verify(
-    'RSASSA-PKCS1-v1_5',
-    publicKey,
-    signature,
-    signingInput
-  );
-  if (!valid) throw new Error('Token signature invalid');
-
-  return payload;
-}
-
-// ─── Service account / Firestore access token ────────────────────────────────
-
-/**
- * Create a signed JWT for the service account (for OAuth2 token exchange).
- */
-async function createServiceAccountJwt(clientEmail, privateKeyPem) {
-  const now = Math.floor(Date.now() / 1000);
-  const header = { alg: 'RS256', typ: 'JWT' };
-  const claimSet = {
-    iss: clientEmail,
-    scope: 'https://www.googleapis.com/auth/datastore',
-    aud: GOOGLE_TOKEN_URL,
-    exp: now + 3600,
-    iat: now
-  };
-
-  function encode(obj) {
-    return btoa(JSON.stringify(obj)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-  }
-
-  const headerB64 = encode(header);
-  const claimB64 = encode(claimSet);
-  const signingInput = `${headerB64}.${claimB64}`;
-
-  // Import private key
-  const pemBody = privateKeyPem
-    .replace('-----BEGIN PRIVATE KEY-----', '')
-    .replace('-----END PRIVATE KEY-----', '')
-    .replace(/\s/g, '');
-  const keyBytes = b64urlDecode(pemBody);
-
-  const cryptoKey = await crypto.subtle.importKey(
-    'pkcs8',
-    keyBytes.buffer,
-    { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
-    false,
-    ['sign']
-  );
-
-  const sigBytes = await crypto.subtle.sign(
-    'RSASSA-PKCS1-v1_5',
-    cryptoKey,
-    new TextEncoder().encode(signingInput)
-  );
-
-  const sigB64 = btoa(String.fromCharCode(...new Uint8Array(sigBytes)))
-    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-
-  return `${signingInput}.${sigB64}`;
-}
-
-/**
- * Exchange a service account JWT for an OAuth2 access token.
- * Result is cached in the Worker's global scope for reuse within the same request.
- */
-let _cachedAccessToken = null;
-let _cachedTokenExpiry = 0;
-
-async function getAccessToken(env) {
-  const now = Date.now() / 1000;
-  if (_cachedAccessToken && _cachedTokenExpiry > now + 60) {
-    return _cachedAccessToken;
-  }
-
-  const jwt = await createServiceAccountJwt(
-    env.FIREBASE_SA_CLIENT_EMAIL,
-    env.FIREBASE_SA_PRIVATE_KEY
-  );
-
-  const res = await fetch(GOOGLE_TOKEN_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: `grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion=${jwt}`
-  });
-
-  if (!res.ok) {
-    const txt = await res.text();
-    throw new Error(`OAuth2 token exchange failed: ${txt}`);
-  }
-
-  const data = await res.json();
-  _cachedAccessToken = data.access_token;
-  _cachedTokenExpiry = now + (data.expires_in || 3600);
-  return _cachedAccessToken;
-}
-
-// ─── Firestore REST helpers ───────────────────────────────────────────────────
-
-function firestoreBase(projectId) {
-  return `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents`;
-}
-
-/**
- * Convert a plain JS object to a Firestore REST "fields" map.
- * Handles: string, number, boolean, null, array, object.
- */
-function toFirestoreFields(obj) {
-  const fields = {};
-  for (const [k, v] of Object.entries(obj)) {
-    fields[k] = toFirestoreValue(v);
-  }
-  return fields;
-}
-
-function toFirestoreValue(v) {
-  if (v === null || v === undefined) return { nullValue: null };
-  if (typeof v === 'boolean')        return { booleanValue: v };
-  if (typeof v === 'number')         return { integerValue: String(Math.round(v)) };
-  if (typeof v === 'string')         return { stringValue: v };
-  if (Array.isArray(v))              return { arrayValue: { values: v.map(toFirestoreValue) } };
-  if (typeof v === 'object')         return { mapValue: { fields: toFirestoreFields(v) } };
-  return { stringValue: String(v) };
-}
-
-/**
- * Convert Firestore REST "fields" map back to a plain JS object.
- */
-function fromFirestoreFields(fields) {
-  if (!fields) return {};
-  const obj = {};
-  for (const [k, v] of Object.entries(fields)) {
-    obj[k] = fromFirestoreValue(v);
-  }
-  return obj;
-}
-
-function fromFirestoreValue(v) {
-  if ('nullValue'    in v) return null;
-  if ('booleanValue' in v) return v.booleanValue;
-  if ('integerValue' in v) return Number(v.integerValue);
-  if ('doubleValue'  in v) return Number(v.doubleValue);
-  if ('stringValue'  in v) return v.stringValue;
-  if ('arrayValue'   in v) return (v.arrayValue.values || []).map(fromFirestoreValue);
-  if ('mapValue'     in v) return fromFirestoreFields(v.mapValue.fields || {});
-  if ('timestampValue' in v) return v.timestampValue;
-  return null;
-}
-
-/**
- * GET a Firestore document. Returns plain JS object or null if not found.
- */
-async function fsGet(projectId, accessToken, path) {
-  const url = `${firestoreBase(projectId)}/${path}`;
-  const res = await fetch(url, {
-    headers: { Authorization: `Bearer ${accessToken}` }
-  });
-  if (res.status === 404) return null;
-  if (!res.ok) throw new Error(`Firestore GET ${path} failed: ${res.status}`);
-  const doc = await res.json();
-  return doc.fields ? fromFirestoreFields(doc.fields) : {};
-}
-
-async function fsRunQuery(projectId, accessToken, structuredQuery) {
-  const url = firestoreBase(projectId).replace('/documents', '') + ':runQuery';
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: {
-      Authorization: 'Bearer ' + accessToken,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ structuredQuery })
-  });
-  if (!res.ok) throw new Error('Firestore RUNQUERY failed: ' + res.status);
-  const rows = await res.json();
-  return rows.filter(row => row.document).map(row => fromFirestoreFields(row.document.fields || {}));
-}
-
-/**
- * PATCH (merge) a Firestore document with specific fields.
- * updateMask is an array of top-level field names.
- */
-async function fsPatch(projectId, accessToken, path, data, updateMask) {
-  const maskParams = updateMask.map(f => `updateMask.fieldPaths=${encodeURIComponent(f)}`).join('&');
-  const url = `${firestoreBase(projectId)}/${path}?${maskParams}`;
-  const body = { fields: toFirestoreFields(data) };
-  const res = await fetch(url, {
-    method: 'PATCH',
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(body)
-  });
-  if (!res.ok) {
-    const txt = await res.text();
-    throw new Error(`Firestore PATCH ${path} failed: ${res.status} ${txt}`);
-  }
-  return res.json();
-}
-
-/**
- * Firestore REST transaction: beginTransaction → read board doc → commit with update.
- * Used for leaderboard upserts to prevent races.
- */
-async function fsTransactionUpdateLeaderboard(projectId, accessToken, boardId, uid, verified, valueKey) {
-  const base = firestoreBase(projectId);
-  const docPath = `projects/${projectId}/databases/(default)/documents/leaderboards/${boardId}`;
-
-  // Begin transaction
-  const beginRes = await fetch(`${base.replace('/documents', '')}:beginTransaction`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ options: { readWrite: {} } })
-  });
-  if (!beginRes.ok) throw new Error(`beginTransaction failed: ${beginRes.status}`);
-  const { transaction } = await beginRes.json();
-
-  // Read existing board inside transaction
-  const readRes = await fetch(`${base}/leaderboards/${boardId}?transaction=${encodeURIComponent(transaction)}`, {
-    headers: { Authorization: `Bearer ${accessToken}` }
-  });
-  let existingEntries = [];
-  if (readRes.ok) {
-    const readDoc = await readRes.json();
-    if (readDoc.fields?.entries?.arrayValue?.values) {
-      existingEntries = readDoc.fields.entries.arrayValue.values.map(fromFirestoreValue);
-    }
-  }
-
-  // Upsert entry in sorted list
-  const newValue = Number(verified[valueKey]) || 0;
-  const idx = existingEntries.findIndex(e => e.uid === uid);
-  const newRow = {
-    uid,
-    name:      verified.name      || 'User',
-    photoURL:  verified.photoURL  || null,
-    value:     newValue,
-    level:     Number(verified.level) || 1
-  };
-  if (idx >= 0) {
-    existingEntries[idx] = { ...existingEntries[idx], ...newRow };
-  } else {
-    existingEntries.push(newRow);
-  }
-  existingEntries.sort((a, b) => (b.value || 0) - (a.value || 0));
-  existingEntries = existingEntries.slice(0, LEADERBOARD_TOP_N);
-
-  // Commit
-  const writes = [{
-    update: {
-      name: docPath,
-      fields: toFirestoreFields({ updatedAtMs: Date.now(), entries: existingEntries })
-    },
-    updateMask: { fieldPaths: ['updatedAtMs', 'entries'] },
-    currentDocument: {} // allow create
-  }];
-
-  const commitRes = await fetch(`${base.replace('/documents', '')}:commit`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ writes, transaction })
-  });
-  if (!commitRes.ok) {
-    const txt = await commitRes.text();
-    throw new Error(`Leaderboard commit failed for ${boardId}: ${txt}`);
-  }
-}
-
-/**
- * Atomic increment of a single integer field using Firestore field transforms.
- */
-async function fsAtomicIncrement(projectId, accessToken, docPath, field, delta) {
-  const base = firestoreBase(projectId);
-  const fullName = `projects/${projectId}/databases/(default)/documents/${docPath}`;
-  const body = {
-    writes: [{
-      transform: {
-        document: fullName,
-        fieldTransforms: [{
-          fieldPath: field,
-          increment: { integerValue: String(delta) }
-        }]
-      }
-    }]
-  };
-  const res = await fetch(`${base.replace('/documents', '')}:commit`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(body)
-  });
-  if (!res.ok) {
-    const txt = await res.text();
-    throw new Error(`Atomic increment ${docPath}.${field} failed: ${txt}`);
-  }
-}
-
-// ─── Core gamification logic ──────────────────────────────────────────────────
-
-/**
- * Evaluate which badges the user has newly earned given their current stats.
- * Returns array of newly earned badge objects.
- */
-function evaluateBadgesDelta(currentBadges, xp, streakCurrent, extraTemplateId) {
-  const existing = new Set((currentBadges || []).map(b => b.id));
-  const checks = [
-    { id: 'badge_first_complete', ok: xp > 0 },
-    { id: 'badge_streak_3',       ok: streakCurrent >= 3 },
-    { id: 'badge_streak_7',       ok: streakCurrent >= 7 },
-    { id: 'badge_streak_30',      ok: streakCurrent >= 30 },
-    { id: 'badge_xp_500',         ok: xp >= 500 },
-    { id: 'badge_xp_1000',        ok: xp >= 1000 }
-  ];
-  const templateMap = {
-    verified_first_post: 'badge_first_post',
-    verified_monthly_engage: 'badge_engager'
-  };
-  const verifiedExtras = Array.isArray(extraTemplateId) ? extraTemplateId : [extraTemplateId];
-  verifiedExtras.filter(Boolean).forEach(id => {
-    if (templateMap[id]) checks.push({ id: templateMap[id], ok: true });
-  });
-
-  const earned = [];
-  for (const c of checks) {
-    if (!c.ok || existing.has(c.id)) continue;
-    const meta = SYSTEM_BADGES.find(b => b.id === c.id) || { id: c.id, name: c.id, icon: '🏅' };
-    earned.push({ id: c.id, atMs: Date.now(), name: meta.name, icon: meta.icon });
-  }
-  return earned;
-}
-
-/**
- * Award XP to uid. Reads authoritative user doc, computes new values,
- * writes user doc, updates all leaderboards, evaluates badges.
- */
-const CATALOG_PUZZLE_CORRECT={p1:2,p2:0,p3:1,p4:0,p5:2,p6:0,p7:1,p8:0,p9:0,p10:2,p11:2,p12:0};
-const CATALOG_LEARN_CORRECT={l1:2,l2:1,l3:1,l4:1,l5:1,l6:1,l7:0,l8:1,l9:0,l10:0,l11:0,l12:1};
-const CATALOG_CHALLENGE_ANSWERS=[2,2,0,2,2,2,1,0,0,2];
-const CATALOG_BUILD={
- b1:{m:'order',items:['Trigger','Condition','Action','Feedback']},
- b2:{m:'order',items:['Hard topic','Break','Easy topic','Practice','Review','Plan tomorrow']},
- b3:{m:'order',items:['Start','Stop A','Stop B','Stop C','Destination']},
- b4:{m:'allocate',budget:5000,mins:[1000,1500,500,300]},
- b5:{m:'grid',required:['Desk','Lamp','Notebook'],blocked:[5,6,9,10],pairs:[['Lamp','Desk'],['Notebook','Desk']]},
- b6:{m:'order',items:['Receive issue','Verify','Investigate','Resolve','Follow up']},
- b7:{m:'order',items:['Key metric','Trend','Breakdown','Detail']},
- b8:{m:'order',items:['Foundations','Core skill','Application','Practice','Review']},
- b9:{m:'allocate',budget:12,mins:[2,3,2,1]},
- b10:{m:'order',items:['Understand problem','Stabilize','Choose fix','Apply','Verify']},
- b11:{m:'grid',required:['Focus','Reference','Write','Tools'],blocked:[3,7,12],pairs:[['Focus','Write'],['Reference','Tools']]},
- b12:{m:'assign',people:['Ava','Ben','Cara','Dev'],roles:['Planner','Builder','Checker','Presenter'],correct:{Ava:'Planner',Ben:'Builder',Cara:'Checker',Dev:'Presenter'}}
+const CATALOG_PUZZLE_CORRECT={
+  p1:0,p2:0,p3:2,p4:0,p5:0,p6:0,p7:0,p8:1,p9:2,p10:1,p11:0,p12:0,p13:0,p14:0,p15:2
 };
+const CATALOG_LEARN_CORRECT={
+  l1:2,l2:1,l3:1,l4:1,l5:1,l6:1,l7:0,l8:1,l9:0,l10:0,l11:0,l12:1,l13:0,l14:0,l15:0
+};
+const CATALOG_CHALLENGE_ANSWERS={
+  c1:[0,1,1,0,0], c2:[1,1,1,1,0], c3:[1,0,0,0,0], c4:[1,0,2,0,0],
+  c5:[0,0,1,0,0], c6:[0,0,1,1,0], c7:[0,1,0,2,0], c8:[2,1,2,2,2],
+  c9:[0,0,0,0,0], c10:[0,0,0,0,0], c11:[0,0,0,0,0], c12:[0,0,0,0,0],
+  c13:[0,0,0,0,0], c14:[0,0,0,0,0], c15:[0,0,0,0,0]
+};
+const CATALOG_BUILD={
+  b1:{m:'order',items:['User problem','Core promise','Key feature','One-screen flow','60-second pitch']},
+  b2:{m:'order',items:['Headline','What it is','Why join','When + where','Call to action']},
+  b3:{m:'assign',people:['Feature A','Feature B','Feature C','Final flow'],roles:['User value','Must-have','Nice-to-have','Integrator'],correct:{'Feature A':'User value','Feature B':'Must-have','Feature C':'Nice-to-have','Final flow':'Integrator'}},
+  b4:{m:'order',items:['Goal','Turn','Core rule','Twist','Win condition']},
+  b5:{m:'order',items:['Goal 1','Goal 2','Fixed event','Buffer','Final check']},
+  b6:{m:'order',items:['Hook','Setup','Problem','Turn','Climax','Ending']},
+  b7:{m:'assign',people:['User story','Behaviour','Edge case','Acceptance test'],roles:['Product','Flow','Risk','Verifier'],correct:{'User story':'Product','Behaviour':'Flow','Edge case':'Risk','Acceptance test':'Verifier'}},
+  b8:{m:'assign',people:['Name + hook','First event','Invitation','Next action'],roles:['Brand','Event','Copy','CTA'],correct:{'Name + hook':'Brand','First event':'Event','Invitation':'Copy','Next action':'CTA'}},
+  b9:{m:'allocate',budget:10,mins:[2,2,1,1,0]},
+  b10:{m:'order',items:['Detect','Acknowledge','Workaround','Fix','Follow-up']},
+  b11:{m:'grid',required:['Decision','Metric','Warning','Detail'],blocked:[2,7,12],pairs:[['Decision','Metric'],['Metric','Warning']]},
+  b12:{m:'assign',people:['Task 1','Task 2','Task 3','Task 4'],roles:['Planner','Builder','Tester','Owner'],correct:{'Task 1':'Planner','Task 2':'Builder','Task 3':'Tester','Task 4':'Owner'}},
+  b13:{m:'assign',people:['Name','Promise','Audience','Mood'],roles:['Naming','Strategy','Audience','Art direction'],correct:{'Name':'Naming','Promise':'Strategy','Audience':'Audience','Mood':'Art direction'}},
+  b14:{m:'order',items:['Explain','Example','Mini-test','Memory trick','Check']},
+  b15:{m:'grid',required:['Clue','Hint','Bottleneck','Final door'],blocked:[1,6,11],pairs:[['Clue','Hint'],['Hint','Bottleneck'],['Bottleneck','Final door']]}
+};
+
 function catalogAdjacent(a,b){return (Math.abs(a-b)===1&&Math.floor(a/4)===Math.floor(b/4))||Math.abs(a-b)===4;}
+
 function validCatalogEvidence(activityId,evidence){
- const id=String(activityId||'').toLowerCase();
- if(!evidence||typeof evidence!=='object')return false;
- const proof=String(evidence.proofText||'').trim();
- if(Object.prototype.hasOwnProperty.call(CATALOG_PUZZLE_CORRECT,id)){
-   return proof.length>=20&&proof.split(/\s+/).filter(Boolean).length>=4&&Number(evidence.answerIndex)===CATALOG_PUZZLE_CORRECT[id];
- }
- if(Object.prototype.hasOwnProperty.call(CATALOG_LEARN_CORRECT,id)){
-   return proof.length>=20&&proof.split(/\s+/).filter(Boolean).length>=4&&Number(evidence.answerIndex)===CATALOG_LEARN_CORRECT[id];
- }
- if(id[0]==='c'){
-   if(proof.length<20||proof.split(/\s+/).filter(Boolean).length<4)return false;
-  const answers=Array.isArray(evidence.answers)?evidence.answers.map(Number):[];
-  const seed=(Number(id.slice(1))||0)%10;
-  if(answers.length!==5||answers.some(a=>!Number.isInteger(a)||a<0||a>3))return false;
-  let score=0;for(let i=0;i<5;i++)if(answers[i]===CATALOG_CHALLENGE_ANSWERS[(seed+i)%10])score++;
-  return score>=3&&Number(evidence.score)===score;
- }
- const cfg=CATALOG_BUILD[id];
- if(!cfg||!evidence.buildEvidence||evidence.buildEvidence.mechanic!==cfg.m)return false;
- const state=evidence.buildEvidence.state;if(!state||typeof state!=='object')return false;
- if(cfg.m==='order')return Array.isArray(state.order)&&state.order.length===cfg.items.length&&state.order.every((v,i)=>v===cfg.items[i]);
- if(cfg.m==='allocate'){
-  const a=Array.isArray(state.allocation)?state.allocation.map(Number):[];
-  return a.length===cfg.mins.length&&a.every((v,i)=>Number.isFinite(v)&&v>=cfg.mins[i])&&a.reduce((s,v)=>s+v,0)<=cfg.budget;
- }
- if(cfg.m==='assign')return state.assign&&cfg.people.every(p=>state.assign[p]===cfg.correct[p])&&new Set(Object.values(state.assign)).size===cfg.roles.length;
- if(cfg.m==='grid'){
-  const p=state.positions;if(!p||typeof p!=='object')return false;
-  const vals=cfg.required.map(name=>Number(p[name]));
-  if(vals.some(v=>!Number.isInteger(v)||v<0||v>15)||new Set(vals).size!==cfg.required.length)return false;
-  if(vals.some(v=>cfg.blocked.includes(v)))return false;
-  return cfg.pairs.every(pair=>p[pair[0]]!==undefined&&p[pair[1]]!==undefined&&catalogAdjacent(Number(p[pair[0]]),Number(p[pair[1]])));
- }
- return false;
+  const id=String(activityId||'').toLowerCase();
+  if(!evidence||typeof evidence!=='object')return false;
+  const proof=String(evidence.proofText||'').trim();
+  if(Object.prototype.hasOwnProperty.call(CATALOG_PUZZLE_CORRECT,id)){
+    return proof.length>=20&&proof.split(/\s+/).filter(Boolean).length>=4&&Number(evidence.answerIndex)===CATALOG_PUZZLE_CORRECT[id];
+  }
+  if(Object.prototype.hasOwnProperty.call(CATALOG_LEARN_CORRECT,id)){
+    return proof.length>=20&&proof.split(/\s+/).filter(Boolean).length>=4&&Number(evidence.answerIndex)===CATALOG_LEARN_CORRECT[id];
+  }
+  if(Object.prototype.hasOwnProperty.call(CATALOG_CHALLENGE_ANSWERS,id)){
+    if(proof.length<20||proof.split(/\s+/).filter(Boolean).length<4)return false;
+    const answers=Array.isArray(evidence.answers)?evidence.answers.map(Number):[];
+    const expected=CATALOG_CHALLENGE_ANSWERS[id];
+    if(answers.length!==5||answers.some(a=>!Number.isInteger(a)||a<0||a>3))return false;
+    let score=0;for(let i=0;i<5;i++)if(answers[i]===expected[i])score++;
+    return score>=3&&Number(evidence.score)===score;
+  }
+  const cfg=CATALOG_BUILD[id];
+  if(!cfg||!evidence.buildEvidence||evidence.buildEvidence.mechanic!==cfg.m)return false;
+  const state=evidence.buildEvidence.state;
+  if(!state||typeof state!=='object')return false;
+  if(cfg.m==='order')return Array.isArray(state.order)&&state.order.length===cfg.items.length&&state.order.every((v,i)=>v===cfg.items[i]);
+  if(cfg.m==='allocate'){
+    const a=Array.isArray(state.allocation)?state.allocation.map(Number):[];
+    return a.length===cfg.mins.length&&a.every((v,i)=>Number.isFinite(v)&&v>=cfg.mins[i])&&a.reduce((s,v)=>s+v,0)<=cfg.budget;
+  }
+  if(cfg.m==='assign'){
+    return state.assign&&cfg.people.every(p=>state.assign[p]===cfg.correct[p])&&new Set(Object.values(state.assign)).size===cfg.roles.length;
+  }
+  if(cfg.m==='grid'){
+    const p=state.positions;if(!p||typeof p!=='object')return false;
+    const vals=cfg.required.map(name=>Number(p[name]));
+    if(vals.some(v=>!Number.isInteger(v)||v<0||v>15)||new Set(vals).size!==cfg.required.length)return false;
+    if(vals.some(v=>cfg.blocked.includes(v)))return false;
+    return cfg.pairs.every(pair=>p[pair[0]]!==undefined&&p[pair[1]]!==undefined&&catalogAdjacent(Number(p[pair[0]]),Number(p[pair[1]])));
+  }
+  return false;
 }
-async function handleCompleteCatalog(uid,body,env){
- const activityId=String(body?.activityId||'').trim().toLowerCase();
- if(!/^[pblcg](?:[1-9]|1[0-2])$/.test(activityId))throw new Error('Unknown catalog activity');
- const now=Date.now();const expectedKey=catalogCycleKey(activityId,now);
- if(String(body?.cycleKey||'')!==expectedKey)throw new Error('Invalid activity cycle');
- if(!validCatalogEvidence(activityId,body?.evidence))throw new Error('Activity solution could not be verified');
- const projectId=env.FIREBASE_PROJECT_ID;const token=await getAccessToken(env);
- const completionPath='users/'+uid+'/activityCompletions/'+expectedKey;
- const cycleStart=Number(expectedKey.split('_')[1])||now;const evidence=body.evidence;
- const created=await fsCreateDoc(projectId,token,completionPath,{
-  uid,activityId,cycleKey:expectedKey,verified:true,completedAtMs:now,
-  cycleEndsAtMs:cycleStart+catalogCycleDays(activityId)*86400000,
-  proofText:String(evidence.proofText||'').trim().slice(0,500),
-  answerIndex:Number.isInteger(Number(evidence.answerIndex))?Number(evidence.answerIndex):null,
-  score:Number.isInteger(Number(evidence.score))?Number(evidence.score):null,
-  answers:Array.isArray(evidence.answers)?evidence.answers.slice(0,5).map(Number):null,
-  buildEvidence:evidence.buildEvidence&&typeof evidence.buildEvidence==='object'?evidence.buildEvidence:null
- });
- if(!created){const existing=await fsGet(projectId,token,completionPath);if(!existing?.verified)throw new Error('Existing completion cannot be verified');}
- const award=await handleAwardXp(uid,{meta:{catalogActivityId:activityId,catalogCycleKey:expectedKey}},env);
- return {ok:true,already:!created,award};
-}
+
 async function handleAwardXp(uid, body, env) {
   const meta = body?.meta || {};
   const communityTaskId = String(meta.communityTaskId || '').trim();
