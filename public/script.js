@@ -9,7 +9,7 @@ import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.13.0/f
 import {
   collection, addDoc, onSnapshot, serverTimestamp,
   doc, getDoc, setDoc, deleteDoc, query, orderBy,
-  getDocs, limit, where
+  getDocs, limit, where, deleteField
 } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 import { makeUserId, escapeHtml, initials, formatTime, getFilterCSS } from './utils.js';
 import { listCommunityTasks, isMember, getMyJoinedTaskIds } from './gamification/community-tasks.js';
