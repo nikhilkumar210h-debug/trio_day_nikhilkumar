@@ -91,7 +91,7 @@ function isChatUnread(uid, peerId, latest) {
   return (Number(latest.createdAtMs) || 0) > (Number(map[peerId]) || 0);
 }
 function ensureChatNavDot() {
-  const link = document.querySelector('.bottom-nav a.nav-btn[href="chat.html"]');
+  const link = document.querySelector('.nkm-rail a.nav-btn[data-rail="chat"], .bottom-nav a.nav-btn[href="chat.html"]');
   if (!link) return null;
   let dot = link.querySelector('.nav-chat-dot');
   if (!dot) { link.classList.add('nav-btn-chat'); dot = document.createElement('span'); dot.className = 'nav-chat-dot'; dot.hidden = true; dot.title = 'Unread chats'; dot.setAttribute('aria-hidden', 'true'); link.appendChild(dot); }
