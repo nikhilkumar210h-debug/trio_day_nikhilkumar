@@ -120,10 +120,9 @@ export function renderNav() {
   const p = (location.pathname.split('/').pop() || '').toLowerCase();
   if (AUTH_PAGES.has(p)) return;
   const active = pathKey();
-  renderBottomNav(active);
   renderRail(active);
+  document.querySelector('.bottom-nav')?.remove();
 }
-
 export function navHtml(active = '') {
   return '<nav class="bottom-nav" aria-label="Primary navigation"><div class="nav-row">' +
     ITEMS.slice(0, 5).map(i => '<a class="nav-btn' + (i.key === active ? ' active' : '') + '" href="' + i.href + '"><span class="nav-icon">' + i.icon + '</span><span class="nav-label">' + i.label + '</span></a>').join('') +
