@@ -15,7 +15,7 @@ import {
 } from './image-upload.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
 import {
-  collection, addDoc, getDocs, limit, serverTimestamp, Timestamp
+  collection, addDoc, getDocs, query, limit, serverTimestamp, Timestamp
 } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 
 const $ = (id) => document.getElementById(id);
