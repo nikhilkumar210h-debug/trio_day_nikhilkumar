@@ -5,12 +5,61 @@ import{escapeHtml as esc,avatarHtml}from'./utils.js';
 import{activityCardHtml}from'./activity-ui.js';
 import{showToast}from'./ui/toast.js';
 import{activeCatalogActivities}from'./activity-catalog.js';
+import{createNotificationViaWorker}from'./services/notificationWorker.js';
 import{mountSharedBuildWorkspace}from'./room-workspace.js';
 import{mountSharedQuizWorkspace}from'./room-quiz-workspace.js';
 import{mountSharedChallengeWorkspace}from'./room-challenge-workspace.js';
 const $=id=>document.getElementById(id),id=new URLSearchParams(location.search).get('id');
 let me=null,p={},room=null,stopSharedWorkspace=()=>{};
+const voicePeers=new Map(),voicePCs=new Map(),voiceAudio=new Map();let localStream=null,voiceReady=false,micEnabled=false;let rtcUnsubs=[];
 function fail(t){$('roomStatus').textContent=t;$('roomStatus').classList.add('error')}
+function pairId(a,b){return [a,b].sort().join('__')}
+async function loadFriends(){
+ const host=$('friendList'); if(!host)return;
+ try{
+  const a=await getDocs(collection(db,'users',me.uid,'following')); const b=await getDocs(collection(db,'users',me.uid,'followers'));
+  const following=new Set(a.docs.map(d=>d.id)); const ids=b.docs.map(d=>d.id).filter(x=>following.has(x)&&x!==me.uid);
+  if(!ids.length){host.innerHTML='<div class="room-empty">No connected friends yet.</div>';return}
+  const rows=await Promise.all(ids.slice(0,30).map(async uid=>{const s=await getDoc(doc(db,'users',uid));return s.exists()?{uid,...s.data()}:null}));
+  const joined=new Set([me.uid,...voicePeers.keys()]);
+  host.innerHTML=rows.filter(Boolean).map(f=>'<div class="room-friend"><span class="room-friend-avatar">'+avatarHtml(f)+'</span><span class="room-friend-info"><strong>'+esc(f.name||f.userId||'Friend')+'</strong><small>'+(joined.has(f.uid)?'Already here':'Connected friend')+'</small></span><button type="button" data-invite="'+f.uid+'" '+(joined.has(f.uid)?'disabled':'')+'>'+(joined.has(f.uid)?'Joined':'Invite')+'</button></div>').join('');
+  host.querySelectorAll('[data-invite]').forEach(b=>b.onclick=()=>inviteFriend(b.dataset.invite,b));
+ }catch(e){host.innerHTML='<div class="room-empty">Could not load friends.</div>'}
+}
+async function inviteFriend(uid,btn){
+ if(room?.hostUid!==me.uid)return showToast('Only the host can invite friends.','warn');
+ btn.disabled=true;btn.textContent='Sending…';
+ try{await setDoc(doc(db,'rooms',id,'invites',uid),{targetUid:uid,hostUid:me.uid,hostName:p.name||me.displayName||'User',roomTitle:room.title||'Live room',roomId:id,status:'pending',createdAtMs:Date.now()});
+  await createNotificationViaWorker(uid,{type:'room_invite',actorName:p.name||me.displayName||'User',text:(p.name||'A friend')+' invited you to '+(room.title||'a live room'),title:'Join '+(room.title||'live room'),urlPath:'room.html?id='+encodeURIComponent(id),roomId:id});
+  btn.textContent='Invited ✓';
+ }catch(e){btn.disabled=false;btn.textContent='Invite';showToast(e.message||'Invite failed.','error')}
+}
+async function startVoice(){
+ if(voiceReady)return;
+ try{localStream=await navigator.mediaDevices.getUserMedia({audio:true});localStream.getAudioTracks().forEach(t=>t.enabled=false);voiceReady=true;$('voiceStatus').textContent='Mic ready';connectVoicePeers()}catch(e){$('voiceStatus').textContent='Voice unavailable';showToast('Microphone permission is needed for voice.','warn')}
+}
+function voicePc(uid){
+ if(voicePCs.has(uid))return voicePCs.get(uid);
+ const pc=new RTCPeerConnection({iceServers:[{urls:'stun:stun.l.google.com:19302'}]});
+ localStream?.getTracks().forEach(t=>pc.addTrack(t,localStream));
+ pc.ontrack=e=>{let a=voiceAudio.get(uid);if(!a){a=document.createElement('audio');a.autoplay=true;a.playsInline=true;$('remoteAudio').appendChild(a);voiceAudio.set(uid,a)}a.srcObject=e.streams[0];a.muted=!!voicePeers.get(uid)?.speakerMuted};
+ pc.onicecandidate=e=>e.candidate&&addDoc(collection(db,'rooms',id,'rtc',pairId(me.uid,uid),'candidates'),{from:me.uid,candidate:e.candidate.toJSON(),createdAtMs:Date.now()}).catch(()=>{});
+ voicePCs.set(uid,pc);return pc
+}
+async function watchVoicePeer(uid){
+ const ref=doc(db,'rooms',id,'rtc',pairId(me.uid,uid));const pc=voicePc(uid);
+ const stop=onSnapshot(ref,async s=>{if(!s.exists())return;const d=s.data();try{if(d.offer&&d.offerFrom!==me.uid&&!pc.currentRemoteDescription){await pc.setRemoteDescription(d.offer);const ans=await pc.createAnswer();await pc.setLocalDescription(ans);await setDoc(ref,{answer:{type:ans.type,sdp:ans.sdp},answerFrom:me.uid,updatedAtMs:Date.now()},{merge:true})}else if(d.answer&&d.answerFrom!==me.uid&&!pc.currentRemoteDescription&&pc.localDescription){await pc.setRemoteDescription(d.answer)}}catch(e){console.warn('voice signalling',e)}});rtcUnsubs.push(stop);
+ const cand=onSnapshot(query(collection(db,'rooms',id,'rtc',pairId(me.uid,uid),'candidates'),orderBy('createdAtMs','asc'),limit(100)),s=>s.docChanges().forEach(ch=>{const d=ch.doc.data();if(ch.type==='added'&&d.from!==me.uid)pc.addIceCandidate(d.candidate).catch(()=>{})}));rtcUnsubs.push(cand);
+ if(me.uid<uid){try{const offer=await pc.createOffer();await pc.setLocalDescription(offer);await setDoc(ref,{offer:{type:offer.type,sdp:offer.sdp},offerFrom:me.uid,updatedAtMs:Date.now()},{merge:true})}catch(e){}}
+}
+async function connectVoicePeers(){for(const uid of voicePeers.keys())if(uid!==me.uid&&!voicePCs.has(uid))await watchVoicePeer(uid)}
+function renderVoiceMembers(s){
+ const ids=new Set(s.docs.map(d=>d.data().uid));for(const uid of [...voicePeers.keys()])if(!ids.has(uid)){voicePCs.get(uid)?.close();voicePCs.delete(uid);voiceAudio.get(uid)?.remove();voiceAudio.delete(uid);voicePeers.delete(uid)}
+ s.docs.forEach(d=>{const m=d.data();if(m.uid!==me.uid)voicePeers.set(m.uid,{...m,speakerMuted:voicePeers.get(m.uid)?.speakerMuted||false})});
+ if(voiceReady)connectVoicePeers();
+ const list=$('memberList');if(!list)return;
+ list.querySelectorAll('.room-member').forEach(row=>{const name=row.querySelector('.room-member-name')?.textContent;const m=[...voicePeers.entries()].find(x=>(x[1].name||'User')===name);if(!m||row.querySelector('[data-speaker]'))return;const b=document.createElement('button');b.type='button';b.className='room-member-speaker';b.dataset.speaker=m[0];b.textContent=voicePeers.get(m[0]).speakerMuted?'🔇':'🔊';b.onclick=()=>{const x=voicePeers.get(m[0]);x.speakerMuted=!x.speakerMuted;const a=voiceAudio.get(m[0]);if(a)a.muted=x.speakerMuted;b.textContent=x.speakerMuted?'🔇':'🔊'};row.appendChild(b)})
+}
 async function load(){
  if(!id)return fail('Missing room id.');
  const s=await getDoc(doc(db,'rooms',id));if(!s.exists())return fail('Room not found.');
@@ -42,6 +91,7 @@ async function load(){
  $('roomSub').textContent='Open activity room · '+(room.maxPlayers||3)+' people max'+(room.expiresAtMs?' · '+Math.max(0,Math.ceil((Number(room.expiresAtMs)-Date.now())/3600000))+'h remaining':'');
  $('endBtn').hidden=room.hostUid!==me.uid;
  $('roomPeopleBadge').textContent='… / '+(room.maxPlayers||3);
+ if(room.hostUid===me.uid)loadFriends();
  if(room.challengeId){
    let activity=null;
    if(room.activitySource==='catalog') activity=activeCatalogActivities().find(x=>x.id===room.challengeId)||null;
@@ -65,6 +115,7 @@ async function load(){
    $('roomPeopleBadge').textContent=s.size+' / '+(room.maxPlayers||3);
    $('memberList').innerHTML=s.docs.map(d=>{const m=d.data();return '<div class="room-member"><span class="room-member-avatar">'+avatarHtml({name:m.name,photoURL:m.photoURL})+'</span><span class="room-member-name">'+esc(m.name||'User')+'</span><span class="room-member-role">'+(m.uid===room.hostUid?'Host':'Member')+'</span></div>'}).join('');
  });
+ onSnapshot(query(collection(db,'rooms',id,'members'),orderBy('joinedAtMs','asc'),limit(20)),renderVoiceMembers);
  onSnapshot(query(collection(db,'rooms',id,'messages'),orderBy('createdAtMs','asc'),limit(100)),s=>{
    $('messageLog').innerHTML=s.docs.map(d=>{const m=d.data();return '<div class="room-msg '+(m.uid===me.uid?'mine':'')+'"><div class="room-msg-bubble"><div class="room-msg-name">'+esc(m.name||'User')+'</div><div class="room-msg-text">'+esc(m.text||'')+'</div></div></div>'}).join('');
    $('messageLog').scrollTop=$('messageLog').scrollHeight;
@@ -91,4 +142,8 @@ $('leaveBtn').onclick=async()=>{
   }
 };
 $('endBtn').onclick=async()=>{if(room?.hostUid!==me.uid)return;await updateDoc(doc(db,'rooms',id),{status:'closed',endedAtMs:Date.now()});location.href='rooms.html'};
+$('inviteBtn')?.addEventListener('click',async()=>{const panel=$('invitePanel');if(!panel)return;panel.hidden=!panel.hidden;if(!panel.hidden)await loadFriends()});
+$('closeInviteBtn')?.addEventListener('click',()=>$('invitePanel').hidden=true);
+$('micBtn')?.addEventListener('click',async()=>{if(!voiceReady)await startVoice();if(!voiceReady)return;micEnabled=!micEnabled;localStream.getAudioTracks().forEach(t=>t.enabled=micEnabled);$('micBtn').textContent=micEnabled?'🎙️ Mic on':'🎙️ Mic off';$('micBtn').classList.toggle('is-on',micEnabled);$('voiceStatus').textContent=micEnabled?'Others can hear you':'You can hear others'});
+$('chatToggleBtn')?.addEventListener('click',()=>document.querySelector('.room-chat')?.classList.toggle('is-collapsed'));
 onAuthStateChanged(auth,async u=>{if(!u)return location.href='login.html?redirect=room.html?id='+encodeURIComponent(id||'');me=u;const s=await getDoc(doc(db,'users',u.uid));p=s.exists()?s.data():{};await load()});
