@@ -36,7 +36,9 @@ async function getCachedFollowers(uid) {
   // Bound to 500 max (counts don't need exact beyond that for UI)
   const snap = await getDocs(query(collection(db, 'users', uid, 'followers'), limit(501))).catch(() => ({ size: 0, docs: [] }));
   const value = snap.size > 500 ? '500+' : snap.size;
+  // Keep follower IDs cached as well; the Chat inbox reuses this cache.
   trioCache.set(key, value, trioCache.TTL.SHORT);
+  trioCache.set(`followers_ids_${uid}`, snap.docs.map(d => d.id), trioCache.TTL.SHORT);
   return value;
 }
 
