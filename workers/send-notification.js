@@ -558,6 +558,9 @@ async function handleCreateNotification(request, env) {
     return json({ error: "Notification rate limit exceeded" }, 429, origin);
   }
 
+  const contentLength = Number(request.headers.get('Content-Length') || 0);
+  if (contentLength > 8192) return json({ error: "Notification payload too large" }, 413, origin);
+
   let body;
   try {
     body = await request.json();
@@ -565,14 +568,18 @@ async function handleCreateNotification(request, env) {
     return json({ error: "Invalid JSON body" }, 400, origin);
   }
 
-  const { targetUid, type, ...notificationData } = body;
-
-  if (!targetUid || !type) {
+  const targetUid = String(body?.targetUid || '').trim();
+  const type = String(body?.type || '').trim();
+  if (!targetUid || targetUid.length > 160 || !type) {
     return json({ error: "targetUid and type required" }, 400, origin);
   }
 
   if (!ALLOWED_NOTIFICATION_TYPES.includes(type)) {
     return json({ error: "Invalid notification type" }, 400, origin);
+  }
+  const notificationData = {};
+  for (const key of ['postId','text','title','urlPath']) {
+    if (body?.[key] !== undefined) notificationData[key] = String(body[key]).slice(0, key === 'text' ? 500 : 240);
   }
 
   if (
