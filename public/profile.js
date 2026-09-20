@@ -8,9 +8,11 @@ import { SoundManager } from './sound-manager.js';
 import { createSheet } from './ui/sheet.js';
 import { getCachedUser } from './services/userCache.js';
 import { getMyGlobalRank } from './gamification/leaderboards.js';
+import { getCommunityTask } from './gamification/community-tasks.js';
+import { normalizeActivityType, activityTypeInfo } from './activity-ui.js';
 import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
 import {
-  doc, getDoc, collection, getDocs, query, where, orderBy,
+  doc, getDoc, collection, collectionGroup, getDocs, query, where, orderBy,
   setDoc, deleteDoc, serverTimestamp, updateDoc, limit
 } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 import { makeUserId, escapeHtml as esc } from './utils.js';
@@ -304,27 +306,106 @@ async function loadProfile(uid) {
     menuBtn.onclick = () => openProfileMenu(current);
   }
 
-  // Gamification panel — show only on own profile
+  // Gamification + activity journey — own profile only
   const game = $('profileGame');
-  if (game) {
-    game.hidden = !isOwnProfile;
-    if (isOwnProfile) {
-      const xp = Number(current.xp) || 0;
-      const level = current.level || levelFromXp(xp);
-      const into = xpIntoLevel(xp);
-      if ($('pgLevel')) $('pgLevel').textContent = level;
-      if ($('pgXp')) $('pgXp').textContent = xp;
-      if ($('pgStreak')) $('pgStreak').textContent = Number(current.streakCurrent) || 0;
-      if ($('pgBest')) $('pgBest').textContent = Number(current.streakBest) || 0;
-      if ($('pgWeekly')) $('pgWeekly').textContent = Number(current.weeklyXp) || 0;
-      if ($('pgMonthly')) $('pgMonthly').textContent = Number(current.monthlyXp) || 0;
-      if ($('pgXpFill')) $('pgXpFill').style.width = ((into / XP_PER_LEVEL) * 100) + '%';
-      if ($('pgBadges')) $('pgBadges').innerHTML = renderBadgesHtml(current.badges || []);
-      const rank = await getMyGlobalRank(me.uid);
-      if ($('pgRank')) $('pgRank').textContent = rank ? ('#' + rank) : '—';    }
+  const activityPanel = $('profileActivityPanel');
+  if (game) game.hidden = !isOwnProfile;
+  if (activityPanel) activityPanel.hidden = !isOwnProfile;
+  if (isOwnProfile) {
+    const xp = Number(current.xp) || 0;
+    const level = current.level || levelFromXp(xp);
+    const into = xpIntoLevel(xp);
+    if ($('pgLevel')) $('pgLevel').textContent = level;
+    if ($('pgXp')) $('pgXp').textContent = xp;
+    if ($('pgStreak')) $('pgStreak').textContent = Number(current.streakCurrent) || 0;
+    if ($('pgBest')) $('pgBest').textContent = Number(current.streakBest) || 0;
+    if ($('pgWeekly')) $('pgWeekly').textContent = Number(current.weeklyXp) || 0;
+    if ($('pgMonthly')) $('pgMonthly').textContent = Number(current.monthlyXp) || 0;
+    if ($('pgXpFill')) $('pgXpFill').style.width = ((into / XP_PER_LEVEL) * 100) + '%';
+    if ($('pgXpInto')) $('pgXpInto').textContent = into + ' / ' + XP_PER_LEVEL + ' XP';
+    if ($('pgNextLevel')) $('pgNextLevel').textContent = 'Next: Level ' + (level + 1);
+    if ($('pgBadges')) $('pgBadges').innerHTML = renderBadgesHtml(current.badges || []);
+    const rank = await getMyGlobalRank(me.uid);
+    if ($('pgRank')) $('pgRank').textContent = rank ? ('#' + rank) : '—';
+    await loadRecentActivities(uid);
   }
 
-  // 3. Action buttons (only for other profiles)
+  async function loadRecentActivities(uid) {
+  const list = $('recentActivities');
+  const summary = $('profileActivitySummary');
+  if (!list) return;
+  list.innerHTML = '<div class="td-skeleton td-skeleton--card"></div><div class="td-skeleton td-skeleton--card"></div>';
+
+  const rows = [];
+  const seen = new Set();
+
+  try {
+    const [catalogSnap, communitySnap] = await Promise.all([
+      getDocs(query(collection(db, 'users', uid, 'activityCompletions'), orderBy('completedAtMs', 'desc'), limit(24))).catch(() => null),
+      getDocs(query(collectionGroup(db, 'completions'), where('uid', '==', uid), orderBy('atMs', 'desc'), limit(24))).catch(() => null)
+    ]);
+
+    if (catalogSnap) {
+      catalogSnap.docs.forEach(d => {
+        const v = d.data() || {};
+        const key = 'catalog:' + (v.cycleKey || v.activityId || d.id);
+        if (seen.has(key)) return;
+        seen.add(key);
+        const difficulty = String(v.difficulty || 'Medium');
+        const xp = difficulty === 'Hard' ? 60 : difficulty === 'Medium' ? 40 : 25;
+        rows.push({
+          key, title: v.title || 'Activity', type: normalizeActivityType(v),
+          icon: v.icon || '🎯', category: v.category || 'Trio Day',
+          xp, atMs: Number(v.completedAtMs) || 0, source: 'catalog'
+        });
+      });
+    }
+
+    if (communitySnap) {
+      const docs = communitySnap.docs.slice(0, 24);
+      const tasks = await Promise.all(docs.map(async d => {
+        const taskId = d.ref.parent?.parent?.id;
+        if (!taskId) return null;
+        const task = await getCommunityTask(taskId).catch(() => null);
+        if (!task) return null;
+        const key = 'community:' + taskId;
+        return {
+          key, title: task.title || 'Community activity',
+          type: normalizeActivityType(task), icon: task.icon || activityTypeInfo(task).icon,
+          category: task.category || 'Community', xp: Number(task.xpReward) || 0,
+          atMs: Number(d.data()?.atMs) || 0, source: 'community'
+        };
+      }));
+      tasks.filter(Boolean).forEach(v => {
+        if (!seen.has(v.key)) { seen.add(v.key); rows.push(v); }
+      });
+    }
+  } catch (e) {
+    console.warn('[Profile] Recent activity history unavailable:', e);
+  }
+
+  rows.sort((a, b) => b.atMs - a.atMs);
+  const items = rows.slice(0, 10);
+  if (summary) summary.textContent = items.length ? (items.length + ' recent') : 'No completions';
+  if (!items.length) {
+    list.innerHTML = '<div class="profile-activity-empty"><span>✦</span><strong>Your activity history starts here.</strong><p>Complete a puzzle, build, lesson, challenge or game to see it here.</p><a href="all-users.html" class="nkm-btn nkm-btn--primary nkm-btn--sm">Explore activities</a></div>';
+    return;
+  }
+
+  list.innerHTML = items.map(item => {
+    const type = activityTypeInfo(item);
+    const when = item.atMs ? new Date(item.atMs).toLocaleDateString(undefined, { day:'numeric', month:'short' }) : 'Recently';
+    return '<a class="profile-activity-item" href="' +
+      (item.source === 'community' ? 'task-detail.html?id=' : 'activity.html?id=') + encodeURIComponent(item.source === 'community' ? item.key.replace('community:','') : item.key.replace('catalog:','').split('_')[0]) +
+      '">' +
+      '<span class="profile-activity-icon">' + (item.icon || type.icon) + '</span>' +
+      '<span class="profile-activity-copy"><strong>' + esc(item.title) + '</strong><small>' + esc(type.label) + ' · ' + esc(item.category) + ' · ' + when + '</small></span>' +
+      '<span class="profile-activity-xp">+' + item.xp + ' XP</span>' +
+      '</a>';
+  }).join('');
+}
+
+// 3. Action buttons (only for other profiles)
   const actions = $('profileActions'); actions.innerHTML = '';
   if (!isOwnProfile) {
     const connected = await isConnected(me.uid, uid);
