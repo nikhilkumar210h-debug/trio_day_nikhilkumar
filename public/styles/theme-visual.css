@@ -84,3 +84,20 @@ input,textarea,select{background:var(--color-bg-elevated)!important;color:var(--
 [data-theme="light"] .profile-menu-item,
 [data-theme="light"] .nkm-sheet-head,
 [data-theme="light"] .nkm-sheet-body{color:var(--color-ink)!important}
+
+/* Light theme hero artwork: keep the artwork, remove heavy dark overlays. */
+[data-theme="light"] .forge-brand-hero{
+  background-image:linear-gradient(90deg,rgba(255,255,255,.94) 0%,rgba(255,255,255,.76) 45%,rgba(255,255,255,.28) 100%),url('../assets/discover-hero.svg')!important;
+  color:var(--color-ink)!important;
+}
+[data-theme="light"] .activity-detail-hero{
+  background-image:linear-gradient(90deg,rgba(255,255,255,.95) 0%,rgba(255,255,255,.78) 52%,rgba(255,255,255,.34) 100%),url('../assets/activity-hero.svg')!important;
+  color:var(--color-ink)!important;
+}
+[data-theme="light"] .room-main-card{
+  background-image:linear-gradient(180deg,rgba(255,255,255,.94) 0%,rgba(255,255,255,.82) 48%,rgba(255,255,255,.95) 100%),url('../assets/room-hero.svg')!important;
+  color:var(--color-ink)!important;
+}
+[data-theme="light"] .room-main-card .room-sub,
+[data-theme="light"] .room-main-card .room-workspace-status,
+[data-theme="light"] .room-main-card .room-chat-head small{color:var(--color-ink-muted)!important}
