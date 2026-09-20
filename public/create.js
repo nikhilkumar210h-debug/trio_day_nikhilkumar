@@ -15,7 +15,7 @@ import {
 } from './image-upload.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
 import {
-  collection, addDoc, serverTimestamp, Timestamp
+  collection, addDoc, getDocs, serverTimestamp, Timestamp
 } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 
 const $ = (id) => document.getElementById(id);
@@ -41,6 +41,41 @@ try { SoundManager.init(); } catch {}
 let currentUser = null;
 let renderFrame = null;
 let historyGuard = false;
+
+// Single source of truth for the create flow. Keep this explicit so Post and
+// Story cannot depend on stale globals from an older bundle.
+const state = {
+  mode: null,
+  stage: 'mode',
+  privacy: 'public',
+  caption: '',
+  dirty: false,
+  textOnly: false,
+  publishing: false,
+  uploadAbort: null,
+  lastPublishError: null,
+  post: { file: null, objectUrl: null },
+  story: { file: null, objectUrl: null },
+  editor: {
+    filter: 'none',
+    filterIntensity: 1,
+    rotation: 0,
+    fit: 'contain',
+    aspect: 'free',
+    textOverlays: [],
+    stickers: [],
+    originalImage: null,
+    selectedText: null,
+    selectedSticker: null,
+    drag: null
+  },
+  camera: {
+    facing: 'environment',
+    stream: null,
+    flashSupported: false,
+    flashOn: false
+  }
+};
 
 onAuthStateChanged(auth, (user) => {
   if (!user) {
@@ -705,20 +740,41 @@ async function publish() {
 
     let payload;
     if (state.mode === 'story') {
+      let allowedUids;
+      if (state.privacy === 'friends') {
+        const [followingSnap, followersSnap] = await Promise.all([
+          getDocs(collection(db, 'users', currentUser.uid, 'following')),
+          getDocs(collection(db, 'users', currentUser.uid, 'followers'))
+        ]);
+        const followers = new Set(followersSnap.docs.map(d => d.id));
+        allowedUids = [...new Set(
+          followingSnap.docs.map(d => d.id).filter(uid => followers.has(uid)).concat(currentUser.uid)
+        )].slice(0, 500);
+      }
       const expiresAtMs = Date.now() + 24 * 60 * 60 * 1000;
       payload = {
         ...base,
         type: 'story',
         isStory: true,
         privacy: state.privacy === 'friends' ? 'friends' : 'public',
+        ...(state.privacy === 'friends' ? { allowedUids } : {}),
         expiresAtMs,
         expiresAt: Timestamp.fromMillis(expiresAtMs),
         editorMeta: {
           filter: state.editor.filter,
           filterIntensity: state.editor.filterIntensity,
           rotation: state.editor.rotation,
-          textOverlays: state.editor.textOverlays,
-          stickers: state.editor.stickers.map((s) => ({
+          textOverlays: state.editor.textOverlays.slice(0, 12).map((t) => ({
+            text: String(t.text || '').slice(0, 120),
+            x: Number(t.x) || 0, y: Number(t.y) || 0,
+            color: String(t.color || '#ffffff').slice(0, 20),
+            fontSize: Math.max(8, Math.min(96, Number(t.fontSize) || 22)),
+            fontFamily: String(t.fontFamily || 'Inter').slice(0, 40),
+            fontWeight: Number(t.fontWeight) || 500,
+            align: ['center','left','right'].includes(t.align) ? t.align : 'center',
+            rotation: Number(t.rotation) || 0
+          })),
+          stickers: state.editor.stickers.slice(0, 24).map((s) => ({
             emoji: s.emoji, x: s.x, y: s.y, size: s.size, rotation: s.rotation || 0
           }))
         }
