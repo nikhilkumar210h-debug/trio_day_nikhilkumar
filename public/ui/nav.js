@@ -67,22 +67,6 @@ function setExpanded(expanded, rail, button) {
   if (button) button.title = expanded ? 'Collapse navigation' : 'Expand navigation';
 }
 
-function renderBottomNav(active) {
-  let bottom = document.querySelector('.bottom-nav');
-  if (!bottom) {
-    bottom = document.createElement('nav');
-    bottom.className = 'bottom-nav';
-    bottom.setAttribute('aria-label','Primary navigation');
-    bottom.innerHTML = '<div class="nav-row"></div>';
-    document.body.appendChild(bottom);
-  }
-  const row = bottom.querySelector('.nav-row') || bottom;
-  row.innerHTML = ITEMS.slice(0, 5).map(i => {
-    const cls = 'nav-btn' + (i.key === active ? ' active' : '');
-    return '<a class="' + cls + '" href="' + i.href + '" data-nav="' + i.key + '" aria-label="' + i.label + '"><span class="nav-icon">' + i.icon + '</span><span class="nav-label">' + i.label + '</span></a>';
-  }).join('');
-}
-
 function renderRail(active) {
   let rail = document.querySelector('.nkm-rail');
   if (!rail) {
