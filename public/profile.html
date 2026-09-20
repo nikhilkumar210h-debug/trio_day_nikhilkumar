@@ -21,7 +21,7 @@
   <link rel="preload" href="styles/components.css" as="style" onload="this.onload=null;this.rel='stylesheet'"><noscript><link rel="stylesheet" href="styles/components.css"></noscript>
     <link rel="preload" href="style.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <noscript><link rel="stylesheet" href="style.css">
-<link rel="stylesheet" href="styles/polish.css?v=6"></noscript>
+<link rel="stylesheet" href="styles/polish.css?v=7"></noscript>
     <link rel="preload" href="ui/tasks.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <noscript><link rel="stylesheet" href="ui/tasks.css"></noscript>
     <link rel="icon" href="icons/icon-192.png" type="image/png">
@@ -51,42 +51,51 @@
                 <button id="profileMenuBtn" class="profile-menu-btn" type="button" aria-label="Profile menu" hidden>⋯</button>
             </div>
             <div id="profileActions" class="profile-actions"></div>
-            <div id="profileGame" class="profile-game" hidden>
-                <div class="profile-game-row">
-                    <div class="profile-game-stat">
-                        <div class="profile-game-value" id="pgLevel">1</div>
-                        <div class="profile-game-label">Level</div>
+            <div id="profileGame" class="profile-progress" hidden>
+                <div class="profile-progress-hero">
+                    <div class="profile-level-badge">
+                        <span id="pgLevel">1</span>
+                        <small>LEVEL</small>
                     </div>
-                    <div class="profile-game-stat">
-                        <div class="profile-game-value" id="pgXp">0</div>
-                        <div class="profile-game-label">Total XP</div>
-                    </div>
-                    <div class="profile-game-stat">
-                        <div class="profile-game-value" id="pgRank">—</div>
-                        <div class="profile-game-label">Global Rank</div>
-                    </div>
-                </div>
-                <div class="profile-game-row profile-game-row--secondary">
-                    <div class="profile-game-stat">
-                        <div class="profile-game-value" id="pgWeekly">0</div>
-                        <div class="profile-game-label">Weekly XP</div>
-                    </div>
-                    <div class="profile-game-stat">
-                        <div class="profile-game-value" id="pgMonthly">0</div>
-                        <div class="profile-game-label">Monthly XP</div>
-                    </div>
-                    <div class="profile-game-stat">
-                        <div class="profile-game-value" id="pgStreak">0</div>
-                        <div class="profile-game-label">Day Streak</div>
+                    <div class="profile-progress-copy">
+                        <div class="profile-progress-top">
+                            <div>
+                                <span class="profile-progress-kicker">YOUR JOURNEY</span>
+                                <strong>Keep building your streak.</strong>
+                            </div>
+                            <span class="profile-rank-pill">Global <b id="pgRank">—</b></span>
+                        </div>
+                        <div class="profile-xp-line">
+                            <strong id="pgXp">0</strong>
+                            <span>XP total</span>
+                        </div>
+                        <div class="profile-xp-track" aria-label="Progress to next level"><i id="pgXpFill" style="width:0%"></i></div>
+                        <div class="profile-xp-foot"><span id="pgXpInto">0 / 100 XP</span><span id="pgNextLevel">Next: Level 2</span></div>
                     </div>
                 </div>
-                <div class="profile-standing-caption"><span>Your progress</span><a href="leaderboard.html">Open leaderboard →</a></div>
-                <div class="xp-bar" aria-label="Progress to next level"><i id="pgXpFill" style="width:0%"></i></div>
-                <div class="profile-game-badges">
-                    <h4 style="margin:12px 0 8px;font-size:0.85rem;opacity:0.8">Badges</h4>
+                <div class="profile-progress-stats">
+                    <div class="profile-progress-stat"><strong id="pgWeekly">0</strong><span>Weekly XP</span></div>
+                    <div class="profile-progress-stat"><strong id="pgMonthly">0</strong><span>Monthly XP</span></div>
+                    <div class="profile-progress-stat"><strong id="pgStreak">0</strong><span>Day Streak</span></div>
+                    <div class="profile-progress-stat"><strong id="pgBest">0</strong><span>Best Streak</span></div>
+                </div>
+                <div class="profile-progress-footer">
+                    <span>Complete activities to earn XP, unlock badges and keep your streak moving.</span>
+                    <a href="leaderboard.html">Leaderboard →</a>
+                </div>
+                <div class="profile-badges-panel">
+                    <div class="profile-badges-head"><div><strong>Badges</strong><span>Milestones you've unlocked</span></div></div>
                     <div id="pgBadges"></div>
                 </div>
-                <a class="btn secondary" href="leaderboard.html" style="margin-top:12px;align-self:flex-start">View Leaderboard</a>
+            </div>        </section>
+        <section id="profileActivityPanel" class="profile-section profile-activity-section" hidden>
+            <div class="profile-section-head">
+                <div><h3>Activity journey</h3><p>Recent things you completed across Trio Day.</p></div>
+                <span id="profileActivitySummary" class="profile-activity-count">0</span>
+            </div>
+            <div id="recentActivities" class="profile-activity-list" aria-live="polite">
+                <div class="td-skeleton td-skeleton--card"></div>
+                <div class="td-skeleton td-skeleton--card"></div>
             </div>
         </section>
         <div class="profile-grid">
@@ -113,7 +122,7 @@
     </nav>
     <script type="module" src="script.js?v=20260919-feedfix5"></script>
     <script type="module" src="auth-ui.js"></script>
-    <script type="module" src="profile.js?v=20260919-profile3"></script>
+    <script type="module" src="profile.js?v=20260920-profile4"></script>
     <script src="install-prompt.js" defer></script>
   <script type="module" src="theme.js"></script>
 <script type="module" src="ui/header.js"></script>
