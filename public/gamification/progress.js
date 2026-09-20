@@ -31,7 +31,7 @@ export async function getProgress(uid, cadence, d = new Date()) {
  */
 export async function getMergedTasks(uid, cadence) {
   const [templates, progress] = await Promise.all([
-    listActiveTemplates({ cadence }),
+    listActiveTemplates({ cadence, uid }),
     getProgress(uid, cadence)
   ]);
   return templates.map(t => {
@@ -52,7 +52,7 @@ export async function getMergedTasks(uid, cadence) {
  */
 export async function bumpProgress(uid, { templateId = null, metric = null, amount = 1, profile = null } = {}) {
   if (!uid || amount <= 0) return [];
-  const templates = await listActiveTemplates();
+  const templates = await listActiveTemplates({ uid });
   const targets = templates.filter(t => {
     if (templateId) return t.id === templateId;
     if (metric) return t.metric === metric;
