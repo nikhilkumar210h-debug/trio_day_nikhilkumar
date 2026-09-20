@@ -138,7 +138,11 @@ async function load(){
      $('roomActivity').innerHTML=activityCardHtml(activity,{compact:true});
      $('workspaceTitle').textContent=activity.title||'Activity workspace';
      $('roomWorkspaceStatus').textContent=activity.challengeBrief||activity.goal||activity.description||'Work together on the activity and use room chat to compare ideas.';
-     $('challengeLink').href=activity.source==='catalog'?'activity.html?id='+encodeURIComponent(room.challengeId):'task-detail.html?id='+encodeURIComponent(room.challengeId);
+     const challengeLink=$('challengeLink');
+     if(challengeLink){
+       challengeLink.textContent='Jump to activity';
+       challengeLink.onclick=()=>$('roomActivity')?.scrollIntoView({behavior:'smooth',block:'start'});
+     }
      stopSharedWorkspace();
      if(activity.type==='build' && (room.activitySource==='catalog'||activity.engineId||activity.interaction?.kind==='build')){
        stopSharedWorkspace=await mountSharedBuildWorkspace($('roomWorkspace'),{db,roomId:id,activity,me,onStateChange:(result)=>{if(result?.passed)$('roomWorkspaceStatus').textContent='Shared build complete ✓ Everyone reached a valid solution.'}});
