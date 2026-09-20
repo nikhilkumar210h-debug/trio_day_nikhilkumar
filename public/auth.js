@@ -35,7 +35,7 @@ function setBusy(busy, label = '') {
 }
 
 async function saveUserProfile(user, chosenName = '') {
-  const [{ doc, setDoc, serverTimestamp, getDoc, deleteField }, { db }] = await Promise.all([
+  const [{ doc, setDoc, serverTimestamp, getDoc, getDocs, query, where, limit, deleteField }, { db }] = await Promise.all([
     import('https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js'),
     import('./firebase-init.js')
   ]);
@@ -44,7 +44,13 @@ async function saveUserProfile(user, chosenName = '') {
   const old = snap?.exists() ? snap.data() : {};
   const name = chosenName.trim() || old.name || user.displayName || user.email?.split('@')[0] || 'User';
   // IMPORTANT: once a Trio UID exists, never replace it on login or profile updates.
-  const permanentUid = old.userId || makeUserId(user.uid);
+  let permanentUid = old.userId || makeUserId(user.uid);
+  if (!old.userId) {
+    const existing = await getDocs(query(collection(db, 'users'), where('userId', '==', permanentUid), limit(1))).catch(() => ({ docs: [] }));
+    if (existing.docs.some(d => d.id !== user.uid)) {
+      permanentUid = makeUserId(user.uid, 1);
+    }
+  }
 
   await setDoc(doc(db, 'usersPrivate', user.uid), {
     email: user.email || null,
