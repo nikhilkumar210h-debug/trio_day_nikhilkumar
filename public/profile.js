@@ -10,6 +10,7 @@ import { getCachedUser } from './services/userCache.js';
 import { getMyGlobalRank } from './gamification/leaderboards.js';
 import { getCommunityTask } from './gamification/community-tasks.js';
 import { normalizeActivityType, activityTypeInfo } from './activity-ui.js';
+import { activeCatalogActivities } from './activity-catalog.js';
 import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
 import {
   doc, getDoc, collection, collectionGroup, getDocs, query, where, orderBy,
@@ -338,6 +339,7 @@ async function loadProfile(uid) {
 
   const rows = [];
   const seen = new Set();
+  const catalogMap = new Map(activeCatalogActivities().map(a => [a.id, a]));
 
   try {
     const [catalogSnap, communitySnap] = await Promise.all([
@@ -348,14 +350,16 @@ async function loadProfile(uid) {
     if (catalogSnap) {
       catalogSnap.docs.forEach(d => {
         const v = d.data() || {};
+        const activity = catalogMap.get(v.activityId);
         const key = 'catalog:' + (v.cycleKey || v.activityId || d.id);
         if (seen.has(key)) return;
         seen.add(key);
-        const difficulty = String(v.difficulty || 'Medium');
-        const xp = difficulty === 'Hard' ? 60 : difficulty === 'Medium' ? 40 : 25;
+        const difficulty = String(activity?.difficulty || 'Medium');
+        const xp = Number(activity?.xpReward) || (difficulty === 'Hard' ? 60 : difficulty === 'Medium' ? 40 : 25);
         rows.push({
-          key, title: v.title || 'Activity', type: normalizeActivityType(v),
-          icon: v.icon || '🎯', category: v.category || 'Trio Day',
+          key, activityId: v.activityId || activity?.id || '', title: v.title || activity?.title || 'Activity',
+          type: normalizeActivityType(activity || v),
+          icon: v.icon || activity?.icon || '🎯', category: v.category || activity?.category || 'Trio Day',
           xp, atMs: Number(v.completedAtMs) || 0, source: 'catalog'
         });
       });
@@ -396,7 +400,7 @@ async function loadProfile(uid) {
     const type = activityTypeInfo(item);
     const when = item.atMs ? new Date(item.atMs).toLocaleDateString(undefined, { day:'numeric', month:'short' }) : 'Recently';
     return '<a class="profile-activity-item" href="' +
-      (item.source === 'community' ? 'task-detail.html?id=' : 'activity.html?id=') + encodeURIComponent(item.source === 'community' ? item.key.replace('community:','') : item.key.replace('catalog:','').split('_')[0]) +
+      (item.source === 'community' ? 'task-detail.html?id=' : 'activity.html?id=') + encodeURIComponent(item.source === 'community' ? item.key.replace('community:','') : (item.activityId || item.key.replace('catalog:','').split('_')[0])) +
       '">' +
       '<span class="profile-activity-icon">' + (item.icon || type.icon) + '</span>' +
       '<span class="profile-activity-copy"><strong>' + esc(item.title) + '</strong><small>' + esc(type.label) + ' · ' + esc(item.category) + ' · ' + when + '</small></span>' +
