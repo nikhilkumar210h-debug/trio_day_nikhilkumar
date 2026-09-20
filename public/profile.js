@@ -311,9 +311,16 @@ async function loadProfile(uid) {
   const isOwnProfile = me && me.uid === uid;
   // Older accounts may not have the public Trio UID yet. Generate it once,
   // then persist that exact value; later logins always reuse the stored value.
-  const publicUid = current.userId || makeUserId(current.uid);
+  let publicUid = current.userId || makeUserId(current.uid);
+  if (!/^TRIO-[A-Z0-9]{8}$/.test(publicUid)) publicUid = makeUserId(current.uid);
   if (isOwnProfile && !current.userId) {
     try {
+      const clash = await getDocs(query(
+        collection(db, 'users'),
+        where('userId', '==', publicUid),
+        limit(1)
+      ));
+      if (clash.docs.some(d => d.id !== uid)) publicUid = makeUserId(uid, 1);
       await setDoc(doc(db, 'users', uid), { uid, userId: publicUid, updatedAt: serverTimestamp() }, { merge: true });
       current.userId = publicUid;
       trioCache.invalidate(`user_${uid}`);
