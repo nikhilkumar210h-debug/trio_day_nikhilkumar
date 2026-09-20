@@ -11,6 +11,34 @@ import{mountSharedQuizWorkspace}from'./room-quiz-workspace.js';
 import{mountSharedChallengeWorkspace}from'./room-challenge-workspace.js';
 const $=id=>document.getElementById(id),id=new URLSearchParams(location.search).get('id');
 let me=null,p={},room=null,stopSharedWorkspace=()=>{};
+const ACTIVE_ROOM_KEY='trio_active_room_v1';
+function setActiveRoom(){
+  try{sessionStorage.setItem(ACTIVE_ROOM_KEY,JSON.stringify({id, url:'room.html?id='+encodeURIComponent(id), expiresAtMs:Number(room?.expiresAtMs)||0}));}catch{}
+}
+function clearActiveRoom(){
+  try{
+    const current=JSON.parse(sessionStorage.getItem(ACTIVE_ROOM_KEY)||'null');
+    if(!current?.id || current.id===id) sessionStorage.removeItem(ACTIVE_ROOM_KEY);
+  }catch{}
+}
+function blockRoomNavigation(){
+  document.addEventListener('click',event=>{
+    const link=event.target.closest?.('a[href]');
+    if(!link)return;
+    const raw=link.getAttribute('href')||'';
+    if(!raw || raw.startsWith('#') || raw.startsWith('mailto:') || raw.startsWith('tel:'))return;
+    let target;
+    try{target=new URL(raw,location.href)}catch{return}
+    const sameRoom=target.origin===location.origin
+      && target.pathname.endsWith('/room.html')
+      && target.searchParams.get('id')===id;
+    if(target.origin!==location.origin || sameRoom)return;
+    event.preventDefault();
+    event.stopPropagation();
+    showToast('Leave the room before opening another Trio page.','warn');
+  },true);
+}
+
 const voicePeers=new Map(),voicePCs=new Map(),voiceAudio=new Map(),pendingCandidates=new Map();let localStream=null,voiceReady=false,micEnabled=false;let rtcUnsubs=[];
 function fail(t){$('roomStatus').textContent=t;$('roomStatus').classList.add('error')}
 function pairId(a,b){return [a,b].sort().join('__')}
@@ -61,8 +89,10 @@ function renderVoiceMembers(s){
 }
 async function load(){
  if(!id)return fail('Missing room id.');
- const s=await getDoc(doc(db,'rooms',id));if(!s.exists())return fail('Room not found.');
- room={id:s.id,...s.data()};if(room.status==='closed'||((Number(room.expiresAtMs)||((Number(room.createdAtMs)||Date.now())+6*60*60*1000))<=Date.now()))return fail('This room has expired.');
+ const s=await getDoc(doc(db,'rooms',id));if(!s.exists()){clearActiveRoom();return fail('Room not found.');}
+ room={id:s.id,...s.data()};
+ if(room.status==='closed'||((Number(room.expiresAtMs)||((Number(room.createdAtMs)||Date.now())+6*60*60*1000))<=Date.now())){clearActiveRoom();return fail('This room has expired.');}
+ setActiveRoom();
  const mine=await getDoc(doc(db,'rooms',id,'members',me.uid));
  if(!mine.exists()){
    try{
@@ -135,12 +165,20 @@ $('leaveBtn').onclick=async()=>{
       transaction.delete(memberRef);
       transaction.update(roomRef,{memberCount:nextCount});
     });
+    clearActiveRoom();
     location.href='rooms.html';
   }catch(err){
     showToast(err.message||'Could not leave the room.', 'error');
   }
 };
-$('endBtn').onclick=async()=>{if(room?.hostUid!==me.uid)return;await updateDoc(doc(db,'rooms',id),{status:'closed',endedAtMs:Date.now()});location.href='rooms.html'};
+$('endBtn').onclick=async()=>{
+ if(room?.hostUid!==me.uid)return;
+ try{
+  await updateDoc(doc(db,'rooms',id),{status:'closed',endedAtMs:Date.now()});
+  clearActiveRoom();
+  location.href='rooms.html';
+ }catch(err){showToast(err.message||'Could not end room.','error')}
+};
 $('inviteBtn')?.addEventListener('click',async()=>{const panel=$('invitePanel');if(!panel)return;panel.hidden=!panel.hidden;if(!panel.hidden)await loadFriends()});
 $('closeInviteBtn')?.addEventListener('click',()=>$('invitePanel').hidden=true);
 $('micBtn')?.addEventListener('click',async()=>{
@@ -161,5 +199,5 @@ $('micBtn')?.addEventListener('click',async()=>{
  $('voiceStatus').textContent=micEnabled?'Others can hear you':'You can hear others';
 });
 $('chatToggleBtn')?.addEventListener('click',()=>{const chat=document.querySelector('.room-chat');const btn=$('chatToggleBtn');if(!chat||!btn)return;const collapsed=chat.classList.toggle('is-collapsed');btn.textContent=collapsed?'Chat':'Hide';btn.setAttribute('aria-expanded',String(!collapsed));});
-onAuthStateChanged(auth,async u=>{if(!u)return location.href='login.html?redirect=room.html?id='+encodeURIComponent(id||'');me=u;const s=await getDoc(doc(db,'users',u.uid));p=s.exists()?s.data():{};await load()});
+onAuthStateChanged(auth,async u=>{if(!u)return location.href='login.html?redirect=room.html?id='+encodeURIComponent(id||'');me=u;const s=await getDoc(doc(db,'users',u.uid));p=s.exists()?s.data():{};await load();blockRoomNavigation()});
 window.addEventListener('beforeunload',()=>{rtcUnsubs.forEach(fn=>fn());voicePCs.forEach(pc=>pc.close());voiceAudio.forEach(a=>a.remove());localStream?.getTracks().forEach(t=>t.stop());stopSharedWorkspace?.();});
