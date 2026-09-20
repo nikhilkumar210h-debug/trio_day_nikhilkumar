@@ -21,3 +21,60 @@
     grid-template-columns: 1fr;
   }
 }
+
+
+/* Live room UI refresh */
+.room-page-shell{padding:14px 14px 96px}
+.room-grid{gap:12px}
+.room-main-card,.room-side-card{padding:15px;border-radius:20px}
+.room-main-card>h1,.room-main-card h1#roomTitle{font-size:clamp(22px,3vw,29px);margin:10px 0 4px}
+.room-sub{font-size:10px}
+.room-activity{margin-top:11px}
+.room-activity .activity-card{grid-template-columns:78px minmax(0,1fr);padding:9px;border-radius:16px}
+.room-activity .activity-card-art{min-height:112px}
+.room-activity .activity-card-body{padding:9px}
+.room-activity .activity-card h3{font-size:14px}
+.room-activity .activity-card p{font-size:9px;line-height:1.4}
+.room-workspace{margin-top:10px!important;border-radius:18px}
+.workspace-placeholder{min-height:120px;padding:18px}
+.workspace-icon{width:46px;height:46px;border-radius:14px;font-size:22px;margin-bottom:7px}
+.workspace-placeholder strong{font-size:14px}
+.workspace-placeholder p{font-size:9px;max-width:360px;margin:4px auto 10px}
+.room-workspace-status{font-size:9px!important;margin-top:7px!important}
+.room-chat{margin-top:10px}
+.room-chat-log{height:190px;padding:9px 2px}
+.room-chat-head{padding-bottom:7px}
+.room-chat-head strong{font-size:12px}
+.room-chat-head small{font-size:8px}
+.room-chat-form input{height:40px}
+.room-side-head{margin-bottom:9px}
+.room-side-head h3{font-size:13px}
+.room-side-head p{font-size:9px}
+.room-side-actions{grid-template-columns:1fr 1fr;gap:7px;margin-top:10px}
+.room-side-actions .nkm-btn--primary{grid-column:1/-1}
+.room-side-actions .nkm-btn{min-height:40px;padding:0 9px;font-size:10px}
+.room-voice-bar{justify-content:flex-end;margin-top:9px;padding-top:8px}
+.room-mic-btn{width:40px;height:40px;min-height:40px;padding:0!important;border-radius:12px;font-size:0!important;line-height:1}
+.room-mic-btn::before{content:'🎙️';font-size:17px}
+.room-mic-btn.is-on{box-shadow:0 0 0 3px rgba(52,211,153,.08)}
+#voiceStatus{display:none}
+.room-muted{display:none}
+.room-invite-panel{padding:10px;margin-top:10px;border-radius:14px}
+.room-invite-head{margin-bottom:7px}
+.room-invite-uid{display:grid;gap:5px}
+.room-invite-uid-row{display:grid;grid-template-columns:1fr auto;gap:6px}
+.room-invite-uid input{height:38px;min-width:0;border:1px solid var(--color-border);border-radius:10px;background:var(--color-bg);color:var(--color-ink);padding:0 10px;font:inherit;font-size:10px;text-transform:uppercase}
+.room-invite-uid button{min-height:38px;padding:0 10px;font-size:9px}
+.room-invite-uid small{font-size:8px;color:var(--color-ink-muted);min-height:12px}
+.room-invite-divider{display:flex;align-items:center;gap:7px;margin:9px 0 6px;color:var(--color-ink-dim);font-size:8px;text-transform:uppercase;letter-spacing:.08em}
+.room-invite-divider::before,.room-invite-divider::after{content:'';height:1px;background:var(--color-border);flex:1}
+@media(max-width:760px){
+  .room-page-shell{padding-left:10px;padding-right:10px}
+  .room-grid{display:flex;flex-direction:column;gap:10px}
+  .room-side-card{order:-1}
+  .room-main-card{padding:12px}
+  .room-side-card{padding:12px}
+  .room-activity .activity-card{grid-template-columns:70px minmax(0,1fr)}
+  .room-activity .activity-card-art{min-height:96px}
+  .room-chat-log{height:165px}
+}
