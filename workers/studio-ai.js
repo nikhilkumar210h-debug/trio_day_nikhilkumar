@@ -1,3 +1,4 @@
+import { isAllowedOrigin } from "./shared/cors.js";
 // workers/studio-ai.js — AI proxy with auth + rate limit (5/min/user). No key in client.
 // Deploy as Cloudflare Worker. Uses crypto.subtle verification (Workers-compatible).
 
@@ -117,7 +118,10 @@ function corsHeaders(origin){
 
 export default {
   async fetch(request, env) {
-    const origin = request.headers.get('Origin') || '*';
+    const origin = request.headers.get('Origin') || '';
+    if(origin && !isAllowedOrigin(origin)){
+      return new Response(JSON.stringify({error:'Origin not allowed'}), {status:403, headers:{'Content-Type':'application/json'}});
+    }
     if(request.method==='OPTIONS') return new Response(null, { status:204, headers: corsHeaders(origin) });
     if(request.method!=='POST' || !new URL(request.url).pathname.endsWith('/ai/generate')){
       return new Response(JSON.stringify({error:'Not found'}), { status:404, headers: { 'Content-Type':'application/json', ...corsHeaders(origin)} });
