@@ -13,7 +13,8 @@ service cloud.firestore {
       allow read: if signedIn() && (
         (resource.data.type == 'post')
         || (
-          resource.data.isStory == true
+          resource.data.type == 'story'
+          && resource.data.isStory == true
           && (
             resource.data.privacy == 'public'
             || resource.data.uid == request.auth.uid
@@ -29,8 +30,8 @@ service cloud.firestore {
       // Subcollections visibility helper.
       function canReadPost(postId) {
         let p = get(/databases/$(database)/documents/posts/$(postId)).data;
-        return (p.type == 'post' && p.isStory != true)
-          || (p.isStory == true && (
+        return (p.type == 'post')
+          || (p.type == 'story' && p.isStory == true && (
             p.privacy == 'public'
             || p.uid == request.auth.uid
             || (p.privacy == 'friends' && p.allowedUids is list && request.auth.uid in p.allowedUids)
