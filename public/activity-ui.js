@@ -56,9 +56,9 @@ export function activityCardHtml(task, { compact=false } = {}){
         <div class="activity-mission"><span>${actionLabel}</span><i></i></div><h3>${title}</h3>
         <p>${desc}</p>
         <div class="activity-meta">
-          <span>${duration ? '⏱ ' + duration + ' min' : '👥 ' + joins + ' joined'}</span>
+          <span>${duration ? '⏱ ' + duration + ' min' : '⏱ Live'}</span>
+          <span>${isCatalog ? '👥 2–6' : '👥 ' + joins + ' joined'}</span>
           <span>${esc(task.difficulty || (isCatalog ? 'Open' : 'Community'))}</span>
-          <span>⌛ ${expiry}</span>
         </div>
         <div class="activity-footer">
           <span class="activity-creator">by ${creator}</span>
