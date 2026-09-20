@@ -8,9 +8,18 @@ const esc = value => {
 };
 
 export async function mountSharedQuizWorkspace(root, { db, roomId, activity, me, mode = 'puzzle', onStateChange }) {
-  const cfg = getInteractiveConfig(activity.engineId || activity.id);
+  const cfg = activity.interaction?.kind === 'quiz'
+    ? {
+        ...activity.interaction,
+        kind: 'quiz',
+        question: String(activity.interaction.question || ''),
+        options: Array.isArray(activity.interaction.options) ? activity.interaction.options.slice(0,4) : [],
+        correct: Number(activity.interaction.correct) || 0,
+        lesson: String(activity.interaction.lesson || '')
+      }
+    : getInteractiveConfig(activity.engineId || activity.id);
 
-  if (!cfg) {
+  if (!cfg || cfg.options.length !== 4) {
     root.innerHTML = '<div class="room-forge-note">This activity does not have a shared question yet. Use the activity page for the solo check.</div>';
     return () => {};
   }
