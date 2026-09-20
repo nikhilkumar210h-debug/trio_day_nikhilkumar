@@ -67,14 +67,14 @@ function canvasToBlob(canvas, type, quality){
  * Upload a compressed blob to Cloudinary (unsigned preset).
  * @returns {Promise<string>} secure_url
  */
-export async function uploadImageBlob(blob, { folder, publicId, fileName } = {}){
+export async function uploadImageBlob(blob, { folder, publicId, fileName, signal } = {}){
   const form = new FormData();
   form.append('file', blob, fileName || `upload.${blob.type === 'image/webp' ? 'webp' : 'jpg'}`);
   form.append('upload_preset', UPLOAD_PRESET);
   if(folder) form.append('folder', folder);
   if(publicId) form.append('public_id', publicId);
 
-  const res = await fetch(UPLOAD_URL, { method: 'POST', body: form });
+  const res = await fetch(UPLOAD_URL, { method: 'POST', body: form, signal });
   const data = await res.json().catch(() => ({}));
   if(!res.ok || !data.secure_url){
     const msg = data?.error?.message || `Cloudinary upload failed (${res.status})`;
@@ -84,7 +84,7 @@ export async function uploadImageBlob(blob, { folder, publicId, fileName } = {})
 }
 
 /** Post photo → Cloudinary folder trio/posts */
-export async function uploadPostImage(uid, file){
+export async function uploadPostImage(uid, file, { signal } = {}){
   const { blob, ext } = await compressImageFile(file, {
     maxEdge: 1280,
     maxBytes: 850_000,
@@ -93,17 +93,19 @@ export async function uploadPostImage(uid, file){
   return uploadImageBlob(blob, {
     folder: 'trio/posts',
     publicId: `${uid}_${Date.now()}_${randomId()}`,
-    fileName: `post.${ext}`
+    fileName: `post.${ext}`,
+    signal
   });
 }
 
 /** Story media — ORIGINAL QUALITY (short term 24h) — no compression */
-export async function uploadStoryMedia(uid, file){
+export async function uploadStoryMedia(uid, file, { signal } = {}){
   if(file?.type?.startsWith('video/')){
     if(file.size > 100 * 1024 * 1024) throw Error('Video must be under 100MB.');
     return uploadVideoBlob(file, {
       folder: 'trio/stories',
-      publicId: `${uid}_${Date.now()}_${randomId()}`
+      publicId: `${uid}_${Date.now()}_${randomId()}`,
+      signal
     });
   }
   // Image story: upload original file directly, keep original quality (no compress, no resize)
@@ -114,19 +116,19 @@ export async function uploadStoryMedia(uid, file){
   form.append('upload_preset', UPLOAD_PRESET);
   form.append('folder', 'trio/stories');
   form.append('public_id', `${uid}_${Date.now()}_${randomId()}`);
-  const res = await fetch(UPLOAD_URL, { method: 'POST', body: form });
+  const res = await fetch(UPLOAD_URL, { method: 'POST', body: form, signal });
   const data = await res.json().catch(() => ({}));
   if(!res.ok || !data.secure_url) throw Error(data?.error?.message || `Cloudinary upload failed (${res.status})`);
   return data.secure_url;
 }
 
-async function uploadVideoBlob(file, { folder, publicId } = {}){
+async function uploadVideoBlob(file, { folder, publicId, signal } = {}){
   const form = new FormData();
   form.append('file', file, file.name || `video_${Date.now()}.mp4`);
   form.append('upload_preset', UPLOAD_PRESET);
   if(folder) form.append('folder', folder);
   if(publicId) form.append('public_id', publicId);
-  const res = await fetch(VIDEO_UPLOAD_URL, { method: 'POST', body: form });
+  const res = await fetch(VIDEO_UPLOAD_URL, { method: 'POST', body: form, signal });
   const data = await res.json().catch(() => ({}));
   if(!res.ok || !data.secure_url){
     const msg = data?.error?.message || `Video upload failed (${res.status})`;
