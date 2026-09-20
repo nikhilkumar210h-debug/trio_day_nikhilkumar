@@ -56,12 +56,13 @@ function createHandler() {
 }
 
 function isExpanded() {
-  return localStorage.getItem('trio_nav_expanded_v2') === '1';
+  try { return localStorage.getItem('trio_nav_expanded_v2') === '1'; }
+  catch { return false; }
 }
 
 function setExpanded(expanded, rail, button) {
   document.body.classList.toggle('nkm-nav-expanded', expanded);
-  localStorage.setItem('trio_nav_expanded_v2', expanded ? '1' : '0');
+  try { localStorage.setItem('trio_nav_expanded_v2', expanded ? '1' : '0'); } catch { /* storage may be blocked */ }
   rail?.setAttribute('data-expanded', expanded ? 'true' : 'false');
   button?.setAttribute('aria-expanded', expanded ? 'true' : 'false');
   if (button) button.title = expanded ? 'Collapse navigation' : 'Expand navigation';
