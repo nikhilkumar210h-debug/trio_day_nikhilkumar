@@ -96,7 +96,7 @@ async function loadConnections(uid) {
   profiles.filter(Boolean).forEach(u => {
     const a = document.createElement('a'); a.className = 'connection-row'; a.href = `profile.html?uid=${encodeURIComponent(u.uid)}`;
     const av = u.photoURL ? `<img src="${esc(u.photoURL)}" alt="">` : (u.name || 'U').charAt(0).toUpperCase();
-    a.innerHTML = `<span class="user-avatar">${av}</span><span class="meta"><strong>${esc(u.name || 'User')}</strong><small class="muted">${esc(u.userId || u.uid)}</small></span><span class="connection-arrow">›</span>`;
+    a.innerHTML = `<span class="user-avatar">${av}</span><span class="meta"><strong>${esc(u.name || 'User')}</strong><small class="muted">UID · ${esc(u.uid || '')}</small></span><span class="connection-arrow">›</span>`;
     box.appendChild(a);
   });
 }
@@ -107,7 +107,7 @@ async function openEdit(u) {
   overlay.innerHTML = `<div class="modal edit-dialog">
     <div class="modal-head"><div><span class="eyebrow">Your profile</span><h2>Edit profile</h2></div><button class="icon-btn close-edit" type="button">×</button></div>
     <label class="field"><span class="label-text">Name</span><input id="editName" type="text" maxlength="50" value="${esc(u.name || '')}"></label>
-    <label class="field"><span class="label-text">UID</span><input id="editUserId" type="text" maxlength="24" value="${esc(u.userId || makeUserId(me.uid))}" disabled readonly><small class="field-help">Permanent account identifier. It cannot be changed.</small></label>
+    <div class="field"><span class="label-text">UID</span><div class="field-readonly">${esc(me.uid)}</div><small class="field-help">Permanent account key used to connect with friends. It cannot be changed.</small></div>
     <label class="field"><span class="label-text">Bio</span><textarea id="editBio" maxlength="180" rows="4" placeholder="Tell people a little about you…">${esc(u.bio || '')}</textarea></label>
     <label class="field"><span class="label-text">Profile photo</span><input id="editPhoto" type="file" accept="image/*"></label>
     <p class="status" id="editStatus"></p>
@@ -122,8 +122,6 @@ async function openEdit(u) {
     const st = overlay.querySelector('#editStatus'), btn = overlay.querySelector('.save-edit'); btn.disabled = true;
     try {
       const name = overlay.querySelector('#editName').value.trim() || 'User';
-      const userId = u.userId || makeUserId(me.uid);
-      if (!userId) throw Error('Permanent UID is missing.');
       let photoURL = u.photoURL || null; const f = overlay.querySelector('#editPhoto').files?.[0];
       if (f) {
         if (!f.type.startsWith('image/')) throw Error('Only image files allowed.');
@@ -265,7 +263,7 @@ async function loadProfile(uid) {
   // Render header
   avatar($('profileAvatar'), current);
   $('profileName').textContent = current.name || 'User';
-  $('profileUserId').textContent = current.userId || makeUserId(uid);
+  $('profileUserId').textContent = current.uid || uid;
   const isOwnProfile = me && me.uid === uid;
   const ownEmail = isOwnProfile ? (me?.email || current.email || '') : '';
   $('profileEmail').textContent = isOwnProfile
