@@ -10,10 +10,11 @@ import { escapeHtml as esc } from './utils.js';
 import { showToast } from './ui/toast.js';
 
 const $ = id => document.getElementById(id);
+const CREATE_LANES = ['build','learn','challenge','puzzle'];
 const params = new URLSearchParams(location.search);
 let me = null;
 let profile = {};
-let activeType = ACTIVITY_TYPES[params.get('activity')] ? params.get('activity') : 'puzzle';
+let activeType = CREATE_LANES.includes(params.get('activity')) ? params.get('activity') : 'puzzle';
 let selected = null;
 let step = 1;
 let interactionDraft = null;
@@ -257,9 +258,9 @@ function resetLaneDraft(){
 }
 function renderLanes() {
   const host = $('creatorLanes'); if(!host)return;
-  host.innerHTML = Object.entries(ACTIVITY_TYPES).map(([type,info]) =>
-    '<button type="button" class="creator-lane-card creator-lane-card--'+info.tone+' '+(type===activeType?'selected':'')+'" data-lane="'+esc(type)+'"><span class="creator-lane-art">'+esc(info.icon)+'</span><span class="creator-lane-copy"><strong>'+esc(info.label)+'</strong><small>'+esc(info.desc)+'</small></span><span class="creator-lane-arrow">→</span></button>'
-  ).join('');
+  host.innerHTML = CREATE_LANES.map(type => { const info=ACTIVITY_TYPES[type]; return
+    '<button type="button" class="creator-lane-card creator-lane-card--'+info.tone+' '+(type===activeType?'selected':'')+'" data-lane="'+esc(type)+'"><span class="creator-lane-art">'+esc(info.icon)+'</span><span class="creator-lane-copy"><strong>'+esc(info.label)+'</strong><small>'+esc(info.desc)+'</small></span><span class="creator-lane-arrow">→</span></button>';
+}).join('');
   host.querySelectorAll('[data-lane]').forEach(btn=>btn.addEventListener('click',()=>{
     activeType=btn.dataset.lane;
     selected=null;
