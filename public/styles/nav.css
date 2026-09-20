@@ -1,197 +1,43 @@
-/* NKM Navigation — Mobile 5-item bottom + Desktop left rail (Phase 3)
-   Canonical: Today / Discover / Do / Chat / You + floating Create.
-   Uses semantic tokens from tokens.css.
-   ═══════════════════════════════════════════════════════════════ */
-/* ── Bottom nav (mobile) — 5 equal columns, no Create inside grid ── */
-.bottom-nav {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: var(--color-bg-elevated);
-  backdrop-filter: blur(18px) saturate(180%);
-  -webkit-backdrop-filter: blur(18px) saturate(180%);
-  border-top: 1px solid var(--color-border);
-  z-index: 80;
-  padding-bottom: env(safe-area-inset-bottom);
-}
-.nav-row {
-  width: min(520px, 100%);
-  margin: auto;
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 2px;
-  padding: 6px 6px 4px;
-  align-items: stretch;
-}
-.nav-btn {
-  min-width: 0;
-  padding: 6px 2px 4px;
-  border-radius: var(--radius-sm);
-  color: var(--color-ink-dim);
-  font-size: var(--text-xs);
-  font-weight: var(--font-semibold);
-  text-transform: uppercase;
-  letter-spacing: .02em;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 2px;
-  min-height: 44px;
-  text-decoration: none;
-}
-.nav-btn .nav-label {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100%;
-  line-height: 1.1;
-}
-.nav-btn.active {
-  color: var(--color-primary);
-  background: var(--color-primary-soft);
-}
-.nav-icon { font-size: 22px; line-height: 1; transition: transform var(--duration-fast) var(--ease-out); }
-.nav-btn.active .nav-icon { transform: scale(1.06); }
-.nav-icon svg { display: block; }
+/* Trio left navigation — collapsed first, expandable with ⋯ */
+.bottom-nav{position:fixed;left:0;right:0;bottom:0;background:var(--color-bg-elevated);backdrop-filter:blur(18px) saturate(180%);-webkit-backdrop-filter:blur(18px) saturate(180%);border-top:1px solid var(--color-border);z-index:80;padding-bottom:env(safe-area-inset-bottom)}
+.nav-row{width:min(520px,100%);margin:auto;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:2px;padding:6px 6px 4px;align-items:stretch}
+.nav-btn{min-width:0;padding:7px 4px;border-radius:var(--radius-sm);color:var(--color-ink-dim);font-size:var(--text-xs);font-weight:var(--font-semibold);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:44px;text-decoration:none;cursor:pointer;background:none;border:0}
+.nav-btn .nav-label{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;line-height:1.1}
+.nav-btn.active{color:var(--color-primary);background:var(--color-primary-soft)}
+.nav-icon{font-size:22px;line-height:1;transition:transform var(--duration-fast) var(--ease-out)}.nav-btn.active .nav-icon{transform:scale(1.06)}.nav-icon svg{display:block}
+.nkm-create-fab{position:fixed;right:16px;bottom:calc(76px + env(safe-area-inset-bottom));width:56px;height:56px;border-radius:50%;border:0;display:grid;place-items:center;cursor:pointer;color:var(--color-primary-ink);background:linear-gradient(135deg,var(--color-primary),var(--color-primary-strong));box-shadow:0 8px 24px var(--color-primary-glow);z-index:78}.nkm-create-fab svg{display:block}.nkm-create-fab:active{transform:scale(.94)}
 
-/* ── Floating Create FAB (mobile only) ── */
-.nkm-create-fab {
-  position: fixed;
-  right: 16px;
-  bottom: calc(76px + env(safe-area-inset-bottom));
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  border: 0;
-  display: grid;
-  place-items: center;
-  cursor: pointer;
-  color: var(--color-primary-ink);
-  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-strong));
-  box-shadow: 0 8px 24px var(--color-primary-glow);
-  z-index: 78;
-  transition: transform var(--duration-fast) var(--ease-out);
+.nkm-rail{display:none}
+@media (min-width:840px){
+  .bottom-nav,.nkm-create-fab{display:none!important}
+  .nkm-rail{display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;width:72px;background:linear-gradient(180deg,rgba(8,12,24,.97),rgba(9,14,28,.97));backdrop-filter:blur(22px) saturate(160%);-webkit-backdrop-filter:blur(22px) saturate(160%);border-right:1px solid var(--color-border);padding:10px 8px;gap:8px;z-index:120;overflow:hidden;box-shadow:10px 0 34px rgba(2,6,23,.14);transition:width .22s ease}
+  body.nkm-nav-expanded .nkm-rail{width:230px}
+  .nkm-rail-brand-row{display:flex;align-items:center;gap:7px;min-height:48px}
+  .nkm-rail-brand{min-width:0;flex:1;display:flex;align-items:center;gap:10px;padding:4px;text-decoration:none;color:var(--color-ink);border-radius:14px}
+  .nkm-rail-brand img{width:38px;height:38px;border-radius:12px;object-fit:cover;flex:none;box-shadow:0 6px 18px rgba(0,0,0,.28)}
+  .nkm-rail-brand-copy{min-width:0;display:grid;gap:1px;opacity:0;transform:translateX(-4px);transition:opacity .18s ease,transform .18s ease}
+  body.nkm-nav-expanded .nkm-rail-brand-copy{opacity:1;transform:none}
+  .nkm-rail-brand-copy strong{font-family:var(--font-display);font-size:17px;line-height:1}.nkm-rail-brand-copy small{font-size:8px;color:var(--color-ink-muted);letter-spacing:.08em;white-space:nowrap}
+  .nkm-rail-toggle{width:38px;height:38px;flex:none;border:1px solid var(--color-border);border-radius:12px;background:var(--color-glass);color:var(--color-ink);cursor:pointer;font-size:21px;line-height:1;display:grid;place-items:center;transition:.18s ease}
+  .nkm-rail-toggle:hover{background:var(--color-glass-hover);border-color:var(--color-border-strong)}
+  .nkm-rail-items{display:grid;gap:5px;min-height:0;overflow:auto;padding:2px 0;scrollbar-width:none}.nkm-rail-items::-webkit-scrollbar{display:none}
+  .nkm-rail .nav-btn{width:100%;min-height:46px;flex-direction:row;justify-content:center;gap:10px;padding:9px 10px;color:var(--color-ink-dim);text-align:left;border:1px solid transparent;border-radius:13px}
+  .nkm-rail .nav-btn:hover{background:rgba(255,255,255,.045);color:var(--color-ink)}.nkm-rail .nav-btn.active{background:rgba(99,102,241,.16);border-color:rgba(129,140,248,.2);color:#fff}
+  .nkm-rail .nav-icon{width:22px;display:grid;place-items:center;flex:none}.nkm-rail .nav-label{font-size:12px;letter-spacing:0;opacity:0;visibility:hidden;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:opacity .18s ease}
+  body.nkm-nav-expanded .nkm-rail .nav-btn{justify-content:flex-start}.nkm-rail .nav-label{max-width:150px}body.nkm-nav-expanded .nkm-rail .nav-label{opacity:1;visibility:visible}
+  .nkm-rail-footer{margin-top:auto;padding-top:8px;border-top:1px solid var(--color-border)}.nkm-rail .nav-btn--create{justify-content:center!important;background:linear-gradient(135deg,var(--color-primary),var(--color-primary-strong));color:#fff;border-color:transparent}
+  body.nkm-nav-expanded .nkm-rail .nav-btn--create{justify-content:center!important}
+  .nkm-rail .nav-btn--create .nav-label{color:#fff}
+  .app-main,.profile-main,.users-main,.chat-main,.tasks-main,.private-main,.notifications-main,.search-main,.policy-main,.view-post-main,.do-shell,.discover-shell,.rooms-shell,.room-page-shell,.activity-page-shell{margin-left:88px!important;margin-right:24px!important;width:auto!important;max-width:none!important;box-sizing:border-box}
+  body.nkm-nav-expanded .app-main,body.nkm-nav-expanded .profile-main,body.nkm-nav-expanded .users-main,body.nkm-nav-expanded .chat-main,body.nkm-nav-expanded .tasks-main,body.nkm-nav-expanded .private-main,body.nkm-nav-expanded .notifications-main,body.nkm-nav-expanded .search-main,body.nkm-nav-expanded .policy-main,body.nkm-nav-expanded .view-post-main,body.nkm-nav-expanded .do-shell,body.nkm-nav-expanded .discover-shell,body.nkm-nav-expanded .rooms-shell,body.nkm-nav-expanded .room-page-shell,body.nkm-nav-expanded .activity-page-shell{margin-left:246px!important}
+  .topbar{z-index:130}
 }
-.nkm-create-fab svg { display: block; width: 22px; height: 22px; stroke: var(--color-primary-ink); }
-.nkm-create-fab:active { transform: scale(0.94); }
-
-/* ── Desktop left rail (hidden on mobile) ── */
-.nkm-rail { display: none; }
-@media (min-width: 840px) {
-  .bottom-nav { display: none; }
-  .nkm-create-fab { display: none; }
-  .nkm-rail {
-    display: flex;
-    flex-direction: column;
-    position: fixed;
-    left: 0;
-    top: 63px; /* header 60 + tricolor 3 */
-    bottom: 0;
-    width: 72px;
-    background: var(--color-bg-elevated);
-    backdrop-filter: blur(18px);
-    border-right: 1px solid var(--color-border);
-    padding: 12px 8px;
-    gap: 6px;
-    z-index: 54;
-    overflow-y: auto;
-  }
-  .nkm-rail .nav-btn { flex-direction: column; min-height: 56px; font-size: var(--text-xs); }
-  .nkm-rail .nav-label { font-size: var(--text-xs); letter-spacing: .04em; }
-  .nkm-rail .nav-btn--create { margin-top: auto; height: 52px; }
-  /* Push main content aside — account for rail width */
-  .app-main, .profile-main, .users-main, .chat-main, .tasks-main, .private-main,
-  .notifications-main, .search-main, .policy-main, .view-post-main, .auth-wrap {
-    margin-left: 72px;
-    width: calc(100% - 72px);
-    max-width: calc(100% - 72px);
-  }
-  .tasks-main.nkm-activity, .profile-main, .chat-main.nkm-chat, .private-main,
-  .notifications-main, .search-main, .policy-main, .view-post-main {
-    margin-left: 72px !important;
-    margin-right: auto;
-    box-sizing: border-box;
-  }
-  .nkm-home { margin-left: auto; margin-right: auto; }
+@media (min-width:1280px){
+  .nkm-rail{width:72px}body.nkm-nav-expanded .nkm-rail{width:250px}
+  .app-main,.profile-main,.users-main,.chat-main,.tasks-main,.private-main,.notifications-main,.search-main,.policy-main,.view-post-main,.do-shell,.discover-shell,.rooms-shell,.room-page-shell,.activity-page-shell{margin-left:88px!important}
+  body.nkm-nav-expanded .app-main,body.nkm-nav-expanded .profile-main,body.nkm-nav-expanded .users-main,body.nkm-nav-expanded .chat-main,body.nkm-nav-expanded .tasks-main,body.nkm-nav-expanded .private-main,body.nkm-nav-expanded .notifications-main,body.nkm-nav-expanded .search-main,body.nkm-nav-expanded .policy-main,body.nkm-nav-expanded .view-post-main,body.nkm-nav-expanded .do-shell,body.nkm-nav-expanded .discover-shell,body.nkm-nav-expanded .rooms-shell,body.nkm-nav-expanded .room-page-shell,body.nkm-nav-expanded .activity-page-shell{margin-left:266px!important}
 }
-@media (min-width: 1280px) {
-  .nkm-rail { width: 240px; padding: 16px 10px; top: 63px; }
-  .nkm-rail .nav-btn {
-    flex-direction: row;
-    justify-content: flex-start;
-    padding: 10px 12px;
-    gap: 10px;
-    font-size: var(--text-sm);
-    text-transform: none;
-    letter-spacing: 0;
-    min-height: 44px;
-    text-align: left;
-  }
-  .nkm-rail .nav-label { text-transform: none; letter-spacing: 0; }
-  .nkm-rail .nav-btn--create { justify-content: center; }
-  .app-main, .profile-main, .users-main, .chat-main, .tasks-main, .private-main,
-  .notifications-main, .search-main, .policy-main, .view-post-main, .auth-wrap {
-    margin-left: 240px;
-    width: calc(100% - 240px);
-    max-width: calc(100% - 240px);
-  }
-  .tasks-main.nkm-activity, .profile-main, .chat-main.nkm-chat, .private-main,
-  .notifications-main, .search-main, .policy-main, .view-post-main {
-    margin-left: 240px !important;
-  }
-}
-/* Prevent white flash on navigation — keep html dark before paint */
-html { background: var(--color-bg); }
-body { background: var(--color-bg); }
-/* ── Mobile cleanup — hide legacy floating create that collides with new nav ── */
-@media (max-width: 839px) {
-  .fab { display: none !important; }
-  #trioRankStrip { bottom: 62px; } /* sit clearly above 5-item nav */
-}
-/* Avoid horizontal overflow */
-html, body { overflow-x: hidden; }
-/* Ensure nav icon SVGs render crisply and stay visible */
-.nav-icon svg { display: block; }
-/* Hide skeleton correctly even with flex display */
-.skeleton-stack[hidden], #feedLoading[hidden] { display: none !important; }
-
-/* Secondary page shells must respect the same global desktop rail. */
-@media (min-width: 840px) {
-  .rooms-shell,
-  .room-page-shell,
-  .activity-page-shell {
-    margin-left: calc(72px + max(16px, (100% - 72px - 1040px) / 2));
-    margin-right: 0;
-    width: min(1040px, calc(100% - 72px - 32px));
-    max-width: none;
-    box-sizing: border-box;
-  }
-}
-@media (min-width: 1280px) {
-  .rooms-shell,
-  .room-page-shell,
-  .activity-page-shell {
-    margin-left: calc(240px + max(16px, (100% - 240px - 1040px) / 2));
-    margin-right: 0;
-    width: min(1040px, calc(100% - 240px - 32px));
-    max-width: none;
-    box-sizing: border-box;
-  }
-}
-
-/* Keep global navigation visually secondary to focused workspaces. */
-.nkm-rail {
-  box-shadow: 10px 0 34px rgba(2, 6, 23, .08);
-}
-.bottom-nav {
-  box-shadow: 0 -10px 34px rgba(2, 6, 23, .10);
-}
-
-@media (min-width: 840px) {
-  .bottom-nav,
-  .fab {
-    display: none !important;
-  }
+@media(max-width:839px){
+  .fab{display:none!important}.nkm-rail{display:none}#trioRankStrip{bottom:62px}
+  html,body{overflow-x:hidden}
 }
