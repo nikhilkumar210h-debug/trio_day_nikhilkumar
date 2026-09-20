@@ -47,8 +47,6 @@ function ensureActions() {
   profileLink.innerHTML = '<span class="nkm-top-avatar">' + PERSON + '</span>';
   actions.appendChild(profileLink);
 
-  const button = notifWrap.querySelector('#notificationButton');
-  button.addEventListener('click', () => { location.href = 'notifications.html'; });
   return { actions, avatar: profileLink.querySelector('.nkm-top-avatar') };
 }
 
