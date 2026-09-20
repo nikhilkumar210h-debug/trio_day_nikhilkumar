@@ -56,27 +56,6 @@
 .nav-btn.active .nav-icon { transform: scale(1.06); }
 .nav-icon svg { display: block; }
 
-/* ── Floating Create FAB (mobile only) ── */
-.nkm-create-fab {
-  position: fixed;
-  right: 16px;
-  bottom: calc(76px + env(safe-area-inset-bottom));
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  border: 0;
-  display: grid;
-  place-items: center;
-  cursor: pointer;
-  color: var(--color-primary-ink);
-  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-strong));
-  box-shadow: 0 8px 24px var(--color-primary-glow);
-  z-index: 78;
-  transition: transform var(--duration-fast) var(--ease-out);
-}
-.nkm-create-fab svg { display: block; width: 22px; height: 22px; stroke: var(--color-primary-ink); }
-.nkm-create-fab:active { transform: scale(0.94); }
-
 /* ── Desktop left rail (hidden on mobile) ── */
 .nkm-rail { display: none; }
 @media (min-width: 840px) {
@@ -100,7 +79,6 @@
   }
   .nkm-rail .nav-btn { flex-direction: column; min-height: 56px; font-size: var(--text-xs); }
   .nkm-rail .nav-label { font-size: var(--text-xs); letter-spacing: .04em; }
-  .nkm-rail .nav-btn--create { margin-top: auto; height: 52px; }
   /* Push main content aside — account for rail width */
   .app-main, .profile-main, .users-main, .chat-main, .tasks-main, .private-main,
   .notifications-main, .search-main, .policy-main, .view-post-main, .auth-wrap {
@@ -114,7 +92,6 @@
     margin-right: auto;
     box-sizing: border-box;
   }
-  .nkm-home { margin-left: auto; margin-right: auto; }
 }
 @media (min-width: 1280px) {
   .nkm-rail { width: 240px; padding: 16px 10px; top: 63px; }
@@ -130,7 +107,6 @@
     text-align: left;
   }
   .nkm-rail .nav-label { text-transform: none; letter-spacing: 0; }
-  .nkm-rail .nav-btn--create { justify-content: center; }
   .app-main, .profile-main, .users-main, .chat-main, .tasks-main, .private-main,
   .notifications-main, .search-main, .policy-main, .view-post-main, .auth-wrap {
     margin-left: 240px;
@@ -156,3 +132,19 @@ html, body { overflow-x: hidden; }
 .nav-icon svg { display: block; }
 /* Hide skeleton correctly even with flex display */
 .skeleton-stack[hidden], #feedLoading[hidden] { display: none !important; }
+
+/* Global desktop content offset: the rail is fixed, so page mains must reserve its width. */
+@media (min-width: 840px) {
+  body.app-page > main {
+    margin-left: 72px !important;
+    margin-right: auto !important;
+    max-width: calc(100% - 72px) !important;
+  }
+}
+@media (min-width: 1280px) {
+  body.app-page > main {
+    margin-left: 240px !important;
+    margin-right: auto !important;
+    max-width: calc(100% - 240px) !important;
+  }
+}
