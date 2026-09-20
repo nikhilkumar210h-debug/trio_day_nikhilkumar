@@ -111,9 +111,31 @@ export function getBuildConfig(id){return BUILD_CONFIG[id]||null}
 
 // 15 catalog items per lane. Game-type catalogue entries are intentionally not published;
 // the four user-facing lanes are Build, Learn, Challenge and Puzzle.
+function makeLearn15(x,i){
+ const long=x.length===10;
+ const duration=Number(long?x[6]:x[5]);
+ const difficulty=long?x[7]:x[6];
+ const cycle=Number(long?x[8]:x[7]);
+ const icon=long?x[9]:x[8];
+ const format=x[3];
+ const win=x[4];
+ const instructions=long ? x[3]+' '+x[5] : x[3];
+ return C('l'+(i+1),'learn',x[0],x[1],x[2],win,instructions,duration,difficulty,cycle,icon,{lane:'learn',roles:['Explainer','Tester','Sceptic','Summariser'],flow:['Pick roles','Try the idea','Challenge it','Teach it back'],win,fun:'Everyone has to contribute an explanation, not just listen.',premise:x[2],format});
+}
+function makeChallenge15(x,i){
+ const long=x.length===10;
+ const duration=Number(long?x[6]:x[5]);
+ const difficulty=long?x[7]:x[6];
+ const cycle=Number(long?x[8]:x[7]);
+ const icon=long?x[9]:x[8];
+ const rules=x[3];
+ const win=x[4];
+ const instructions=long ? x[3]+' '+x[5] : x[3];
+ return C('c'+(i+1),'challenge',x[0],x[1],x[2],win,instructions,duration,difficulty,cycle,icon,{lane:'challenge',roles:['Player 1','Player 2','Judge'],flow:['Start round','Lock answer','Reveal score','Defend one choice'],win,fun:'Fast decisions, live reveals and a visible score chase.',premise:x[2],rules});
+}
 const BUILD15=B.map((x,i)=>C('b'+(i+1),'build',x[0],x[1],x[2],x[3],x[4],x[5],x[6],x[7],x[8],{lane:'build',roles:['Planner','Maker','Reviewer'],flow:['Split the work live','Build your piece','Merge and review','Present the result'],win:x[3],fun:'A visible team result appears at the end.',premise:x[2]}));
-const LEARN15=L.map((x,i)=>C('l'+(i+1),'learn',x[0],x[1],x[2],x[4],x[3]+' '+x[5],x[6],x[7],x[8],x[9],{lane:'learn',roles:['Explainer','Tester','Sceptic','Summariser'],flow:['Pick roles','Try the idea','Challenge it','Teach it back'],win:x[4],fun:'Everyone has to contribute an explanation, not just listen.',premise:x[2],format:x[3]}));
-const CHALLENGE15=Cg.map((x,i)=>C('c'+(i+1),'challenge',x[0],x[1],x[2],x[4],x[3]+' '+x[5],x[6],x[7],x[8],x[9],{lane:'challenge',roles:['Player 1','Player 2','Judge'],flow:['Start round','Lock answer','Reveal score','Defend one choice'],win:x[4],fun:'Fast decisions, live reveals and a visible score chase.',premise:x[2],rules:x[3]}));
+const LEARN15=L.map(makeLearn15);
+const CHALLENGE15=Cg.map(makeChallenge15);
 const PUZZLE15=P.map((x,i)=>C('p'+(i+1),'puzzle',x[1],x[2],x[3],x[5],x[6],x[7],x[8],x[9],x[10],{lane:'puzzle',roles:(x[4]||'Clue Keeper, Sceptic, Mapper, Final Caller').split(/\s*,\s*/),flow:['Split clues','Share deductions','Challenge the theory','Lock the solution'],win:x[5],fun:'No single player gets the whole picture.',premise:x[3]}));
 export const ACTIVITY_CATALOG=[...PUZZLE15,...BUILD15,...LEARN15,...CHALLENGE15];
 
