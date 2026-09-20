@@ -9,6 +9,7 @@ import{createNotificationViaWorker}from'./services/notificationWorker.js';
 import{mountSharedBuildWorkspace}from'./room-workspace.js';
 import{mountSharedQuizWorkspace}from'./room-quiz-workspace.js';
 import{mountSharedChallengeWorkspace}from'./room-challenge-workspace.js';
+import{mountSharedGameWorkspace}from'./room-game-workspace.js';
 const $=id=>document.getElementById(id),id=new URLSearchParams(location.search).get('id');
 let me=null,p={},room=null,stopSharedWorkspace=()=>{};
 const ACTIVE_ROOM_KEY='trio_active_room_v1';
@@ -137,6 +138,8 @@ async function load(){
        stopSharedWorkspace=await mountSharedQuizWorkspace($('roomWorkspace'),{db,roomId:id,activity,me,mode:activity.type,onStateChange:(result)=>{if(result?.passed)$('roomWorkspaceStatus').textContent=activity.type==='learn'?'Concept understood by the room ✓':'Shared puzzle solved ✓'}});
      }else if(activity.type==='challenge' && (room.activitySource==='catalog'||activity.engineId||activity.interaction?.kind==='challenge')){
        stopSharedWorkspace=await mountSharedChallengeWorkspace($('roomWorkspace'),{db,roomId:id,activity,me,hostUid:room.hostUid});
+     }else if(activity.type==='game' && (room.activitySource==='catalog'||activity.engineId||activity.interaction?.kind==='room')){
+       stopSharedWorkspace=await mountSharedGameWorkspace($('roomWorkspace'),{db,roomId:id,activity,me,hostUid:room.hostUid});
      }
    }
  }
