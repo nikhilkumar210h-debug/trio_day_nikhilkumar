@@ -1,6 +1,6 @@
 import{auth,db}from'./firebase-init.js';
 import{onAuthStateChanged}from'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
-import{collection,query,orderBy,limit,onSnapshot,getDoc,getDocs,doc,setDoc,deleteDoc,addDoc,updateDoc,runTransaction}from'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
+import{collection,query,where,orderBy,limit,onSnapshot,getDoc,getDocs,doc,setDoc,deleteDoc,addDoc,updateDoc,runTransaction}from'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 import{escapeHtml as esc,avatarHtml}from'./utils.js';
 import{activityCardHtml}from'./activity-ui.js';
 import{showToast}from'./ui/toast.js';
@@ -61,13 +61,35 @@ async function loadFriends(){
   host.querySelectorAll('[data-invite]').forEach(b=>b.onclick=()=>inviteFriend(b.dataset.invite,b));
  }catch(e){host.innerHTML='<div class="room-empty">Could not load friends.</div>'}
 }
+async function sendRoomInvite(uid){
+ if(room?.hostUid!==me.uid)throw new Error('Only the host can invite friends.');
+ if(uid===me.uid)throw new Error('You cannot invite yourself.');
+ const member=await getDoc(doc(db,'rooms',id,'members',uid));
+ if(member.exists())throw new Error('That user is already in the room.');
+ await setDoc(doc(db,'rooms',id,'invites',uid),{targetUid:uid,hostUid:me.uid,hostName:p.name||me.displayName||'User',roomTitle:room.title||'Live room',roomId:id,status:'pending',createdAtMs:Date.now()});
+ await createNotificationViaWorker(uid,{type:'room_invite',actorName:p.name||me.displayName||'User',text:(p.name||'A friend')+' invited you to '+(room.title||'a live room'),title:'Join '+(room.title||'live room'),urlPath:'room.html?id='+encodeURIComponent(id),roomId:id});
+}
 async function inviteFriend(uid,btn){
  if(room?.hostUid!==me.uid)return showToast('Only the host can invite friends.','warn');
  btn.disabled=true;btn.textContent='Sending…';
- try{await setDoc(doc(db,'rooms',id,'invites',uid),{targetUid:uid,hostUid:me.uid,hostName:p.name||me.displayName||'User',roomTitle:room.title||'Live room',roomId:id,status:'pending',createdAtMs:Date.now()});
-  await createNotificationViaWorker(uid,{type:'room_invite',actorName:p.name||me.displayName||'User',text:(p.name||'A friend')+' invited you to '+(room.title||'a live room'),title:'Join '+(room.title||'live room'),urlPath:'room.html?id='+encodeURIComponent(id),roomId:id});
-  btn.textContent='Invited ✓';
- }catch(e){try{await deleteDoc(doc(db,'rooms',id,'invites',uid))}catch(_){}btn.disabled=false;btn.textContent='Invite';showToast(e.message||'Invite failed.','error')}
+ try{await sendRoomInvite(uid);btn.textContent='Invited ✓';}
+ catch(e){btn.disabled=false;btn.textContent='Invite';showToast(e.message||'Invite failed.','error')}
+}
+async function inviteByTrioUid(){
+ const input=$('inviteUid'),status=$('inviteUidStatus'),btn=$('inviteUidBtn');
+ if(!input||!status||!btn)return;
+ const trioUid=input.value.trim().toUpperCase();
+ if(!/^TRIO-[A-Z0-9]{8}$/.test(trioUid)){status.textContent='Enter a valid Trio UID.';return}
+ btn.disabled=true;status.textContent='Looking up…';
+ try{
+   const snap=await getDocs(query(collection(db,'users'),where('userId','==',trioUid),limit(1)));
+   if(snap.empty)throw new Error('No user found for that Trio UID.');
+   const targetUid=snap.docs[0].id;
+   await sendRoomInvite(targetUid);
+   status.textContent='Invite sent ✓';
+   input.value='';
+ }catch(e){status.textContent=e.message||'Invite failed.'}
+ finally{btn.disabled=false}
 }
 async function startVoice(){
  if(voiceReady)return;
@@ -231,21 +253,25 @@ $('endBtn').onclick=async()=>{
 };
 $('inviteBtn')?.addEventListener('click',async()=>{const panel=$('invitePanel');if(!panel)return;panel.hidden=!panel.hidden;if(!panel.hidden)await loadFriends()});
 $('closeInviteBtn')?.addEventListener('click',()=>$('invitePanel').hidden=true);
+$('inviteUidBtn')?.addEventListener('click',inviteByTrioUid);
+$('inviteUid')?.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();inviteByTrioUid()}});
 $('micBtn')?.addEventListener('click',async()=>{
  if(!voiceReady){
    await startVoice();
    if(!voiceReady)return;
    micEnabled=false;
    localStream?.getAudioTracks().forEach(t=>t.enabled=false);
-   $('micBtn').textContent='🎙️ Mic off';
    $('micBtn').classList.remove('is-on');
+   $('micBtn').setAttribute('aria-label','Turn microphone on');
+   $('micBtn').title='Microphone off';
    $('voiceStatus').textContent='Voice connected · mic off';
    return;
  }
  micEnabled=!micEnabled;
  localStream?.getAudioTracks().forEach(t=>t.enabled=micEnabled);
- $('micBtn').textContent=micEnabled?'🎙️ Mic on':'🎙️ Mic off';
  $('micBtn').classList.toggle('is-on',micEnabled);
+ $('micBtn').setAttribute('aria-label',micEnabled?'Turn microphone off':'Turn microphone on');
+ $('micBtn').title=micEnabled?'Microphone on':'Microphone off';
  $('voiceStatus').textContent=micEnabled?'Others can hear you':'You can hear others';
 });
 $('chatToggleBtn')?.addEventListener('click',()=>{const chat=document.querySelector('.room-chat');const btn=$('chatToggleBtn');if(!chat||!btn)return;const collapsed=chat.classList.toggle('is-collapsed');btn.textContent=collapsed?'Chat':'Hide';btn.setAttribute('aria-expanded',String(!collapsed));btn.setAttribute('aria-label',collapsed?'Show chat':'Hide chat');});
