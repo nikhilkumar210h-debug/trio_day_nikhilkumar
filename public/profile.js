@@ -236,7 +236,7 @@ async function openProfileMenu(userData) {
         }
       } else if (action === 'theme') {
         const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
-        const themeSheet = createSheet({
+        const { sheet: themeSheet, open: openTheme, close: closeTheme } = createSheet({
           title: 'Theme',
           content: `
             <div class="theme-choice-list">
@@ -245,8 +245,8 @@ async function openProfileMenu(userData) {
               <button type="button" class="profile-menu-item theme-choice ${!window.localStorage.getItem('trio-theme') ? 'is-selected' : ''}" data-theme-choice="system"><span>◐</span><span>System</span><small>Follow device setting</small></button>
             </div>`
         });
-        themeSheet.open();
-        themeSheet.sheet?.querySelectorAll('[data-theme-choice]').forEach(choice => {
+        openTheme();
+        themeSheet.querySelectorAll('[data-theme-choice]').forEach(choice => {
           choice.addEventListener('click', () => {
             const value = choice.dataset.themeChoice;
             try {
@@ -254,7 +254,7 @@ async function openProfileMenu(userData) {
               else window.TrioTheme?.applyTheme(value);
               if (value === 'system') window.TrioTheme?.initTheme();
             } catch {}
-            themeSheet.close();
+            closeTheme();
           });
         });
       } else if (action === 'install') {
