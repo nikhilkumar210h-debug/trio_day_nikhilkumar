@@ -484,6 +484,21 @@ async function fsGet(projectId, accessToken, path) {
   return doc.fields ? fromFirestoreFields(doc.fields) : {};
 }
 
+async function fsRunQuery(projectId, accessToken, structuredQuery) {
+  const url = firestoreBase(projectId).replace('/documents', '') + ':runQuery';
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      Authorization: 'Bearer ' + accessToken,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ structuredQuery })
+  });
+  if (!res.ok) throw new Error('Firestore RUNQUERY failed: ' + res.status);
+  const rows = await res.json();
+  return rows.filter(row => row.document).map(row => fromFirestoreFields(row.document.fields || {}));
+}
+
 /**
  * PATCH (merge) a Firestore document with specific fields.
  * updateMask is an array of top-level field names.
@@ -629,8 +644,7 @@ function evaluateBadgesDelta(currentBadges, xp, streakCurrent, extraTemplateId) 
     { id: 'badge_xp_1000',        ok: xp >= 1000 }
   ];
   const templateMap = {
-    sys_post:            'badge_first_post',
-    sys_monthly_engage:  'badge_engager'
+    verified_first_post: 'badge_first_post'
   };
   if (extraTemplateId && templateMap[extraTemplateId]) {
     checks.push({ id: templateMap[extraTemplateId], ok: true });
@@ -819,27 +833,36 @@ async function handleBumpStreak(uid, env) {
 /**
  * Award specific badges to uid (e.g. first_post triggered by template completion).
  */
-async function handleAwardBadges(uid, body, env) {
+async function handleAwardBadges(uid, _body, env) {
   const projectId = env.FIREBASE_PROJECT_ID;
   const token = await getAccessToken(env);
-
   const userData = await fsGet(projectId, token, `users/${uid}`) || {};
   const currentBadges = Array.isArray(userData.badges) ? userData.badges : [];
+
+  const postQuery = {
+    from: [{ collectionId: 'posts' }],
+    where: {
+      fieldFilter: {
+        field: { fieldPath: 'uid' },
+        op: 'EQUAL',
+        value: { stringValue: uid }
+      }
+    },
+    limit: 1
+  };
+  const hasPost = (await fsRunQuery(projectId, token, postQuery).catch(() => [])).length > 0;
   const earned = evaluateBadgesDelta(
     currentBadges,
     Number(userData.xp) || 0,
     Number(userData.streakCurrent) || 0,
-    body.templateId || null
+    hasPost ? 'verified_first_post' : null
   );
-
   if (earned.length > 0) {
     const newBadges = [...currentBadges, ...earned];
     await fsPatch(projectId, token, `users/${uid}`, { badges: newBadges }, ['badges']);
   }
-
   return { ok: true, badgesEarned: earned };
 }
-
 /**
  * Bump a counter field on a communityTasks document.
  * action: 'join'|'leave'|'like'|'unlike'|'comment'|'complete'
