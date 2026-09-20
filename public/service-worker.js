@@ -1,6 +1,6 @@
 /* Offline cache + efficient cache lifetimes (95 KiB savings fix). OneSignal SW lives under push/onesignal/. */
-const CACHE_NAME = "trio-day-cache-v50";
-const STATIC_CACHE = "trio-static-v38";
+const CACHE_NAME = "trio-day-cache-v51";
+const STATIC_CACHE = "trio-static-v39";
 const BASE = "/";
 const FILES_TO_CACHE = [
   BASE,
