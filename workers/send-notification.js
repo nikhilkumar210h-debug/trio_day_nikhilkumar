@@ -584,7 +584,7 @@ async function handleCreateNotification(request, env) {
     return json({ error: "Invalid notification type" }, 400, origin);
   }
   const notificationData = {};
-  for (const key of ['postId','text','title','urlPath']) {
+  for (const key of ['postId','text','title','urlPath','roomId']) {
     if (body?.[key] !== undefined) notificationData[key] = String(body[key]).slice(0, key === 'text' ? 500 : 240);
   }
 
