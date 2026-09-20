@@ -53,7 +53,7 @@ export function renderBuildWorkspace(root,activity,onPass){
  }else if(cfg.mechanic==='assign'){
    body.innerHTML='<div class="forge-assign-list">'+cfg.people.map((person,i)=>'<label class="forge-assign-row"><span>'+esc(person)+'</span><select data-person="'+esc(person)+'"><option value="">Choose role…</option>'+cfg.roles.map(r=>'<option>'+esc(r)+'</option>').join('')+'</select></label>').join('')+'</div><button class="forge-check" id="forgeCheck">Check team</button>';
    body.querySelectorAll('[data-person]').forEach(s=>s.onchange=()=>state.assign[s.dataset.person]=s.value);
-   body.querySelector('#forgeCheck').onclick=()=>{const ok=cfg.people.every(p=>state.assign[p]===cfg.correct[p])&&new Set(Object.values(state.assign)).size===cfg.roles.length;setResult(ok?'Team accepted — every role has the right fit.':'The assignment has conflicts. Try matching strengths to roles again.',ok,{assign:{...state.assign}})};
+   body.querySelector('#forgeCheck').onclick=()=>{const assigned=cfg.people.every(p=>cfg.roles.includes(state.assign[p]));const unique=new Set(Object.values(state.assign)).size===cfg.roles.length;const allowed=cfg.people.every(p=>!(cfg.forbidden?.[p]||[]).includes(state.assign[p]));const ok=assigned&&unique&&allowed;setResult(ok?'Team accepted — every role is used once and all exclusions are respected.':'The assignment has a conflict or a missing role. Try another valid arrangement.',ok,{assign:{...state.assign}})};
  }
  return{isPassed:()=>passed};
 }
