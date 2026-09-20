@@ -1,14 +1,8 @@
 import { auth } from './firebase-auth.js';
 import {
-  GoogleAuthProvider,
-  signInWithPopup,
-  signInWithRedirect,
-  getRedirectResult,
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  updateProfile,
-  onAuthStateChanged,
-  sendPasswordResetEmail
+  GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult,
+  createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile,
+  onAuthStateChanged, sendPasswordResetEmail
 } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
 import { makeUserId } from './utils.js';
 
@@ -18,11 +12,12 @@ const params = new URLSearchParams(location.search);
 const redirectTo = params.get('redirect') || 'index.html';
 const urlMode = params.get('mode');
 const isResetMode = urlMode === 'reset';
+let mode = 'login';
 
-function status(t = '', err = false) {
+function status(text = '', error = false) {
   if (!statusEl) return;
-  statusEl.textContent = t;
-  statusEl.classList.toggle('error', err);
+  statusEl.textContent = text;
+  statusEl.classList.toggle('error', error);
 }
 
 async function saveUserProfile(user, chosenName = '') {
@@ -34,13 +29,18 @@ async function saveUserProfile(user, chosenName = '') {
   const snap = await getDoc(ref).catch(() => null);
   const old = snap?.exists() ? snap.data() : {};
   const name = chosenName.trim() || old.name || user.displayName || user.email?.split('@')[0] || 'User';
+  const permanentUid = old.userId || makeUserId(user.uid);
+
   await setDoc(doc(db, 'usersPrivate', user.uid), {
     email: user.email || null,
     updatedAt: serverTimestamp()
   }, { merge: true });
+
+  // userId is a legacy field name retained for database compatibility.
+  // It is created once from the Firebase Auth UID and never changed afterwards.
   await setDoc(ref, {
     uid: user.uid,
-    userId: old.userId || makeUserId(user.uid),
+    userId: permanentUid,
     name,
     email: deleteField(),
     photoURL: old.photoURL || user.photoURL || null,
@@ -50,158 +50,128 @@ async function saveUserProfile(user, chosenName = '') {
   }, { merge: true });
 }
 
-getRedirectResult(auth)
-  .then(async result => {
-    if (result?.user) {
-      status('Google se sign in ho raha hai…');
-      await saveUserProfile(result.user);
-      status('Signed in!');
-    }
-  })
-  .catch(e => {
-    console.error('Redirect result error:', e);
-    if (e.code && e.code !== 'auth/no-auth-event') {
-      const msgs = {
-        'auth/account-exists-with-different-credential': 'Yeh email doosre provider se pehle se registered hai.',
-        'auth/popup-closed-by-user': ''
-      };
-      status(msgs[e.code] ?? (e.message || 'Google sign-in fail ho gaya.'), true);
-    }
-  });
+function setMode(next) {
+  mode = next === 'signup' ? 'signup' : 'login';
+  const loginTab = $('loginTab'), signupTab = $('signupTab'), nameField = $('nameField');
+  const submit = $('emailSubmitBtn'), toggle = $('modeToggle'), note = $('uidNote');
+  const title = $('authTitle'), subtitle = $('authSubtitle'), pwd = $('password');
+  const forgot = $('forgotPasswordBtn');
 
-onAuthStateChanged(auth, u => { if (u) location.href = redirectTo; });
-
-// Reset password mode UI
-if (isResetMode) {
-  const googleBtn = $('googleBtn');
-  const modeToggle = $('modeToggle');
-  const nameField = $('nameField');
-  const submitBtn = $('emailSubmitBtn');
-  const pwd = $('password');
-  if (googleBtn) googleBtn.hidden = true;
-  if (modeToggle) modeToggle.hidden = true;
-  if (nameField) nameField.hidden = true;
-  if (pwd) { pwd.placeholder = 'Not needed'; pwd.disabled = true; pwd.style.opacity = '0.5'; }
-  if (submitBtn) submitBtn.textContent = 'Send Reset Link';
-  const h1 = document.querySelector('.auth-card h1');
-  if (h1) h1.textContent = 'Reset Password';
-  const sub = document.querySelector('.auth-sub');
-  if (sub) sub.textContent = 'Enter your email to receive a reset link';
+  loginTab?.classList.toggle('active', mode === 'login');
+  signupTab?.classList.toggle('active', mode === 'signup');
+  loginTab?.setAttribute('aria-selected', String(mode === 'login'));
+  signupTab?.setAttribute('aria-selected', String(mode === 'signup'));
+  if (nameField) nameField.hidden = mode !== 'signup';
+  if (submit) submit.textContent = mode === 'signup' ? 'Create account' : 'Log in';
+  if (toggle) toggle.innerHTML = mode === 'signup' ? 'Already have an account? <strong>Log in</strong>' : 'New here? <strong>Create account</strong>';
+  if (note) note.classList.toggle('visible', mode === 'signup');
+  if (title) title.textContent = mode === 'signup' ? 'Create your account' : 'Welcome back';
+  if (subtitle) subtitle.textContent = mode === 'signup' ? 'Your permanent UID will be created automatically.' : 'Sign in to continue where you left off.';
+  if (pwd) pwd.autocomplete = mode === 'signup' ? 'new-password' : 'current-password';
+  if (forgot) forgot.hidden = mode === 'signup';
+  status('');
 }
 
-const googleBtn = $('googleBtn');
-if (googleBtn) {
-  googleBtn.addEventListener('click', async () => {
-    const provider = new GoogleAuthProvider();
-    provider.setCustomParameters({ prompt: 'select_account' });
-    status('Google sign-in khul raha hai…');
-    try {
-      const result = await signInWithPopup(auth, provider);
-      await saveUserProfile(result.user);
-      status('Signed in!');
-    } catch (e) {
-      console.warn('Popup failed, trying redirect:', e.code);
-      if (e.code === 'auth/popup-blocked' || e.code === 'auth/popup-closed-by-user' || e.code === 'auth/cancelled-popup-request') {
-        status('Google page pe redirect ho raha hai…');
-        try {
-          await signInWithRedirect(auth, provider);
-        } catch (redirectErr) {
-          console.error('Redirect also failed:', redirectErr);
-          status(redirectErr.message || 'Sign-in fail ho gaya.', true);
-        }
-      } else {
-        const msgs = {
-          'auth/account-exists-with-different-credential': 'Yeh email doosre provider se pehle se registered hai.',
-          'auth/network-request-failed': 'Network error. Internet connection check karo.'
-        };
-        status(msgs[e.code] ?? (e.message || 'Google sign-in fail ho gaya.'), true);
-      }
-    }
-  });
-}
-
-let mode = 'login';
-const modeToggle = $('modeToggle');
-if (modeToggle) {
-  modeToggle.addEventListener('click', () => {
-    mode = mode === 'login' ? 'signup' : 'login';
-    const submitBtn = $('emailSubmitBtn');
-    const nameField = $('nameField');
-    const pwd = $('password');
-    if (submitBtn) submitBtn.textContent = mode === 'login' ? 'Login' : 'Sign up';
-    modeToggle.textContent = mode === 'login' ? 'New here? Create account' : 'Already have an account? Login';
-    if (nameField) nameField.hidden = mode !== 'signup';
-    if (pwd) pwd.autocomplete = mode === 'login' ? 'current-password' : 'new-password';
-    status('');
-  });
-}
-
-// Forgot password handler
-const forgotBtn = $('forgotPasswordBtn');
-if (forgotBtn) {
-  forgotBtn.addEventListener('click', async () => {
-    const email = $('email').value.trim();
-    if (!email) return status('Email daalo pehle', true);
-    try {
-      await sendPasswordResetEmail(auth, email);
-      status('Reset link bhej diya! Email check karo ✉️');
-    } catch (err) {
-      console.error(err);
-      status(err.message || 'Reset link bhejne me dikkat aayi', true);
-    }
-  });
-}
-
-const emailForm = $('emailForm');
-if (emailForm) {
-  emailForm.addEventListener('submit', async e => {
-    e.preventDefault();
-    
-    // Handle reset password mode
-    if (isResetMode) {
-      const email = $('email').value.trim();
-      if (!email) return status('Email daalo pehle', true);
-      try {
-        await sendPasswordResetEmail(auth, email);
-        status('Reset link bhej diya! Email check karo ✉️');
-      } catch (err) {
-        console.error(err);
-        status(err.message || 'Reset link bhejne me dikkat aayi', true);
-      }
+async function handleGoogle() {
+  const provider = new GoogleAuthProvider();
+  provider.setCustomParameters({ prompt: 'select_account' });
+  status('Opening Google sign-in…');
+  try {
+    const result = await signInWithPopup(auth, provider);
+    await saveUserProfile(result.user);
+    status('Signed in. Redirecting…');
+  } catch (e) {
+    if (e.code === 'auth/popup-blocked' || e.code === 'auth/cancelled-popup-request') {
+      try { status('Opening Google sign-in…'); await signInWithRedirect(auth, provider); } catch (err) { status(err.message || 'Google sign-in failed.', true); }
       return;
     }
-    
-    const email = $('email').value.trim();
-    const password = $('password').value;
-    const name = $('fullName').value.trim();
-    if (!email || !password) return status('Email aur password dono chahiye.', true);
-    if (mode === 'signup' && password.length < 6) return status('Password kam se kam 6 characters ka hona chahiye.', true);
-    const btn = $('emailSubmitBtn');
-    if (btn) btn.disabled = true;
-    try {
-      if (mode === 'signup') {
-        const c = await createUserWithEmailAndPassword(auth, email, password);
-        if (name) await updateProfile(c.user, { displayName: name });
-        await saveUserProfile(c.user, name);
-      } else {
-        const c = await signInWithEmailAndPassword(auth, email, password);
-        await saveUserProfile(c.user);
-      }
-      status('Success! Redirecting…');
-    } catch (e) {
-      console.error(e);
-      const m = {
-        'auth/email-already-in-use': 'Email already registered.',
-        'auth/invalid-email': 'Email sahi format me daalo.',
-        'auth/weak-password': 'Password kam se kam 6 characters ka rakho.',
-        'auth/user-not-found': 'User nahi mila.',
-        'auth/wrong-password': 'Password galat hai.',
-        'auth/invalid-credential': 'Email ya password galat hai.'
-      };
-      status(m[e.code] || e.message || 'Kuch galat ho gaya.', true);
-    } finally {
-      const btn2 = $('emailSubmitBtn');
-      if (btn2) btn2.disabled = false;
+    const msgs = {
+      'auth/account-exists-with-different-credential': 'This email is already linked to another sign-in method.',
+      'auth/network-request-failed': 'Network error. Check your connection.'
+    };
+    status(msgs[e.code] || e.message || 'Google sign-in failed.', true);
+  }
+}
+
+$('googleBtn')?.addEventListener('click', handleGoogle);
+$('loginTab')?.addEventListener('click', () => setMode('login'));
+$('signupTab')?.addEventListener('click', () => setMode('signup'));
+$('modeToggle')?.addEventListener('click', () => setMode(mode === 'login' ? 'signup' : 'login'));
+
+$('forgotPasswordBtn')?.addEventListener('click', async () => {
+  const email = $('email')?.value.trim();
+  if (!email) return status('Enter your email first.', true);
+  try {
+    await sendPasswordResetEmail(auth, email);
+    status('Reset link sent. Check your email.');
+  } catch (err) {
+    status(err.message || 'Could not send reset link.', true);
+  }
+});
+
+$('emailForm')?.addEventListener('submit', async event => {
+  event.preventDefault();
+  if (isResetMode) {
+    const email = $('email')?.value.trim();
+    if (!email) return status('Enter your email first.', true);
+    try { await sendPasswordResetEmail(auth, email); status('Reset link sent. Check your email.'); }
+    catch (err) { status(err.message || 'Could not send reset link.', true); }
+    return;
+  }
+
+  const email = $('email')?.value.trim();
+  const password = $('password')?.value || '';
+  const name = $('fullName')?.value.trim() || '';
+  if (!email || !password) return status('Email and password are required.', true);
+  if (mode === 'signup' && !name) return status('Enter your name.', true);
+  if (mode === 'signup' && password.length < 6) return status('Password must be at least 6 characters.', true);
+
+  const btn = $('emailSubmitBtn');
+  if (btn) btn.disabled = true;
+  try {
+    if (mode === 'signup') {
+      const c = await createUserWithEmailAndPassword(auth, email, password);
+      if (name) await updateProfile(c.user, { displayName: name });
+      await saveUserProfile(c.user, name);
+    } else {
+      const c = await signInWithEmailAndPassword(auth, email, password);
+      await saveUserProfile(c.user);
     }
-  });
+    status('Success. Redirecting…');
+  } catch (e) {
+    const m = {
+      'auth/email-already-in-use': 'Email already registered.',
+      'auth/invalid-email': 'Enter a valid email.',
+      'auth/weak-password': 'Password is too weak.',
+      'auth/user-not-found': 'No account found for this email.',
+      'auth/wrong-password': 'Incorrect password.',
+      'auth/invalid-credential': 'Email or password is incorrect.'
+    };
+    status(m[e.code] || e.message || 'Something went wrong.', true);
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+});
+
+getRedirectResult(auth).catch(e => {
+  if (e.code && e.code !== 'auth/no-auth-event') status(e.message || 'Google sign-in failed.', true);
+});
+
+onAuthStateChanged(auth, user => {
+  if (user) location.href = redirectTo;
+  else setMode(isResetMode ? 'login' : 'login');
+});
+
+if (isResetMode) {
+  const google = $('googleBtn'), tabs = document.querySelector('.mode-tabs'), toggle = $('modeToggle');
+  const submit = $('emailSubmitBtn'), pwd = $('password'), title = $('authTitle'), subtitle = $('authSubtitle'), forgot = $('forgotPasswordBtn'), note = $('uidNote');
+  if (google) google.hidden = true;
+  if (tabs) tabs.hidden = true;
+  if (toggle) toggle.hidden = true;
+  if (pwd) { pwd.hidden = true; pwd.required = false; }
+  if (forgot) forgot.hidden = true;
+  if (note) note.classList.remove('visible');
+  if (submit) submit.textContent = 'Send reset link';
+  if (title) title.textContent = 'Reset password';
+  if (subtitle) subtitle.textContent = 'Enter your email to receive a password reset link.';
 }
