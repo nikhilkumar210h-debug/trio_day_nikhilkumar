@@ -1,0 +1,11 @@
+name = "trio-media-upload"
+main = "media-upload.js"
+compatibility_date = "2026-08-21"
+
+[vars]
+FIREBASE_PROJECT_ID = "nkm-ind"
+CLOUDINARY_CLOUD_NAME = "vyhglthg"
+CLOUDINARY_API_KEY = "REPLACE_WITH_CLOUDINARY_API_KEY"
+
+[secrets]
+required = ["CLOUDINARY_API_SECRET"]
