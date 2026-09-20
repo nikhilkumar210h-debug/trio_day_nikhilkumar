@@ -990,6 +990,12 @@ export default {
       return json({ error: 'Rate limit exceeded', retryAfter: rateLimit.retryAfter }, 429, origin);
     }
 
+    // Reject oversized bodies before parsing.
+    const contentLength = Number(request.headers.get('Content-Length') || 0);
+    if (contentLength > 8192) {
+      return json({ error: 'Request body too large' }, 413, origin);
+    }
+
     // Parse body
     let body = {};
     try {
