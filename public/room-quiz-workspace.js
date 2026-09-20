@@ -25,7 +25,7 @@ export async function mountSharedQuizWorkspace(root, { db, roomId, activity, me,
   }
 
   const ref = doc(db, 'rooms', roomId, 'state', 'main');
-  const defaultState = { votes: {}, revealed: false, passed: false, version: 0 };
+  const defaultState = { votes: {}, revealed: false, passed: false, tie: false, version: 0 };
 
   root.innerHTML = '<div class="room-forge-head"><div class="room-forge-title"><strong>' +
     (mode === 'learn' ? 'Team Learn Board' : 'Team Puzzle Board') +
@@ -59,8 +59,10 @@ export async function mountSharedQuizWorkspace(root, { db, roomId, activity, me,
     const voteCounts = [0,1,2,3].map(i => Object.values(state.votes || {}).filter(v => Number(v) === i).length);
     const myVote = Object.prototype.hasOwnProperty.call(state.votes || {}, me.uid) ? Number(state.votes[me.uid]) : null;
     const totalVotes = Object.keys(state.votes || {}).length;
-    const requiredVotes = participantCount();
-    const majorityIndex = voteCounts.reduce((best, count, i) => count > voteCounts[best] ? i : best, 0);
+    const requiredVotes = Math.min(2, participantCount());
+    const highest = Math.max(...voteCounts);
+    const leaders = voteCounts.map((count,i)=>count===highest?i:-1).filter(i=>i>=0);
+    const majorityIndex = leaders.length===1 ? leaders[0] : -1;
     const lesson = mode === 'learn' ? '<div class="forge-lesson">' + esc(cfg.lesson || 'Learn the key idea, then discuss it together.') + '</div>' : '';
 
     const options = cfg.options.map((option, index) => {
@@ -77,9 +79,11 @@ export async function mountSharedQuizWorkspace(root, { db, roomId, activity, me,
 
     let resultText = 'Discuss, then cast your vote.';
     if (state.revealed) {
-      resultText = majorityIndex === cfg.correct
-        ? 'Team call was correct ✓'
-        : 'Team call missed it. Reset the vote and try again.';
+      resultText = state.tie
+        ? 'Tie vote — discuss and vote again.'
+        : (majorityIndex === cfg.correct
+          ? 'Team call was correct ✓'
+          : 'Team call missed it. Reset the vote and try again.');
     } else if (totalVotes >= requiredVotes) {
       resultText = 'Everyone voted. Reveal the team decision.';
     } else if (myVote !== null) {
@@ -111,12 +115,12 @@ export async function mountSharedQuizWorkspace(root, { db, roomId, activity, me,
       const counts = [0,1,2,3].map(i => Object.values(latestVotes).filter(v => Number(v) === i).length);
       const winning = counts.reduce((best, count, i) => count > counts[best] ? i : best, 0);
       const ok = winning === cfg.correct;
-      await write({ revealed: true, passed: ok, passedBy: me.uid, passedAtMs: Date.now() });
+      await write({ revealed: true, tie: leaders.length > 1, passed: ok, passedBy: me.uid, passedAtMs: Date.now() });
       if (ok) onStateChange?.({ passed: true });
     });
 
     body.querySelector('#sharedQuizReset')?.addEventListener('click', async () => {
-      await write({ votes: {}, revealed: false, passed: false });
+      await write({ votes: {}, revealed: false, passed: false, tie: false });
     });
 
     const last = root.querySelector('#sharedQuizLast');
