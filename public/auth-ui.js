@@ -67,7 +67,10 @@ function listenForNotifications(user) {
       initial = false;
     }, () => { }
   ));
-  button.addEventListener('click', () => { location.href = 'notifications.html'; });
+  if (button.__trioNotificationClick) button.removeEventListener('click', button.__trioNotificationClick);
+  const notificationClick = () => { location.href = 'notifications.html'; };
+  button.__trioNotificationClick = notificationClick;
+  button.addEventListener('click', notificationClick);
 }
 
 // ── Chat unread helpers ──────────────────────────────────────────────────────
@@ -191,6 +194,11 @@ function listenForAlerts(user) {
   window.addEventListener('trio-chat-unread-change', onUnreadEvent);
   notificationUnsubs.push(() => window.removeEventListener('trio-chat-unread-change', onUnreadEvent));
 }
+
+window.addEventListener('trio-header-ready', () => {
+  const user = auth.currentUser;
+  if (user && !location.pathname.endsWith('notifications.html')) listenForNotifications(user);
+});
 
 // ── Auth state → render header chip ─────────────────────────────────────────
 onAuthStateChanged(auth, async user => {
