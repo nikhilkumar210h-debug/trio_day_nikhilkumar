@@ -295,6 +295,7 @@ export async function joinTask(taskId, uid, profile) {
 
   trioCache.invalidatePrefix('ctasks_');
   trioCache.invalidatePrefix('communityTasks_');
+  trioCache.invalidate(`joined_tasks_${uid}`);
   return true;
 }
 
