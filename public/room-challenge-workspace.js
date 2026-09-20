@@ -1,4 +1,4 @@
-import { doc, setDoc, onSnapshot, runTransaction } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
+import { collection, doc, setDoc, onSnapshot, runTransaction } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 import { getChallengeRounds } from './forge-interactions.js';
 
 const esc = value => {
@@ -23,6 +23,7 @@ export async function mountSharedChallengeWorkspace(root, { db, roomId, activity
     scores: {},
     answered: {},
     startedAtMs: null,
+    roundStartedAtMs: null,
     roundEndsAtMs: null,
     finished: false
   };
@@ -33,6 +34,8 @@ export async function mountSharedChallengeWorkspace(root, { db, roomId, activity
 
   let current = base;
   let timerId = null;
+  let memberNames = {};
+  let stopMembers = null;
 
   const write = async patch => {
     await runTransaction(db, async transaction => {
@@ -77,6 +80,7 @@ export async function mountSharedChallengeWorkspace(root, { db, roomId, activity
             ...latest,
             round: nextRound,
             answered: {},
+            roundStartedAtMs: Date.now(),
             roundEndsAtMs: Date.now() + roundSeconds * 1000
           },
           updatedBy: me.uid,
@@ -92,7 +96,10 @@ export async function mountSharedChallengeWorkspace(root, { db, roomId, activity
   const renderScores = scores => {
     const rows = Object.entries(scores || {})
       .sort((a, b) => Number(b[1]) - Number(a[1]))
-      .map(([uid, score]) => '<div class="room-forge-score-row"><span>' + (uid === me.uid ? 'You' : 'Player') + '</span><strong>' + Number(score || 0) + '</strong></div>')
+      .map(([uid, score]) => {
+        const label = uid === me.uid ? 'You' : (memberNames[uid] || 'Player');
+        return '<div class="room-forge-score-row"><span>' + esc(label) + '</span><strong>' + Number(score || 0) + '</strong></div>';
+      })
       .join('');
     return rows || '<div class="room-forge-note">Scores appear when players answer.</div>';
   };
@@ -108,7 +115,8 @@ export async function mountSharedChallengeWorkspace(root, { db, roomId, activity
         '<div class="room-forge-actions"><button class="room-forge-btn room-forge-btn--primary" id="startChallenge" '+(me.uid===hostUid?'':'disabled')+'>'+(me.uid===hostUid?'Start challenge':'Waiting for host')+'</button></div>';
       body.querySelector('#startChallenge').onclick = async () => {
         if (me.uid !== hostUid) return;
-        await write({ startedAtMs: Date.now(), roundEndsAtMs: Date.now() + roundSeconds * 1000, round: 0, scores: {}, answered: {}, finished: false });
+        const now = Date.now();
+        await write({ startedAtMs: now, roundStartedAtMs: now, roundEndsAtMs: now + roundSeconds * 1000, round: 0, scores: {}, answered: {}, finished: false });
       };
     } else if (state.finished) {
       body.innerHTML =
@@ -140,10 +148,16 @@ export async function mountSharedChallengeWorkspace(root, { db, roomId, activity
             if (!snap.exists()) return;
             const latest = { ...base, ...(snap.data().state || {}) };
             const answered = { ...(latest.answered || {}) };
-            if (latest.finished || answered[me.uid] || Date.now() >= Number(latest.roundEndsAtMs || 0)) return;
+            const now = Date.now();
+            if (latest.finished || answered[me.uid] || now >= Number(latest.roundEndsAtMs || 0)) return;
 
             const scores = { ...(latest.scores || {}) };
-            scores[me.uid] = Number(scores[me.uid] || 0) + (selected === round.a ? 1 : 0);
+            if (selected === round.a) {
+              const roundStart = Number(latest.roundStartedAtMs || latest.startedAtMs || now);
+              const elapsed = Math.max(0, now - roundStart);
+              const speedBonus = elapsed <= (roundSeconds * 1000 * 0.5) ? 2 : 1;
+              scores[me.uid] = Number(scores[me.uid] || 0) + speedBonus;
+            }
             answered[me.uid] = true;
 
             transaction.set(ref, {
@@ -177,6 +191,19 @@ export async function mountSharedChallengeWorkspace(root, { db, roomId, activity
     }
   };
 
+  stopMembers = onSnapshot(
+    collection(db, 'rooms', roomId, 'members'),
+    snap => {
+      memberNames = {};
+      snap.docs.forEach(d => {
+        const data = d.data() || {};
+        if (d.id) memberNames[d.id] = String(data.name || 'Player').slice(0, 50);
+      });
+      if (current) render(current);
+    },
+    () => {}
+  );
+
   const unsubscribe = onSnapshot(ref, async snap => {
     if (!snap.exists()) {
       await setDoc(ref, {
@@ -199,5 +226,6 @@ export async function mountSharedChallengeWorkspace(root, { db, roomId, activity
   return () => {
     if (timerId) clearInterval(timerId);
     unsubscribe();
+    stopMembers?.();
   };
 }
