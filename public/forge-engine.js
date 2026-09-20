@@ -1,4 +1,4 @@
-import{getBuildConfig}from'./activity-catalog.js';
+import{getBuildConfig}from'./activity-catalog.js?v=20260920-audit2';
 const esc=s=>{const d=document.createElement('div');d.textContent=String(s??'');return d.innerHTML};
 export function renderBuildWorkspace(root,activity,onPass){
  const selectedMechanic=activity.interaction?.kind==='build' ? String(activity.interaction.mechanic||'') : '';
