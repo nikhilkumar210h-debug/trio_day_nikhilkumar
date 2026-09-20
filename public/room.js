@@ -25,6 +25,13 @@ function clearActiveRoom(){
 function blockRoomNavigation(){
   document.addEventListener('click',event=>{
     const link=event.target.closest?.('a[href]');
+    const notif=event.target.closest?.('#notificationButton');
+    if(notif){
+      event.preventDefault();
+      event.stopPropagation();
+      showToast('Leave the room before opening notifications.','warn');
+      return;
+    }
     if(!link)return;
     const raw=link.getAttribute('href')||'';
     if(!raw || raw.startsWith('#') || raw.startsWith('mailto:') || raw.startsWith('tel:'))return;
