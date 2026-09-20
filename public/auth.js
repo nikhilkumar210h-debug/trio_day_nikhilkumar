@@ -153,13 +153,25 @@ $('emailForm')?.addEventListener('submit', async event => {
   }
 });
 
-getRedirectResult(auth).catch(e => {
-  if (e.code && e.code !== 'auth/no-auth-event') status(e.message || 'Google sign-in failed.', true);
-});
+let redirectProfileReady = Promise.resolve();
+redirectProfileReady = getRedirectResult(auth)
+  .then(async result => {
+    if (result?.user) {
+      await saveUserProfile(result.user);
+      status('Signed in. Redirecting…');
+    }
+  })
+  .catch(e => {
+    if (e.code && e.code !== 'auth/no-auth-event') status(e.message || 'Google sign-in failed.', true);
+  });
 
-onAuthStateChanged(auth, user => {
-  if (user) location.href = redirectTo;
-  else setMode(isResetMode ? 'login' : 'login');
+onAuthStateChanged(auth, async user => {
+  if (user) {
+    await redirectProfileReady;
+    location.href = redirectTo;
+  } else {
+    setMode(isResetMode ? 'login' : 'login');
+  }
 });
 
 if (isResetMode) {
