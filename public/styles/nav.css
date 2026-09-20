@@ -17,7 +17,9 @@
   z-index:140;overflow:hidden;transition:width .22s ease,box-shadow .22s ease;
 }
 body.nkm-nav-expanded .nkm-rail{width:236px;box-shadow:18px 0 48px rgba(2,6,23,.28)}
-.nkm-rail-brand-row{display:flex;align-items:center;justify-content:center;gap:7px;min-height:46px}
+.nkm-rail-brand-row{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:7px;min-height:92px}
+body.nkm-nav-expanded .nkm-rail-brand-row{flex-direction:row;justify-content:space-between;min-height:46px}
+body.nkm-nav-expanded .nkm-rail-brand{width:auto;flex:1}
 .nkm-rail-brand{width:40px;height:40px;flex:none;display:grid;place-items:center;padding:2px;text-decoration:none;color:var(--color-ink);border-radius:13px}
 .nkm-rail-brand img{width:36px;height:36px;border-radius:11px;object-fit:cover;display:block;box-shadow:0 6px 18px rgba(0,0,0,.28)}
 .nkm-rail-brand-copy{display:none}
