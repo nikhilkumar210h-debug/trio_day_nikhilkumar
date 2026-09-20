@@ -96,7 +96,7 @@ service cloud.firestore {
         allow create: if owner(moodUid) && canReadPost(postId)
           && request.resource.data.uid == request.auth.uid
           && request.resource.data.mood is string
-          && request.resource.data.mood in ['😍','🔥','💯','🎉'];
+          && request.resource.data.mood in ['❤️','😂','😍','🔥','💯','🎉'];
         allow delete: if owner(moodUid);
         // Mood changes are modelled as delete/create from the client. Disallow
         // arbitrary in-place updates so users cannot inject extra fields.
