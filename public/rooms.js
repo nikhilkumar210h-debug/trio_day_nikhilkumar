@@ -3,7 +3,7 @@ import{onAuthStateChanged}from'https://www.gstatic.com/firebasejs/10.13.0/fireba
 import{collection,query,where,limit,onSnapshot,getDoc,doc,getDocs,writeBatch,serverTimestamp}from'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 import{escapeHtml as esc}from'./utils.js';
 import{activityCardHtml,ACTIVITY_TYPES,normalizeActivityType}from'./activity-ui.js';
-import{activeCatalogActivities}from'./activity-catalog.js';
+import{activeCatalogActivities}from'./activity-catalog.js?v=20260920-audit2';
 const $=id=>document.getElementById(id);
 let me=null,profile={},selectedActivity=null,capacity=3,filterActivityId=new URLSearchParams(location.search).get('taskId');
 function msg(t,e=false){$('createStatus').textContent=t||'';$('createStatus').classList.toggle('error',e)}
