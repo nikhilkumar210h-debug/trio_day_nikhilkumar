@@ -176,8 +176,8 @@ async function openProfileMenu(userData) {
         <button type="button" class="profile-menu-item" data-action="password">
           <span>🔐</span> Account Security
         </button>
-        <button type="button" class="profile-menu-item" data-action="leaderboard">
-          <span>🏆</span> Leaderboard
+        <button type="button" class="profile-menu-item" data-action="theme">
+          <span>🎨</span> Theme
         </button>
         <a class="profile-menu-item" href="privacy.html">
           <span>🔒</span> Privacy Policy
@@ -234,6 +234,29 @@ async function openProfileMenu(userData) {
           const { showToast } = await import('./ui/toast.js');
           showToast(err.message, 'error');
         }
+      } else if (action === 'theme') {
+        const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+        const themeSheet = createSheet({
+          title: 'Theme',
+          content: `
+            <div class="theme-choice-list">
+              <button type="button" class="profile-menu-item theme-choice ${currentTheme === 'dark' ? 'is-selected' : ''}" data-theme-choice="dark"><span>🌙</span><span>Dark</span><small>Deep, focused UI</small></button>
+              <button type="button" class="profile-menu-item theme-choice ${currentTheme === 'light' ? 'is-selected' : ''}" data-theme-choice="light"><span>☀️</span><span>Light</span><small>Bright, clean UI</small></button>
+              <button type="button" class="profile-menu-item theme-choice ${!window.localStorage.getItem('trio-theme') ? 'is-selected' : ''}" data-theme-choice="system"><span>◐</span><span>System</span><small>Follow device setting</small></button>
+            </div>`
+        });
+        themeSheet.open();
+        themeSheet.sheet?.querySelectorAll('[data-theme-choice]').forEach(choice => {
+          choice.addEventListener('click', () => {
+            const value = choice.dataset.themeChoice;
+            try {
+              if (value === 'system') localStorage.removeItem('trio-theme');
+              else window.TrioTheme?.applyTheme(value);
+              if (value === 'system') window.TrioTheme?.initTheme();
+            } catch {}
+            themeSheet.close();
+          });
+        });
       } else if (action === 'install') {
         // Trigger install prompt
         const event = new CustomEvent('app-install-prompt');
