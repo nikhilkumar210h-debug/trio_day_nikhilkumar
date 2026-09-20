@@ -15,3 +15,11 @@
 
 /* Activity card in room sidebar */
 .room-activity .activity-card{margin:0;padding:12px} 
+
+
+/* Compact room workspace */
+.room-workspace{min-height:0}
+.workspace-placeholder{min-height:120px!important;padding:18px!important}
+.room-forge-workspace{margin-top:10px;border-radius:17px}
+.room-forge-head{padding:10px 12px}
+.room-forge-body{padding:11px}
