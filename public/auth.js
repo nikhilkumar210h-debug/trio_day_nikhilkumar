@@ -35,7 +35,7 @@ function setBusy(busy, label = '') {
 }
 
 async function saveUserProfile(user, chosenName = '') {
-  const [{ doc, setDoc, serverTimestamp, getDoc, getDocs, query, where, limit, deleteField }, { db }] = await Promise.all([
+  const [{ collection, doc, setDoc, serverTimestamp, getDoc, getDocs, query, where, limit, deleteField }, { db }] = await Promise.all([
     import('https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js'),
     import('./firebase-init.js')
   ]);
