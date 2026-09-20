@@ -4,7 +4,7 @@ import{doc,getDoc}from'https://www.gstatic.com/firebasejs/10.13.0/firebase-fires
 import{activeCatalogActivities}from'./activity-catalog.js?v=20260919-catalog4';
 import{activityTypeInfo}from'./activity-ui.js';
 import{renderBuildWorkspace}from'./forge-engine.js?v=20260919-engine4';
-import{getInteractiveConfig,getChallengeRounds}from'./forge-interactions.js?v=20260919-interactions3';
+import{getInteractiveConfig,getChallengeRounds,getGameRounds}from'./forge-interactions.js?v=20260919-interactions4';
 import{completeTask as completeCommunityTask}from'./gamification/community-tasks.js?v=20260919-community5';
 import{workerPost}from'./gamification/worker-config.js';
 import{showAchievement}from'./ui/achievements.js';
@@ -115,7 +115,7 @@ function renderChallengeWorkspace(root){
  const customRounds=Array.isArray(activity.interaction?.rounds) && activity.interaction.rounds.length===5
    ? activity.interaction.rounds.map(r=>({q:String(r.q||''),o:Array.isArray(r.o)?r.o.slice(0,4):[],a:Number(r.a)||0}))
    : null;
- const rounds=customRounds || getChallengeRounds((Number(String(activity.engineId||activity.id).replace(/\\D/g,''))||0)%10,5);
+ const rounds=customRounds || getChallengeRounds(String(activity.id||''),5);
  let idx=0,score=0;
  const answers=[];
  root.hidden=false;
@@ -151,11 +151,39 @@ function renderChallengeWorkspace(root){
  paint();
 }
 function renderGameWorkspace(root){
+ const rounds=getGameRounds(activity.id)||getChallengeRounds(0,5);
+ let idx=0,score=0;
  root.hidden=false;
- root.innerHTML='<div class="forge-workspace-head"><div><h3>Room game</h3><p>This activity is designed for people to play together in a live room.</p></div><span class="forge-pill">MULTI-PLAYER</span></div><div class="forge-lesson">Open a room, invite people, and play the rounds together. Your room becomes the shared game board.</div>';
- setPassed(false);
+ function paint(){
+   const q=rounds[idx];
+   root.innerHTML='<div class="forge-workspace-head"><div><h3>Quick game</h3><p>Five playable rounds. Finish the game, then leave a short reflection.</p></div><span class="forge-pill">PLAY</span></div><div class="forge-scorebar"><span>Round '+(idx+1)+' / '+rounds.length+'</span><strong>Score '+score+'</strong></div><div class="forge-quiz"><div class="forge-quiz-question">'+esc(q.q)+'</div><div class="forge-quiz-options">'+q.o.map((o,i)=>'<button type="button" class="forge-option" data-answer="'+i+'">'+esc(o)+'</button>').join('')+'</div></div><div class="forge-result"></div>';
+   const result=root.querySelector('.forge-result');
+   root.querySelectorAll('[data-answer]').forEach(btn=>btn.onclick=()=>{
+     const answer=Number(btn.dataset.answer);
+     root.querySelectorAll('[data-answer]').forEach(x=>x.disabled=true);
+     if(answer===q.a){score++;btn.classList.add('correct');result.textContent='Correct.';result.className='forge-result ok'}
+     else{btn.classList.add('wrong');result.textContent='Not quite — keep going.';result.className='forge-result bad'}
+     const next=document.createElement('button');next.type='button';next.className='forge-next';next.textContent=idx===rounds.length-1?'Finish game':'Next round';result.insertAdjacentElement('afterend',next);
+     next.onclick=()=>{
+       if(idx<rounds.length-1){idx++;paint();return}
+       result.textContent='Final score: '+score+' / '+rounds.length+' · Explain one choice to finish.';result.className=score>=3?'forge-result ok':'forge-result bad';
+       const proof=document.createElement('div');proof.className='forge-proof';
+       proof.innerHTML='<label class="forge-proof-label">What helped you solve the game?</label><textarea id="gameProof" maxlength="500" rows="3" placeholder="Explain one pattern, rule or strategy…"></textarea><div class="forge-proof-footer"><span id="gameProofCount">0 / 500</span><button type="button" class="forge-check" id="verifyGame">Finish game</button></div>';
+       root.appendChild(proof);
+       const input=proof.querySelector('#gameProof'),count=proof.querySelector('#gameProofCount');
+       input.addEventListener('input',()=>{count.textContent=input.value.trim().length+' / 500'});
+       proof.querySelector('#verifyGame').onclick=()=>{
+         const proofText=input.value.trim();
+         if(score<3){result.textContent='You need at least 3 correct rounds. Replay the game to try again.';result.className='forge-result bad';return}
+         if(proofText.length<20){result.textContent='Add a little more detail (at least 20 characters).';result.className='forge-result bad';input.focus();return}
+         activityEvidence={score,proofText};setPassed(true,activityEvidence);
+         result.textContent='Game complete — your score and reflection are recorded.';result.className='forge-result ok';
+       };
+     };
+   });
+ }
+ paint();
 }
-
 function render(){
  const type=activityTypeInfo(activity);
  $('activityStatus').textContent='';$('activityHero').hidden=false;$('activityGrid').hidden=false;
