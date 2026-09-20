@@ -39,7 +39,7 @@ function pathKey() {
   if (p === 'learn.html') return 'learn';
   if (p === 'puzzle.html' || p === 'activity.html') return 'puzzle';
   if (p === 'challenge.html' || p === 'game.html') return 'challenge';
-  if (p === 'profile.html') return 'profile';
+  if (p === 'profile.html') return 'you';
   return 'today';
 }
 
@@ -56,12 +56,12 @@ function createHandler() {
 }
 
 function isExpanded() {
-  return localStorage.getItem('trio_nav_expanded') === '1';
+  return localStorage.getItem('trio_nav_expanded_v2') === '1';
 }
 
 function setExpanded(expanded, rail, button) {
   document.body.classList.toggle('nkm-nav-expanded', expanded);
-  localStorage.setItem('trio_nav_expanded', expanded ? '1' : '0');
+  localStorage.setItem('trio_nav_expanded_v2', expanded ? '1' : '0');
   rail?.setAttribute('data-expanded', expanded ? 'true' : 'false');
   button?.setAttribute('aria-expanded', expanded ? 'true' : 'false');
   if (button) button.title = expanded ? 'Collapse navigation' : 'Expand navigation';
