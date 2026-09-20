@@ -6,10 +6,10 @@ import{activityTypeInfo}from'./activity-ui.js';
 import{renderBuildWorkspace}from'./forge-engine.js?v=20260919-engine4';
 import{getInteractiveConfig,getChallengeRounds}from'./forge-interactions.js?v=20260919-interactions3';
 import{completeTask as completeCommunityTask}from'./gamification/community-tasks.js?v=20260919-community5';
-import{awardXp}from'./gamification/xp-levels.js';
 import{workerPost}from'./gamification/worker-config.js';
 import{showAchievement}from'./ui/achievements.js';
 import{escapeHtml as esc}from'./utils.js';
+import{workerPost}from'./gamification/worker-config.js';
 
 const params=new URLSearchParams(location.search);
 const id=params.get('id');
@@ -274,28 +274,18 @@ $('completeBtn').onclick=async()=>{
       award=result?.award||null;
     }else{
       const cycleKey=activity.id+'_'+activity.startAtMs;
-      const xp=activity.difficulty==='Hard'?60:activity.difficulty==='Medium'?40:25;
+      const completionEvidence=activityEvidence || {};
       try{
-        const result=await workerPost('/gamification/complete-catalog',{
+        award=await workerPost('/gamification/complete-catalog',{
           activityId:activity.id,
           cycleKey,
-          evidence:activityEvidence
+          evidence:completionEvidence
         },me);
-        completionAlready=!!result?.already;
-        award=result?.award||null;
-        if(!completionAlready){
-          showAchievement({
-            title:activity.title,
-            subtitle:'+'+xp+' XP',
-            icon:activity.icon||'🎯',
-            leveledUp:award?.leveledUp,
-            level:award?.level,
-            badges:award?.badgesEarned||[]
-          });
-        }
-      }catch(catalogErr){
-        throw catalogErr;
+      }catch(workerErr){
+        throw workerErr;
       }
+      completionAlready=!!award?.already;
+    }
     }
     if(timer){clearInterval(timer);timer=null;timerEndsAt=0;}
     const earnedXp=Number(activity.xpReward)||(activity.difficulty==='Hard'?60:activity.difficulty==='Medium'?40:25);
