@@ -61,7 +61,16 @@ async function watchInbox() {
   // Efficient: get peerIds from cached following/followers (no full users scan), limit 20 most recent via one-time preview fetches
   const following = trioCache.get(`following_ids_${currentUser.uid}`) || [];
   const followersSnap = trioCache.get(`followers_ids_${currentUser.uid}`) || [];
-  let peerIds = [...new Set([...following, ...followersSnap])].slice(0,40);
+  // Profile cache normally provides follower IDs; fall back to the authoritative subcollection when cold.
+  const followerIds = followersSnap.length ? followersSnap : await (async()=>{
+    try {
+      const snap = await getDocs(collection(db, 'users', currentUser.uid, 'followers'));
+      const ids = snap.docs.map(d => d.id).filter(id => id !== currentUser.uid).slice(0, 100);
+      trioCache.set(`followers_ids_${currentUser.uid}`, ids, trioCache.TTL.SHORT);
+      return ids;
+    } catch { return []; }
+  })();
+  let peerIds = [...new Set([...following, ...followerIds])].slice(0,40);
   if (!peerIds.length) {
     // fallback: use users list limited to 20 not current
     peerIds = users.filter(u=>u.uid!==currentUser.uid).slice(0,20).map(u=>u.uid);
