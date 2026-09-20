@@ -26,7 +26,7 @@ function pathKey() {
   if (p === 'all-users.html') return 'discover';
   if (p === 'tasks.html' || p === 'task-create.html' || p === 'task-detail.html' || p === 'leaderboard.html' || p === 'admin-tasks.html') return 'do';
   if (p === 'chat.html' || p === 'private-chat.html') return 'chat';
-  if (p === 'profile.html' || p === 'task-create.html') return 'you';
+  if (p === 'profile.html') return 'you';
   return 'today';
 }
 
@@ -51,7 +51,7 @@ export function renderNav() {
     } else {
       row.querySelectorAll('.nav-btn').forEach(el => el.classList.toggle('active', el.dataset.nav === active));
     }
-  } else if (!document.querySelector('.nkm-create-fab')) {
+  } else if (!document.querySelector('.bottom-nav')) {
     // Page is missing bottom-nav markup (e.g., Forge lanes) — inject it
     const nav = document.createElement('nav');
     nav.className = 'bottom-nav';
