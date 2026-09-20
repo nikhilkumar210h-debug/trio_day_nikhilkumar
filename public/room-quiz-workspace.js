@@ -60,7 +60,7 @@ export async function mountSharedQuizWorkspace(root, { db, roomId, activity, me,
     const myVote = Object.prototype.hasOwnProperty.call(state.votes || {}, me.uid) ? Number(state.votes[me.uid]) : null;
     const myProof = String(state.proofs?.[me.uid] || '');
     const totalVotes = Object.keys(state.votes || {}).length;
-    const requiredVotes = Math.min(2, participantCount());
+    const requiredVotes = participantCount();
     const highest = Math.max(...voteCounts);
     const leaders = voteCounts.map((count,i)=>count===highest?i:-1).filter(i=>i>=0);
     const majorityIndex = leaders.length===1 ? leaders[0] : -1;
@@ -83,7 +83,7 @@ export async function mountSharedQuizWorkspace(root, { db, roomId, activity, me,
       resultText = state.tie
         ? 'Tie vote — discuss and vote again.'
         : (majorityIndex === cfg.correct
-          ? (Object.keys(state.proofs || {}).length >= Math.min(2, participantCount())
+          ? (Object.keys(state.proofs || {}).length >= participantCount()
             ? (mode === 'learn' ? 'Teach-back complete ✓' : 'Deduction chain complete ✓')
             : (mode === 'learn' ? 'Correct call. Add a teach-back note.' : 'Correct call. Add a deduction note.'))
           : 'Team call missed it. Vote again.');
@@ -117,7 +117,7 @@ export async function mountSharedQuizWorkspace(root, { db, roomId, activity, me,
     body.querySelector('#sharedQuizReveal')?.addEventListener('click', async () => {
       const latestVotes = current.votes || {};
       const total = Object.keys(latestVotes).length;
-      const minVotes = Math.min(2, participantCount());
+      const minVotes = participantCount();
       if (total < minVotes) return;
       const counts = [0,1,2,3].map(i => Object.values(latestVotes).filter(v => Number(v) === i).length);
       const highest = Math.max(...counts);
@@ -135,7 +135,7 @@ export async function mountSharedQuizWorkspace(root, { db, roomId, activity, me,
       const text=String(input?.value||'').trim();
       if(text.length<20){ if(input) input.focus(); return; }
       const proofs={...(current.proofs||{}),[me.uid]:text};
-      const needed=Math.min(2,participantCount());
+      const needed=participantCount();
       await write({proofs,passed:Object.keys(proofs).length>=needed,passedBy:me.uid,passedAtMs:Date.now()});
       if(Object.keys(proofs).length>=needed) onStateChange?.({passed:true});
     });
