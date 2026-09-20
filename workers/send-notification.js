@@ -391,6 +391,12 @@ async function verifyActionExists(projectId, accessToken, actorUid, targetUid, t
     return !!(await fsGet(projectId, accessToken, `users/${actorUid}/following/${targetUid}`));
   }
 
+  if (type === 'room_invite') {
+    if (!data.roomId) return false;
+    const invite = await fsGet(projectId, accessToken, `rooms/${data.roomId}/invites/${targetUid}`);
+    return !!(invite && invite.hostUid === actorUid && invite.targetUid === targetUid && invite.status === 'pending');
+  }
+
   if (type === 'message') {
     const chatId = [actorUid, targetUid].sort().join('_');
     const rows = await fsRunQuery(projectId, accessToken, {
