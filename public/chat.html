@@ -12,7 +12,7 @@
 <noscript><link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
  <style>:root{--primary:#6366f1;--bg:#0a0f1a;--surface:#141b2e;--ink:#f1f5f9;--border:rgba(148,163,184,.12)}*{box-sizing:border-box}html{scroll-behavior:smooth;background:var(--color-bg)}body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif}.tricolor-strip{height:3px;display:flex;position:fixed;inset:0 0 auto;z-index:200}.tricolor-strip span{flex:1}.tricolor-strip span:nth-child(1){background:linear-gradient(90deg,#ff9933,#ff7700)}.tricolor-strip span:nth-child(2){background:#fff}.tricolor-strip span:nth-child(3){background:linear-gradient(90deg,#128807,#0a6305)}.topbar{position:sticky;top:3px;z-index:100;background:var(--color-bg-elevated);border-bottom:1px solid var(--border)}.chat-main{width:min(720px,100%);margin:auto;padding:16px}.nkm-chat-head{margin-bottom:14px}.nkm-chat-head h1{font-size:22px;font-weight:800;letter-spacing:-.02em;margin:0}.nkm-chat-head p{font-size:12px;color:var(--color-ink-muted);margin:2px 0 0}.bottom-nav{position:fixed;left:0;right:0;bottom:0;background:var(--color-bg-elevated);backdrop-filter:blur(18px);border-top:1px solid rgba(148,163,184,.12);z-index:55;padding-bottom:env(safe-area-inset-bottom)}.nav-row{width:min(520px,100%);margin:auto;display:grid;grid-template-columns:1fr 1fr 72px 1fr 1fr;gap:2px;padding:6px 6px 4px;align-items:end}.nav-btn{padding:6px 2px 4px;border-radius:12px;color:var(--color-ink-dim);font-size:10px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;gap:2px;min-height:44px;display:flex;flex-direction:column;align-items:center;justify-content:center}.nav-btn.active{color:var(--color-primary-text);background:rgba(99,102,241,.10)}.nav-btn--create{background:linear-gradient(135deg,#4f46e5 0%,#4338ca 100%);color:#fff;border:1px solid rgba(255,255,255,.08);border-radius:16px;height:48px;margin-bottom:4px;box-shadow:0 4px 12px rgba(67,56,202,.28);gap:0}.nav-btn--create .nav-icon svg{stroke:#fff}</style>  <link rel="stylesheet" href="styles/tokens.css">  <link rel="stylesheet" href="styles/skeleton.css">  <link rel="stylesheet" href="styles/sheet.css">  <link rel="stylesheet" href="styles/nav.css">  <link rel="stylesheet" href="styles/header.css">  <link rel="stylesheet" href="styles/components.css">  <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="styles/polish.css?v=3">
-<link rel="stylesheet" href="chat.css?v=33">
+<link rel="stylesheet" href="chat.css?v=34">
 <link rel="manifest" href="manifest.json">
 </head>
 <body class="chat-page">
@@ -26,7 +26,7 @@
 <main class="chat-main nkm-chat">
   <div class="nkm-chat-head">
     <h1>Messages</h1>
-    <p>Recent conversations — fast, original NKM</p>
+    <p>Recent conversations</p>
   </div>
   <section id="privateInbox" class="nkm-inbox-panel" aria-label="Private messages">
     <div class="nkm-inbox-head">
