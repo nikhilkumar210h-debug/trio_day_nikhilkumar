@@ -15,7 +15,7 @@ import {
 } from './image-upload.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
 import {
-  collection, addDoc, getDocs, serverTimestamp, Timestamp
+  collection, addDoc, getDocs, limit, serverTimestamp, Timestamp
 } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 
 const $ = (id) => document.getElementById(id);
@@ -743,8 +743,8 @@ async function publish() {
       let allowedUids;
       if (state.privacy === 'friends') {
         const [followingSnap, followersSnap] = await Promise.all([
-          getDocs(collection(db, 'users', currentUser.uid, 'following')),
-          getDocs(collection(db, 'users', currentUser.uid, 'followers'))
+          getDocs(query(collection(db, 'users', currentUser.uid, 'following'), limit(500))),
+          getDocs(query(collection(db, 'users', currentUser.uid, 'followers'), limit(500)))
         ]);
         const followers = new Set(followersSnap.docs.map(d => d.id));
         allowedUids = [...new Set(
