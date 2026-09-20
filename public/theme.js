@@ -7,6 +7,16 @@ const LEGACY_THEME_KEYS = ['trio_theme']; // older pages wrote this key
 const THEME_ATTR = 'data-theme';
 const LIGHT_META = '#f8fafc';
 const DARK_META = '#0a0f1a';
+const THEME_VISUAL_HREF = 'styles/theme-visual.css?v=1';
+
+function ensureVisualStyles() {
+  if (document.querySelector('link[data-trio-visual]')) return;
+  const link = document.createElement('link');
+  link.rel = 'stylesheet';
+  link.href = THEME_VISUAL_HREF;
+  link.dataset.trioVisual = 'true';
+  document.head.appendChild(link);
+}
 
 function getSavedTheme() {
   try {
@@ -50,6 +60,7 @@ function applyTheme(theme) {
 }
 
 function initTheme() {
+  ensureVisualStyles();
   applyTheme(resolveTheme());
 }
 
