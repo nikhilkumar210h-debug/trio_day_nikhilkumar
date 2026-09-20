@@ -637,7 +637,7 @@ service cloud.firestore {
         allow update, delete: if false;
       }
       match /completions/{uid} {
-        allow read: if signedIn();
+         allow read: if owner(uid);
         allow create: if owner(uid)
           && get(/databases/$(database)/documents/communityTasks/$(taskId)).data.creatorUid != request.auth.uid
           && request.resource.data.uid == request.auth.uid
