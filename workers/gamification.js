@@ -687,10 +687,14 @@ function validCatalogEvidence(activityId,evidence){
  const id=String(activityId||'').toLowerCase();
  if(!evidence||typeof evidence!=='object')return false;
  const proof=String(evidence.proofText||'').trim();
- if(proof.length<20||proof.split(/\s+/).filter(Boolean).length<4)return false;
- if(Object.prototype.hasOwnProperty.call(CATALOG_PUZZLE_CORRECT,id))return Number(evidence.answerIndex)===CATALOG_PUZZLE_CORRECT[id];
- if(Object.prototype.hasOwnProperty.call(CATALOG_LEARN_CORRECT,id))return Number(evidence.answerIndex)===CATALOG_LEARN_CORRECT[id];
+ if(Object.prototype.hasOwnProperty.call(CATALOG_PUZZLE_CORRECT,id)){
+   return proof.length>=20&&proof.split(/\s+/).filter(Boolean).length>=4&&Number(evidence.answerIndex)===CATALOG_PUZZLE_CORRECT[id];
+ }
+ if(Object.prototype.hasOwnProperty.call(CATALOG_LEARN_CORRECT,id)){
+   return proof.length>=20&&proof.split(/\s+/).filter(Boolean).length>=4&&Number(evidence.answerIndex)===CATALOG_LEARN_CORRECT[id];
+ }
  if(id[0]==='c'){
+   if(proof.length<20||proof.split(/\s+/).filter(Boolean).length<4)return false;
   const answers=Array.isArray(evidence.answers)?evidence.answers.map(Number):[];
   const seed=(Number(id.slice(1))||0)%10;
   if(answers.length!==5||answers.some(a=>!Number.isInteger(a)||a<0||a>3))return false;
