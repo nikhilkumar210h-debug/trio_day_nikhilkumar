@@ -379,23 +379,26 @@ async function renderFocusAndContinue(uid) {
         ? 'Picked up from where you left off.'
         : 'A clear activity you can finish in one focused session.';
 
+      const focusHref = focus.source === 'community'
+        ? 'task-detail.html?id=' + encodeURIComponent(focus.id)
+        : 'activity.html?id=' + encodeURIComponent(focus.id);
       focusPrimary.innerHTML = `
         <div class="today-focus-frame">
           <div class="today-focus-context">
             <span><strong>${resumable[0] && resumable[0].id === focus.id ? 'RESUME' : 'PICKED FOR TODAY'}</strong></span>
-            <span>${type} · ${duration} min · ${escapeHtml(difficulty)}</span>
+            <span>${type} · ${duration} min · ${escapeHtml(difficulty)} · +${Number(focus.xpReward) || (difficulty === 'Hard' ? 60 : difficulty === 'Medium' ? 40 : 25)} XP</span>
           </div>
-          <div class="today-focus-visual" aria-hidden="true">
+          <a class="today-focus-visual" href="${focusHref}" aria-label="Open ${escapeHtml(focus.title || 'today activity')}">
             <div class="today-focus-visual-grid"></div>
             <div class="today-focus-visual-core">${escapeHtml(focus.icon || '🎯')}</div>
             <div class="today-focus-visual-copy">
-              <span>YOUR NEXT MOVE</span>
+              <span>${resumable[0] && resumable[0].id === focus.id ? 'CONTINUE YOUR MOVE' : 'YOUR NEXT MOVE'}</span>
               <strong>${escapeHtml(focus.title || 'One meaningful move')}</strong>
-              <small>${escapeHtml(type)} · ${duration} min</small>
+              <small>${escapeHtml(type)} · ${duration} min · ${escapeHtml(focus.category || 'Trio Day')}</small>
             </div>
             <div class="today-focus-visual-signal"><i></i><i></i><i></i><i></i></div>
-          </div>
-          ${activityCardHtml(focus, {compact:true})}
+            <span class="today-focus-visual-cta">Open activity ↗</span>
+          </a>
           <p class="today-focus-note">${escapeHtml(focusNote)}</p>
         </div>`;
 
