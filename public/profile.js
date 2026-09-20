@@ -96,7 +96,8 @@ async function loadConnections(uid) {
   profiles.filter(Boolean).forEach(u => {
     const a = document.createElement('a'); a.className = 'connection-row'; a.href = `profile.html?uid=${encodeURIComponent(u.uid)}`;
     const av = u.photoURL ? `<img src="${esc(u.photoURL)}" alt="">` : (u.name || 'U').charAt(0).toUpperCase();
-    a.innerHTML = `<span class="user-avatar">${av}</span><span class="meta"><strong>${esc(u.name || 'User')}</strong><small class="muted">UID · ${esc(u.uid || '')}</small></span><span class="connection-arrow">›</span>`;
+    const publicUid = u.userId || makeUserId(u.uid || id);
+    a.innerHTML = `<span class="user-avatar">${av}</span><span class="meta"><strong>${esc(u.name || 'User')}</strong><small class="muted">TRIO UID · ${esc(publicUid)}</small></span><span class="connection-arrow">›</span>`;
     box.appendChild(a);
   });
 }
@@ -107,7 +108,7 @@ async function openEdit(u) {
   overlay.innerHTML = `<div class="modal edit-dialog">
     <div class="modal-head"><div><span class="eyebrow">Your profile</span><h2>Edit profile</h2></div><button class="icon-btn close-edit" type="button">×</button></div>
     <label class="field"><span class="label-text">Name</span><input id="editName" type="text" maxlength="50" value="${esc(u.name || '')}"></label>
-    <div class="field"><span class="label-text">UID</span><div class="field-readonly">${esc(me.uid)}</div><small class="field-help">Permanent account key used to connect with friends. It cannot be changed.</small></div>
+    <div class="field"><span class="label-text">Trio UID</span><div class="field-readonly">${esc(u.userId || makeUserId(me.uid))}</div><small class="field-help">Permanent account ID used to sign in and connect with friends. It cannot be changed.</small></div>
     <label class="field"><span class="label-text">Bio</span><textarea id="editBio" maxlength="180" rows="4" placeholder="Tell people a little about you…">${esc(u.bio || '')}</textarea></label>
     <label class="field"><span class="label-text">Profile photo</span><input id="editPhoto" type="file" accept="image/*"></label>
     <p class="status" id="editStatus"></p>
@@ -276,6 +277,28 @@ async function openProfileMenu(userData) {
   open();
 }
 
+async function copyPublicUid(value, button) {
+  const uid = String(value || '').trim();
+  if (!uid) return;
+  try {
+    await navigator.clipboard.writeText(uid);
+  } catch {
+    const area = document.createElement('textarea');
+    area.value = uid;
+    area.style.position = 'fixed';
+    area.style.opacity = '0';
+    document.body.appendChild(area);
+    area.select();
+    try { document.execCommand('copy'); } finally { area.remove(); }
+  }
+  if (button) {
+    const old = button.textContent;
+    button.textContent = 'Copied';
+    button.classList.add('copied');
+    setTimeout(() => { button.textContent = old || 'Copy'; button.classList.remove('copied'); }, 1400);
+  }
+}
+
 // ── Main profile loader ──────────────────────────────────────────────────────
 async function loadProfile(uid) {
   // 1. User document — cache first
@@ -283,11 +306,32 @@ async function loadProfile(uid) {
   if (!userData) { if ($('profileName')) $('profileName').textContent = 'User not found'; return; }
   current = { ...userData, uid: userData.uid || uid };
 
+  const isOwnProfile = me && me.uid === uid;
+  // Older accounts may not have the public Trio UID yet. Generate it once,
+  // then persist that exact value; later logins always reuse the stored value.
+  const publicUid = current.userId || makeUserId(current.uid);
+  if (isOwnProfile && !current.userId) {
+    try {
+      await setDoc(doc(db, 'users', uid), { uid, userId: publicUid, updatedAt: serverTimestamp() }, { merge: true });
+      current.userId = publicUid;
+      trioCache.invalidate(`user_${uid}`);
+    } catch (err) {
+      console.warn('[Profile] Could not persist permanent Trio UID:', err);
+    }
+  }
+
   // Render header
   avatar($('profileAvatar'), current);
   $('profileName').textContent = current.name || 'User';
-  $('profileUserId').textContent = current.uid || uid;
-  const isOwnProfile = me && me.uid === uid;
+  const uidBtn = $('profileUserId');
+  const copyUidBtn = $('copyUidBtn');
+  if (uidBtn) {
+    uidBtn.textContent = current.userId || publicUid;
+    uidBtn.onclick = () => copyPublicUid(current.userId || publicUid, copyUidBtn);
+  }
+  if (copyUidBtn) {
+    copyUidBtn.onclick = () => copyPublicUid(current.userId || publicUid, copyUidBtn);
+  }
   const ownEmail = isOwnProfile ? (me?.email || current.email || '') : '';
   $('profileEmail').textContent = isOwnProfile
     ? (ownEmail ? 'Email connected' : 'Email hidden')
