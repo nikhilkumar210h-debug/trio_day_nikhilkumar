@@ -21,7 +21,8 @@ export function pushCopy({ type, actorName, text, title }) {
     task_reminder: { title: title || 'Task reminder', body: text || 'You have tasks waiting' },
     challenge_reminder: { title: title || 'Challenge reminder', body: text || 'A challenge needs you' },
     streak_warning: { title: title || 'Streak at risk!', body: text || 'Complete a task today' },
-    task_complete: { title: title || 'Task complete', body: text || 'Nice work!' }
+    task_complete: { title: title || 'Task complete', body: text || 'Nice work!' },
+    room_invite: { title: title || 'Live room invite', body: text || `${who} invited you to a live room` }
   };
   return map[type] || { title: title || 'Trio Day', body: text || `${who} sent you an update` };
 }
@@ -57,6 +58,7 @@ export function notificationText(notification) {
     task_reminder: notification.title || 'Daily tasks waiting',
     challenge_reminder: notification.title || 'Challenge reminder',
     streak_warning: notification.title || 'Streak at risk!',
-    task_complete: notification.title || 'Task completed'
+    task_complete: notification.title || 'Task completed',
+    room_invite: notification.title || 'You were invited to a live room'
   }[notification.type] || `${who} sent you an update`;
 }
