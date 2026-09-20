@@ -12,7 +12,7 @@ import {
   getDocs, limit, where
 } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 import { makeUserId, escapeHtml, initials, formatTime, getFilterCSS } from './utils.js';
-import { listCommunityTasks, isMember } from './gamification/community-tasks.js';
+import { listCommunityTasks, isMember, getMyJoinedTaskIds } from './gamification/community-tasks.js';
 import { activityCardHtml, normalizeActivityType } from './activity-ui.js';
 import { activeCatalogActivities } from './activity-catalog.js';
 
@@ -467,12 +467,9 @@ async function renderActiveChallenges(uid) {
       return;
     }
 
-    // Batch membership checks — bounded at 40 reads max
-    const membershipResults = await Promise.all(
-      allChallenges.map(c => isMember(c.id, uid).then(joined => ({ challenge: c, joined })))
-    );
-
-    const joinedChallenges = membershipResults.filter(r => r.joined).map(r => r.challenge);
+    // One collection-group query replaces one document read per challenge.
+    const joinedTaskIds = await getMyJoinedTaskIds(uid, 100);
+    const joinedChallenges = allChallenges.filter(c => joinedTaskIds.has(c.id));
 
     if (!joinedChallenges.length) {
       listEl.innerHTML = '';
