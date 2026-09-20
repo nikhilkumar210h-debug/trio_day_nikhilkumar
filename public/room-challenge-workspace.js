@@ -15,7 +15,7 @@ export async function mountSharedChallengeWorkspace(root, { db, roomId, activity
         a: Number(r.a) || 0
       }))
     : null;
-  const rounds = customRounds || getChallengeRounds((Number(String(activity.engineId || activity.id).replace(/\D/g, '')) || 0) % 10, 5);
+  const rounds = customRounds || getChallengeRounds(String(activity.engineId || activity.id), 5);
   const ref = doc(db, 'rooms', roomId, 'state', 'main');
   const roundSeconds = Math.max(30, Math.min(120, Math.round((Number(activity.durationMin || 20) * 60) / rounds.length)));
   const base = {
