@@ -143,7 +143,23 @@ $('leaveBtn').onclick=async()=>{
 $('endBtn').onclick=async()=>{if(room?.hostUid!==me.uid)return;await updateDoc(doc(db,'rooms',id),{status:'closed',endedAtMs:Date.now()});location.href='rooms.html'};
 $('inviteBtn')?.addEventListener('click',async()=>{const panel=$('invitePanel');if(!panel)return;panel.hidden=!panel.hidden;if(!panel.hidden)await loadFriends()});
 $('closeInviteBtn')?.addEventListener('click',()=>$('invitePanel').hidden=true);
-$('micBtn')?.addEventListener('click',async()=>{if(!voiceReady)await startVoice();if(!voiceReady)return;micEnabled=!micEnabled;localStream.getAudioTracks().forEach(t=>t.enabled=micEnabled);$('micBtn').textContent=micEnabled?'🎙️ Mic on':'🎙️ Mic off';$('micBtn').classList.toggle('is-on',micEnabled);$('voiceStatus').textContent=micEnabled?'Others can hear you':'You can hear others'});
+$('micBtn')?.addEventListener('click',async()=>{
+ if(!voiceReady){
+   await startVoice();
+   if(!voiceReady)return;
+   micEnabled=false;
+   localStream?.getAudioTracks().forEach(t=>t.enabled=false);
+   $('micBtn').textContent='🎙️ Mic off';
+   $('micBtn').classList.remove('is-on');
+   $('voiceStatus').textContent='Voice connected · mic off';
+   return;
+ }
+ micEnabled=!micEnabled;
+ localStream?.getAudioTracks().forEach(t=>t.enabled=micEnabled);
+ $('micBtn').textContent=micEnabled?'🎙️ Mic on':'🎙️ Mic off';
+ $('micBtn').classList.toggle('is-on',micEnabled);
+ $('voiceStatus').textContent=micEnabled?'Others can hear you':'You can hear others';
+});
 $('chatToggleBtn')?.addEventListener('click',()=>{const chat=document.querySelector('.room-chat');const btn=$('chatToggleBtn');if(!chat||!btn)return;const collapsed=chat.classList.toggle('is-collapsed');btn.textContent=collapsed?'Chat':'Hide';btn.setAttribute('aria-expanded',String(!collapsed));});
 onAuthStateChanged(auth,async u=>{if(!u)return location.href='login.html?redirect=room.html?id='+encodeURIComponent(id||'');me=u;const s=await getDoc(doc(db,'users',u.uid));p=s.exists()?s.data():{};await load()});
 window.addEventListener('beforeunload',()=>{rtcUnsubs.forEach(fn=>fn());voicePCs.forEach(pc=>pc.close());voiceAudio.forEach(a=>a.remove());localStream?.getTracks().forEach(t=>t.stop());stopSharedWorkspace?.();});
