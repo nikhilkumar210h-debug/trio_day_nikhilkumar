@@ -28,10 +28,12 @@ exports.signInWithTrioUid = onCall(async (request) => {
   try {
     const snap = await db.collection('users')
       .where('userId', '==', trioUid)
-      .limit(1)
+      .limit(2)
       .get();
 
-    if (snap.empty) {
+    // A public Trio UID must map to exactly one Firebase account.
+    // Reject ambiguous legacy data instead of signing into an arbitrary account.
+    if (snap.docs.length !== 1) {
       throw new HttpsError('unauthenticated', 'Invalid Trio UID or password.');
     }
 
