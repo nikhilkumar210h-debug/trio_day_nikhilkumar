@@ -27,3 +27,8 @@
 @keyframes completionPop{0%{transform:scale(.65) rotate(-8deg);opacity:0}70%{transform:scale(1.08) rotate(2deg)}100%{transform:scale(1) rotate(0);opacity:1}}
 @media(max-width:700px){.activity-completion{grid-template-columns:auto 1fr;gap:10px}.activity-completion-rewards{grid-column:1/-1}.activity-completion button{grid-column:1/-1}.activity-completion-icon{width:54px;height:54px;font-size:28px;border-radius:17px}}
 @media(prefers-reduced-motion:reduce){.activity-completion{transition:none}.activity-completion-icon{animation:none}}
+
+.forge-workspace--complete{border-color:rgba(34,197,94,.35);background:radial-gradient(circle at 92% 12%,rgba(34,197,94,.16),transparent 34%),linear-gradient(145deg,rgba(34,197,94,.08),rgba(6,182,212,.035));box-shadow:0 0 0 1px rgba(34,197,94,.08),0 14px 36px rgba(34,197,94,.07)}
+.forge-workspace--complete .forge-result{font-size:12px;font-weight:900;min-height:34px;display:flex;align-items:center;padding:9px 11px;border-radius:12px;background:rgba(34,197,94,.09);color:#34d399}
+.activity-timer.is-running .activity-timer-display{color:var(--color-primary-text);text-shadow:0 0 18px var(--color-primary-glow)}
+.activity-timer.is-running .activity-timer-state{color:var(--color-primary-text)}
