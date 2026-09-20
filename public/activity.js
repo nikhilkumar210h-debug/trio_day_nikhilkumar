@@ -14,10 +14,31 @@ const params=new URLSearchParams(location.search);
 const id=params.get('id');
 const source=params.get('source')||'catalog';
 const $=id=>document.getElementById(id);
-let me=null,profile=null,activity=null,timer=null,remaining=0,activityPassed=false,activityEvidence=null;
+let me=null,profile=null,activity=null,timer=null,remaining=0,timerEndsAt=0,activityPassed=false,activityEvidence=null;
 
 function fail(t){$('activityStatus').textContent=t;$('activityStatus').classList.add('error')}
-function setPassed(v,evidence=null){activityPassed=!!v;if(evidence)activityEvidence=evidence;updateCompleteState()}
+function setPassed(v,evidence=null){
+  activityPassed=!!v;
+  if(evidence) activityEvidence=evidence;
+  updateCompleteState();
+  if(v) markWorkspacePassed();
+}
+function markWorkspacePassed(){
+  const workspace=$('forgeWorkspace');
+  if(workspace) workspace.classList.add('forge-workspace--complete');
+}
+function showCompletion({already=false,xp=0,level='—'}={}){
+  const panel=$('activityCompletion');
+  if(!panel)return;
+  panel.hidden=false;
+  $('completionIcon').textContent=already?'✓':'✓';
+  $('completionTitle').textContent=already?'Already completed':'Activity complete';
+  $('completionText').textContent=already?'This activity cycle is already saved on your profile.':'Saved to your activity history. Nice work.';
+  $('completionXp').textContent='+'+Number(xp||0);
+  $('completionLevel').textContent=level||'—';
+  $('completionContinue').onclick=()=>{location.href='all-users.html'};
+  panel.scrollIntoView({behavior:'smooth',block:'center'});
+}
 
 function renderQuizWorkspace(root,cfg,isLesson){
  const normalized={
@@ -143,8 +164,17 @@ function render(){
  if(activity.challengeBrief){$('activityBriefWrap').hidden=false;$('activityBrief').textContent=activity.challengeBrief}
  $('roomBtn').href='rooms.html?taskId='+encodeURIComponent(activity.id)+'&source='+encodeURIComponent(activity.source||source);
  $('expiryText').textContent=(activity.expiresInDays||30)+' days remaining in this cycle';
- remaining=Math.max(60,Number(activity.durationMin||20)*60);paintTimer();
-
+ remaining=Math.max(60,Number(activity.durationMin||20)*60);
+ timerEndsAt=0;
+ paintTimer();
+ if(activity.type==='game'){
+   $('timerBtn').hidden=true;
+   $('timerDisplay').textContent='ROOM';
+   $('timerDisplay').setAttribute('aria-label','This game uses the live room timer');
+ }else{
+   $('timerBtn').hidden=false;
+   $('timerBtn').textContent='Start timer';
+ }
  const workspace=$('forgeWorkspace');
  const engineId=activity.engineId||activity.id;
  const customCfg = activity.interaction?.kind === 'quiz' ? activity.interaction : null;
@@ -174,11 +204,34 @@ function updateCompleteState(){
  else b.textContent=activityPassed?'Mark complete':'Finish the activity first';
 }
 
-function paintTimer(){const m=Math.floor(remaining/60),s=remaining%60;$('timerDisplay').textContent=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0')}
+function paintTimer(){
+  if(activity?.type==='game')return;
+  const m=Math.floor(remaining/60),s=remaining%60;
+  $('timerDisplay').textContent=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+}
 $('timerBtn').onclick=()=>{
- if(timer){clearInterval(timer);timer=null;$('timerBtn').textContent='Resume timer';return}
- timer=setInterval(()=>{remaining=Math.max(0,remaining-1);paintTimer();if(!remaining){clearInterval(timer);timer=null;$('timerBtn').textContent='Time complete'}},1000);
- $('timerBtn').textContent='Pause timer';
+  if(activity?.type==='game')return;
+  if(timer){
+    remaining=Math.max(0,Math.ceil((timerEndsAt-Date.now())/1000));
+    clearInterval(timer);timer=null;timerEndsAt=0;
+    $('timerBtn').textContent=remaining>0?'Resume timer':'Restart timer';
+    $('activityTimer')?.classList.remove('is-running');
+    return;
+  }
+  if(remaining<=0) remaining=Math.max(60,Number(activity?.durationMin||20)*60);
+  timerEndsAt=Date.now()+remaining*1000;
+  $('timerBtn').textContent='Pause timer';
+  $('activityTimer')?.classList.add('is-running');
+  timer=setInterval(()=>{
+    remaining=Math.max(0,Math.ceil((timerEndsAt-Date.now())/1000));
+    paintTimer();
+    if(!remaining){
+      clearInterval(timer);timer=null;timerEndsAt=0;
+      $('timerBtn').textContent='Restart timer';
+      $('activityTimer')?.classList.remove('is-running');
+      $('timerDisplay').setAttribute('aria-label','Session timer complete');
+    }
+  },250);
 };
 
 $('completeBtn').onclick=async()=>{
@@ -187,7 +240,7 @@ $('completeBtn').onclick=async()=>{
  try{
    if(activity.source==='community'){
      const result=await completeCommunityTask(activity.id,me.uid,profile,activityEvidence);
-     if(result?.already){$('completionNote').textContent='Already completed ✓';b.textContent='Completed';return}
+     if(result?.already){$('completionNote').textContent='Already completed ✓';b.textContent='Completed';showCompletion({already:true});return}
    }else{
      const cycleKey=activity.id+'_'+activity.startAtMs;
      const ref=doc(db,'users',me.uid,'activityCompletions',cycleKey);
@@ -198,6 +251,7 @@ $('completeBtn').onclick=async()=>{
      try{
        const award=await awardXp(me.uid,xp,{catalogActivityId:activity.id,catalogCycleKey:cycleKey});
        showAchievement({title:activity.title,subtitle:'+'+xp+' XP',icon:activity.icon||'🎯',leveledUp:award?.leveledUp,level:award?.level,badges:award?.badgesEarned||[]});
+       showCompletion({xp,level:award?.level||profile?.level||'—'});
      }catch(xpErr){console.warn('XP award skipped',xpErr)}
    }
    $('completionNote').innerHTML='<div class="activity-success">Completed ✓ Great job.</div>';
