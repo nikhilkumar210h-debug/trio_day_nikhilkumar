@@ -289,7 +289,9 @@ async function handleSign(request, env) {
   if (!config) return json({ error: "Unsupported media kind" }, 400, origin);
 
   const timestamp = Math.floor(Date.now() / 1000);
-  const publicId = `${uid}_${timestamp}_${randomId()}`;
+  const publicId = kind === "profile"
+    ? `${uid}_avatar`
+    : `${uid}_${timestamp}_${randomId()}`;
   const overwrite = kind === "profile" ? "true" : "false";
   const params = {
     allowed_formats: config.formats,
@@ -309,7 +311,6 @@ async function handleSign(request, env) {
     allowedFormats: config.formats,
     folder: config.folder,
     publicId,
-    allowedFormats: config.formats,
     overwrite: kind === "profile",
     timestamp,
     signature,
