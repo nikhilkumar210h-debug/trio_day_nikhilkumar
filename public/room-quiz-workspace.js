@@ -25,7 +25,7 @@ export async function mountSharedQuizWorkspace(root, { db, roomId, activity, me,
   }
 
   const ref = doc(db, 'rooms', roomId, 'state', 'main');
-  const defaultState = { votes: {}, revealed: false, passed: false, tie: false, version: 0 };
+  const defaultState = { votes: {}, revealed: false, passed: false, tie: false, proofs: {}, version: 0 };
 
   root.innerHTML = '<div class="room-forge-head"><div class="room-forge-title"><strong>' +
     (mode === 'learn' ? 'Team Learn Board' : 'Team Puzzle Board') +
@@ -58,6 +58,7 @@ export async function mountSharedQuizWorkspace(root, { db, roomId, activity, me,
 
     const voteCounts = [0,1,2,3].map(i => Object.values(state.votes || {}).filter(v => Number(v) === i).length);
     const myVote = Object.prototype.hasOwnProperty.call(state.votes || {}, me.uid) ? Number(state.votes[me.uid]) : null;
+    const myProof = String(state.proofs?.[me.uid] || '');
     const totalVotes = Object.keys(state.votes || {}).length;
     const requiredVotes = Math.min(2, participantCount());
     const highest = Math.max(...voteCounts);
@@ -82,8 +83,10 @@ export async function mountSharedQuizWorkspace(root, { db, roomId, activity, me,
       resultText = state.tie
         ? 'Tie vote — discuss and vote again.'
         : (majorityIndex === cfg.correct
-          ? 'Team call was correct ✓'
-          : 'Team call missed it. Reset the vote and try again.');
+          ? (Object.keys(state.proofs || {}).length >= Math.min(2, participantCount())
+            ? (mode === 'learn' ? 'Teach-back complete ✓' : 'Deduction chain complete ✓')
+            : (mode === 'learn' ? 'Correct call. Add a teach-back note.' : 'Correct call. Add a deduction note.'))
+          : 'Team call missed it. Vote again.');
     } else if (totalVotes >= requiredVotes) {
       resultText = 'Team vote is ready. Reveal the decision.';
     } else if (myVote !== null) {
@@ -97,6 +100,9 @@ export async function mountSharedQuizWorkspace(root, { db, roomId, activity, me,
       '<div class="room-forge-actions"><button class="room-forge-btn room-forge-btn--primary" id="sharedQuizReveal" ' +
       (state.revealed || totalVotes < requiredVotes ? 'disabled' : '') + '>Reveal team vote</button>' +
       (state.revealed && majorityIndex !== cfg.correct ? '<button class="room-forge-btn" id="sharedQuizReset">Vote again</button>' : '') +
+      (state.revealed && majorityIndex === cfg.correct && !state.tie && Object.keys(state.proofs || {}).length < Math.min(2, participantCount())
+        ? '<div class="room-proof-box"><label>' + (mode === 'learn' ? 'Teach it back in one or two lines.' : 'Add your deduction in one or two lines.') + '</label><textarea id="roomProof" maxlength="300" rows="3" placeholder="' + (mode === 'learn' ? 'Explain the idea in your own words…' : 'What clue or rule sealed the answer?') + '">' + esc(myProof) + '</textarea><button class="room-forge-btn room-forge-btn--primary" id="submitRoomProof">Submit note</button></div>'
+        : '') +
       '</div>' +
       '<div id="sharedQuizResult" class="room-forge-status ' + (state.revealed ? (majorityIndex === cfg.correct ? 'ok' : 'bad') : '') + '">' + resultText + '</div>';
 
@@ -114,14 +120,24 @@ export async function mountSharedQuizWorkspace(root, { db, roomId, activity, me,
       const minVotes = Math.min(2, participantCount());
       if (total < minVotes) return;
       const counts = [0,1,2,3].map(i => Object.values(latestVotes).filter(v => Number(v) === i).length);
-      const winning = counts.reduce((best, count, i) => count > counts[best] ? i : best, 0);
+      const highest = Math.max(...counts);
+      const winnerIds = counts.map((count,i)=>count===highest?i:-1).filter(i=>i>=0);
+      const winning = winnerIds.length===1 ? winnerIds[0] : -1;
       const ok = winning === cfg.correct;
-      await write({ revealed: true, tie: leaders.length > 1, passed: ok, passedBy: me.uid, passedAtMs: Date.now() });
-      if (ok) onStateChange?.({ passed: true });
+      await write({ revealed: true, tie: winnerIds.length > 1, passed: false, passedAtMs: Date.now() });
     });
 
     body.querySelector('#sharedQuizReset')?.addEventListener('click', async () => {
-      await write({ votes: {}, revealed: false, passed: false, tie: false });
+      await write({ votes: {}, revealed: false, passed: false, tie: false, proofs: {} });
+    });
+    body.querySelector('#submitRoomProof')?.addEventListener('click', async () => {
+      const input=body.querySelector('#roomProof');
+      const text=String(input?.value||'').trim();
+      if(text.length<20){ if(input) input.focus(); return; }
+      const proofs={...(current.proofs||{}),[me.uid]:text};
+      const needed=Math.min(2,participantCount());
+      await write({proofs,passed:Object.keys(proofs).length>=needed,passedBy:me.uid,passedAtMs:Date.now()});
+      if(Object.keys(proofs).length>=needed) onStateChange?.({passed:true});
     });
 
     const last = root.querySelector('#sharedQuizLast');
@@ -142,6 +158,7 @@ export async function mountSharedQuizWorkspace(root, { db, roomId, activity, me,
         updatedBy: data.updatedBy,
         updatedAtMs: data.updatedAtMs,
         passed: data.state?.passed || false,
+        proofs: data.state?.proofs || {},
         passedAtMs: data.state?.passedAtMs || null
       });
     } else {
