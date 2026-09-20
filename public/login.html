@@ -35,6 +35,11 @@
     .submit-btn{margin-top:16px;border:0;background:linear-gradient(135deg,var(--primary),var(--primary2));color:#fff;box-shadow:0 10px 24px rgba(99,102,241,.22)}.submit-btn:disabled{opacity:.6;cursor:not-allowed}
     .forgot{border:0;background:none;color:#9da8c1;display:block;margin:9px 0 0 auto;font:inherit;font-size:10px;cursor:pointer}.forgot:hover{color:#fff}.auth-switch{border:0;background:none;color:#aeb8cf;margin:14px auto 0;font:inherit;font-size:10px;cursor:pointer}.auth-switch strong{color:#fff}
     .uid-note{display:none;margin-top:14px;padding:11px 12px;border-radius:13px;background:rgba(6,182,212,.06);border:1px solid rgba(6,182,212,.14);color:#aebbd4;font-size:10px;line-height:1.5}.uid-note.visible{display:block}.uid-note b{color:#fff}
+    .login-method-bar{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;margin:0 0 12px;border:1px solid var(--line);border-radius:13px;background:rgba(255,255,255,.022)}
+    .login-method-btn{border:0;background:transparent;color:#7f8ba7;border-radius:9px;padding:8px 9px;font:inherit;font-size:10px;font-weight:800;cursor:pointer;transition:background .2s,color .2s,transform .2s}.login-method-btn.active{background:rgba(99,102,241,.16);color:#fff}.login-method-btn:active{transform:scale(.98)}
+    .input-wrap{position:relative}.input-wrap input{padding-right:46px!important}.password-toggle{position:absolute;right:7px;top:50%;transform:translateY(-50%);width:34px;height:30px;border:0;border-radius:9px;background:transparent;color:#8f9ab5;font-size:11px;cursor:pointer}.password-toggle:hover{background:rgba(255,255,255,.05);color:#fff}
+    .strength{display:grid;gap:5px;margin-top:7px}.strength-track{height:4px;border-radius:99px;background:rgba(255,255,255,.07);overflow:hidden}.strength-track i{display:block;height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,#f87171,#f59e0b,#34d399);transition:width .2s}.strength-copy{font-size:9px;color:#77839e}
+    .uid-field-hint{font-size:9px;color:#6f7b99;line-height:1.35;margin-top:1px}
     .status{min-height:18px;margin:8px 0 0;font-size:10px;color:#9fb0cb}.status.error{color:#f87171}
     @media(max-width:860px){.auth-page{padding:16px}.auth-shell{grid-template-columns:1fr;max-width:560px}.auth-visual{min-height:340px}.auth-visual h1{font-size:40px;margin-top:58px}.visual-cards{position:relative;left:auto;right:auto;bottom:auto;margin-top:34px}.auth-panel{min-height:0}}
     @media(max-width:520px){.auth-visual{padding:22px;min-height:300px;border-radius:24px}.auth-visual h1{font-size:34px}.visual-cards{grid-template-columns:1fr 1fr}.visual-card:last-child{display:none}.auth-panel{padding:22px;border-radius:24px}}
@@ -69,6 +74,11 @@
         <button id="signupTab" class="mode-tab" type="button" role="tab" aria-selected="false">Create account</button>
       </div>
 
+      <div id="loginMethodBar" class="login-method-bar" role="tablist" aria-label="Login method">
+        <button id="emailLoginTab" class="login-method-btn active" type="button" aria-selected="true">Email</button>
+        <button id="uidLoginTab" class="login-method-btn" type="button" aria-selected="false">Trio UID</button>
+      </div>
+
       <button id="googleBtn" type="button" class="google-btn">
         <svg width="17" height="17" viewBox="0 0 18 18" aria-hidden="true"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84c-.21 1.13-.84 2.09-1.8 2.73v2.27h2.91c1.7-1.57 2.69-3.87 2.69-6.64z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.91-2.27c-.81.54-1.84.86-3.05.86-2.35 0-4.34-1.58-5.05-3.71H.9v2.33C2.38 15.98 5.48 18 9 18z"/><path fill="#FBBC05" d="M3.95 10.7A5.4 5.4 0 013.68 9c0-.59.1-1.16.27-1.7V4.97H.9A9 9 0 000 9c0 1.45.35 2.83.9 4.03l3.05-2.33z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.51.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0 5.48 0 2.38 2.02.9 4.97L3.95 7.3C4.66 5.17 6.65 3.58 9 3.58z"/></svg>
         Continue with Google
@@ -78,19 +88,33 @@
 
       <form id="emailForm" novalidate>
         <label class="field" id="nameField" hidden><span class="label">Name</span><input id="fullName" type="text" maxlength="50" autocomplete="name" placeholder="Your name"></label>
-        <label class="field"><span class="label">Email</span><input id="email" type="email" autocomplete="email" required placeholder="you@example.com"></label>
-        <label class="field"><span class="label">Password</span><input id="password" type="password" autocomplete="current-password" required placeholder="Your password"></label>
+        <label class="field" id="emailField"><span class="label">Email</span><input id="email" type="email" autocomplete="email" required placeholder="you@example.com"></label>
+        <label class="field" id="trioUidField" hidden>
+          <span class="label">Trio UID</span>
+          <input id="trioUid" type="text" maxlength="13" autocomplete="username" autocapitalize="characters" spellcheck="false" placeholder="TRIO-XXXXXXXX">
+          <span class="uid-field-hint">Your Trio UID is permanent and stays the same after logout or on another device.</span>
+        </label>
+        <label class="field"><span class="label">Password</span>
+          <div class="input-wrap">
+            <input id="password" type="password" autocomplete="current-password" required placeholder="Your password">
+            <button id="passwordToggle" class="password-toggle" type="button" aria-label="Show password">Show</button>
+          </div>
+          <div id="passwordStrength" class="strength" hidden>
+            <div class="strength-track"><i id="passwordStrengthFill"></i></div>
+            <span id="passwordStrengthText" class="strength-copy">Use 6+ characters.</span>
+          </div>
+        </label>
         <button id="forgotPasswordBtn" type="button" class="forgot">Forgot password?</button>
         <p id="authFormStatus" class="status" aria-live="polite"></p>
         <button id="emailSubmitBtn" type="submit" class="submit-btn">Log in</button>
       </form>
 
-      <div id="uidNote" class="uid-note"><b>Your UID is permanent.</b> It is created from your account identity and is used to find/connect with friends. You do not need to type or change it.</div>
+      <div id="uidNote" class="uid-note"><b>Your Trio UID is permanent.</b> After signup, the same UID works for login, connecting with friends and finding your profile. It never gets regenerated.</div>
       <button id="modeToggle" type="button" class="auth-switch">New here? <strong>Create account</strong></button>
     </section>
   </div>
 </main>
 <script type="module" src="theme.js"></script>
-<script type="module" src="auth.js?v=20260920-auth3"></script>
+<script type="module" src="auth.js?v=20260920-auth4"></script>
 </body>
 </html>
