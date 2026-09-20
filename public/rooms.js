@@ -22,7 +22,7 @@ async function loadActivity(){
    const community=snap?snap.docs.map(d=>({id:d.id,...d.data(),source:'community',activityType:normalizeActivityType(d.data())})):[]; 
    const communityActive=community.filter(t=>!t.hidden&&((t.endAtMs||((t.createdAtMs||Date.now())+30*86400000))>Date.now()));
    const activities=[...activeCatalogActivities().map(a=>({...a,source:'catalog',activityType:a.activityType||a.type})),...communityActive];
-   const laneOrder=['puzzle','build','learn','challenge','game'];
+   const laneOrder=['build','learn','challenge','puzzle'];
    $('roomActivityPicker').innerHTML=activities.length?laneOrder.map(type=>{
      const lane=activities.filter(a=>a.activityType===type||a.type===type).slice(0,5);
      return lane.length?`<div class="room-picker-lane"><div class="room-picker-heading"><span>${ACTIVITY_TYPES[type].icon}</span><strong>${ACTIVITY_TYPES[type].label}</strong></div><div class="room-picker-list">${lane.map(a=>`<button type="button" class="room-picker-card" data-activity-id="${a.id}" data-source="${a.source||'catalog'}"><span>${esc(a.icon||ACTIVITY_TYPES[type].icon)}</span><span><strong>${esc(a.title||'Activity')}</strong><small>${esc(a.category||'General')} · ${esc(a.description||ACTIVITY_TYPES[type].desc)}</small></span></button>`).join('')}</div></div>`:'';
