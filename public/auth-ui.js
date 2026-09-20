@@ -187,7 +187,6 @@ function listenForAlerts(user) {
     const peerId = e?.detail?.peerId;
     if (peerId) unreadPeers.delete(peerId);
     refreshNavDot();
-  };
   window.addEventListener('trio-chat-unread-change', onUnreadEvent);
   notificationUnsubs.push(() => window.removeEventListener('trio-chat-unread-change', onUnreadEvent));
 }
