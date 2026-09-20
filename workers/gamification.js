@@ -199,6 +199,40 @@ function validCatalogEvidence(activityId,evidence){
   return false;
 }
 
+async function handleCompleteCatalog(uid,body,env){
+  const activityId=String(body?.activityId||'').trim().toLowerCase();
+  if(!/^[pblc](?:[1-9]|1[0-5])$/.test(activityId))throw new Error('Unknown catalog activity');
+  const now=Date.now();
+  const expectedKey=catalogCycleKey(activityId,now);
+  if(String(body?.cycleKey||'')!==expectedKey)throw new Error('Invalid activity cycle');
+  if(!validCatalogEvidence(activityId,body?.evidence))throw new Error('Activity solution could not be verified');
+
+  const projectId=env.FIREBASE_PROJECT_ID;
+  const token=await getAccessToken(env);
+  const completionPath='users/'+uid+'/activityCompletions/'+expectedKey;
+  const cycleStart=Number(expectedKey.split('_')[1])||now;
+  const evidence=body.evidence;
+  const created=await fsCreateDoc(projectId,token,completionPath,{
+    uid,
+    activityId,
+    cycleKey:expectedKey,
+    verified:true,
+    completedAtMs:now,
+    cycleEndsAtMs:cycleStart+catalogCycleDays(activityId)*86400000,
+    proofText:String(evidence.proofText||'').trim().slice(0,500),
+    answerIndex:Number.isInteger(Number(evidence.answerIndex))?Number(evidence.answerIndex):null,
+    score:Number.isInteger(Number(evidence.score))?Number(evidence.score):null,
+    answers:Array.isArray(evidence.answers)?evidence.answers.slice(0,5).map(Number):null,
+    buildEvidence:evidence.buildEvidence&&typeof evidence.buildEvidence==='object'?evidence.buildEvidence:null
+  });
+  if(!created){
+    const existing=await fsGet(projectId,token,completionPath);
+    if(!existing?.verified)throw new Error('Existing completion cannot be verified');
+  }
+  const award=await handleAwardXp(uid,{meta:{catalogActivityId:activityId,catalogCycleKey:expectedKey}},env);
+  return {ok:true,already:!created,award};
+}
+
 async function handleAwardXp(uid, body, env) {
   const meta = body?.meta || {};
   const communityTaskId = String(meta.communityTaskId || '').trim();
