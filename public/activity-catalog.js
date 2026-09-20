@@ -133,9 +133,44 @@ function makeChallenge15(x,i){
  const instructions=long ? x[3]+' '+x[5] : x[3];
  return C('c'+(i+1),'challenge',x[0],x[1],x[2],win,instructions,duration,difficulty,cycle,icon,{lane:'challenge',roles:['Player 1','Player 2','Judge'],flow:['Start round','Lock answer','Reveal score','Defend one choice'],win,fun:'Fast decisions, live reveals and a visible score chase.',premise:x[2],rules});
 }
-const BUILD15=B.map((x,i)=>C('b'+(i+1),'build',x[0],x[1],x[2],x[3],x[4],x[5],x[6],x[7],x[8],{lane:'build',roles:['Planner','Maker','Reviewer'],flow:['Split the work live','Build your piece','Merge and review','Present the result'],win:x[3],fun:'A visible team result appears at the end.',premise:x[2]}));
-const LEARN15=L.map(makeLearn15);
-const CHALLENGE15=Cg.map(makeChallenge15);
+const BUILD_ROLE_SETS=[
+ ['Product lead','Designer','Reviewer'],
+ ['Copywriter','Event planner','Visual editor'],
+ ['User advocate','Feature owner','Scope editor','Integrator'],
+ ['Rule designer','Host','Scorer','Playtester'],
+ ['Goal owner','Scheduler','Buffer keeper','Reviewer'],
+ ['Story writer','Plot keeper','Editor','Presenter'],
+ ['Product owner','Spec writer','Edge-case hunter','Verifier'],
+ ['Brand lead','Event planner','Copywriter','Host'],
+ ['Essentials lead','Pack planner','Trade-off caller','Checker'],
+ ['Support lead','Diagnoser','Communicator','Verifier'],
+ ['Decision owner','Metric designer','UX reviewer','Summariser'],
+ ['Planner','Maker','Tester','Owner'],
+ ['Name lead','Strategy lead','Audience lead','Art director'],
+ ['Teacher','Example maker','Quiz master','Editor'],
+ ['Clue designer','Path planner','Hint keeper','Presenter']
+];
+const LEARN_ROLE_SETS=[
+ ['Explainer','Tester','Sceptic','Summariser'],['Prompt writer','Critic','Tester','Explainer'],['Data checker','Calculator','Sceptic','Teacher'],
+ ['Network mapper','Browser','Server','Summariser'],['Example giver','Classifier','Sceptic','Teacher'],['Probability counter','Assumption checker','Sceptic','Explainer'],
+ ['Table owner A','Table owner B','Join checker','Teacher'],['Experiment designer','Confounder hunter','Reviewer','Explainer'],
+ ['Speaker','Quiz master','Example maker','Summariser'],['Commit mapper','Merge checker','Historian','Teacher'],
+ ['Model reviewer','Evidence checker','Sceptic','Teacher'],['DNS mapper','Layer checker','Explainer','Verifier'],
+ ['User','Observer','Designer','Tester'],['Calculator','Data editor','Sceptic','Explainer'],
+ ['Dependency mapper','Blocker hunter','Planner','Teacher']
+];
+const BUILD15=B.map((x,i)=>C('b'+(i+1),'build',x[0],x[1],x[2],x[3],x[4],x[5],x[6],x[7],x[8],{lane:'build',roles:BUILD_ROLE_SETS[i],flow:['Split the work live','Build your piece','Merge and review','Present the result'],win:x[3],fun:'A visible team result appears at the end.',premise:x[2]}));
+function makeLearn15(x,i){
+ const long=x.length===10;
+ const duration=Number(long?x[6]:x[5]);
+ const difficulty=long?x[7]:x[6];
+ const cycle=Number(long?x[8]:x[7]);
+ const icon=long?x[9]:x[8];
+ const win=x[4];
+ const instructions=long ? x[3]+' '+x[5] : x[3];
+ return C('l'+(i+1),'learn',x[0],x[1],x[2],win,instructions,duration,difficulty,cycle,icon,{lane:'learn',roles:LEARN_ROLE_SETS[i],flow:['Pick roles','Try the idea','Challenge it','Teach it back'],win,fun:'Everyone has to contribute an explanation, not just listen.',premise:x[2],format:x[3]});
+}
+const CHALLENGE15=Cg.map((x,i)=>C('c'+(i+1),'challenge',x[0],x[1],x[2],x.length===10?x[4]:x[4],x.length===10?x[3]+' '+x[5]:x[3],x.length===10?x[6]:x[5],x.length===10?x[7]:x[6],x.length===10?x[8]:x[7],x.length===10?x[9]:x[8],{lane:'challenge',roles:['Player 1','Player 2','Judge'],flow:['Start round','Lock answer','Reveal score','Defend one choice'],win:x[4],fun:'Fast decisions, live reveals and a visible score chase.',premise:x[2],rules:x[3]}));
 const PUZZLE15=P.map((x,i)=>C('p'+(i+1),'puzzle',x[1],x[2],x[3],x[5],x[6],x[7],x[8],x[9],x[10],{lane:'puzzle',roles:(x[4]||'Clue Keeper, Sceptic, Mapper, Final Caller').split(/\s*,\s*/),flow:['Split clues','Share deductions','Challenge the theory','Lock the solution'],win:x[5],fun:'No single player gets the whole picture.',premise:x[3]}));
 export const ACTIVITY_CATALOG=[...PUZZLE15,...BUILD15,...LEARN15,...CHALLENGE15];
 
