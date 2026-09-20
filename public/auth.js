@@ -2,9 +2,10 @@ import { auth } from './firebase-auth.js';
 import {
   GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult,
   createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile,
-  onAuthStateChanged, sendPasswordResetEmail
+  onAuthStateChanged, sendPasswordResetEmail, signInWithCustomToken
 } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
 import { makeUserId } from './utils.js';
+import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-functions.js';
 
 const $ = id => document.getElementById(id);
 const statusEl = $('authFormStatus');
@@ -13,11 +14,24 @@ const redirectTo = params.get('redirect') || 'index.html';
 const urlMode = params.get('mode');
 const isResetMode = urlMode === 'reset';
 let mode = 'login';
+let loginMethod = 'email';
 
 function status(text = '', error = false) {
   if (!statusEl) return;
   statusEl.textContent = text;
   statusEl.classList.toggle('error', error);
+}
+
+function setBusy(busy, label = '') {
+  const btn = $('emailSubmitBtn');
+  if (!btn) return;
+  btn.disabled = busy;
+  if (busy) {
+    btn.dataset.originalLabel = btn.textContent;
+    btn.textContent = label || 'Please wait…';
+  } else {
+    btn.textContent = btn.dataset.originalLabel || (mode === 'signup' ? 'Create account' : 'Log in');
+  }
 }
 
 async function saveUserProfile(user, chosenName = '') {
@@ -29,6 +43,7 @@ async function saveUserProfile(user, chosenName = '') {
   const snap = await getDoc(ref).catch(() => null);
   const old = snap?.exists() ? snap.data() : {};
   const name = chosenName.trim() || old.name || user.displayName || user.email?.split('@')[0] || 'User';
+  // IMPORTANT: once a Trio UID exists, never replace it on login or profile updates.
   const permanentUid = old.userId || makeUserId(user.uid);
 
   await setDoc(doc(db, 'usersPrivate', user.uid), {
@@ -36,8 +51,6 @@ async function saveUserProfile(user, chosenName = '') {
     updatedAt: serverTimestamp()
   }, { merge: true });
 
-  // userId is a legacy field name retained for database compatibility.
-  // It is created once from the Firebase Auth UID and never changed afterwards.
   await setDoc(ref, {
     uid: user.uid,
     userId: permanentUid,
@@ -50,25 +63,54 @@ async function saveUserProfile(user, chosenName = '') {
   }, { merge: true });
 }
 
+function setLoginMethod(next) {
+  loginMethod = next === 'uid' ? 'uid' : 'email';
+  const emailTab = $('emailLoginTab');
+  const uidTab = $('uidLoginTab');
+  const emailField = $('emailField');
+  const uidField = $('trioUidField');
+  const forgot = $('forgotPasswordBtn');
+  const emailInput = $('email');
+  const uidInput = $('trioUid');
+
+  emailTab?.classList.toggle('active', loginMethod === 'email');
+  uidTab?.classList.toggle('active', loginMethod === 'uid');
+  emailTab?.setAttribute('aria-selected', String(loginMethod === 'email'));
+  uidTab?.setAttribute('aria-selected', String(loginMethod === 'uid'));
+  if (emailField) emailField.hidden = loginMethod !== 'email';
+  if (uidField) uidField.hidden = loginMethod !== 'uid';
+  if (emailInput) emailInput.required = mode === 'login' && loginMethod === 'email' || mode === 'signup';
+  if (uidInput) uidInput.required = mode === 'login' && loginMethod === 'uid';
+  if (forgot) forgot.hidden = !(mode === 'login' && loginMethod === 'email');
+  if (loginMethod === 'uid') uidInput?.focus();
+  status('');
+}
+
 function setMode(next) {
   mode = next === 'signup' ? 'signup' : 'login';
   const loginTab = $('loginTab'), signupTab = $('signupTab'), nameField = $('nameField');
   const submit = $('emailSubmitBtn'), toggle = $('modeToggle'), note = $('uidNote');
   const title = $('authTitle'), subtitle = $('authSubtitle'), pwd = $('password');
-  const forgot = $('forgotPasswordBtn');
+  const forgot = $('forgotPasswordBtn'), methodBar = $('loginMethodBar');
+  const strength = $('passwordStrength');
 
   loginTab?.classList.toggle('active', mode === 'login');
   signupTab?.classList.toggle('active', mode === 'signup');
   loginTab?.setAttribute('aria-selected', String(mode === 'login'));
   signupTab?.setAttribute('aria-selected', String(mode === 'signup'));
   if (nameField) nameField.hidden = mode !== 'signup';
+  if (methodBar) methodBar.hidden = mode !== 'login';
   if (submit) submit.textContent = mode === 'signup' ? 'Create account' : 'Log in';
   if (toggle) toggle.innerHTML = mode === 'signup' ? 'Already have an account? <strong>Log in</strong>' : 'New here? <strong>Create account</strong>';
   if (note) note.classList.toggle('visible', mode === 'signup');
   if (title) title.textContent = mode === 'signup' ? 'Create your account' : 'Welcome back';
-  if (subtitle) subtitle.textContent = mode === 'signup' ? 'Your permanent UID will be created automatically.' : 'Sign in to continue where you left off.';
+  if (subtitle) subtitle.textContent = mode === 'signup'
+    ? 'Create once. Your permanent Trio UID is generated automatically.'
+    : 'Use email or your permanent Trio UID to sign in.';
   if (pwd) pwd.autocomplete = mode === 'signup' ? 'new-password' : 'current-password';
-  if (forgot) forgot.hidden = mode === 'signup';
+  if (forgot) forgot.hidden = !(mode === 'login' && loginMethod === 'email');
+  if (strength) strength.hidden = mode !== 'signup';
+  setLoginMethod(mode === 'signup' ? 'email' : loginMethod);
   status('');
 }
 
@@ -93,10 +135,58 @@ async function handleGoogle() {
   }
 }
 
+async function loginWithTrioUid(trioUid, password) {
+  // Cloud Function resolves Trio UID server-side, verifies the password against
+  // Firebase Auth and returns a short-lived custom token. The email never reaches the browser.
+  const functions = getFunctions();
+  const signInCallable = httpsCallable(functions, 'signInWithTrioUid');
+  const result = await signInCallable({ trioUid, password });
+  const customToken = result?.data?.customToken;
+  if (!customToken) throw new Error('UID login service returned an invalid response.');
+  return signInWithCustomToken(auth, customToken);
+}
+
+function updateStrength() {
+  const input = $('password');
+  const wrap = $('passwordStrength');
+  const fill = $('passwordStrengthFill');
+  const text = $('passwordStrengthText');
+  if (!input || !wrap || !fill || !text) return;
+  if (mode !== 'signup') return;
+  const value = input.value || '';
+  let score = 0;
+  if (value.length >= 6) score++;
+  if (value.length >= 10) score++;
+  if (/[A-Z]/.test(value) && /[a-z]/.test(value)) score++;
+  if (/\d/.test(value)) score++;
+  if (/[^A-Za-z0-9]/.test(value)) score++;
+  const widths = [0, 22, 42, 62, 82, 100];
+  const labels = ['Use 6+ characters.', 'A little short.', 'Getting there.', 'Good password.', 'Strong password.', 'Very strong password.'];
+  fill.style.width = widths[score] + '%';
+  text.textContent = labels[score];
+}
+
 $('googleBtn')?.addEventListener('click', handleGoogle);
 $('loginTab')?.addEventListener('click', () => setMode('login'));
 $('signupTab')?.addEventListener('click', () => setMode('signup'));
 $('modeToggle')?.addEventListener('click', () => setMode(mode === 'login' ? 'signup' : 'login'));
+$('emailLoginTab')?.addEventListener('click', () => setLoginMethod('email'));
+$('uidLoginTab')?.addEventListener('click', () => setLoginMethod('uid'));
+
+$('passwordToggle')?.addEventListener('click', () => {
+  const input = $('password');
+  const btn = $('passwordToggle');
+  if (!input || !btn) return;
+  const visible = input.type === 'text';
+  input.type = visible ? 'password' : 'text';
+  btn.textContent = visible ? 'Show' : 'Hide';
+  btn.setAttribute('aria-label', visible ? 'Show password' : 'Hide password');
+});
+
+$('password')?.addEventListener('input', updateStrength);
+$('trioUid')?.addEventListener('input', e => {
+  e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, '').slice(0, 13);
+});
 
 $('forgotPasswordBtn')?.addEventListener('click', async () => {
   const email = $('email')?.value.trim();
@@ -120,19 +210,30 @@ $('emailForm')?.addEventListener('submit', async event => {
   }
 
   const email = $('email')?.value.trim();
+  const trioUid = $('trioUid')?.value.trim().toUpperCase();
   const password = $('password')?.value || '';
   const name = $('fullName')?.value.trim() || '';
-  if (!email || !password) return status('Email and password are required.', true);
-  if (mode === 'signup' && !name) return status('Enter your name.', true);
-  if (mode === 'signup' && password.length < 6) return status('Password must be at least 6 characters.', true);
 
-  const btn = $('emailSubmitBtn');
-  if (btn) btn.disabled = true;
+  if (mode === 'signup') {
+    if (!name) return status('Enter your name.', true);
+    if (!email || !password) return status('Email and password are required.', true);
+    if (password.length < 6) return status('Password must be at least 6 characters.', true);
+  } else if (loginMethod === 'uid') {
+    if (!/^TRIO-[A-Z0-9]{8}$/.test(trioUid)) return status('Enter a valid Trio UID like TRIO-AB12CD34.', true);
+    if (!password) return status('Enter your password.', true);
+  } else if (!email || !password) {
+    return status('Email and password are required.', true);
+  }
+
+  setBusy(true, mode === 'signup' ? 'Creating…' : 'Signing in…');
   try {
     if (mode === 'signup') {
       const c = await createUserWithEmailAndPassword(auth, email, password);
       if (name) await updateProfile(c.user, { displayName: name });
       await saveUserProfile(c.user, name);
+    } else if (loginMethod === 'uid') {
+      const c = await loginWithTrioUid(trioUid, password);
+      await saveUserProfile(c.user);
     } else {
       const c = await signInWithEmailAndPassword(auth, email, password);
       await saveUserProfile(c.user);
@@ -147,9 +248,13 @@ $('emailForm')?.addEventListener('submit', async event => {
       'auth/wrong-password': 'Incorrect password.',
       'auth/invalid-credential': 'Email or password is incorrect.'
     };
-    status(m[e.code] || e.message || 'Something went wrong.', true);
+    const message = e?.message || '';
+    const safe = e?.code === 'functions/unauthenticated' || /invalid trio uid or password/i.test(message)
+      ? 'Invalid Trio UID or password.'
+      : (m[e.code] || message || 'Something went wrong.');
+    status(safe, true);
   } finally {
-    if (btn) btn.disabled = false;
+    setBusy(false);
   }
 });
 
@@ -176,11 +281,13 @@ onAuthStateChanged(auth, async user => {
 
 if (isResetMode) {
   const google = $('googleBtn'), tabs = document.querySelector('.mode-tabs'), toggle = $('modeToggle');
-  const submit = $('emailSubmitBtn'), pwd = $('password'), title = $('authTitle'), subtitle = $('authSubtitle'), forgot = $('forgotPasswordBtn'), note = $('uidNote');
+  const submit = $('emailSubmitBtn'), pwd = $('password'), title = $('authTitle'), subtitle = $('authSubtitle'), forgot = $('forgotPasswordBtn'), note = $('uidNote'), methodBar = $('loginMethodBar');
   if (google) google.hidden = true;
   if (tabs) tabs.hidden = true;
   if (toggle) toggle.hidden = true;
+  if (methodBar) methodBar.hidden = true;
   if (pwd) { pwd.hidden = true; pwd.required = false; }
+  if ($('trioUidField')) $('trioUidField').hidden = true;
   if (forgot) forgot.hidden = true;
   if (note) note.classList.remove('visible');
   if (submit) submit.textContent = 'Send reset link';
