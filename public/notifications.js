@@ -36,7 +36,7 @@ function renderNotificationRows(container, alerts) {
       if (!alert.read) {
         try { await updateDoc(doc(db, 'users', me.uid, 'notifications', alert.id), { read: true }); } catch (e) { console.error(e); }
       }
-      if (alert.postId) location.href = `view_post.html?postId=${encodeURIComponent(alert.postId)}`;
+      if (alert.urlPath) location.href = alert.urlPath; else if (alert.postId) location.href = `view_post.html?postId=${encodeURIComponent(alert.postId)}`;
     });
     container.appendChild(row);
   });
