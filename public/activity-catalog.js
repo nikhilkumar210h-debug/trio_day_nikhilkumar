@@ -102,7 +102,7 @@ const BUILD_CONFIG={
  b9:{mechanic:'allocate',budget:12,items:[['Water',2],['Food',3],['Navigation',2],['First aid',1]],mins:[2,3,2,1]},
  b10:{mechanic:'order',items:['Understand','Stabilize','Choose fix','Apply','Verify'],target:['Understand','Stabilize','Choose fix','Apply','Verify']},
  b11:{mechanic:'grid',size:4,required:['Focus','Reference','Write','Tools'],blocked:[3,7,12],adjacentPairs:[['Focus','Write'],['Reference','Tools']]},
- b12:{mechanic:'assign',people:['Ava','Ben','Cara','Dev'],roles:['Planner','Builder','Checker','Presenter'],correct:{Ava:'Planner',Ben:'Builder',Cara:'Checker',Dev:'Presenter'}}
+ b12:{mechanic:'assign',people:['Ava','Ben','Cara','Dev'],roles:['Planner','Builder','Checker','Presenter'],forbidden:{Ava:['Checker'],Ben:['Presenter'],Cara:['Builder'],Dev:['Planner']}}
 };
 export function getBuildConfig(id){return BUILD_CONFIG[id]||null}
 
