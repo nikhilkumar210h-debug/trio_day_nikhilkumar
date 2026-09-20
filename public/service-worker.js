@@ -135,6 +135,9 @@ self.addEventListener("activate", (event) => {
 function isStaticAsset(url){
   return /\.(css|js|png|jpg|jpeg|webp|svg|ico|woff2?)(\?v=|\?|$)/i.test(url) || url.includes("/icons/") || url.includes("/ui/");
 }
+function isVersionedAsset(url){
+  return /[?&]v=[^&]+/i.test(url);
+}
 self.addEventListener("fetch", (event) => {
   // Don't intercept VS Code Live Preview / localhost WS or file://
   if (event.request.url.startsWith("ws:") || event.request.url.startsWith("wss:")) return;
@@ -143,29 +146,38 @@ self.addEventListener("fetch", (event) => {
   // Bypass localhost file preview entirely — let browser handle it (fixes ERR_CONNECTION_REFUSED with 127.0.0.1:3001)
   if (location.hostname === "localhost" || location.hostname === "127.0.0.1" || location.hostname === "") return;
   const url = event.request.url;
-  // Static assets → Cache-First with 1-year effective lifetime (satisfies PSI “Serve static assets with efficient cache policy”)
-  if (isStaticAsset(url)){
+  // Explicitly versioned assets can be cache-first; the URL is immutable by contract.
+  if (isStaticAsset(url) && isVersionedAsset(url)){
     event.respondWith(
       caches.match(event.request).then(cached => {
         if (cached) {
-          // Update in background (stale-while-revalidate) — bypass HTTP immutable cache
           fetch(new Request(event.request, { cache: "reload" })).then(resp=>{
             if(resp && resp.ok) caches.open(STATIC_CACHE).then(c=>c.put(event.request, resp));
           }).catch(()=>{});
           return cached;
         }
         return fetch(new Request(event.request, { cache: "reload" })).then(resp=>{
-          if(resp && resp.ok){
-            const clone = resp.clone();
-            caches.open(STATIC_CACHE).then(c=>c.put(event.request, clone));
-            // Also add Cache-Control header simulation via cached response? Real header set by GH Pages but SW extends lifetime
-          }
+          if(resp && resp.ok) caches.open(STATIC_CACHE).then(c=>c.put(event.request, resp.clone()));
           return resp;
         }).catch(()=> caches.match(event.request));
       })
     );
     return;
   }
+
+  // Unversioned assets must revalidate so new deployments are not stranded behind stale JS/CSS.
+  if (isStaticAsset(url)){
+    event.respondWith(
+      fetch(event.request)
+        .then(response=>{
+          if(response && response.ok) caches.open(STATIC_CACHE).then(cache=>cache.put(event.request,response.clone()));
+          return response;
+        })
+        .catch(()=> caches.match(event.request))
+    );
+    return;
+  }
+
   // HTML / API → Network-First
   event.respondWith(
     fetch(event.request)
