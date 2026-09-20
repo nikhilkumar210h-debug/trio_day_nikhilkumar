@@ -104,5 +104,6 @@ g12:{rounds:[{q:'Target: ★. Which option is the target?',o:['○','★','▲',
 };
 
 export function getInteractiveConfig(id){return Q[id]||null}
-const CHALLENGE_IDS=Object.keys(CHALLENGES);\nexport function getChallengeRounds(seed=0,count=5){const key=String(seed||'');const idx=/^c(\\d+)$/.test(key)?Math.max(0,Number(key.slice(1))-1)%CHALLENGE_IDS.length:Math.abs(Number(seed)||0)%CHALLENGE_IDS.length;const bank=CHALLENGES[CHALLENGE_IDS[idx]]||CHALLENGES.c1;return Array.from({length:count},(_,i)=>bank[i%bank.length])}
+const CHALLENGE_IDS=Object.keys(CHALLENGES);
+export function getChallengeRounds(seed=0,count=5){const key=String(seed||'');const idx=/^c(\\d+)$/.test(key)?Math.max(0,Number(key.slice(1))-1)%CHALLENGE_IDS.length:Math.abs(Number(seed)||0)%CHALLENGE_IDS.length;const bank=CHALLENGES[CHALLENGE_IDS[idx]]||CHALLENGES.c1;return Array.from({length:count},(_,i)=>bank[i%bank.length])}
 export function getGameRounds(id){return GAMES[id]?.rounds||null}
