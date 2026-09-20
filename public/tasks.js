@@ -1,7 +1,7 @@
 import{auth,db}from'./firebase-init.js';
 import{onAuthStateChanged}from'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
 import{listCommunityTasks}from'./gamification/community-tasks.js';
-import{activeCatalogActivities}from'./activity-catalog.js?v=20260919-catalog2';
+import{activeCatalogActivities}from'./activity-catalog.js?v=20260920-audit2';
 import{activityCardHtml,normalizeActivityType}from'./activity-ui.js';
 
 const $=id=>document.getElementById(id);
