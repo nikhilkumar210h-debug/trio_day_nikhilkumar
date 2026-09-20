@@ -405,3 +405,12 @@ button:disabled,.nkm-btn:disabled,.btn:disabled{cursor:not-allowed;opacity:.55;t
 /* Shared soft visual treatment */
 .profile-card,.profile-section,.connection-row{transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease}
 .profile-section:hover{box-shadow:var(--td-shadow)}
+
+
+/* Shared story tiles: square-first, visual-led */
+.story-carousel,.stories-carousel,.story-feed-section .story-carousel{gap:12px}
+.story-item{width:164px;aspect-ratio:1/1.08;border-radius:20px;position:relative;overflow:hidden;background:var(--color-surface);box-shadow:0 10px 30px rgba(0,0,0,.10)}
+.story-item img,.story-item video,.story-item .story-media,.story-item .story-media img{width:100%;height:calc(100% - 34px);object-fit:cover;display:block}
+.story-item .story-caption,.story-item .story-meta{font-size:9px;line-height:1.2;padding:7px 9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.story-item:hover{transform:translateY(-3px) scale(1.015)}
+@media(max-width:640px){.story-item{width:148px}}
