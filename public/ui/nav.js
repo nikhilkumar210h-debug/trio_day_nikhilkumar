@@ -44,6 +44,37 @@ function pathKey() {
 }
 
 const AUTH_PAGES = new Set(['login.html','404.html','sitemap.html','offline.html']);
+const ACTIVE_ROOM_KEY = 'trio_active_room_v1';
+
+function getActiveRoom() {
+  try {
+    const raw = sessionStorage.getItem(ACTIVE_ROOM_KEY);
+    if (!raw) return null;
+    const value = JSON.parse(raw);
+    if (!value?.id || !value?.url) return null;
+    if (Number(value.expiresAtMs || 0) && Number(value.expiresAtMs) <= Date.now()) {
+      sessionStorage.removeItem(ACTIVE_ROOM_KEY);
+      return null;
+    }
+    return value;
+  } catch { return null; }
+}
+
+function enforceRoomLock() {
+  const active = getActiveRoom();
+  if (!active) return false;
+  const current = new URLSearchParams(location.search).get('id');
+  const path = (location.pathname.split('/').pop() || '').toLowerCase();
+  if (path === 'room.html' && current === active.id) return false;
+  if (path === 'room.html' && current && current !== active.id) {
+    location.replace(active.url);
+    return true;
+  }
+  // Once inside a live room, app navigation is intentionally locked until Leave/End.
+  location.replace(active.url);
+  return true;
+}
+
 
 function createHandler() {
   const chooser = document.getElementById('createChooser');
@@ -104,6 +135,7 @@ function renderRail(active) {
 export function renderNav() {
   const p = (location.pathname.split('/').pop() || '').toLowerCase();
   if (AUTH_PAGES.has(p)) return;
+  if (enforceRoomLock()) return;
   const active = pathKey();
   renderRail(active);
   document.querySelector('.bottom-nav')?.remove();
