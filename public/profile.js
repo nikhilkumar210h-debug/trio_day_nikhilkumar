@@ -154,7 +154,7 @@ async function connect(uid) {
     } else {
       const mine = await getCachedUser(me.uid);
       const myName = mine?.name || me.displayName || 'Someone';
-      await setDoc(a, { uid, userId: current?.userId || uid, name: current?.name || 'User', createdAt: serverTimestamp() });
+      await setDoc(a, { uid, userId: current?.userId || makeUserId(uid), name: current?.name || 'User', createdAt: serverTimestamp() });
       await setDoc(b, { uid: me.uid, createdAt: serverTimestamp() });
       await notifyUser(uid, { type: 'connect', actorUid: me.uid, actorName: myName });
     }
