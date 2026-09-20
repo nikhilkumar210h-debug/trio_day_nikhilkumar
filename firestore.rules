@@ -762,7 +762,7 @@ service cloud.firestore {
         allow read: if signedIn();
         allow create: if owner(memberUid)
           && getAfter(/databases/$(database)/documents/rooms/$(roomId)).data.status == 'open'
-          && getAfter(/databases/$(database)/documents/rooms/$(roomId)).data.memberCount < getAfter(/databases/$(database)/documents/rooms/$(roomId)).data.maxPlayers;
+          && getAfter(/databases/$(database)/documents/rooms/$(roomId)).data.memberCount <= getAfter(/databases/$(database)/documents/rooms/$(roomId)).data.maxPlayers;
         allow delete: if owner(memberUid);
         allow update: if false;
       }
