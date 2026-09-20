@@ -111,7 +111,8 @@ export async function mountSharedQuizWorkspace(root, { db, roomId, activity, me,
     body.querySelector('#sharedQuizReveal')?.addEventListener('click', async () => {
       const latestVotes = current.votes || {};
       const total = Object.keys(latestVotes).length;
-      if (total < participantCount()) return;
+      const minVotes = Math.min(2, participantCount());
+      if (total < minVotes) return;
       const counts = [0,1,2,3].map(i => Object.values(latestVotes).filter(v => Number(v) === i).length);
       const winning = counts.reduce((best, count, i) => count > counts[best] ? i : best, 0);
       const ok = winning === cfg.correct;
