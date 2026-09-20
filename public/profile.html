@@ -99,9 +99,10 @@
             </div>
         </section>
         <div class="profile-grid">
-            <section class="profile-section">
-                <h3>Posts</h3>
-                <div id="postsList" class="feed"><div class="td-skeleton td-skeleton--wide"></div></div>
+            <section class="profile-section profile-today-card" aria-label="Today">
+                <div class="profile-today-glow"></div>
+                <div class="profile-today-head"><div><span class="profile-section-kicker">TODAY</span><h3>Your day at a glance</h3><p>Keep your momentum going with a quick look at what to do next.</p></div><span class="profile-today-icon">✦</span></div>
+                <div class="profile-today-actions"><a href="tasks.html" class="profile-today-action"><span>⚡</span><strong>Start an activity</strong><small>Pick something to do</small></a><a href="all-users.html" class="profile-today-action"><span>◎</span><strong>Discover people</strong><small>See what’s happening</small></a></div>
             </section>
             <section class="profile-section">
                 <h3>Connections</h3>
@@ -122,7 +123,7 @@
     </nav>
     <script type="module" src="script.js?v=20260919-feedfix5"></script>
     <script type="module" src="auth-ui.js"></script>
-    <script type="module" src="profile.js?v=20260920-profile4"></script>
+    <script type="module" src="profile.js?v=20260920-profile5"></script>
     <script src="install-prompt.js" defer></script>
   <script type="module" src="theme.js"></script>
 <script type="module" src="ui/header.js"></script>
