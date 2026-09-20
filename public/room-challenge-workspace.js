@@ -8,7 +8,14 @@ const esc = value => {
 };
 
 export async function mountSharedChallengeWorkspace(root, { db, roomId, activity, me, hostUid }) {
-  const rounds = getChallengeRounds((Number(String(activity.engineId || activity.id).replace(/\D/g, '')) || 0) % 10, 5);
+  const customRounds = Array.isArray(activity.interaction?.rounds) && activity.interaction.rounds.length === 5
+    ? activity.interaction.rounds.map(r => ({
+        q: String(r.q || ''),
+        o: Array.isArray(r.o) ? r.o.slice(0,4) : [],
+        a: Number(r.a) || 0
+      }))
+    : null;
+  const rounds = customRounds || getChallengeRounds((Number(String(activity.engineId || activity.id).replace(/\D/g, '')) || 0) % 10, 5);
   const ref = doc(db, 'rooms', roomId, 'state', 'main');
   const roundSeconds = Math.max(30, Math.min(120, Math.round((Number(activity.durationMin || 20) * 60) / rounds.length)));
   const base = {
