@@ -102,11 +102,11 @@ c12:[
 
 const GAMES={
 g1:{rounds:[
-{q:'Rapid anagram: “earth” can become:',o:['heart','there','earths','all of these'],a:3},
-{q:'Rapid anagram: “listen” can become:',o:['silent','enlist','tinsel','all of these'],a:3},
-{q:'Rapid anagram: “save” can become:',o:['vase','aves','same','first one only'],a:0},
-{q:'Rapid anagram: “rate” can become:',o:['tear','tare','rate','all of these'],a:3},
-{q:'Final scramble: “stone” can become:',o:['notes','tones','onset','all of these'],a:3}]},
+{q:'Quick pick: which action gives the team a new clue?',o:['Ask a teammate to explain their reasoning','Refresh the page','Ignore the clue','Rename the room'],a:0},
+{q:'Quick pick: the timer is low. What helps most?',o:['Choose one clear next move','Open three new tasks','Argue about the title','Wait silently'],a:0},
+{q:'Quick pick: a teammate has a different answer. Best move?',o:['Hear their reason before deciding','Dismiss it','Hide both answers','Change the question'],a:0},
+{q:'Quick pick: you find a useful shortcut. What should you do?',o:['Share it with the room','Keep it secret','Reset the game','Delete the chat'],a:0},
+{q:'Final pick: the team finishes early. Best ending?',o:['Compare strategies and celebrate','Add random penalties','Erase the score','Restart automatically'],a:0}]},
 g2:{rounds:[
 {q:'Pattern: 2, 4, 2, 4, __',o:['2','3','4','6'],a:0},
 {q:'Pattern: ▲ ○ ▲ ○ __',o:['○','▲','■','□'],a:1},
@@ -148,7 +148,7 @@ g8:{rounds:[
 {q:'Grid dash: below cell 2?',o:['3','5','6','8'],a:2},
 {q:'Grid dash: horizontal neighbours?',o:['1 & 2','1 & 5','2 & 7','4 & 9'],a:0},
 {q:'Grid dash: vertical neighbours?',o:['2 & 3','2 & 6','6 & 7','1 & 4'],a:3},
-{q:'Grid dash: diagonal down-right from 6?',o:['7','9','10','11'],a:2}]},
+{q:'Grid dash: diagonal down-right from 6?',o:['7','9','10','11'],a:3}]},
 g9:{rounds:[
 {q:'Rule race: add 5. 7 → ?',o:['10','11','12','13'],a:2},
 {q:'Rule race: multiply by 3. 4 → ?',o:['7','10','12','14'],a:2},
