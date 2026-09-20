@@ -50,10 +50,10 @@ function resolveTheme() {
   return getSavedTheme() || getSystemTheme();
 }
 
-function applyTheme(theme) {
+function applyTheme(theme, { persist = true } = {}) {
   if (theme !== 'light' && theme !== 'dark') theme = 'dark';
   document.documentElement.setAttribute(THEME_ATTR, theme);
-  setSavedTheme(theme);
+  if (persist) setSavedTheme(theme);
   // Update meta theme-color for browser UI chrome
   const meta = document.querySelector('meta[name="theme-color"]');
   if (meta) meta.setAttribute('content', theme === 'light' ? LIGHT_META : DARK_META);
@@ -61,7 +61,9 @@ function applyTheme(theme) {
 
 function initTheme() {
   ensureVisualStyles();
-  applyTheme(resolveTheme());
+  // System mode must follow the OS without turning the resolved value into a
+  // persisted user preference.
+  applyTheme(resolveTheme(), { persist: !!getSavedTheme() });
 }
 
 function toggleTheme() {
@@ -97,7 +99,7 @@ function watchSystemTheme() {
   try {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: light)');
     const handler = (e) => {
-      if (!getSavedTheme()) applyTheme(e.matches ? 'light' : 'dark');
+      if (!getSavedTheme()) applyTheme(e.matches ? 'light' : 'dark', { persist: false });
     };
     mediaQuery.addEventListener ? mediaQuery.addEventListener('change', handler) : mediaQuery.addListener(handler);
   } catch { }
