@@ -275,7 +275,7 @@ function renderLanes() {
 function renderTemplates() {
   const host=$('creatorTemplates'); if(!host)return;
   const list=starters();
-  const blankCard='<button type="button" class="creator-starter creator-starter--blank '+(!startChosen?'selected':'')+'" data-blank="true"><span class="creator-starter-icon">✦</span><span class="creator-starter-main"><strong>Blank canvas</strong><small>Start from zero. You decide the idea, rules and wording.</small><span class="creator-starter-foot"><em>FULL CONTROL</em><em>∞</em></span></span><span class="creator-starter-go">'+(startChosen&& !selected?'✓':'＋')+'</span></button>';
+  const blankCard='<button type="button" class="creator-starter creator-starter--blank '+(startChosen && !selected?'selected':'')+'" data-blank="true"><span class="creator-starter-icon">✦</span><span class="creator-starter-main"><strong>Blank canvas</strong><small>Start from zero. You decide the idea, rules and wording.</small><span class="creator-starter-foot"><em>FULL CONTROL</em><em>∞</em></span></span><span class="creator-starter-go">'+(startChosen&& !selected?'✓':'＋')+'</span></button>';
   host.innerHTML=blankCard+list.map(t=>{
     const mechanic=mechanicInfo(activeType,t.mechanic);
     return '<button type="button" class="creator-starter '+(selected?.id===t.id?'selected':'')+'" data-starter="'+esc(t.id)+'"><span class="creator-starter-icon">'+esc(t.icon||activityTypeInfo(t).icon)+'</span><span class="creator-starter-main"><strong>'+esc(t.title)+'</strong><small>'+esc(t.description||'')+'</small><span class="creator-starter-foot"><em>'+(mechanic?esc(mechanic.label):'Ready')+'</em><em>⏱ '+Number(t.durationMin||20)+'m</em></span></span><span class="creator-starter-go">→</span></button>';
@@ -290,7 +290,7 @@ function renderTemplates() {
     selected=list.find(x=>x.id===btn.dataset.starter)||null;
     startChosen=true;
     interactionDraft=sourceConfig(selected);
-    buildCustomizerStage=0;quizCustomizerStage=0;challengeRound=0;
+    quizCustomizerStage=0;challengeRound=0;
     fillFormFromStarter(true);
     renderTemplates();renderInteractionEditor();setEditorStage(1);renderPreview();
   }));
@@ -506,7 +506,6 @@ function openCreatorPreview(){
 }
 
 $('toStep2')?.addEventListener('click',()=>{
-  if(!startChosen)return showToast('Choose a starter or Blank canvas first.','warn');
   setStep(2,{stage:0});
 });
 $('backStep1')?.addEventListener('click',()=>setStep(1));
@@ -600,6 +599,9 @@ $('creatorForm')?.addEventListener('submit', async e => {
     btn.disabled = false;
   }
 });
+
+renderLanes();
+setStep(1);
 
 onAuthStateChanged(auth, async user => {
   if (!user) {
