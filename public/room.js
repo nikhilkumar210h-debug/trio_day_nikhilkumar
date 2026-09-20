@@ -180,7 +180,27 @@ async function load(){
    $('messageLog').scrollTop=$('messageLog').scrollHeight;
  });
 }
-$('messageForm').onsubmit=async e=>{e.preventDefault();const i=$('messageInput'),t=i.value.trim();if(!t)return;await addDoc(collection(db,'rooms',id,'messages'),{uid:me.uid,name:p.name||me.displayName||'User',text:t.slice(0,500),createdAtMs:Date.now()});i.value='';i.focus()};
+$('messageForm').onsubmit=async e=>{
+ e.preventDefault();
+ const i=$('messageInput'),t=i.value.trim();
+ if(!t)return;
+ const btn=e.currentTarget.querySelector('button[type="submit"],button:not([type])');
+ if(btn)btn.disabled=true;
+ try{
+   await addDoc(collection(db,'rooms',id,'messages'),{
+     uid:me.uid,
+     name:p.name||me.displayName||'User',
+     text:t.slice(0,500),
+     createdAtMs:Date.now()
+   });
+   i.value='';
+   i.focus();
+ }catch(err){
+   showToast(err.message||'Message could not be sent.','error');
+ }finally{
+   if(btn)btn.disabled=false;
+ }
+};
 $('leaveBtn').onclick=async()=>{
   if(room?.hostUid===me.uid)return showToast('Host must end the room.', 'warn');
   try{
