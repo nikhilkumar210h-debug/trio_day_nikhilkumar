@@ -286,7 +286,6 @@ $('completeBtn').onclick=async()=>{
       }
       completionAlready=!!award?.already;
     }
-    }
     if(timer){clearInterval(timer);timer=null;timerEndsAt=0;}
     const earnedXp=Number(activity.xpReward)||(activity.difficulty==='Hard'?60:activity.difficulty==='Medium'?40:25);
     $('completionNote').innerHTML='<div class="activity-success">Completed ✓ Your activity is saved in your journey.</div>';
