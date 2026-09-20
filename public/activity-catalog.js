@@ -111,17 +111,6 @@ export function getBuildConfig(id){return BUILD_CONFIG[id]||null}
 
 // 15 catalog items per lane. Game-type catalogue entries are intentionally not published;
 // the four user-facing lanes are Build, Learn, Challenge and Puzzle.
-function makeLearn15(x,i){
- const long=x.length===10;
- const duration=Number(long?x[6]:x[5]);
- const difficulty=long?x[7]:x[6];
- const cycle=Number(long?x[8]:x[7]);
- const icon=long?x[9]:x[8];
- const format=x[3];
- const win=x[4];
- const instructions=long ? x[3]+' '+x[5] : x[3];
- return C('l'+(i+1),'learn',x[0],x[1],x[2],win,instructions,duration,difficulty,cycle,icon,{lane:'learn',roles:['Explainer','Tester','Sceptic','Summariser'],flow:['Pick roles','Try the idea','Challenge it','Teach it back'],win,fun:'Everyone has to contribute an explanation, not just listen.',premise:x[2],format});
-}
 function makeChallenge15(x,i){
  const long=x.length===10;
  const duration=Number(long?x[6]:x[5]);
