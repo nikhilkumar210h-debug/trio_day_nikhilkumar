@@ -404,7 +404,7 @@ async function verifyActionExists(projectId, accessToken, actorUid, targetUid, t
     const wanted = String(data.text || '');
     return rows.some(row => {
       const age = Date.now() - (Number(row.createdAtMs) || 0);
-      return age >= 0 && age <= 10 * 60_000 && (!wanted || String(row.text || '') === wanted);
+      return age >= 0 && age <= 10 * 60_000 && (!wanted || String(row.text || '').includes(wanted));
     });
   }
 
