@@ -91,21 +91,21 @@ const Cg=[
 ];
 
 const BUILD_CONFIG={
- b1:{mechanic:'order',items:['Trigger','Condition','Action','Feedback'],target:['Trigger','Condition','Action','Feedback']},
- b2:{mechanic:'order',items:['Choose outcome','Set timer','Focus','Short reset','Review result'],target:['Choose outcome','Set timer','Focus','Short reset','Review result']},
- b3:{mechanic:'order',items:['Start','Cafe','Park','Museum','Destination'],target:['Start','Cafe','Park','Museum','Destination']},
- b4:{mechanic:'allocate',budget:5000,items:[['Venue',1000],['Food',1500],['Travel',500],['Reserve',300]],mins:[1000,1500,500,300]},
- b5:{mechanic:'grid',size:4,required:['Desk','Lamp','Notebook'],blocked:[5,6,9,10],adjacentPairs:[['Lamp','Desk'],['Notebook','Desk']]},
- b6:{mechanic:'order',items:['Reproduce','Describe','Fix','Test','Close'],target:['Reproduce','Describe','Fix','Test','Close']},
- b7:{mechanic:'order',items:['Question','Key metric','Trend','Breakdown','Detail'],target:['Question','Key metric','Trend','Breakdown','Detail']},
- b8:{mechanic:'order',items:['Foundation','Core skill','Mini project','Practice','Review'],target:['Foundation','Core skill','Mini project','Practice','Review']},
- b9:{mechanic:'allocate',budget:12,items:[['Water',2],['Food',3],['Navigation',2],['First aid',1]],mins:[2,3,2,1]},
- b10:{mechanic:'order',items:['Understand','Stabilize','Choose fix','Apply','Verify'],target:['Understand','Stabilize','Choose fix','Apply','Verify']},
- b11:{mechanic:'grid',size:4,required:['Focus','Reference','Write','Tools'],blocked:[3,7,12],adjacentPairs:[['Focus','Write'],['Reference','Tools']]},
- b12:{mechanic:'assign',people:['Ava','Ben','Cara','Dev'],roles:['Planner','Builder','Checker','Presenter'],forbidden:{Ava:['Checker'],Ben:['Presenter'],Cara:['Builder'],Dev:['Planner']}},
- b13:{mechanic:'order',items:['Find anchor','Place early event','Place middle event','Check conflict','Reveal timeline'],target:['Find anchor','Place early event','Place middle event','Check conflict','Reveal timeline']},
- b14:{mechanic:'grid',size:4,required:['Signal','Decoder','Key'],blocked:[2,7,10],adjacentPairs:[['Signal','Decoder'],['Decoder','Key']]},
- b15:{mechanic:'assign',people:['Layer 1','Layer 2','Layer 3','Final caller'],roles:['Clue solver','Rule solver','Verifier','Presenter'],correct:{'Layer 1':'Clue solver','Layer 2':'Rule solver','Layer 3':'Verifier','Final caller':'Presenter'}}
+ b1:{mechanic:'order',items:['User problem','Core promise','Key feature','One-screen flow','60-second pitch'],target:['User problem','Core promise','Key feature','One-screen flow','60-second pitch']},
+ b2:{mechanic:'order',items:['Headline','What it is','Why join','When + where','Call to action'],target:['Headline','What it is','Why join','When + where','Call to action']},
+ b3:{mechanic:'assign',people:['Feature A','Feature B','Feature C','Final flow'],roles:['User value','Must-have','Nice-to-have','Integrator'],correct:{'Feature A':'User value','Feature B':'Must-have','Feature C':'Nice-to-have','Final flow':'Integrator'}},
+ b4:{mechanic:'order',items:['Goal','Turn','Core rule','Twist','Win condition'],target:['Goal','Turn','Core rule','Twist','Win condition']},
+ b5:{mechanic:'order',items:['Goal 1','Goal 2','Fixed event','Buffer','Final check'],target:['Goal 1','Goal 2','Fixed event','Buffer','Final check']},
+ b6:{mechanic:'order',items:['Hook','Setup','Problem','Turn','Climax','Ending'],target:['Hook','Setup','Problem','Turn','Climax','Ending']},
+ b7:{mechanic:'assign',people:['User story','Behaviour','Edge case','Acceptance test'],roles:['Product','Flow','Risk','Verifier'],correct:{'User story':'Product','Behaviour':'Flow','Edge case':'Risk','Acceptance test':'Verifier'}},
+ b8:{mechanic:'assign',people:['Name + hook','First event','Invitation','Next action'],roles:['Brand','Event','Copy','CTA'],correct:{'Name + hook':'Brand','First event':'Event','Invitation':'Copy','Next action':'CTA'}},
+ b9:{mechanic:'allocate',budget:10,items:[['Water',2],['Food',2],['Navigation',1],['First aid',1],['Optional fun',1]],mins:[2,2,1,1,0]},
+ b10:{mechanic:'order',items:['Detect','Acknowledge','Workaround','Fix','Follow-up'],target:['Detect','Acknowledge','Workaround','Fix','Follow-up']},
+ b11:{mechanic:'grid',size:4,required:['Decision','Metric','Warning','Detail'],blocked:[2,7,12],adjacentPairs:[['Decision','Metric'],['Metric','Warning']]},
+ b12:{mechanic:'assign',people:['Task 1','Task 2','Task 3','Task 4'],roles:['Planner','Builder','Tester','Owner'],correct:{'Task 1':'Planner','Task 2':'Builder','Task 3':'Tester','Task 4':'Owner'}},
+ b13:{mechanic:'assign',people:['Name','Promise','Audience','Mood'],roles:['Naming','Strategy','Audience','Art direction'],correct:{'Name':'Naming','Promise':'Strategy','Audience':'Audience','Mood':'Art direction'}},
+ b14:{mechanic:'order',items:['Explain','Example','Mini-test','Memory trick','Check'],target:['Explain','Example','Mini-test','Memory trick','Check']},
+ b15:{mechanic:'grid',size:4,required:['Clue','Hint','Bottleneck','Final door'],blocked:[1,6,11],adjacentPairs:[['Clue','Hint'],['Hint','Bottleneck'],['Bottleneck','Final door']]}
 };
 export function getBuildConfig(id){return BUILD_CONFIG[id]||null}
 
