@@ -1,7 +1,13 @@
 // Shared utilities — single source for makeUserId, escapeHtml, initials, formatTime, avatarHtml, chatId, nameOf, getFilterCSS
 // Reuse-first Phase 0: all files must import from here, no local copies.
-export function makeUserId(uid) {
-  return 'TRIO-' + uid.replace(/[^a-z0-9]/gi, '').slice(0, 8).toUpperCase();
+export function makeUserId(uid, salt = 0) {
+  const input = String(uid || '') + ':' + String(salt || 0);
+  let hash = 2166136261;
+  for (let i = 0; i < input.length; i++) {
+    hash ^= input.charCodeAt(i);
+    hash = Math.imul(hash, 16777619) >>> 0;
+  }
+  return 'TRIO-' + hash.toString(36).toUpperCase().padStart(8, '0').slice(-8);
 }
 export function escapeHtml(s) {
   return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
