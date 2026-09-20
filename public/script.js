@@ -87,7 +87,7 @@ async function initTodayScreen(uid) {
       renderPeople(uid),
     ]);
   }
-  initHighlightsFeed(uid);
+  // Posts/feed are intentionally removed from Today. Stories and Today activities remain.
 }
 
 function renderGreeting() {
