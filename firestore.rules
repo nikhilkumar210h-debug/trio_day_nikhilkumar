@@ -445,16 +445,10 @@ service cloud.firestore {
         allow read, write: if owner(userId);
       }
       match /activityCompletions/{completionId} {
+        // Built-in completions are server-authoritative. Clients may only read
+        // their own history; the gamification Worker creates verified records.
         allow read: if owner(userId);
-        allow create, update: if owner(userId)
-          && request.resource.data.uid == request.auth.uid
-          && request.resource.data.activityId is string
-          && request.resource.data.cycleKey == completionId
-          && request.resource.data.cycleEndsAtMs is number
-          && request.resource.data.completedAtMs is number
-          && request.resource.data.completedAtMs <= request.time.toMillis()
-          && request.resource.data.cycleEndsAtMs > request.time.toMillis();
-        allow delete: if owner(userId);
+        allow create, update, delete: if false;
       }
     }
 
