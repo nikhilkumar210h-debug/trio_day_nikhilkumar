@@ -720,9 +720,9 @@ async function publish() {
             state.editor.rotation !== 0 ||
             state.editor.textOverlays.length ||
             state.editor.stickers.length);
-        mediaUrl = await uploadStoryMedia(currentUser.uid, fileToUpload);
+        mediaUrl = await uploadStoryMedia(currentUser.uid, fileToUpload, { signal: controller.signal });
       } else {
-        mediaUrl = await uploadPostImage(currentUser.uid, fileToUpload);
+        mediaUrl = await uploadPostImage(currentUser.uid, fileToUpload, { signal: controller.signal });
       }
       setProgress(100, 'Processing…');
     }
