@@ -388,10 +388,11 @@ async function loadProfile(uid) {
     const when = item.atMs ? new Date(item.atMs).toLocaleDateString(undefined, { day:'numeric', month:'short' }) : 'Recently';
     return '<a class="profile-activity-item" href="' +
       (item.source === 'community' ? 'task-detail.html?id=' : 'activity.html?id=') + encodeURIComponent(item.source === 'community' ? item.key.replace('community:','') : (item.activityId || item.key.replace('catalog:','').split('_')[0])) +
-      '">' +
+      '" aria-label="' + esc(item.title) + '">' +
       '<span class="profile-activity-icon">' + (item.icon || type.icon) + '</span>' +
-      '<span class="profile-activity-copy"><strong>' + esc(item.title) + '</strong><small>' + esc(type.label) + ' · ' + esc(item.category) + ' · ' + when + '</small></span>' +
-      '<span class="profile-activity-xp">+' + item.xp + ' XP</span>' +
+      '<span class="profile-achievement-badge">✓</span>' +
+      '<span class="profile-activity-copy"><strong>' + esc(item.title) + '</strong><small>' + esc(type.label) + ' · ' + esc(when) + '</small></span>' +
+      '<span class="profile-activity-xp">+' + item.xp + '</span>' +
       '</a>';
   }).join('');
 }
