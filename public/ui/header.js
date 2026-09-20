@@ -56,8 +56,14 @@ async function renderUser(user, avatarEl) {
   try { profile = await getCachedUser(user.uid); } catch {}
   const url = profile?.photoURL || user.photoURL;
   const name = profile?.name || user.displayName || user.email?.split('@')[0] || 'User';
+  avatarEl.textContent = '';
   if (url) {
-    avatarEl.innerHTML = '<img src="' + String(url).replace(/"/g, '&quot;') + '" alt="' + String(name).replace(/"/g, '&quot;') + '">';
+    const img = document.createElement('img');
+    img.src = String(url);
+    img.alt = name;
+    img.loading = 'lazy';
+    img.referrerPolicy = 'no-referrer';
+    avatarEl.appendChild(img);
   } else {
     avatarEl.textContent = name.trim().charAt(0).toUpperCase() || 'U';
   }
