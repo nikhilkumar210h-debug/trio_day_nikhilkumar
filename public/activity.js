@@ -190,8 +190,16 @@ function render(){
  $('activityKicker').textContent=type.icon+' '+type.label+' · '+(activity.category||'General');
  $('activityTitle').textContent=activity.title;
  $('activityDescription').textContent=activity.description||'';
- $('activityChips').innerHTML='<span class="activity-detail-chip">⏱ '+Number(activity.durationMin||20)+' min</span><span class="activity-detail-chip">'+esc(activity.difficulty||'Medium')+'</span><span class="activity-detail-chip">⌛ '+Number(activity.expiresInDays||30)+'d left</span>';
- $('activityGoal').innerHTML='<div class="activity-brief">'+esc(activity.goal||'Complete the activity and reflect on what you learned or built.')+'</div>';
+ $('activityChips').innerHTML='<span class="activity-detail-chip">⏱ '+Number(activity.durationMin||20)+' min</span><span class="activity-detail-chip">'+esc(activity.difficulty||'Medium')+'</span><span class="activity-detail-chip">👥 Live team</span>';
+ $('activityPremise').innerHTML='<div class="activity-brief">'+esc(activity.premise||activity.description||'')+'</div>';
+ const roles=Array.isArray(activity.roles)?activity.roles.filter(Boolean):[];
+ const rolesWrap=$('activityRolesWrap');
+ if(roles.length){rolesWrap.hidden=false;$('activityRoles').innerHTML=roles.map(r=>'<span>'+esc(r)+'</span>').join('');}else rolesWrap.hidden=true;
+ const flow=Array.isArray(activity.flow)?activity.flow.filter(Boolean):[];
+ const flowWrap=$('activityFlowWrap');
+ if(flow.length){flowWrap.hidden=false;$('activityFlow').innerHTML=flow.map((x,i)=>'<li><b>'+(i+1)+'</b>'+esc(x)+'</li>').join('');}else flowWrap.hidden=true;
+ $('activityGoal').innerHTML='<div class="activity-brief">'+esc(activity.win||activity.goal||'Complete the activity and reach the finish line.')+'</div>';
+ $('activityFun').textContent=activity.fun||'The room gets a clear shared finish.';
  const bits=String(activity.instructions||'').split(/\n|\./).map(x=>x.trim()).filter(Boolean);
  $('activityInstructions').innerHTML=bits.length?bits.map(x=>'<li>'+esc(x)+'.</li>').join(''):'<li>Work through the activity and complete its goal.</li>';
  if(activity.challengeBrief){$('activityBriefWrap').hidden=false;$('activityBrief').textContent=activity.challengeBrief}
