@@ -22,7 +22,10 @@ l8:{kind:'lesson',question:'Why use async/await in JavaScript?',options:['To mak
 l9:{kind:'lesson',question:'What does a Git branch represent?',options:['A separate line of development','A backup of the laptop','A file type','A package manager'],correct:0,lesson:'A Git branch is a movable pointer to a line of commits. It lets you work on changes without immediately mixing them into another branch.'},
 l10:{kind:'lesson',question:'What is overfitting?',options:['A model that learns only the training examples too closely','A model that has no parameters','A model that never trains','A model with perfect generalization'],correct:0,lesson:'Overfitting happens when a model fits training data too specifically and performs worse on new data. Validation data helps reveal this gap.'},
 l11:{kind:'lesson',question:'What is a neural-network weight?',options:['A parameter learned during training','A dataset row','A UI theme','A browser tab'],correct:0,lesson:'Weights are numerical parameters that influence how signals are transformed through a neural network. Training adjusts them to reduce the model’s error.'},
-l12:{kind:'lesson',question:'What makes a technical explanation easier for a beginner?',options:['More jargon','One clear idea plus a concrete example','Longer sentences','No examples'],correct:1,lesson:'Start with one core idea, then ground it in a familiar example. Add technical vocabulary only when it helps precision.'}
+l12:{kind:'lesson',question:'What makes a technical explanation easier for a beginner?',options:['More jargon','One clear idea plus a concrete example','Longer sentences','No examples'],correct:1,lesson:'Start with one core idea, then ground it in a familiar example. Add technical vocabulary only when it helps precision.'},
+l13:{kind:'lesson',question:'What is a user story mainly used for?',options:['Describe a user goal and value','Pick a colour palette','Store a database password','Measure CPU temperature'],correct:0,lesson:'A user story frames who needs something, what they need, and why. It helps the team focus on user value before implementation details.'},
+l14:{kind:'lesson',question:'Which habit is most useful when testing a product idea?',options:['Run a small test with a real task','Change five variables at once','Only ask whether people like the logo','Skip the observation'],correct:0,lesson:'A small task-based test exposes real friction. Observing what someone does is usually more useful than asking only for opinions.'},
+l15:{kind:'lesson',question:'What does a dependency mean in project work?',options:['One task needs another task first','Two tasks have the same colour','A task has no deadline','A feature has more buttons'],correct:0,lesson:'A dependency means one piece of work relies on another being ready first. Mapping dependencies helps a team find the critical path.'}
 };
 
 const CHALLENGES={
@@ -98,6 +101,25 @@ c12:[
 {q:'A buffer is most useful when:',o:['The outcome has uncertainty','Everything is guaranteed','You want zero flexibility','No resources exist'],a:0},
 {q:'A transparent decision log should capture:',o:['Criteria, evidence and reasoning','Only the winner','A secret score','Nothing'],a:0},
 {q:'Best team decision habit?',o:['Say what would change your mind','Defend the first idea forever','Hide uncertainty','Skip evidence'],a:0}]
+,
+c13:[
+{q:'Heist timeline: which move should happen first?',o:['Place the fixed anchor event','Choose a random middle step','Ignore dependencies','Pick the shortest word'],a:0},
+{q:'A teammate owns two clues. Best competitive move?',o:['Share the key deduction before the timer ends','Hide every clue','Change the rules','Stop answering'],a:0},
+{q:'Two players have equal scores. Best tie-break?',o:['A correct one-sentence justification','Who typed more emojis','Who joined first','Random choice'],a:0},
+{q:'A clue contradicts your current answer. What should you do?',o:['Re-check the deduction','Ignore the clue','Lock the answer faster','Delete the chat'],a:0},
+{q:'Final round: what wins a team-friendly challenge?',o:['Correctness plus a clear reason','Volume of messages','Longest answer','Most tabs'],a:0}],
+c14:[
+{q:'Signal race: you receive a partial code. Best move?',o:['Compare it with another player’s chunk','Guess the rest instantly','Ignore your chunk','Restart the room'],a:0},
+{q:'A symbol key is ambiguous. What helps?',o:['Cross-check against another occurrence','Pick a meaning randomly','Delete the symbol','Wait for the timer'],a:0},
+{q:'Two decodings are possible. What should decide?',o:['The full-message consistency','Who spoke first','The louder player','The shortest guess'],a:0},
+{q:'A teammate spots a mismatch. Best move?',o:['Pause and verify the shared rule','Hide the mismatch','Change every symbol','Ignore it'],a:0},
+{q:'Final signal is correct when:',o:['Every chunk agrees with the reconstructed message','One player feels confident','The message is longest','The timer is still running'],a:0}],
+c15:[
+{q:'Escape lab: which layer should be solved first?',o:['The prerequisite clue','The final code','A random optional clue','The room title'],a:0},
+{q:'A teammate solved layer 1. Best handoff?',o:['Explain the rule and the result to the next solver','Just type “done”','Hide the method','Reset the puzzle'],a:0},
+{q:'Two possible codes remain. Best move?',o:['Use the next clue to eliminate one','Guess immediately','Average the codes','Ask the title'],a:0},
+{q:'The final clue changes a rule. What now?',o:['Re-run the affected deduction','Ignore the new rule','Keep the old result','Stop checking'],a:0},
+{q:'The room escapes when:',o:['All three layers agree and the final code is valid','One person guesses correctly','The timer reaches zero','Everyone sends a message'],a:0}]
 };
 
 const GAMES={
