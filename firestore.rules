@@ -612,6 +612,23 @@ service cloud.firestore {
       );
       allow delete: if isAdmin() || (signedIn() && resource.data.creatorUid == request.auth.uid);
 
+      match /invites/{targetUid} {
+        allow read: if signedIn() && (owner(targetUid) || get(/databases/$(database)/documents/rooms/$(roomId)).data.hostUid == request.auth.uid);
+        allow create: if signedIn() && get(/databases/$(database)/documents/rooms/$(roomId)).data.hostUid == request.auth.uid
+          && request.resource.data.targetUid == targetUid && request.resource.data.hostUid == request.auth.uid
+          && request.resource.data.status == 'pending';
+        allow update: if owner(targetUid) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','respondedAtMs'])
+          && request.resource.data.status in ['accepted','declined'];
+        allow delete: if owner(targetUid) || get(/databases/$(database)/documents/rooms/$(roomId)).data.hostUid == request.auth.uid;
+      }
+      match /rtc/{pairId} {
+        allow read, create, update: if signedIn() && exists(/databases/$(database)/documents/rooms/$(roomId)/members/$(request.auth.uid));
+        allow delete: if false;
+        match /candidates/{candidateId} {
+          allow read, create: if signedIn() && exists(/databases/$(database)/documents/rooms/$(roomId)/members/$(request.auth.uid));
+          allow update, delete: if false;
+        }
+      }
       match /members/{memberUid} {
         allow read: if signedIn();
         allow create, delete: if owner(memberUid);
@@ -690,7 +707,7 @@ service cloud.firestore {
       allow create: if signedIn() && request.resource.data.hostUid == request.auth.uid
         && request.resource.data.title is string && request.resource.data.title.size() > 0
         && request.resource.data.title.size() <= 80
-        && request.resource.data.maxPlayers in [2,3,4,6]
+        && request.resource.data.maxPlayers in [2,3,4,6,8]
         && request.resource.data.activitySource in ['catalog','community']
         && request.resource.data.activityType in ['puzzle','build','learn','challenge','game']
         && request.resource.data.challengeId is string
