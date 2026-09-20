@@ -1,48 +1,50 @@
 const DETAILS={
-p1:'Starter: 3, 6, 12, 24, __. Then find two harder patterns of your own.',
-p2:'There are 3 switches outside a room and 3 lamps inside. You may enter once. Work out which switch controls each lamp.',
-p3:'Case: A says “B is lying.” B says “C is lying.” C says “A is truthful.” Exactly one statement is false. Identify it and explain why.',
-p4:'Six seats are in a row. A sits left of B. C is next to D. E is not at an end. F sits right of B. Find one valid arrangement and show the deductions.',
-p5:'Starter: 2, 5, 10, 17, 26, __. Now make one sequence where the rule changes every other step.',
-p6:'Turn COLD into WARM by changing one letter at a time. Every intermediate word must be valid.',
-p7:'Grid: S . # . . / . . # . # / # . . . . / # # # . . / . . . . G. Find a shortest route from S to G without crossing #.',
-p8:'Example: KHOOR → HELLO. Infer the transformation, then decode “WUXR DAY” and create one encoded five-letter word.',
-p9:'Three study sessions happen Mon, Tue, Wed. Math is before coding. Design is not Monday. Coding is not Wednesday. Find the schedule.',
-p10:'A bag has 3 red, 2 blue and 1 green token. Without replacement, what is the probability the first two draws are different colours? Show your counting.',
-p11:'Input/output: 1→3, 2→6, 3→11, 4→18. Infer the rule and predict 5. Then invent a second rule that matches the first four.',
-p12:'Secret code has four digits. Guess 1234: one digit is correct and well placed. Guess 5678: no digit is correct. Guess 9012: two digits are correct but misplaced. Deduce one possible code and reasoning.'
+p1:'Solve a tiny mystery: work out who moved the missing notebook from three truthful clues.',
+p2:'Plan a one-screen emergency-free travel route: choose the order that avoids backtracking.',
+p3:'Spot the fake product review by comparing claims, evidence and contradictions.',
+p4:'Decode a message from a simple letter-shift and then make your own.',
+p5:'Beat the budget: distribute a fixed amount across essentials without wasting the buffer.',
+p6:'Find the fastest way through a blocked grid and explain why the route is shortest.',
+p7:'Schedule three people around availability, dependencies and one fixed appointment.',
+p8:'Choose the best experiment for testing a claim while changing only one variable.',
+p9:'Use probability to decide between two fair-looking game strategies.',
+p10:'Repair a broken workflow by identifying the first step that can never happen.',
+p11:'Rank a set of options using explicit constraints rather than a gut feeling.',
+p12:'Crack a four-digit code using position and inclusion clues, then explain the deductions.'
 };
 const dayMs=86400000;
 const C=(id,type,category,title,description,goal,instructions,durationMin,difficulty,cycleDays,icon)=>({id,type,category,title,description,goal,instructions,durationMin,difficulty,cycleDays,icon,source:'catalog'});
 
 const P=[
-['p1','Logic','Pattern Breaker','Find the missing item in a number or visual pattern.','Solve the featured pattern and explain the rule.','Check differences, ratios, position, repetition and alternating rules before choosing.',15,'Easy',14,'🔢'],
-['p2','Logic','Three Switch Mystery','Use one visit to identify which switch controls each lamp.','Choose the useful clue and explain the reasoning.','Create extra information before entering; use heat, light state and elimination.',12,'Medium',21,'💡'],
-['p3','Logic','Truth & Lie Case','Use the statements to find the single false clue.','Identify the false statement and explain the contradiction.','Test every statement against the others and eliminate contradictions.',18,'Medium',14,'🕵️'],
-['p4','Logic','Seat the Team','Place people using ordering and adjacency clues.','Find one valid arrangement from the clues.','Translate clues into before, after, next-to and position constraints.',20,'Medium',30,'🪑'],
-['p5','Math Logic','Missing Number Lab','Find the hidden rule in a number sequence.','Choose the missing value and explain the pattern.','Try differences, ratios, alternating rules and digit operations.',20,'Easy',14,'🧠'],
-['p6','Word','Word Ladder Sprint','Transform a start word into a target by changing one letter at a time.','Choose the valid next step in the ladder.','Every step must be a valid word; change one letter only.',15,'Easy',14,'🔤'],
-['p7','Spatial','Grid Escape','Find a shortest route through a blocked grid.','Choose the correct route strategy for the featured grid.','Mark dead ends, count moves and compare candidate paths.',18,'Medium',21,'🗺️'],
-['p8','Logic','Crack the Tiny Code','Infer the rule behind an encoded message.','Choose the decoding rule that fits the example.','Compare repeated symbols, positions, shifts and word lengths.',20,'Medium',30,'🔐'],
-['p9','Logic','Calendar Detective','Use ordering clues to solve a small schedule.','Choose a schedule that satisfies every clue.','Build a small calendar table and eliminate impossible dates first.',20,'Medium',30,'📅'],
-['p10','Probability','Chance or Choice?','Compare the odds of two strategies in a probability scenario.','Choose the correct probability reasoning.','List possible outcomes, count equally likely cases and compare ratios.',15,'Medium',21,'🎲'],
-['p11','Logic','Spot the Rule','Find the transformation hidden in an input/output table.','Choose the rule that predicts the next value.','Compare rows, columns and changes between input and output.',18,'Medium',14,'🔍'],
-['p12','Logic','Codebreaker Mini','Use feedback clues to narrow down a secret code.','Choose the deduction that best fits the clues.','Separate exact-position clues from correct-symbol clues and keep candidates.',25,'Hard',40,'🧩']
+['p1','Logic','Notebook Mystery','Find the only suspect consistent with every clue.','Compare three short statements and catch the contradiction.','Test each suspect against every clue instead of guessing.',15,'Easy',14,'🕵️'],
+['p2','Planning','Route Optimiser','Choose an efficient order for five stops.','Build a route with no duplicate stop and minimal backtracking.','Compare total distance and make the final stop matter.',15,'Easy',21,'🗺️'],
+['p3','Media','Review Reality Check','Spot which review claim is unsupported.','Separate evidence from hype in a mini review set.','Look for specific evidence, contradictions and absolute claims.',15,'Medium',14,'🔎'],
+['p4','Code','Message Decoder','Decode a short message and identify the transformation.','Find the shift and use it on a second word.','Compare each letter position before choosing the rule.',15,'Easy',21,'🔐'],
+['p5','Money','Budget Battle','Make a small event fit a fixed budget.','Choose the allocation that covers essentials and keeps a buffer.','Protect essentials first and reject allocations over budget.',18,'Medium',30,'💰'],
+['p6','Spatial','Shortest Path','Choose the shortest valid route through a grid.','Find the route with the fewest moves.','Count moves and reject paths that cross blocked cells.',18,'Medium',21,'🧭'],
+['p7','Planning','Calendar Puzzle','Build a three-person schedule from availability clues.','Choose the schedule that satisfies every constraint.','Start with fixed events, then eliminate impossible slots.',18,'Medium',30,'📅'],
+['p8','Science','Fair Test','Pick the experiment that actually tests the claim.','Identify the controlled comparison.','Change one variable and keep the comparison group meaningful.',18,'Medium',30,'🧪'],
+['p9','Probability','Game Odds','Compare two simple probability strategies.','Choose the mathematically justified option.','Count equally likely outcomes before deciding.',15,'Medium',21,'🎲'],
+['p10','Systems','Workflow Rescue','Find the impossible step in a broken process.','Identify the first dependency that fails.','Trace inputs and outputs one step at a time.',15,'Medium',21,'🔧'],
+['p11','Decision','Constraint Sort','Choose an option using explicit requirements.','Find the only option meeting all hard constraints.','Separate must-haves from nice-to-haves.',15,'Medium',30,'📋'],
+['p12','Logic','Four-Digit Crack','Use exact and misplaced clues to narrow a code.','Find a valid code from the clues.','Keep exact-position and misplaced-digit information separate.',20,'Hard',40,'🧩']
 ];
+
 const B=[
-['Systems','Build a Reminder Flow','Arrange the pieces of a reminder system from trigger to result.','Create a working flow with the right order and no missing step.','Choose the trigger first, then condition, action and feedback.',25,'Easy',21,'🔔'],
-['Planning','Build a Study Day','Arrange six study blocks into a realistic day with breaks and priorities.','Create a schedule that completes the required work without overlap.','Protect focused time, add recovery and place the hardest block when attention is highest.',25,'Easy',14,'🗓️'],
-['Routes','Build a Smart Route','Arrange five stops into the required route.','Reach every required stop and finish at the destination.','Think about order and the final destination before committing.',20,'Medium',21,'🗺️'],
-['Budget','Build a ₹5,000 Event','Allocate a fixed budget across venue, food, travel and backup.','Stay under budget while covering every required category.','Spend on essentials first and keep a deliberate buffer.',25,'Medium',30,'💰'],
-['Space','Build a Desk Setup','Place three essential objects on a small grid without blocking the main work zone.','Place every required object and keep the central area clear.','Keep frequently used objects close and preserve a clean movement path.',20,'Easy',21,'🖥️'],
-['Workflow','Build a Support Workflow','Arrange a customer-support flow from issue to resolution.','Create a sequence that handles every required step exactly once.','Separate verification, investigation, resolution and follow-up.',20,'Medium',30,'🔄'],
-['Dashboard','Build an Insight Board','Arrange four information blocks so the key metric is visible first.','Put the decision-critical information in the correct hierarchy.','Start with the question a user needs answered, then add supporting context.',25,'Medium',30,'📊'],
-['Strategy','Build a Revision Plan','Arrange revision topics around prerequisites and limited time.','Create a sequence that respects every prerequisite.','Learn foundations before dependent topics and leave a final review block.',25,'Medium',21,'🧠'],
-['Resources','Build a Travel Pack','Allocate 12 weight units across essentials for a one-day trip.','Cover every required category without crossing the 12-unit limit.','Prioritize essentials, leave room for contingency and stay within the total weight.',20,'Easy',14,'🎒'],
-['Decision','Build a Rescue Plan','Arrange response steps for a simple non-dangerous everyday failure scenario.','Create a safe and complete response order.','Check the problem, stabilize the situation, choose a fix and verify the result.',20,'Medium',21,'🧭'],
-['Grid','Build a Mini Workspace','Place required zones on a 4×4 grid while keeping related zones adjacent.','Satisfy every placement constraint.','Place fixed zones first, then use adjacency constraints to finish the layout.',25,'Hard',30,'▦'],
-['Team','Build a Team Mission','Assign four distinct roles to four people without duplicate roles.','Produce one valid assignment with every role used once.','Match each person to one role and make sure no role is assigned twice.',25,'Medium',21,'🤝']
+['Systems','Build a Reminder Flow','Arrange a notification flow from trigger to feedback.','Create a complete flow with every stage in the right order.','Start with the trigger, then condition, action and feedback.',20,'Easy',21,'🔔'],
+['Planning','Build a Focus Session','Arrange a realistic 30-minute focus routine.','Create a sequence that protects focus and includes a finish step.','Put setup before focus, recovery after focus and reflection last.',20,'Easy',14,'🎯'],
+['Routes','Build a City Hop','Arrange five stops without repeating one.','Create a complete route ending at the destination.','Use the destination clue before arranging the middle stops.',20,'Medium',21,'🗺️'],
+['Budget','Build a Mini Event','Allocate a fixed budget across essentials and reserve.','Cover all required costs without exceeding the budget.','Meet minimums first, then keep any remaining money as reserve.',20,'Medium',30,'💸'],
+['Space','Build a Desk Zone','Place work zones on a grid with useful neighbours.','Use every zone once and satisfy adjacency rules.','Place the main work zone first, then nearby support zones.',20,'Easy',21,'🖥️'],
+['Workflow','Build a Bug Triage','Arrange a bug report from reproduction to verification.','Create a workflow that never skips verification.','Reproduce before fixing and verify after changing.',20,'Medium',30,'🐞'],
+['Dashboard','Build a Decision Board','Arrange information so the key decision is visible first.','Put the decision-critical block at the top of the hierarchy.','Question first, evidence second, detail last.',20,'Medium',30,'📊'],
+['Strategy','Build a Learning Path','Arrange topics around prerequisites and practice.','Create a sequence that respects dependencies.','Learn foundations before dependent skills.',20,'Medium',21,'🧠'],
+['Resources','Build a Day Pack','Allocate limited weight to practical essentials.','Meet every minimum without crossing the weight limit.','Choose essentials before optional extras.',18,'Easy',14,'🎒'],
+['Decision','Build a Recovery Plan','Arrange safe steps for an everyday project failure.','Create a complete response from diagnosis to verification.','Understand the problem, choose a fix, then verify it.',20,'Medium',21,'🧭'],
+['Grid','Build a Creator Desk','Place four zones on a grid while keeping related zones close.','Use every zone once and satisfy all adjacency rules.','Place constrained zones first.',22,'Hard',30,'▦'],
+['Team','Build a Team Sprint','Assign people to roles using strengths and exclusions.','Produce a valid assignment with every role used once.','Apply exclusions first, then fill the remaining roles.',22,'Medium',21,'🤝']
 ];
+
 const L=[
 ['Coding','Python Foundations','Practice lists, dictionaries, functions and clean data flow.','Pass the knowledge check and explain the concept.','Code first, then rewrite one solution with clearer names and functions.',35,'Easy',30,'🐍'],
 ['Coding','SQL Joins','Learn INNER, LEFT and multi-table joins through a tiny dataset.','Pass the knowledge check and explain the concept.','Predict the row count before running each query.',40,'Medium',21,'🗃️'],
@@ -57,69 +59,67 @@ const L=[
 ['AI','Neural Network Basics','Understand layers, weights, activation and training at a conceptual level.','Pass the knowledge check and explain the concept.','Use a tiny toy example and focus on the data flow.',40,'Medium',40,'🕸️'],
 ['Communication','Explain It Simply','Learn to explain a complex idea to a beginner.','Pass the knowledge check and explain the concept.','Remove jargon, then add only terms that are genuinely useful.',20,'Easy',14,'🎤']
 ];
+
 const Cg=[
-['Focus','20-Minute Deep Work','Choose one meaningful task and work without switching context.','Complete one defined piece of work in 20 focused minutes.','Write the exact outcome first, start a timer, then stop at 20 minutes.',20,'Easy',14,'🎯'],
-['Problem Solving','Five-Problem Sprint','Solve five short problems from a subject you know.','Finish all five with written reasoning.','Do not search for solutions until you have tried each problem.',30,'Medium',21,'⚡'],
-['Learning','Teach Back','Learn one concept, then teach it in a 90-second explanation.','Explain it clearly enough for a beginner.','Use one example and one common mistake.',25,'Easy',14,'🗣️'],
-['Coding','Fix One Bug','Take an old project and resolve one real bug cleanly.','Document cause, fix and test.','Reproduce first, change second, verify last.',30,'Medium',30,'🐞'],
-['Build','No-Tutorial Build','Create a small feature without copying a tutorial.','Ship one working feature.','Use documentation only for specific API facts you need.',45,'Medium',30,'🛠️'],
-['Design','No-Copy Redesign','Redesign one familiar interface from memory.','Create a distinct useful layout and explain two choices.','Avoid tracing an existing screen; solve the same user problem differently.',35,'Medium',21,'✨'],
-['Memory','Recall 20','Study a short page, hide it, then recall 20 facts.','Reach 15 correct recalls.','Write from memory before checking the original.',20,'Easy',14,'🧩'],
-['Observation','Detail Hunt','Inspect a scene, page or object and record specific details.','Find 15 verifiable details.','Separate what you saw from what you assumed.',20,'Easy',14,'🔎'],
-['Research','30-Minute Mini Research','Answer one real question using multiple reliable sources.','Write a 5-point evidence summary.','Record source names and distinguish facts from interpretations.',30,'Medium',21,'📖'],
-['Refactor','Make It Cleaner','Take one messy piece of code and improve readability.','Reduce duplication or complexity in one area.','Keep behavior the same and describe what improved.',30,'Medium',30,'🧹'],
-['Reading','Read & Synthesize','Read one focused article or chapter section.','Write the main idea plus three supporting points.','End with one question the reading created for you.',25,'Easy',14,'📘'],
-['Collaboration','Solve Together','Pair up on one logic or coding problem and compare approaches.','Reach one shared solution and explain the trade-offs.','Let each person propose an approach before combining them.',30,'Medium',21,'🤝']
+['Focus','Distraction Dodge','Beat a set of quick focus decisions.','Score at least 3 of 5 and explain your strategy.','Choose the action that protects the current goal.',15,'Easy',14,'🎯'],
+['Logic','Mystery Sprint','Solve five tiny logic cases.','Score at least 3 of 5 and explain one deduction.','Use clues rather than intuition.',20,'Medium',21,'🕵️'],
+['Coding','Code Sense Sprint','Predict small pieces of code before running them.','Score at least 3 of 5 and explain one prediction.','Trace values line by line.',20,'Medium',21,'💻'],
+['Money','Budget Sprint','Make five quick spending decisions.','Score at least 3 of 5 and explain one trade-off.','Check totals and priorities.',15,'Easy',14,'💰'],
+['Science','Experiment Sprint','Choose the soundest experimental design in five rounds.','Score at least 3 of 5 and explain one control.',20,'Medium',30,'🧪'],
+['Media','Fact or Hype','Separate evidence-backed claims from unsupported claims.','Score at least 3 of 5 and explain one clue.',15,'Medium',21,'📰'],
+['Planning','Time Attack','Solve five scheduling decisions under constraints.','Score at least 3 of 5 and explain one ordering choice.',18,'Medium',21,'⏱️'],
+['Math','Number Dash','Solve five quick number problems.','Score at least 3 of 5 and show one calculation.',15,'Easy',14,'🔢'],
+['AI','ML Mini-Quiz','Make five practical model-selection decisions.','Score at least 3 of 5 and explain one choice.',20,'Medium',30,'🤖'],
+['Communication','Explain Better','Pick the clearest explanation in five situations.','Score at least 3 of 5 and explain one choice.',15,'Easy',14,'🎤'],
+['Problem Solving','Fix-It Sprint','Choose the next useful debugging step in five cases.','Score at least 3 of 5 and explain one fix.',20,'Medium',21,'🛠️'],
+['Decision','Trade-off Sprint','Choose actions under competing constraints.','Score at least 3 of 5 and explain one trade-off.',18,'Medium',30,'⚖️']
 ];
+
 const G=[
-['Word','Word Chain','Build a chain where each new word connects to the previous one.','Reach 20 connected words.','Choose a clear category or relation and keep the chain understandable.',10,'Easy',14,'🔗'],
-['Social','20 Questions','Guess a secret object using yes/no questions.','Guess within 20 questions.','Ask broad category questions before narrowing down.',15,'Easy',14,'❔'],
-['Creative','Emoji Story','Create a short story using 8 chosen emojis.','Tell a coherent beginning, middle and end.','Use emojis as constraints, not just decoration.',15,'Easy',21,'😀'],
-['Drawing','Draw & Guess','One person draws a simple concept while others guess it.','Complete 8 rounds.','Keep drawings quick; focus on communication.',20,'Easy',14,'✏️'],
-['Words','Category Chain','Take turns naming items in one category without repeats.','Reach 25 unique items.','Pick a category large enough for the group and track repeats.',15,'Easy',14,'📚'],
-['Memory','Sequence Recall','Watch a short sequence and reproduce it from memory.','Complete 6 rounds.','Repeat the sequence mentally in chunks before entering it.',15,'Medium',21,'🧠'],
-['Social','Two Facts & A Trick','Share three statements and let the group identify the invented one.','Play 5 rounds.','Keep statements light and based on ordinary experiences.',15,'Easy',14,'🎭'],
-['Logic','Reverse Definition','Give a definition without saying the target word.','Get 12 words guessed.','Describe meaning, use or example while avoiding obvious fragments.',15,'Medium',21,'🔤'],
-['Trivia','Speed Trivia','Answer a mixed set of quick knowledge questions.','Get 15 correct answers.','Mark uncertain answers and review the ones you missed.',15,'Easy',14,'⚡'],
-['Language','Alias Round','Describe a target word using related ideas under time pressure.','Complete 10 successful guesses.','Use examples, contrasts and categories instead of the word itself.',15,'Medium',21,'🎙️'],
-['Patterns','Visual Sequence','Identify the next item in quick visual sequences.','Solve 10 rounds.','Look for rotation, count, position and color changes.',15,'Medium',14,'🟣'],
-['Team','Build-a-Story','Each person adds one sentence to create a shared story.','Complete a 12-sentence story.','Keep continuity while adding one surprising but safe detail.',15,'Easy',21,'📖']
+['Words','Word Shuffle','Unscramble short words against the clock.','Solve 5 rounds correctly.','Rearrange letters mentally before committing.',15,'Easy',14,'🔤'],
+['Memory','Pattern Memory','Remember short symbol sequences and reproduce them.','Pass 4 rounds.','Chunk the sequence into small groups.',15,'Easy',14,'🧠'],
+['Observation','Odd One Out','Spot the item that breaks the rule in each round.','Solve 5 rounds.','Find the shared rule before looking for the odd item.',15,'Easy',14,'👀'],
+['Speed','Quick Maths','Solve rapid arithmetic rounds.','Get 4 of 5 correct.','Estimate first, then calculate.',12,'Easy',14,'⚡'],
+['Trivia','Curiosity Quiz','Answer a mixed set of practical trivia.','Get 4 of 5 correct.','Use elimination when you are unsure.',15,'Easy',14,'❓'],
+['Patterns','Sequence Snap','Pick the next item in changing sequences.','Solve 4 of 5.','Check differences, ratios and alternating rules.',15,'Medium',21,'🧩'],
+['Language','Alias Rush','Choose the word that best matches a description.','Solve 4 of 5.','Think of meaning, not spelling alone.',15,'Easy',14,'🎙️'],
+['Spatial','Grid Memory','Remember where targets appeared on a small grid.','Pass 4 rounds.','Mentally group nearby cells.',15,'Medium',21,'▦'],
+['Logic','Rule Switch','Notice when the rule changes between rounds.','Solve 4 of 5.','Do not assume the previous rule still applies.',15,'Medium',21,'🔄'],
+['Creativity','Story Choice','Choose the next sentence that keeps a story coherent.','Complete 5 rounds.','Track characters, cause and effect.',15,'Easy',14,'📖'],
+['Team','Co-op Quiz','Play a short quiz with a friend or room.','Finish all 5 rounds and record your score.','Compare answers after each round.',15,'Easy',14,'🤝'],
+['Reflex','Focus Tap','Choose the target symbol among decoys.','Clear 5 rounds without a wrong target.',12,'Easy',14,'🎯']
 ];
 
 const BUILD_CONFIG={
  b1:{mechanic:'order',items:['Trigger','Condition','Action','Feedback'],target:['Trigger','Condition','Action','Feedback']},
- b2:{mechanic:'order',items:['Hard topic','Break','Easy topic','Practice','Review','Plan tomorrow'],target:['Hard topic','Break','Easy topic','Practice','Review','Plan tomorrow']},
- b3:{mechanic:'order',items:['Start','Stop A','Stop B','Stop C','Destination'],target:['Start','Stop A','Stop B','Stop C','Destination']},
- b4:{mechanic:'allocate',budget:5000,items:[['Venue',1000],['Food',1500],['Travel',500],['Backup',300]],mins:[1000,1500,500,300]},
+ b2:{mechanic:'order',items:['Choose outcome','Set timer','Focus','Short reset','Review result'],target:['Choose outcome','Set timer','Focus','Short reset','Review result']},
+ b3:{mechanic:'order',items:['Start','Cafe','Park','Museum','Destination'],target:['Start','Cafe','Park','Museum','Destination']},
+ b4:{mechanic:'allocate',budget:5000,items:[['Venue',1000],['Food',1500],['Travel',500],['Reserve',300]],mins:[1000,1500,500,300]},
  b5:{mechanic:'grid',size:4,required:['Desk','Lamp','Notebook'],blocked:[5,6,9,10],adjacentPairs:[['Lamp','Desk'],['Notebook','Desk']]},
- b6:{mechanic:'order',items:['Receive issue','Verify','Investigate','Resolve','Follow up'],target:['Receive issue','Verify','Investigate','Resolve','Follow up']},
- b7:{mechanic:'order',items:['Key metric','Trend','Breakdown','Detail'],target:['Key metric','Trend','Breakdown','Detail']},
- b8:{mechanic:'order',items:['Foundations','Core skill','Application','Practice','Review'],target:['Foundations','Core skill','Application','Practice','Review']},
- b9:{mechanic:'allocate',budget:12,items:[['Water',2],['Food',3],['Navigation',2],['Contingency',1]],mins:[2,3,2,1]},
- b10:{mechanic:'order',items:['Understand problem','Stabilize','Choose fix','Apply','Verify'],target:['Understand problem','Stabilize','Choose fix','Apply','Verify']},
+ b6:{mechanic:'order',items:['Reproduce','Describe','Fix','Test','Close'],target:['Reproduce','Describe','Fix','Test','Close']},
+ b7:{mechanic:'order',items:['Question','Key metric','Trend','Breakdown','Detail'],target:['Question','Key metric','Trend','Breakdown','Detail']},
+ b8:{mechanic:'order',items:['Foundation','Core skill','Mini project','Practice','Review'],target:['Foundation','Core skill','Mini project','Practice','Review']},
+ b9:{mechanic:'allocate',budget:12,items:[['Water',2],['Food',3],['Navigation',2],['First aid',1]],mins:[2,3,2,1]},
+ b10:{mechanic:'order',items:['Understand','Stabilize','Choose fix','Apply','Verify'],target:['Understand','Stabilize','Choose fix','Apply','Verify']},
  b11:{mechanic:'grid',size:4,required:['Focus','Reference','Write','Tools'],blocked:[3,7,12],adjacentPairs:[['Focus','Write'],['Reference','Tools']]},
  b12:{mechanic:'assign',people:['Ava','Ben','Cara','Dev'],roles:['Planner','Builder','Checker','Presenter'],correct:{Ava:'Planner',Ben:'Builder',Cara:'Checker',Dev:'Presenter'}}
 };
 export function getBuildConfig(id){return BUILD_CONFIG[id]||null}
 
 export const ACTIVITY_CATALOG=[
-  ...P.map((x,i)=>C('p'+(i+1),'puzzle',...x)),
-  ...B.map((x,i)=>C('b'+(i+1),'build',...x)),
-  ...L.map((x,i)=>C('l'+(i+1),'learn',...x)),
-  ...Cg.map((x,i)=>C('c'+(i+1),'challenge',...x)),
-  ...G.map((x,i)=>C('g'+(i+1),'game',...x))
+ ...P.map((x,i)=>C('p'+(i+1),'puzzle',...x)),
+ ...B.map((x,i)=>C('b'+(i+1),'build',...x)),
+ ...L.map((x,i)=>C('l'+(i+1),'learn',...x)),
+ ...Cg.map((x,i)=>C('c'+(i+1),'challenge',...x)),
+ ...G.map((x,i)=>C('g'+(i+1),'game',...x))
 ];
 
 export function getCatalogActivity(id){
-  const item=ACTIVITY_CATALOG.find(x=>x.id===id);
-  if(!item)return null;
-  const now=Date.now(), cycle=Math.max(7,item.cycleDays||30), epoch=Date.UTC(2026,0,1);
-  const index=Math.max(0,Math.floor((now-epoch)/(cycle*dayMs)));
-  const startMs=epoch+index*cycle*dayMs;
-  const endAtMs=startMs+cycle*dayMs;
-  return {...item,challengeBrief:DETAILS[item.id]||null,startAtMs:startMs, endAtMs:endAtMs, expiresInDays:Math.max(0,Math.ceil((endAtMs-now)/dayMs))};
+ const item=ACTIVITY_CATALOG.find(x=>x.id===id);
+ if(!item)return null;
+ const now=Date.now(),cycle=Math.max(7,item.cycleDays||30),epoch=Date.UTC(2026,0,1);
+ const index=Math.max(0,Math.floor((now-epoch)/(cycle*dayMs)));
+ const startMs=epoch+index*cycle*dayMs,endAtMs=startMs+cycle*dayMs;
+ return {...item,challengeBrief:DETAILS[item.id]||null,startAtMs:startMs,endAtMs,expiresInDays:Math.max(0,Math.ceil((endAtMs-now)/dayMs))};
 }
-
-export function activeCatalogActivities(){
-  return ACTIVITY_CATALOG.map(x=>getCatalogActivity(x.id)).filter(Boolean);
-}
+export function activeCatalogActivities(){return ACTIVITY_CATALOG.map(x=>getCatalogActivity(x.id)).filter(Boolean)}
