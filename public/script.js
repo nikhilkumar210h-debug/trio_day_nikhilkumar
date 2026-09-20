@@ -1462,7 +1462,7 @@ function buildStoryCard(data) {
     e.stopPropagation();
     const storyUrl = new URL(`view_post.html?postId=${encodeURIComponent(postId)}`, location.href).href;
     if(navigator.share){
-      try{ await navigator.share({title: `${data.name||'Story'} on Trio Day`, url: storyUrl}); await notifyUser(data.uid, {type:'share', actorUid: currentUser?.uid, actorName: (await getMyProfile(currentUser.uid))?.name||'Someone', postId}).catch(()=>{}); }catch{}
+      try{ await navigator.share({title: `${data.name||'Story'} on Trio Day`, url: storyUrl}); }catch{}
     } else {
       try{ await navigator.clipboard.writeText(storyUrl); alert('Story link copied ✅'); }catch{ prompt('Copy link', storyUrl); }
     }
