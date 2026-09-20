@@ -79,22 +79,9 @@ async function isConnected(myUid, theirUid) {
 // ── Cached posts list ────────────────────────────────────────────────────────
 // Profile posts don't change that often — 2 min TTL
 async function getCachedUserPosts(uid) {
-  const key = `posts_${uid}`;
-  const cached = trioCache.get(key);
-  if (cached) return cached;
-  // Bound query: limit to 50 most recent, filter server-side where possible
-  try {
-    // First, let's check what fields exist in posts collection
-    const snap = await getDocs(
-      query(collection(db, 'posts'), where('uid', '==', uid), where('isStory', '==', false), orderBy('createdAtMs', 'desc'), limit(50))
-    );
-    const posts = snap.docs.map(d => ({ ...d.data(), _id: d.id })).filter(p => p.type !== 'story');
-    trioCache.set(key, posts, trioCache.TTL.SHORT);
-    return posts;
-  } catch (err) {
-    console.error('[Profile] Error fetching posts:', err);
-    return [];
-  }
+  // Posts are intentionally not rendered on profiles; Trio Day profiles focus on identity,
+  // progress, activities and connections. Keep this stub for compatibility with older callers.
+  return [];
 }
 
 // ── Load connections panel ───────────────────────────────────────────────────
@@ -422,20 +409,7 @@ async function loadProfile(uid) {
   // 4. Connections panel — cached
   await loadConnections(uid);
 
-  // 5. Posts list — cached (story short-term, don't show in profile)
-  const posts = $('postsList'); posts.innerHTML = '<div class="td-skeleton td-skeleton--wide"></div>';
-  const userPosts = await getCachedUserPosts(uid);
-   posts.innerHTML = '';
-  if (!userPosts.length) {
-    posts.innerHTML = '<div class="connections-empty">No posts yet.</div>';
-  } else {
-    [...userPosts]
-      .sort((a, b) => (b.createdAtMs || 0) - (a.createdAtMs || 0))
-      .forEach(p => {
-        if (window.buildFeedItem) posts.appendChild(window.buildFeedItem(p));
-        else { const el = document.createElement('div'); el.textContent = p.message || ''; posts.appendChild(el); }
-      });
-  }
+
 }
 
 // ── Auth ─────────────────────────────────────────────────────────────────────
