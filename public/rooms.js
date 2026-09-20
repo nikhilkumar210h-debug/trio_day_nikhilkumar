@@ -12,7 +12,7 @@ async function loadActivity(){
  const source=new URLSearchParams(location.search).get('source');
  if(id){
    let a=null;
-   if(source==='catalog')a=activeCatalogActivities().find(x=>x.id===id)||null;
+   if(source==='catalog'){a=activeCatalogActivities().find(x=>x.id===id)||null;if(a)a={...a,source:'catalog',activityType:a.activityType||a.type};}
    else{const s=await getDoc(doc(db,'communityTasks',id));if(s.exists())a={id:s.id,...s.data(),source:'community',activityType:normalizeActivityType(s.data())};}
    if(!a){msg('Activity not found.',true);return;}
    selectedActivity=a;$('challengeId').value=a.id;$('selectedActivity').innerHTML=activityCardHtml(a,{compact:true});$('roomTitle').value=(a.title||'Activity')+' · Room';return;
@@ -21,7 +21,7 @@ async function loadActivity(){
    const snap=await getDocs(query(collection(db,'communityTasks'),where('status','==','active'),limit(40))).catch(()=>null);
    const community=snap?snap.docs.map(d=>({id:d.id,...d.data(),source:'community',activityType:normalizeActivityType(d.data())})):[]; 
    const communityActive=community.filter(t=>!t.hidden&&((t.endAtMs||((t.createdAtMs||Date.now())+30*86400000))>Date.now()));
-   const activities=[...activeCatalogActivities(),...communityActive];
+   const activities=[...activeCatalogActivities().map(a=>({...a,source:'catalog',activityType:a.activityType||a.type})),...communityActive];
    const laneOrder=['puzzle','build','learn','challenge','game'];
    $('roomActivityPicker').innerHTML=activities.length?laneOrder.map(type=>{
      const lane=activities.filter(a=>a.activityType===type||a.type===type).slice(0,5);
