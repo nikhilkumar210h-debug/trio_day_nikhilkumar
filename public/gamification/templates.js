@@ -59,30 +59,45 @@ export async function ensureSystemTemplates() {
 
   if (seeded) {
     console.log(`[templates] Seeded ${seeded} missing system template(s).`);
-    trioCache.invalidate(CACHE_KEY);
+    trioCache.invalidatePrefix(CACHE_KEY);
   }
   trioCache.set('templates_seeded', true, trioCache.TTL.LONG);
 }
 
-export async function listActiveTemplates({ cadence = null } = {}) {
+export async function listActiveTemplates({ cadence = null, uid = null } = {}) {
   await ensureSystemTemplates();
-  const cached = trioCache.get(CACHE_KEY);
+  const cacheKey = uid ? `${CACHE_KEY}_${uid}` : CACHE_KEY;
+  const cached = trioCache.get(cacheKey);
   let all = cached;
   if (!all) {
-    const q = query(collection(db, 'taskTemplates'), where('active', '==', true), limit(100));
-    const snap = await getDocs(q).catch(() => null);
-    all = snap
-      ? snap.docs.map(d => ({ id: d.id, ...d.data() }))
-      : SYSTEM_TEMPLATES.map(t => ({ ...t }));
-    if (!all.length) all = SYSTEM_TEMPLATES.map(t => ({ ...t }));
-    trioCache.set(CACHE_KEY, all, trioCache.TTL.LONG);
+    const queries = [
+      getDocs(query(
+        collection(db, 'taskTemplates'),
+        where('active', '==', true),
+        where('isSystem', '==', true),
+        limit(100)
+      )).catch(() => null)
+    ];
+    if (uid) {
+      queries.push(getDocs(query(
+        collection(db, 'taskTemplates'),
+        where('active', '==', true),
+        where('createdBy', '==', uid),
+        limit(100)
+      )).catch(() => null));
+    }
+    const snaps = await Promise.all(queries);
+    const map = new Map();
+    snaps.forEach(snap => snap?.docs?.forEach(d => map.set(d.id, { id: d.id, ...d.data() })));
+    all = map.size ? [...map.values()] : SYSTEM_TEMPLATES.map(t => ({ ...t }));
+    trioCache.set(cacheKey, all, trioCache.TTL.LONG);
   }
   if (cadence) return all.filter(t => t.cadence === cadence);
   return all;
 }
 
-export async function getTemplate(id) {
-  const list = await listActiveTemplates();
+export async function getTemplate(id, uid = null) {
+  const list = await listActiveTemplates({ uid });
   const hit = list.find(t => t.id === id);
   if (hit) return hit;
   const snap = await getDoc(doc(db, 'taskTemplates', id));
@@ -107,11 +122,11 @@ export async function createTemplate(uid, data, { isAdmin = false } = {}) {
   };
   if (data.id && isAdmin) {
     await setDoc(doc(db, 'taskTemplates', data.id), payload, { merge: true });
-    trioCache.invalidate(CACHE_KEY);
+    trioCache.invalidatePrefix(CACHE_KEY);
     return data.id;
   }
   const ref = await addDoc(collection(db, 'taskTemplates'), payload);
-  trioCache.invalidate(CACHE_KEY);
+  trioCache.invalidatePrefix(CACHE_KEY);
   return ref.id;
 }
 
@@ -123,7 +138,7 @@ export async function updateTemplate(id, patch, uid, isAdmin) {
   if (cur.isSystem && !isAdmin) throw new Error('System templates are admin-only');
   if (!isAdmin && cur.createdBy !== uid) throw new Error('Not allowed');
   await updateDoc(ref, { ...patch, updatedAt: serverTimestamp() });
-  trioCache.invalidate(CACHE_KEY);
+  trioCache.invalidatePrefix(CACHE_KEY);
 }
 
 export async function isAdmin(uid) {
