@@ -41,7 +41,16 @@ export async function mountSharedBuildWorkspace(root,{db,roomId,activity,me,onSt
      current={...merged,version:Number(latest.version||0)+1,updatedBy:me.uid,updatedAtMs:Date.now()};
    });
  };
- const pass=async()=>{await write({passed:true,passedBy:me.uid,passedAtMs:Date.now()});onStateChange?.({passed:true})};
+ const pass=async()=>{
+   const teamRoles=current?.teamRoles||{};
+   const activeRoles=new Set(Object.values(teamRoles));
+   const participants=Math.max(1,root.closest('.room-grid')?.querySelectorAll('.room-member').length||1);
+   const needed=Math.min(2,participants);
+   if(activeRoles.size<needed){showBuildRoleWarning();return;}
+   await write({passed:true,passedBy:me.uid,passedAtMs:Date.now()});
+   onStateChange?.({passed:true})
+ };
+ const showBuildRoleWarning=()=>{const out=root.querySelector('.room-forge-status');if(out){out.textContent='Claim roles with at least one teammate before finishing the build.';out.className='room-forge-status bad'}};
  const render=state=>{current=state;const body=root.querySelector('#roomForgeBody');if(!body)return;
   const myRole=state.teamRoles?.[me.uid]||'';
   const claimedRoles=new Set(Object.values(state.teamRoles||{}));
