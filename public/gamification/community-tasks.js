@@ -307,6 +307,31 @@ export async function leaveTask(taskId, uid) {
   await bumpCounter(taskId, 'leave', joinedAtMs);
 
   trioCache.invalidatePrefix('ctasks_');
+  trioCache.invalidate(`joined_tasks_${uid}`);
+}
+
+export async function getMyJoinedTaskIds(uid, max = 100) {
+  if (!uid) return new Set();
+  const cacheKey = `joined_tasks_${uid}`;
+  const cached = trioCache.get(cacheKey);
+  if (cached instanceof Set) return cached;
+  try {
+    const snap = await getDocs(query(
+      collectionGroup(db, 'members'),
+      where('uid', '==', uid),
+      limit(max)
+    ));
+    const ids = new Set();
+    snap.docs.forEach(d => {
+      const taskRef = d.ref.parent?.parent;
+      if (taskRef?.parent?.id === 'communityTasks') ids.add(taskRef.id);
+    });
+    trioCache.set(cacheKey, ids, trioCache.TTL.SHORT);
+    return ids;
+  } catch (err) {
+    console.warn('[communityTasks] joined-task query failed:', err);
+    return new Set();
+  }
 }
 
 export async function isMember(taskId, uid) {
