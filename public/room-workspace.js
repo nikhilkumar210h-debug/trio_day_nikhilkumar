@@ -51,22 +51,158 @@ export async function mountSharedBuildWorkspace(root,{db,roomId,activity,me,onSt
    onStateChange?.({passed:true})
  };
  const showBuildRoleWarning=()=>{const out=root.querySelector('.room-forge-status');if(out){out.textContent='Claim roles with at least one teammate before finishing the build.';out.className='room-forge-status bad'}};
- const render=state=>{current=state;const body=root.querySelector('#roomForgeBody');if(!body)return;
+ const render=state=>{
+  current=state;
+  const body=root.querySelector('#roomForgeBody');
+  if(!body)return;
+
   const myRole=state.teamRoles?.[me.uid]||'';
   const claimedRoles=new Set(Object.values(state.teamRoles||{}));
-  const roleHtml='<div class="room-team-roles"><div class="room-team-roles-head"><strong>Pick your job</strong><small>Claim one role, then work on the shared board.</small></div><div class="room-team-role-list">'+availableRoles.map(role=>'<button type="button" class="room-team-role '+(myRole===role?'is-active':'')+'" data-role="'+esc(role)+'" '+(claimedRoles.has(role)&&myRole!==role?'disabled':'')+'>'+esc(role)+'</button>').join('')+'</div></div>';
-  if(cfg.mechanic==='order'){body.insertAdjacentHTML('beforeend','<div class="forge-order-list">'+state.order.map((item,i)=>'<div class="forge-order-row"><span class="forge-order-label">'+esc(item)+'</span><button class="forge-mini-btn" data-move="'+i+'" data-dir="-1">↑</button><button class="forge-mini-btn" data-move="'+i+'" data-dir="1">↓</button></div>').join('')+'</div><div class="room-forge-actions"><button class="room-forge-btn room-forge-btn--primary" id="roomCheck">Check shared build</button></div><div id="roomResult" class="room-forge-status">'+(state.passed?'Shared build accepted ✓':'')+'</div>';
-   body.querySelectorAll('[data-move]').forEach(b=>b.onclick=async()=>{const i=Number(b.dataset.move),to=i+Number(b.dataset.dir);if(to<0||to>=state.order.length)return;const order=state.order.slice();[order[i],order[to]]=[order[to],order[i]];await write({order})});
-   body.querySelector('#roomCheck').onclick=()=>{const ok=(cfg.target||[]).length===state.order.length&&(cfg.target||[]).every((x,i)=>x===state.order[i]);const out=body.querySelector('#roomResult');out.textContent=ok?'Shared build accepted ✓':'Not yet — keep working with the room.';out.className='room-forge-status '+(ok?'ok':'bad');if(ok)pass()};
-  }else if(cfg.mechanic==='allocate'){body.innerHTML='<div class="forge-budget-list">'+cfg.items.map((it,i)=>'<label class="forge-budget-row"><strong>'+esc(it[0])+'</strong><input type="number" min="0" max="'+cfg.budget+'" value="'+Number(state.alloc?.[i]||0)+'" data-alloc="'+i+'"><span></span></label>').join('')+'</div><div class="forge-total">Total: <strong id="roomTotal">0</strong> / '+cfg.budget+'</div><div class="room-forge-actions"><button class="room-forge-btn room-forge-btn--primary" id="roomCheck">Check allocation</button></div><div id="roomResult" class="room-forge-status">'+(state.passed?'Shared allocation accepted ✓':'')+'</div>';const updateTotal=()=>{const vals=[...body.querySelectorAll('[data-alloc]')].map(x=>Math.max(0,Number(x.value)||0));body.querySelector('#roomTotal').textContent=vals.reduce((a,b)=>a+b,0)};body.querySelectorAll('[data-alloc]').forEach(input=>input.onchange=async()=>{const alloc={...(state.alloc||{})};alloc[input.dataset.alloc]=Math.max(0,Number(input.value)||0);await write({alloc})});updateTotal();body.querySelector('#roomCheck').onclick=()=>{const total=Object.values(state.alloc||{}).reduce((a,b)=>a+Number(b||0),0);const mins=cfg.mins||[];const ok=total<=cfg.budget&&cfg.items.every((it,i)=>Number(state.alloc?.[i]||0)>=Number(mins[i]||0));const out=body.querySelector('#roomResult');out.textContent=ok?'Shared allocation accepted ✓':'Adjust the shared allocation to satisfy the minimums and budget.';out.className='room-forge-status '+(ok?'ok':'bad');if(ok)pass()};
+  const roleHtml='<div class="room-team-roles">'+
+    '<div class="room-team-roles-head"><strong>Pick your job</strong><small>Claim one role, then work on the shared board.</small></div>'+
+    '<div class="room-team-role-list">'+
+      availableRoles.map(role=>'<button type="button" class="room-team-role '+(myRole===role?'is-active':'')+'" data-role="'+esc(role)+'" '+(claimedRoles.has(role)&&myRole!==role?'disabled':'')+'>'+esc(role)+'</button>').join('')+
+    '</div></div>';
+
+  let boardHtml='';
+  if(cfg.mechanic==='order'){
+    boardHtml='<div class="forge-order-list">'+state.order.map((item,i)=>
+      '<div class="forge-order-row"><span class="forge-order-label">'+esc(item)+'</span>'+
+      '<button type="button" class="forge-mini-btn" data-move="'+i+'" data-dir="-1" '+(state.passed?'disabled':'')+'>↑</button>'+
+      '<button type="button" class="forge-mini-btn" data-move="'+i+'" data-dir="1" '+(state.passed?'disabled':'')+'>↓</button></div>'
+    ).join('')+'</div>'+
+    '<div class="room-forge-actions"><button type="button" class="room-forge-btn room-forge-btn--primary" id="roomCheck" '+(state.passed?'disabled':'')+'>Check shared build</button></div>'+
+    '<div id="roomResult" class="room-forge-status '+(state.passed?'ok':'')+'">'+(state.passed?'Shared build accepted ✓':'')+'</div>';
+  }else if(cfg.mechanic==='allocate'){
+    boardHtml='<div class="forge-budget-list">'+cfg.items.map((it,i)=>
+      '<label class="forge-budget-row"><strong>'+esc(it[0])+'</strong><input type="number" min="0" max="'+cfg.budget+'" value="'+Number(state.alloc?.[i]||0)+'" data-alloc="'+i+'" '+(state.passed?'disabled':'')+'><span></span></label>'
+    ).join('')+'</div>'+
+    '<div class="forge-total">Total: <strong id="roomTotal">0</strong> / '+cfg.budget+'</div>'+
+    '<div class="room-forge-actions"><button type="button" class="room-forge-btn room-forge-btn--primary" id="roomCheck" '+(state.passed?'disabled':'')+'>Check allocation</button></div>'+
+    '<div id="roomResult" class="room-forge-status '+(state.passed?'ok':'')+'">'+(state.passed?'Shared allocation accepted ✓':'')+'</div>';
+  }else if(cfg.mechanic==='grid'){
+    const blocked=new Set(cfg.blocked||[]);
+    boardHtml='<div class="room-forge-grid-tools">'+cfg.required.map((x,i)=>
+      '<button type="button" class="room-forge-grid-tool '+(i===tool?'active':'')+'" data-tool="'+i+'" '+(state.passed?'disabled':'')+'>'+esc(x)+'</button>'
+    ).join('')+'</div>'+
+    '<div class="room-forge-grid">'+Array.from({length:cfg.size*cfg.size},(_,i)=>
+      '<button type="button" class="room-forge-cell '+(blocked.has(i)?'blocked':'')+'" data-cell="'+i+'" '+(blocked.has(i)||state.passed?'disabled':'')+'>'+esc(state.placed?.[i]!==undefined?cfg.required[state.placed[i]]:'')+'</button>'
+    ).join('')+'</div>'+
+    '<div class="room-forge-actions" style="margin-top:10px"><button type="button" class="room-forge-btn room-forge-btn--primary" id="roomCheck" '+(state.passed?'disabled':'')+'>Check layout</button></div>'+
+    '<div id="roomResult" class="room-forge-status '+(state.passed?'ok':'')+'">'+(state.passed?'Shared layout accepted ✓':'')+'</div>';
+  }else if(cfg.mechanic==='assign'){
+    boardHtml='<div class="forge-assign-list">'+cfg.people.map(person=>
+      '<label class="forge-assign-row"><span>'+esc(person)+'</span><select data-person="'+esc(person)+'" '+(state.passed?'disabled':'')+'><option value="">Choose role…</option>'+
+      cfg.roles.map(role=>'<option '+(state.assign?.[person]===role?'selected':'')+'>'+esc(role)+'</option>').join('')+
+      '</select></label>'
+    ).join('')+'</div>'+
+    '<div class="room-forge-actions"><button type="button" class="room-forge-btn room-forge-btn--primary" id="roomCheck" '+(state.passed?'disabled':'')+'>Check team</button></div>'+
+    '<div id="roomResult" class="room-forge-status '+(state.passed?'ok':'')+'">'+(state.passed?'Team accepted ✓':'')+'</div>';
   }
-  else if(cfg.mechanic==='grid'){const blocked=new Set(cfg.blocked||[]);body.innerHTML='<div class="room-forge-grid-tools">'+cfg.required.map((x,i)=>'<button class="room-forge-grid-tool '+(i===tool?'active':'')+'" data-tool="'+i+'">'+esc(x)+'</button>').join('')+'</div><div class="room-forge-grid">'+Array.from({length:cfg.size*cfg.size},(_,i)=>'<button type="button" class="room-forge-cell '+(blocked.has(i)?'blocked':'')+'" data-cell="'+i+'" '+(blocked.has(i)?'disabled':'')+'>'+esc(state.placed?.[i]!==undefined?cfg.required[state.placed[i]]:'')+'</button>').join('')+'</div><div class="room-forge-actions" style="margin-top:10px"><button class="room-forge-btn room-forge-btn--primary" id="roomCheck">Check layout</button></div><div id="roomResult" class="room-forge-status">'+(state.passed?'Shared layout accepted ✓':'')+'</div>';body.querySelectorAll('[data-tool]').forEach(b=>b.onclick=()=>{tool=Number(b.dataset.tool);render(current)});body.querySelectorAll('[data-cell]').forEach(cell=>cell.onclick=async()=>{const p={...(state.placed||{})};const idx=Number(cell.dataset.cell);if(p[idx]!==undefined)delete p[idx];else p[idx]=tool;await write({placed:p})});body.querySelector('#roomCheck').onclick=()=>{const placed=state.placed||{},keys=Object.keys(placed),unique=new Set(Object.values(placed)).size===cfg.required.length,safe=keys.every(k=>!blocked.has(Number(k))),positions={};Object.entries(placed).forEach(([k,v])=>positions[cfg.required[v]]=Number(k));const adj=(a,b)=>(Math.abs(a-b)===1&&Math.floor(a/cfg.size)===Math.floor(b/cfg.size))||Math.abs(a-b)===cfg.size;const adjOk=(cfg.adjacentPairs||[]).every(([a,b])=>positions[a]!==undefined&&positions[b]!==undefined&&adj(positions[a],positions[b]));const ok=keys.length===cfg.required.length&&unique&&safe&&adjOk;const out=body.querySelector('#roomResult');out.textContent=ok?'Shared layout accepted ✓':'Use every required piece once and respect the board constraints.';out.className='room-forge-status '+(ok?'ok':'bad');if(ok)pass()};
+
+  body.innerHTML=roleHtml+boardHtml;
+
+  body.querySelectorAll('[data-role]').forEach(button=>button.onclick=async()=>{
+    if(current.passed)return;
+    const role=button.dataset.role;
+    const teamRoles={...(current.teamRoles||{})};
+    if(myRole===role) delete teamRoles[me.uid];
+    else {
+      Object.keys(teamRoles).forEach(uid=>{if(uid!==me.uid&&teamRoles[uid]===role)delete teamRoles[uid]});
+      teamRoles[me.uid]=role;
+    }
+    await write({teamRoles});
+  });
+
+  if(cfg.mechanic==='order'){
+    body.querySelectorAll('[data-move]').forEach(button=>button.onclick=async()=>{
+      const i=Number(button.dataset.move),to=i+Number(button.dataset.dir);
+      if(current.passed||to<0||to>=current.order.length)return;
+      const order=current.order.slice();
+      [order[i],order[to]]=[order[to],order[i]];
+      await write({order});
+    });
+    body.querySelector('#roomCheck')?.addEventListener('click',()=>{
+      const target=cfg.target||[];
+      const ok=target.length===current.order.length&&target.every((x,i)=>x===current.order[i]);
+      const out=body.querySelector('#roomResult');
+      out.textContent=ok?'Build arrangement is correct.':'Not yet — compare the dependency order with the team.';
+      out.className='room-forge-status '+(ok?'ok':'bad');
+      if(ok)pass();
+    });
+  }else if(cfg.mechanic==='allocate'){
+    const updateTotal=()=>{
+      const vals=[...body.querySelectorAll('[data-alloc]')].map(input=>Math.max(0,Number(input.value)||0));
+      const total=vals.reduce((sum,v)=>sum+v,0);
+      const totalEl=body.querySelector('#roomTotal');
+      if(totalEl)totalEl.textContent=String(total);
+    };
+    body.querySelectorAll('[data-alloc]').forEach(input=>input.addEventListener('input',updateTotal));
+    updateTotal();
+    body.querySelectorAll('[data-alloc]').forEach(input=>input.addEventListener('change',async()=>{
+      if(current.passed)return;
+      const alloc={...(current.alloc||{})};
+      alloc[input.dataset.alloc]=Math.max(0,Number(input.value)||0);
+      await write({alloc});
+    }));
+    body.querySelector('#roomCheck')?.addEventListener('click',()=>{
+      const total=Object.values(current.alloc||{}).reduce((sum,v)=>sum+Number(v||0),0);
+      const mins=cfg.mins||[];
+      const ok=total<=Number(cfg.budget||0)&&cfg.items.every((it,i)=>Number(current.alloc?.[i]||0)>=Number(mins[i]||0));
+      const out=body.querySelector('#roomResult');
+      out.textContent=ok?'Allocation accepted — essentials are covered.':'Adjust the shared budget and try again.';
+      out.className='room-forge-status '+(ok?'ok':'bad');
+      if(ok)pass();
+    });
+  }else if(cfg.mechanic==='grid'){
+    body.querySelectorAll('[data-tool]').forEach(button=>button.onclick=()=>{if(current.passed)return;tool=Number(button.dataset.tool);render(current)});
+    body.querySelectorAll('[data-cell]').forEach(cell=>cell.onclick=async()=>{
+      if(current.passed||cell.disabled)return;
+      const placed={...(current.placed||{})};
+      const idx=Number(cell.dataset.cell);
+      if(placed[idx]!==undefined)delete placed[idx];
+      else placed[idx]=tool;
+      await write({placed});
+    });
+    body.querySelector('#roomCheck')?.addEventListener('click',()=>{
+      const placed=current.placed||{},keys=Object.keys(placed);
+      const unique=new Set(Object.values(placed)).size===cfg.required.length;
+      const safe=keys.every(k=>!new Set(cfg.blocked||[]).has(Number(k)));
+      const positions={};
+      Object.entries(placed).forEach(([k,v])=>{positions[cfg.required[v]]=Number(k)});
+      const adjacent=(a,b)=>(Math.abs(a-b)===1&&Math.floor(a/cfg.size)===Math.floor(b/cfg.size))||Math.abs(a-b)===cfg.size;
+      const adjOk=(cfg.adjacentPairs||[]).every(([a,b])=>positions[a]!==undefined&&positions[b]!==undefined&&adjacent(positions[a],positions[b]));
+      const ok=keys.length===cfg.required.length&&unique&&safe&&adjOk;
+      const out=body.querySelector('#roomResult');
+      out.textContent=ok?'Layout accepted — the team placed every zone safely.':'The layout still breaks a board constraint.';
+      out.className='room-forge-status '+(ok?'ok':'bad');
+      if(ok)pass();
+    });
+  }else if(cfg.mechanic==='assign'){
+    body.querySelectorAll('[data-person]').forEach(select=>select.onchange=async()=>{
+      if(current.passed)return;
+      const assign={...(current.assign||{})};
+      assign[select.dataset.person]=select.value;
+      await write({assign});
+    });
+    body.querySelector('#roomCheck')?.addEventListener('click',()=>{
+      const assigned=cfg.people.every(person=>cfg.roles.includes(current.assign?.[person]));
+      const unique=new Set(Object.values(current.assign||{})).size===cfg.roles.length;
+      const allowed=cfg.people.every(person=>!(cfg.forbidden?.[person]||[]).includes(current.assign?.[person]));
+      const ok=assigned&&unique&&allowed;
+      const out=body.querySelector('#roomResult');
+      out.textContent=ok?'Team accepted — every role is covered.':'There is still a role conflict or missing assignment.';
+      out.className='room-forge-status '+(ok?'ok':'bad');
+      if(ok)pass();
+    });
   }
-  else if(cfg.mechanic==='assign'){body.innerHTML='<div class="forge-assign-list">'+cfg.people.map(person=>'<label class="forge-assign-row"><span>'+esc(person)+'</span><select data-person="'+esc(person)+'"><option value="">Choose role…</option>'+cfg.roles.map(r=>'<option '+(state.assign?.[person]===r?'selected':'')+'>'+esc(r)+'</option>').join('')+'</select></label>').join('')+'</div><div class="room-forge-actions"><button class="room-forge-btn room-forge-btn--primary" id="roomCheck">Check team</button></div><div id="roomResult" class="room-forge-status">'+(state.passed?'Team accepted ✓':'')+'</div>';body.querySelectorAll('[data-person]').forEach(s=>s.onchange=async()=>{const assign={...(state.assign||{})};assign[s.dataset.person]=s.value;await write({assign})});body.querySelector('#roomCheck').onclick=()=>{const ok=cfg.people.every(p=>state.assign?.[p]===cfg.correct[p])&&new Set(Object.values(state.assign||{})).size===cfg.roles.length;const out=body.querySelector('#roomResult');out.textContent=ok?'Team accepted ✓':'The shared assignment still has conflicts.';out.className='room-forge-status '+(ok?'ok':'bad');if(ok)pass()};
-  }
-  body.insertAdjacentHTML('afterbegin',roleHtml);
-  body.querySelectorAll('[data-role]').forEach(b=>b.onclick=async()=>{const role=b.dataset.role;const teamRoles={...(state.teamRoles||{})};if(myRole===role)delete teamRoles[me.uid];else{Object.keys(teamRoles).forEach(uid=>{if(uid!==me.uid&&teamRoles[uid]===role)delete teamRoles[uid]});teamRoles[me.uid]=role}await write({teamRoles})});
-  const last=root.querySelector('#roomForgeLast');if(last)last.textContent=current.passed?'Shared solution accepted by the room · '+new Date(current.passedAtMs||Date.now()).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):(current.updatedBy?'Last updated by '+(current.updatedBy===me.uid?'you':'another room member')+' · synced '+new Date(current.updatedAtMs||Date.now()).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):'Shared board initialized');
+
+  const last=root.querySelector('#roomForgeLast');
+  if(last)last.textContent=current.passed
+    ? 'Team solution accepted ✓ · '+new Date(current.passedAtMs||Date.now()).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})
+    : (current.updatedBy
+      ? 'Last update by '+(current.updatedBy===me.uid?'you':'another teammate')+' · '+new Date(current.updatedAtMs||Date.now()).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})
+      : 'Shared board initialized');
  };
  const unsub=onSnapshot(ref,async snap=>{if(snap.exists()){const data=snap.data();const base=initialState(activity);render({...base,...(data.state||{}),version:data.version,updatedBy:data.updatedBy,updatedAtMs:data.updatedAtMs})}else{const init=initialState(activity);if(init)await setDoc(ref,{state:init,updatedBy:me.uid,updatedAtMs:Date.now(),version:1,activityId:activity.id,mechanic:cfg.mechanic},{merge:true})}},err=>{root.innerHTML='<div class="room-forge-note">Shared workspace is unavailable right now. Room chat is still available.</div>';console.error(err)});
  return unsub;
