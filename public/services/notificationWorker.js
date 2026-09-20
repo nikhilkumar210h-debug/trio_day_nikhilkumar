@@ -12,10 +12,7 @@ async function getIdToken() {
 
 export async function createNotificationViaWorker(targetUid, data) {
   const token = await getIdToken();
-  if (!token) {
-    console.warn("No auth token, falling back to direct write");
-    return { fallback: true };
-  }
+  if (!token) throw new Error("Not authenticated");
 
   try {
     const res = await fetch(NOTIFICATION_WORKER_URL, {
@@ -29,26 +26,18 @@ export async function createNotificationViaWorker(targetUid, data) {
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      console.warn("Worker notification failed:", err);
-      return { fallback: true, error: err.error };
+      const message = err.error || "Notification Worker failed";
+      throw new Error(message);
     }
 
     return await res.json();
   } catch (err) {
-    console.warn("Worker notification request failed:", err);
-    return { fallback: true, error: err.message };
+    throw err;
   }
 }
 
 export async function notifyUserViaWorker(targetUid, data) {
-  const result = await createNotificationViaWorker(targetUid, data);
-
-  if (result.fallback) {
-    const { notifyUser } = await import("./notificationHelpers.js");
-    await notifyUser(targetUid, data);
-  }
-
-  return result;
+  return createNotificationViaWorker(targetUid, data);
 }
 
 export function getNotificationWorkerStatus() {
