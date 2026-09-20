@@ -190,18 +190,40 @@ function render(){
 }
 
 function updateCompleteState(){
- const b=$('completeBtn');
- if(!b)return;
- const isOwnCommunity = activity?.source === 'community' && activity?.creatorUid === me?.uid;
- if(isOwnCommunity){
-   b.disabled=true;
-   b.textContent='Creator preview';
-   b.title='Creators can test their activity but do not earn XP from their own activity.';
-   return;
- }
- b.disabled=!activityPassed;
- if(activity?.type==='game')b.textContent='Play in a room';
- else b.textContent=activityPassed?'Mark complete':'Finish the activity first';
+  const b=$('completeBtn');
+  if(!b)return;
+  const isOwnCommunity = activity?.source === 'community' && activity?.creatorUid === me?.uid;
+  if(isOwnCommunity){
+    b.disabled=true;
+    b.textContent='Creator preview';
+    b.title='Creators can test their activity but do not earn XP from their own activity.';
+    return;
+  }
+  b.disabled=!activityPassed;
+  if(activity?.type==='game')b.textContent='Play in a room';
+  else b.textContent=activityPassed?'Mark complete':'Finish the activity first';
+}
+
+async function refreshExistingCompletion(){
+  if(!me || !activity || activity.type==='game') return;
+  try{
+    const cycleKey=activity.source==='community'
+      ? activity.id
+      : activity.id+'_'+activity.startAtMs;
+    const ref=activity.source==='community'
+      ? doc(db,'communityTasks',activity.id,'completions',me.uid)
+      : doc(db,'users',me.uid,'activityCompletions',cycleKey);
+    const snap=await getDoc(ref);
+    if(!snap.exists()) return;
+    activityPassed=true;
+    const b=$('completeBtn');
+    if(b){b.disabled=true;b.textContent='Completed ✓';}
+    const xp=Number(activity.xpReward)||(activity.difficulty==='Hard'?60:activity.difficulty==='Medium'?40:25);
+    showCompletion({already:true,xp,level:profile?.level||'—'});
+    $('completionNote').innerHTML='<div class="activity-success">Completed ✓ This activity is already in your journey.</div>';
+  }catch(err){
+    console.warn('[Activity] Existing completion check skipped:',err);
+  }
 }
 
 function paintTimer(){
@@ -235,30 +257,49 @@ $('timerBtn').onclick=()=>{
 };
 
 $('completeBtn').onclick=async()=>{
- if(!me||!activity||!activityPassed||activity.type==='game')return;
- const b=$('completeBtn');b.disabled=true;b.textContent='Saving…';
- try{
-   if(activity.source==='community'){
-     const result=await completeCommunityTask(activity.id,me.uid,profile,activityEvidence);
-     if(result?.already){$('completionNote').textContent='Already completed ✓';b.textContent='Completed';showCompletion({already:true});return}
-   }else{
-     const cycleKey=activity.id+'_'+activity.startAtMs;
-     const ref=doc(db,'users',me.uid,'activityCompletions',cycleKey);
-     const old=await getDoc(ref);
-     if(old.exists()){$('completionNote').textContent='Already completed in this cycle ✓';b.textContent='Completed';return}
-     await setDoc(ref,{uid:me.uid,activityId:activity.id,cycleKey,title:activity.title,type:activity.type,completedAtMs:Date.now(),cycleEndsAtMs:activity.endAtMs});
-     const xp=activity.difficulty==='Hard'?60:activity.difficulty==='Medium'?40:25;
-     try{
-       const award=await awardXp(me.uid,xp,{catalogActivityId:activity.id,catalogCycleKey:cycleKey});
-       showAchievement({title:activity.title,subtitle:'+'+xp+' XP',icon:activity.icon||'🎯',leveledUp:award?.leveledUp,level:award?.level,badges:award?.badgesEarned||[]});
-       showCompletion({xp,level:award?.level||profile?.level||'—'});
-     }catch(xpErr){console.warn('XP award skipped',xpErr)}
-   }
-   $('completionNote').innerHTML='<div class="activity-success">Completed ✓ Great job.</div>';
-   b.textContent='Completed';
- }catch(e){b.disabled=false;updateCompleteState();$('completionNote').textContent=e.message||'Could not save completion.'}
+  if(!me||!activity||!activityPassed||activity.type==='game')return;
+  const b=$('completeBtn');b.disabled=true;b.textContent='Saving…';
+  let completionAlready=false;
+  let award=null;
+  try{
+    if(activity.source==='community'){
+      const result=await completeCommunityTask(activity.id,me.uid,profile,activityEvidence);
+      completionAlready=!!result?.already;
+      award=result?.award||null;
+    }else{
+      const cycleKey=activity.id+'_'+activity.startAtMs;
+      const ref=doc(db,'users',me.uid,'activityCompletions',cycleKey);
+      const old=await getDoc(ref);
+      if(!old.exists()){
+        await setDoc(ref,{uid:me.uid,activityId:activity.id,cycleKey,title:activity.title,type:activity.type,completedAtMs:Date.now(),cycleEndsAtMs:activity.endAtMs});
+      }else{
+        completionAlready=true;
+      }
+      const xp=activity.difficulty==='Hard'?60:activity.difficulty==='Medium'?40:25;
+      try{
+        award=await awardXp(me.uid,xp,{catalogActivityId:activity.id,catalogCycleKey:cycleKey});
+        if(!completionAlready){
+          showAchievement({title:activity.title,subtitle:'+'+xp+' XP',icon:activity.icon||'🎯',leveledUp:award?.leveledUp,level:award?.level,badges:award?.badgesEarned||[]});
+        }
+      }catch(xpErr){
+        console.warn('[Activity] XP award skipped; completion is still saved:',xpErr);
+      }
+    }
+    if(timer){clearInterval(timer);timer=null;timerEndsAt=0;}
+    const earnedXp=Number(activity.xpReward)||(activity.difficulty==='Hard'?60:activity.difficulty==='Medium'?40:25);
+    $('completionNote').innerHTML='<div class="activity-success">Completed ✓ Your activity is saved in your journey.</div>';
+    b.textContent='Completed ✓';
+    showCompletion({
+      already:completionAlready,
+      xp:earnedXp,
+      level:award?.level||profile?.level||'—'
+    });
+  }catch(e){
+    b.disabled=false;
+    updateCompleteState();
+    $('completionNote').textContent=e.message||'Could not save completion.';
+  }
 };
-
 onAuthStateChanged(auth,async u=>{
  if(!u){location.href='login.html?redirect=activity.html?id='+encodeURIComponent(id||'');return}
  me=u;
