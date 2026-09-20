@@ -4,7 +4,7 @@ p2:{kind:'quiz',question:'Three switches control three lamps. You may enter once
 p3:{kind:'quiz',question:'A says B is lying. B says C is lying. C says A is truthful. Exactly one statement is false. Which statement is false?',options:['A','B','C','None'],correct:1},
 p4:{kind:'quiz',question:'A is left of B and F is right of B. Which person is guaranteed to be left of B?',options:['A','B','C','E'],correct:0},
 p5:{kind:'quiz',question:'What comes next: 2, 5, 10, 17, 26, __?',options:['31','35','37','42'],correct:2},
-p6:{kind:'quiz',question:'Which is a valid first step when changing COLD to WARM one letter at a time?',options:['CORD','WARM','BOLD','WARD'],correct:0},
+p6:{kind:'quiz',question:'Which is a valid first step when changing COLD to WARM one letter at a time?',options:['CORD','COLD','WARM','WARD'],correct:0},
 p7:{kind:'quiz',question:'In a shortest-path problem, what should you optimize first?',options:['Number of turns only','Total path length','Alphabetical order','Color count'],correct:1},
 p8:{kind:'quiz',question:'Using the same Caesar shift as KHOOR → HELLO, what does FDW decode to?',options:['CAT','DOG','CAR','FOX'],correct:0},
 p9:{kind:'quiz',question:'Math is before Coding. Coding is not Wednesday. Which can be a valid schedule?',options:['Mon Math, Tue Coding, Wed Design','Mon Design, Tue Math, Wed Coding','Mon Coding, Tue Math, Wed Design','Mon Math, Tue Design, Wed Coding'],correct:0},
