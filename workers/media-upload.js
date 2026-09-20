@@ -290,9 +290,11 @@ async function handleSign(request, env) {
 
   const timestamp = Math.floor(Date.now() / 1000);
   const publicId = `${uid}_${timestamp}_${randomId()}`;
+  const overwrite = kind === "profile" ? "true" : "false";
   const params = {
+    allowed_formats: config.formats,
     folder: config.folder,
-    overwrite: "false",
+    overwrite,
     public_id: publicId,
     timestamp: String(timestamp),
   };
@@ -307,7 +309,8 @@ async function handleSign(request, env) {
     allowedFormats: config.formats,
     folder: config.folder,
     publicId,
-    overwrite: false,
+    allowedFormats: config.formats,
+    overwrite: kind === "profile",
     timestamp,
     signature,
   }, 200, origin);
