@@ -4,7 +4,7 @@ import{collection,query,orderBy,limit,onSnapshot,getDoc,getDocs,doc,setDoc,delet
 import{escapeHtml as esc,avatarHtml}from'./utils.js';
 import{activityCardHtml}from'./activity-ui.js';
 import{showToast}from'./ui/toast.js';
-import{activeCatalogActivities}from'./activity-catalog.js';
+import{activeCatalogActivities}from'./activity-catalog.js?v=20260920-audit2';
 import{createNotificationViaWorker}from'./services/notificationWorker.js';
 import{mountSharedBuildWorkspace}from'./room-workspace.js';
 import{mountSharedQuizWorkspace}from'./room-quiz-workspace.js';
