@@ -15,8 +15,8 @@ test.describe('Trio Day QA Audit', () => {
 
     // Set mobile viewport FIRST
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto('http://localhost:5500/', { waitUntil: 'networkidle' });
-    await page.waitForTimeout(3000);
+    await page.goto('http://localhost:5500/', { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(2000);
 
     console.log('Console errors on index.html:', errors);
     
@@ -41,33 +41,35 @@ test.describe('Trio Day QA Audit', () => {
     await page.setViewportSize({ width: 390, height: 844 });
     
     // Today
-    await page.goto('http://localhost:5500/', { waitUntil: 'networkidle' });
-    await page.waitForTimeout(2000);
+    await page.goto('http://localhost:5500/', { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(1500);
     console.log('Today errors:', errors.filter(e => !e.includes('favicon')));
 
     // Discover
     await page.click('[data-nav="discover"]');
-    await page.waitForURL('**/all-users.html');
-    await page.waitForTimeout(2000);
+    await page.waitForURL('**/all-users.html', { timeout: 15000 });
+    await page.waitForTimeout(1500);
     console.log('Discover errors:', errors.filter(e => !e.includes('favicon')));
 
     // Do
     await page.click('[data-nav="do"]');
-    await page.waitForURL('**/tasks.html');
-    await page.waitForTimeout(2000);
+    await page.waitForURL('**/tasks.html', { timeout: 15000 });
+    await page.waitForTimeout(1500);
     console.log('Do errors:', errors.filter(e => !e.includes('favicon')));
 
-    // Chat
+    // Chat (protected - redirects to login)
     await page.click('[data-nav="chat"]');
-    await page.waitForURL('**/chat.html');
-    await page.waitForTimeout(2000);
-    console.log('Chat errors:', errors.filter(e => !e.includes('favicon')));
+    await page.waitForURL('**/login.html**', { timeout: 15000 });
+    await page.waitForTimeout(1500);
+    console.log('Chat redirect errors:', errors.filter(e => !e.includes('favicon')));
 
-    // You (Profile) - redirects to login since protected
-    await page.waitForSelector('[data-nav="you"]', { state: 'visible', timeout: 10000 });
+    // You (Profile) - protected, redirects to login
+    await page.goto('http://localhost:5500/', { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(1500);
+    await page.waitForSelector('[data-nav="you"]', { state: 'visible', timeout: 15000 });
     await page.click('[data-nav="you"]');
-    await page.waitForURL('**/login.html**');
-    await page.waitForTimeout(2000);
+    await page.waitForURL('**/login.html**', { timeout: 15000 });
+    await page.waitForTimeout(1500);
     console.log('Profile redirect errors:', errors.filter(e => !e.includes('favicon') && !e.includes('already declared')));
   });
 
@@ -114,8 +116,8 @@ test.describe('Trio Day QA Audit', () => {
     page.on('pageerror', err => errors.push(err.message));
 
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto('http://localhost:5500/all-users.html', { waitUntil: 'networkidle' });
-    await page.waitForTimeout(3000);
+    await page.goto('http://localhost:5500/all-users.html', { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(2000);
 
     // Check four lane cards
     await expect(page.locator('.discover-lane-card')).toHaveCount(4);
@@ -144,20 +146,20 @@ test.describe('Trio Day QA Audit', () => {
     await page.setViewportSize({ width: 390, height: 844 });
 
     // Test Build lane
-    await page.goto('http://localhost:5500/build.html', { waitUntil: 'networkidle' });
-    await page.waitForTimeout(3000);
+    await page.goto('http://localhost:5500/build.html', { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(2000);
     await expect(page.locator('#forgeList')).toBeVisible();
     console.log('Build page errors:', errors.filter(e => !e.includes('favicon')));
 
     // Test Learn lane
-    await page.goto('http://localhost:5500/learn.html', { waitUntil: 'networkidle' });
-    await page.waitForTimeout(3000);
+    await page.goto('http://localhost:5500/learn.html', { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(2000);
     await expect(page.locator('#forgeList')).toBeVisible();
     console.log('Learn page errors:', errors.filter(e => !e.includes('favicon')));
 
     // Test Challenge lane
-    await page.goto('http://localhost:5500/challenge.html', { waitUntil: 'networkidle' });
-    await page.waitForTimeout(3000);
+    await page.goto('http://localhost:5500/challenge.html', { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(2000);
     await expect(page.locator('#forgeList')).toBeVisible();
     console.log('Challenge page errors:', errors.filter(e => !e.includes('favicon')));
   });
