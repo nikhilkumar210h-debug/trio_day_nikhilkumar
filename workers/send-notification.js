@@ -375,7 +375,6 @@ async function verifyActionExists(projectId, accessToken, actorUid, targetUid, t
           value: { stringValue: actorUid }
         }
       },
-      orderBy: [{ field: { fieldPath: 'createdAtMs' }, direction: 'DESCENDING' }],
       limit: 10
     }, `projects/${projectId}/databases/(default)/documents/posts/${data.postId}`);
     return rows.some(row => {
