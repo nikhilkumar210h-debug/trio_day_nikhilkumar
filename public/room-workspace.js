@@ -1,4 +1,4 @@
-import{doc,getDoc,setDoc,onSnapshot,runTransaction}from'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';import{getBuildConfig}from'./activity-catalog.js';
+import{doc,getDoc,setDoc,onSnapshot,runTransaction}from'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';import{getBuildConfig}from'./activity-catalog.js?v=20260920-audit2';
 const esc=s=>{const d=document.createElement('div');d.textContent=String(s??'');return d.innerHTML};
 const stateRef=(db,roomId)=>doc(db,'rooms',roomId,'state','main');
 function getBuildRuntimeConfig(activity){
