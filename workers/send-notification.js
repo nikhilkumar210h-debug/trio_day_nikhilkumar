@@ -323,6 +323,22 @@ async function fsGet(projectId, accessToken, path) {
   return doc.fields ? fromFirestoreFields(doc.fields) : {};
 }
 
+async function fsRunQuery(projectId, accessToken, structuredQuery, parent = null) {
+  const url = firestoreBase(projectId).replace('/documents', '') + ':runQuery';
+  const body = parent ? { structuredQuery, parent } : { structuredQuery };
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(body)
+  });
+  if (!res.ok) throw new Error('Firestore query failed: ' + res.status);
+  const rows = await res.json();
+  return rows.filter(r => r.document).map(r => fromFirestoreFields(r.document.fields || {}));
+}
+
 async function fsPost(projectId, accessToken, path, data) {
   const url = `${firestoreBase(projectId)}/${path}`;
   const body = { fields: toFirestoreFields(data) };
@@ -341,92 +357,92 @@ async function fsPost(projectId, accessToken, path, data) {
   return res.json();
 }
 
-async function verifyActionExists(
-  projectId,
-  accessToken,
-  actorUid,
-  type,
-  data,
-) {
-  switch (type) {
-    case "like": {
-      if (!data.postId) return false;
-      const moodDoc = await fsGet(
-        projectId,
-        accessToken,
-        `posts/${data.postId}/moods/${actorUid}`,
-      );
-      return moodDoc && moodDoc.mood && typeof moodDoc.mood === "string";
-    }
-    case "comment": {
-      if (!data.postId) return false;
-      const commentsQuery = {
-        structuredQuery: {
-          from: [{ collectionId: "posts", allDescendants: true }],
-          where: {
-            compositeFilter: {
-              op: "AND",
-              filters: [
-                {
-                  fieldFilter: {
-                    field: { fieldPath: "__name__" },
-                    op: "EQUAL",
-                    value: { stringValue: data.postId },
-                  },
-                },
-              ],
-            },
-          },
-          limit: 1,
-        },
-      };
-      return true;
-    }
-    case "share": {
-      return true;
-    }
-    case "connect": {
-      return true;
-    }
-    case "message": {
-      return true;
-    }
-    case "badge_earned":
-    case "task_reminder":
-    case "challenge_reminder":
-    case "streak_warning":
-    case "task_complete": {
-      return data.actorUid === actorUid;
-    }
-    default:
-      return false;
+async function verifyActionExists(projectId, accessToken, actorUid, targetUid, type, data) {
+  if (type === 'like') {
+    if (!data.postId) return false;
+    const mood = await fsGet(projectId, accessToken, `posts/${data.postId}/moods/${actorUid}`);
+    return !!(mood && typeof mood.mood === 'string');
   }
+
+  if (type === 'comment') {
+    if (!data.postId) return false;
+    const rows = await fsRunQuery(projectId, accessToken, {
+      from: [{ collectionId: 'comments' }],
+      where: {
+        fieldFilter: {
+          field: { fieldPath: 'uid' },
+          op: 'EQUAL',
+          value: { stringValue: actorUid }
+        }
+      },
+      orderBy: [{ field: { fieldPath: 'createdAtMs' }, direction: 'DESCENDING' }],
+      limit: 10
+    }, `projects/${projectId}/databases/(default)/documents/posts/${data.postId}`);
+    return rows.some(row => {
+      const created = Number(row.createdAtMs) || 0;
+      return created >= Date.now() - 10 * 60_000;
+    });
+  }
+
+  if (type === 'connect') {
+    return !!(await fsGet(projectId, accessToken, `users/${actorUid}/following/${targetUid}`));
+  }
+
+  if (type === 'message') {
+    const chatId = [actorUid, targetUid].sort().join('_');
+    const rows = await fsRunQuery(projectId, accessToken, {
+      from: [{ collectionId: 'messages' }],
+      where: {
+        fieldFilter: {
+          field: { fieldPath: 'uid' },
+          op: 'EQUAL',
+          value: { stringValue: actorUid }
+        }
+      },
+      orderBy: [{ field: { fieldPath: 'createdAtMs' }, direction: 'DESCENDING' }],
+      limit: 10
+    }, `projects/${projectId}/databases/(default)/documents/privateChats/${chatId}`);
+    const wanted = String(data.text || '');
+    return rows.some(row => {
+      const age = Date.now() - (Number(row.createdAtMs) || 0);
+      return age >= 0 && age <= 10 * 60_000 && (!wanted || String(row.text || '') === wanted);
+    });
+  }
+
+  if (type === 'share') {
+    if (!data.postId) return false;
+    const chatId = [actorUid, targetUid].sort().join('_');
+    const rows = await fsRunQuery(projectId, accessToken, {
+      from: [{ collectionId: 'messages' }],
+      where: {
+        fieldFilter: {
+          field: { fieldPath: 'uid' },
+          op: 'EQUAL',
+          value: { stringValue: actorUid }
+        }
+      },
+      orderBy: [{ field: { fieldPath: 'createdAtMs' }, direction: 'DESCENDING' }],
+      limit: 10
+    }, `projects/${projectId}/databases/(default)/documents/privateChats/${chatId}`);
+    return rows.some(row => {
+      const age = Date.now() - (Number(row.createdAtMs) || 0);
+      return age >= 0 && age <= 10 * 60_000 && String(row.sharedPostId || '') === String(data.postId);
+    });
+  }
+
+  if (['badge_earned','task_reminder','challenge_reminder','streak_warning','task_complete'].includes(type)) {
+    return targetUid === actorUid;
+  }
+
+  return false;
 }
-
-async function sendOneSignalPush(env, subscriptionId, title, body, url) {
-  const payload = {
-    app_id: env.ONESIGNAL_APP_ID,
-    include_subscription_ids: [subscriptionId],
-    headings: { en: title },
-    contents: { en: body },
-    target_channel: "push",
-  };
-  if (url) payload.url = url;
-
-  const res = await fetch(ONESIGNAL_API_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json; charset=utf-8",
-      Authorization: "Key " + env.ONESIGNAL_REST_API_KEY,
-    },
-    body: JSON.stringify(payload),
-  });
-
-  if (!res.ok) {
-    const txt = await res.text();
-    console.warn("OneSignal push failed:", txt);
-    return false;
-  }
+const notificationRateLimit = new Map();
+function allowedNotification(uid) {
+  const now = Date.now();
+  const recent = (notificationRateLimit.get(uid) || []).filter(t => now - t < 60_000);
+  if (recent.length >= 20) return false;
+  recent.push(now);
+  notificationRateLimit.set(uid, recent);
   return true;
 }
 
@@ -539,6 +555,9 @@ async function handleCreateNotification(request, env) {
 
   const actorUid = tokenPayload.sub;
   if (!actorUid) return json({ error: "Invalid token: no uid" }, 401, origin);
+  if (!allowedNotification(actorUid)) {
+    return json({ error: "Notification rate limit exceeded" }, 429, origin);
+  }
 
   let body;
   try {
@@ -574,30 +593,20 @@ async function handleCreateNotification(request, env) {
     );
   }
 
+  const projectId = env.FIREBASE_PROJECT_ID || PROJECT_ID;
+  const accessToken = await getAccessToken(env);
   const hasAction = await verifyActionExists(
-    env.FIREBASE_PROJECT_ID,
-    await getAccessToken(env),
+    projectId,
+    accessToken,
     actorUid,
+    targetUid,
     type,
     notificationData,
   );
-  if (
-    !hasAction &&
-    ![
-      "badge_earned",
-      "task_reminder",
-      "challenge_reminder",
-      "streak_warning",
-      "task_complete",
-      "share",
-      "connect",
-      "message",
-    ].includes(type)
-  ) {
+  if (!hasAction) {
     return json({ error: "Action verification failed" }, 400, origin);
   }
 
-  const accessToken = await getAccessToken(env);
   const targetUser = await fsGet(
     env.FIREBASE_PROJECT_ID,
     accessToken,
