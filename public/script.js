@@ -1589,6 +1589,7 @@ function initHighlightsFeed(uid) {
   onSnapshot(
     query(
       collection(db, 'posts'),
+      where('type', '==', 'story'),
       where('privacy', '==', 'public'),
       where('isStory', '==', true),
       limit(50)
@@ -1600,6 +1601,7 @@ function initHighlightsFeed(uid) {
   onSnapshot(
     query(
       collection(db, 'posts'),
+      where('type', '==', 'story'),
       where('privacy', '==', 'friends'),
       where('isStory', '==', true),
       where('allowedUids', 'array-contains', uid),
