@@ -100,7 +100,7 @@ export async function mountSharedQuizWorkspace(root, { db, roomId, activity, me,
       '<div class="room-forge-actions"><button class="room-forge-btn room-forge-btn--primary" id="sharedQuizReveal" ' +
       (state.revealed || totalVotes < requiredVotes ? 'disabled' : '') + '>Reveal team vote</button>' +
       (state.revealed && majorityIndex !== cfg.correct ? '<button class="room-forge-btn" id="sharedQuizReset">Vote again</button>' : '') +
-      (state.revealed && majorityIndex === cfg.correct && !state.tie && Object.keys(state.proofs || {}).length < Math.min(2, participantCount())
+      (state.revealed && majorityIndex === cfg.correct && !state.tie && Object.keys(state.proofs || {}).length < participantCount()
         ? '<div class="room-proof-box"><label>' + (mode === 'learn' ? 'Teach it back in one or two lines.' : 'Add your deduction in one or two lines.') + '</label><textarea id="roomProof" maxlength="300" rows="3" placeholder="' + (mode === 'learn' ? 'Explain the idea in your own words…' : 'What clue or rule sealed the answer?') + '">' + esc(myProof) + '</textarea><button class="room-forge-btn room-forge-btn--primary" id="submitRoomProof">Submit note</button></div>'
         : '') +
       '</div>' +
