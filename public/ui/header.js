@@ -83,6 +83,7 @@ export function initHeader() {
     btn.addEventListener('click', () => { location.href = 'search.html'; });
     if (actions) actions.prepend(btn);
   }
+  window.dispatchEvent(new CustomEvent('trio-header-ready'));
 }
 
 // Auto-init on DOM ready
