@@ -33,8 +33,10 @@ async function renderCommunity(){
   }
 }
 
-onAuthStateChanged(auth,async u=>{
-  if(!u){location.href='login.html?redirect=tasks.html';return}
+// Public page - no auth redirect needed (auth-guard.js handles protected pages)
+import { auth } from './firebase-init.js';
+
+if (auth.currentUser) {
   renderCatalog();
   await renderCommunity();
-});
+}

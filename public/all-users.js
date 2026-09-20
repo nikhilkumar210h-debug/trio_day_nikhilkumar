@@ -36,10 +36,19 @@ function renderRooms(snapshot){
   const rows=snapshot.docs.map(d=>({id:d.id,...d.data()})).filter(r=>(Number(r.expiresAtMs)||now+21600000)>now).sort((a,b)=>(b.createdAtMs||0)-(a.createdAtMs||0)).slice(0,8);
   host.innerHTML=rows.length?rows.map(roomCardHtml).join(''):'<div class="discover-empty">No live rooms right now. Open any activity to start one.</div>';
 }
-onAuthStateChanged(auth,async u=>{
-  if(!u){location.href='login.html?redirect=all-users.html';return}
-  try{await loadActivities()}catch(e){$('discoverActivityStatus').textContent=e.message||'Could not load activities.';$('discoverActivityList').innerHTML='<div class="discover-empty">Activities are temporarily unavailable.</div>'}
-  const roomsQuery=query(collection(db,'rooms'),where('status','==','open'),limit(24));
-  onSnapshot(roomsQuery,renderRooms,()=>{$('discoverRoomList').innerHTML='<div class="discover-empty">Live rooms are temporarily unavailable.</div>'});
-});
+// Public page - no auth redirect needed (auth-guard.js handles protected pages)
+import { auth } from './firebase-init.js';
+
+// Discover is public - load activities for all users
+if (auth.currentUser) {
+  try { await loadActivities(); } 
+  catch (e) { 
+    $('discoverActivityStatus').textContent = e.message || 'Could not load activities.';
+    $('discoverActivityList').innerHTML = '<div class="discover-empty">Activities are temporarily unavailable.</div>';
+  }
+  const roomsQuery = query(collection(db, 'rooms'), where('status', '==', 'open'), limit(24));
+  onSnapshot(roomsQuery, renderRooms, () => {
+    $('discoverRoomList').innerHTML = '<div class="discover-empty">Live rooms are temporarily unavailable.</div>';
+  });
+}
 $('discoverSearch')?.addEventListener('input',e=>{search=e.target.value.trim();renderActivities()});

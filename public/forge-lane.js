@@ -11,4 +11,10 @@ function renderFilters(){const subs=[...new Set(activities.map(a=>a.category).fi
 function renderList(){const list=activities.filter(a=>activeSub==='all'||String(a.category||'')===activeSub);$('forgeList').innerHTML=list.length?list.map(a=>activityCardHtml({...a,activityType:typeOf(a)})).join(''):'<div class="forge-empty">Nothing here yet. Try another category or create the next activity.</div>'}
 async function load(){try{const built=activeCatalogActivities().filter(a=>a.type===type).map(a=>({...a,activityType:type}));const snap=await getDocs(query(collection(db,'communityTasks'),where('status','==','active'),limit(60))).catch(()=>null);const community=snap?snap.docs.map(d=>({id:d.id,...d.data(),source:'community'})).filter(a=>normalizeActivityType(a)===type&&(!a.hidden)&&(!a.endAtMs||a.endAtMs>Date.now())).map(a=>({...a,activityType:type})):[];activities=[...built,...community];renderHero();renderFilters();renderList()}catch(e){$('forgeStatus').textContent=e.message||'Could not load Forge.'}}
 $('forgeSearch')?.addEventListener('input',()=>{const q=$('forgeSearch').value.toLowerCase().trim();document.querySelectorAll('.activity-card').forEach(c=>c.style.display=!q||c.textContent.toLowerCase().includes(q)?'':'none')});
-onAuthStateChanged(auth,u=>{if(!u){location.href='login.html?redirect='+encodeURIComponent(location.pathname+location.search);return}load()});
+// Public page - no auth redirect needed (auth-guard.js handles protected pages)
+import { auth } from './firebase-init.js';
+
+// Forge lanes are public - load activities for all users
+if (auth.currentUser) {
+  load();
+}

@@ -15,14 +15,52 @@ function activeRoom() {
   } catch { return null; }
 }
 
+const PUBLIC_PAGES = new Set([
+  'index.html',
+  'login.html',
+  '404.html',
+  'sitemap.html',
+  'offline.html',
+  'privacy.html',
+  'privacy-policy.html',
+  'view_post.html',
+  'all-users.html',
+  'build.html',
+  'learn.html',
+  'challenge.html',
+  'tasks.html',
+  'task-create.html',
+  'task-detail.html',
+  'leaderboard.html',
+  'admin-tasks.html',
+  'chat.html',
+  'private-chat.html',
+  'rooms.html',
+  'room.html',
+  'activity.html',
+  'create.html',
+  'voice-status.html',
+  'notifications.html',
+  'profile.html',
+  'search.html',
+  'sitemap.html'
+]);
+
 onAuthStateChanged(auth, (user) => {
+  const page = (location.pathname.split("/").pop() || "index.html").toLowerCase();
+  const isPublic = PUBLIC_PAGES.has(page);
+
+  console.log('[auth-guard] page:', page, 'isPublic:', isPublic, 'user:', !!user);
+
   if (!user) {
-    const page = (location.pathname.split("/").pop() || "index.html") + (location.search || "");
-    window.location.href = `login.html?redirect=${encodeURIComponent(page)}`;
+    if (!isPublic) {
+      const fullPage = (location.pathname.split("/").pop() || "index.html") + (location.search || "");
+      console.log('[auth-guard] Redirecting to login:', fullPage);
+      window.location.href = `login.html?redirect=${encodeURIComponent(fullPage)}`;
+    }
     return;
   }
   const active = activeRoom();
-  const page = (location.pathname.split("/").pop() || "index.html").toLowerCase();
   const roomId = new URLSearchParams(location.search).get("id");
   if (active && !(page === "room.html" && roomId === active.id)) {
     window.location.replace(active.url);
