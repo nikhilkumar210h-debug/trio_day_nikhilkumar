@@ -23,6 +23,10 @@ function initialState(activity){
 }
 export async function mountSharedBuildWorkspace(root,{db,roomId,activity,me,onStateChange}){
  const cfg=getBuildRuntimeConfig(activity);
+ if(!cfg){
+   root.innerHTML='<div class="room-forge-note">This activity does not have a shared board configuration yet. The room can still use chat and the activity page.</div>';
+   return()=>{};
+ }
 
  root.innerHTML='<div class="room-forge-head"><div class="room-forge-title"><strong>Shared Forge Board</strong><small>Everyone in this room sees the same board.</small></div><span class="room-forge-sync"><i></i> SYNCED</span></div><div id="roomForgeBody" class="room-forge-body"></div><div id="roomForgeLast" class="room-forge-last">Waiting for the shared board…</div>';
  let current=null,tool=0;
