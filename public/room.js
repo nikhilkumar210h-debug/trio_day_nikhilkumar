@@ -11,7 +11,7 @@ import{mountSharedQuizWorkspace}from'./room-quiz-workspace.js';
 import{mountSharedChallengeWorkspace}from'./room-challenge-workspace.js';
 import{mountSharedGameWorkspace}from'./room-game-workspace.js';
 const $=id=>document.getElementById(id),id=new URLSearchParams(location.search).get('id');
-let me=null,p={},room=null,stopSharedWorkspace=()=>{};
+let me=null,p={},room=null,stopSharedWorkspace=()=>{},roomLiveUnsub=null;
 const ACTIVE_ROOM_KEY='trio_active_room_v1';
 function setActiveRoom(){
   try{sessionStorage.setItem(ACTIVE_ROOM_KEY,JSON.stringify({id, url:'room.html?id='+encodeURIComponent(id), expiresAtMs:Number(room?.expiresAtMs)||0}));}catch{}
@@ -114,8 +114,9 @@ async function load(){
        transaction.update(roomRef,{memberCount:count+1});
      });
      room.memberCount=Math.min(Number(room.maxPlayers||3),Number(room.memberCount||0)+1);
-   }catch(joinErr){return fail(joinErr.message||'Could not join this room.');}
+   }catch(joinErr){clearActiveRoom();return fail(joinErr.message||'Could not join this room.');}
  }
+ setActiveRoom();
  $('roomGrid').hidden=false;
  $('roomTitle').textContent=room.title||'Open room';
  $('roomSub').textContent='Open activity room · '+(room.maxPlayers||3)+' people max'+(room.expiresAtMs?' · '+Math.max(0,Math.ceil((Number(room.expiresAtMs)-Date.now())/3600000))+'h remaining':'');
@@ -143,6 +144,21 @@ async function load(){
      }
    }
  }
+ roomLiveUnsub=onSnapshot(doc(db,'rooms',id),snap=>{
+   if(!snap.exists()){clearActiveRoom();roomLiveUnsub?.();location.href='rooms.html';return}
+   const latest=snap.data();
+   const expiry=Number(latest.expiresAtMs)||((Number(latest.createdAtMs)||Date.now())+6*60*60*1000);
+   if(latest.status!=='open'||expiry<=Date.now()){
+     clearActiveRoom();
+     stopSharedWorkspace?.();
+     rtcUnsubs.forEach(fn=>fn());
+     voicePCs.forEach(pc=>pc.close());
+     voiceAudio.forEach(a=>a.remove());
+     localStream?.getTracks().forEach(t=>t.stop());
+     roomLiveUnsub?.();
+     location.href='rooms.html';
+   }
+ },()=>{});
  onSnapshot(query(collection(db,'rooms',id,'members'),orderBy('joinedAtMs','asc'),limit(20)),s=>{
    $('roomPeopleBadge').textContent=s.size+' / '+(room.maxPlayers||3);
    $('memberList').innerHTML=s.docs.map(d=>{const m=d.data();return '<div class="room-member" data-uid="'+esc(m.uid)+'"><span class="room-member-avatar">'+avatarHtml({name:m.name,photoURL:m.photoURL})+'</span><span class="room-member-name">'+esc(m.name||'User')+'</span><span class="room-member-role">'+(m.uid===room.hostUid?'Host':'Member')+'</span></div>'}).join('');
@@ -203,4 +219,4 @@ $('micBtn')?.addEventListener('click',async()=>{
 });
 $('chatToggleBtn')?.addEventListener('click',()=>{const chat=document.querySelector('.room-chat');const btn=$('chatToggleBtn');if(!chat||!btn)return;const collapsed=chat.classList.toggle('is-collapsed');btn.textContent=collapsed?'Chat':'Hide';btn.setAttribute('aria-expanded',String(!collapsed));});
 onAuthStateChanged(auth,async u=>{if(!u)return location.href='login.html?redirect=room.html?id='+encodeURIComponent(id||'');me=u;const s=await getDoc(doc(db,'users',u.uid));p=s.exists()?s.data():{};await load();blockRoomNavigation()});
-window.addEventListener('beforeunload',()=>{rtcUnsubs.forEach(fn=>fn());voicePCs.forEach(pc=>pc.close());voiceAudio.forEach(a=>a.remove());localStream?.getTracks().forEach(t=>t.stop());stopSharedWorkspace?.();});
+window.addEventListener('beforeunload',()=>{roomLiveUnsub?.();rtcUnsubs.forEach(fn=>fn());voicePCs.forEach(pc=>pc.close());voiceAudio.forEach(a=>a.remove());localStream?.getTracks().forEach(t=>t.stop());stopSharedWorkspace?.();});
