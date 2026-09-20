@@ -300,3 +300,69 @@ button:disabled,.nkm-btn:disabled,.btn:disabled{cursor:not-allowed;opacity:.55;t
   .today-mode-picker{justify-content:flex-start;width:100%;overflow:auto;flex-wrap:nowrap;padding-bottom:3px}
   .today-mode-picker button{flex:0 0 auto}
 }
+
+
+/* Profile — activity-first progress surface */
+.profile-progress{display:grid;gap:12px;margin-top:16px}
+.profile-progress-hero{display:grid;grid-template-columns:92px minmax(0,1fr);gap:14px;align-items:stretch;padding:14px;border:1px solid var(--color-border);border-radius:22px;background:radial-gradient(circle at 0% 100%,rgba(99,102,241,.12),transparent 42%),linear-gradient(145deg,rgba(99,102,241,.08),rgba(255,255,255,.02));overflow:hidden}
+.profile-level-badge{min-height:118px;border-radius:19px;display:grid;place-items:center;align-content:center;gap:1px;background:linear-gradient(145deg,rgba(99,102,241,.18),rgba(6,182,212,.08));border:1px solid rgba(129,140,248,.2)}
+.profile-level-badge span{font-family:var(--font-display);font-size:36px;font-weight:900;line-height:1;color:var(--color-ink)}
+.profile-level-badge small{font-size:8px;letter-spacing:.14em;font-weight:900;color:var(--color-primary-text)}
+.profile-progress-copy{min-width:0;display:grid;align-content:center;gap:10px}
+.profile-progress-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.profile-progress-kicker{display:block;font-size:8px;letter-spacing:.16em;font-weight:900;color:var(--color-primary-text)}
+.profile-progress-top strong{display:block;font-size:15px;line-height:1.15;margin-top:2px}
+.profile-rank-pill{flex:none;padding:7px 9px;border:1px solid var(--color-border);border-radius:999px;background:var(--color-glass);font-size:9px;color:var(--color-ink-muted)}
+.profile-rank-pill b{color:var(--color-ink);font-size:11px}
+.profile-xp-line{display:flex;align-items:baseline;gap:6px}
+.profile-xp-line strong{font-size:22px;line-height:1}
+.profile-xp-line span{font-size:10px;color:var(--color-ink-muted)}
+.profile-xp-track{height:9px;border-radius:999px;background:var(--color-border);overflow:hidden}
+.profile-xp-track i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--color-primary),#06b6d4);box-shadow:0 0 16px var(--color-primary-glow);transition:width .45s var(--ease-out)}
+.profile-xp-foot{display:flex;justify-content:space-between;gap:8px;font-size:9px;color:var(--color-ink-dim)}
+.profile-progress-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
+.profile-progress-stat{padding:11px 9px;border:1px solid var(--color-border);border-radius:16px;background:var(--color-glass);text-align:center}
+.profile-progress-stat strong{display:block;font-size:17px;line-height:1.05;color:var(--color-ink)}
+.profile-progress-stat span{display:block;margin-top:4px;font-size:8px;text-transform:uppercase;letter-spacing:.06em;color:var(--color-ink-dim)}
+.profile-progress-footer{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:10px 3px 0;font-size:9px;color:var(--color-ink-dim)}
+.profile-progress-footer a{color:var(--color-primary);font-weight:800;white-space:nowrap}
+.profile-badges-panel{padding:13px;border:1px solid var(--color-border);border-radius:18px;background:rgba(255,255,255,.018)}
+.profile-badges-head{display:flex;justify-content:space-between;margin-bottom:9px}
+.profile-badges-head strong{display:block;font-size:12px}
+.profile-badges-head span{display:block;font-size:9px;color:var(--color-ink-dim);margin-top:2px}
+.profile-badges-panel .badges-grid,.profile-badges-panel .badges-list{display:flex;flex-wrap:wrap;gap:7px}
+.profile-section-head{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;margin-bottom:11px}
+.profile-section-head h3{margin:0!important}
+.profile-section-head p{margin:3px 0 0;font-size:9px;color:var(--color-ink-dim)}
+.profile-activity-count{padding:5px 8px;border-radius:999px;background:var(--color-primary-soft);color:var(--color-primary-text);font-size:8px;font-weight:900;white-space:nowrap}
+.profile-activity-list{display:grid;gap:7px}
+.profile-activity-item{display:grid;grid-template-columns:42px minmax(0,1fr) auto;gap:10px;align-items:center;padding:9px;border:1px solid var(--color-border);border-radius:15px;background:var(--color-glass);transition:transform .15s ease,border-color .15s ease,background .15s ease}
+.profile-activity-item:hover{transform:translateX(2px);border-color:var(--color-border-strong);background:var(--color-glass-hover)}
+.profile-activity-icon{width:42px;height:42px;border-radius:13px;display:grid;place-items:center;font-size:20px;background:var(--color-primary-soft);border:1px solid rgba(99,102,241,.14)}
+.profile-activity-copy{min-width:0}
+.profile-activity-copy strong{display:block;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.profile-activity-copy small{display:block;margin-top:2px;font-size:8px;color:var(--color-ink-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-transform:capitalize}
+.profile-activity-xp{font-size:9px;font-weight:900;color:var(--color-primary-text);white-space:nowrap}
+.profile-activity-empty{padding:24px 14px;text-align:center;border:1px dashed var(--color-border);border-radius:16px;color:var(--color-ink-muted)}
+.profile-activity-empty span{display:block;font-size:21px;margin-bottom:4px;color:var(--color-primary)}
+.profile-activity-empty strong{font-size:12px;color:var(--color-ink)}
+.profile-activity-empty p{font-size:9px;line-height:1.5;margin:4px auto 10px;max-width:330px}
+@media(max-width:640px){
+  .profile-progress-hero{grid-template-columns:68px minmax(0,1fr);padding:10px;gap:10px}
+  .profile-level-badge{min-height:94px;border-radius:16px}
+  .profile-level-badge span{font-size:28px}
+  .profile-progress-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .profile-progress-footer{align-items:flex-start;flex-direction:column}
+  .profile-activity-item{grid-template-columns:40px minmax(0,1fr);gap:9px}
+  .profile-activity-xp{grid-column:2;justify-self:start;margin-top:-4px}
+}
+@media(prefers-reduced-motion:reduce){
+  .profile-activity-item,.profile-xp-track i{transition:none}
+}
+
+/* Today focus — make the chosen activity visual the single primary card */
+.today-page .today-focus-visual{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;text-decoration:none;color:inherit;cursor:pointer;transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}
+.today-page .today-focus-visual:hover{transform:translateY(-2px);border-color:rgba(129,140,248,.34);box-shadow:0 18px 42px rgba(0,0,0,.16)}
+.today-focus-visual-cta{position:relative;z-index:2;align-self:flex-end;justify-self:end;padding:8px 10px;border:1px solid rgba(165,180,252,.18);border-radius:999px;background:rgba(5,10,22,.42);font-size:9px;font-weight:900;color:#c7d2fe;white-space:nowrap}
+.today-page .today-focus-visual .today-focus-visual-copy strong{max-width:none}
+@media(max-width:600px){.today-focus-visual-cta{padding:7px 8px;font-size:8px}.today-page .today-focus-visual{grid-template-columns:auto minmax(0,1fr) auto}}
