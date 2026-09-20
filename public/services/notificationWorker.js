@@ -1,5 +1,4 @@
 import { auth } from "../firebase-init.js";
-import { trioCache } from "../trio-cache.js";
 
 const NOTIFICATION_WORKER_URL =
   "https://trio-notifications.trioday-nikhil.workers.dev/notifications/create";
