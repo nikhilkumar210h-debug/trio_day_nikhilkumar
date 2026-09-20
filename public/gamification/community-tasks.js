@@ -366,10 +366,11 @@ export async function completeTask(taskId, uid, profile, evidence = null) {
 
   const cref     = doc(db, 'communityTasks', taskId, 'completions', uid);
   const existing = await getDoc(cref);
-  if (existing.exists()) return { already: true };
+  const alreadyCompleted = existing.exists();
 
-  // Write completion subcollection doc (client rules: owner create only)
-  const atMs = Date.now();
+  // Keep completion idempotent. A retry can still ask the Worker to award a
+  // missing XP grant because the Worker itself de-duplicates the grant.
+  const atMs = alreadyCompleted ? (Number(existing.data()?.atMs) || Date.now()) : Date.now();
   const safeEvidence = evidence && typeof evidence === 'object'
     ? {
         answerIndex: Number.isInteger(Number(evidence.answerIndex)) ? Number(evidence.answerIndex) : null,
@@ -388,20 +389,22 @@ export async function completeTask(taskId, uid, profile, evidence = null) {
           : {})
       }
     : null;
-  await setDoc(cref, {
-    uid,
-    name:  profile?.name || 'User',
-    atMs,
-    ...(safeEvidence ? safeEvidence : {})
-  });
+  if (!alreadyCompleted) {
+    await setDoc(cref, {
+      uid,
+      name:  profile?.name || 'User',
+      atMs,
+      ...(safeEvidence ? safeEvidence : {})
+    });
 
-  // Bump completions counter server-side
-  await bumpCounter(taskId, 'complete', atMs);
+    // Bump completions counter server-side
+    await bumpCounter(taskId, 'complete', atMs);
+    // Auto-join if not already a member
+    await joinTask(taskId, uid, profile).catch(() => {});
+  }
 
-  // Auto-join if not already a member
-  await joinTask(taskId, uid, profile).catch(() => {});
-
-  // Award XP via Worker (xp-levels.js → Worker → Firestore)
+  // Award XP via Worker (xp-levels.js → Worker → Firestore). The grant key
+  // is idempotent, so this also repairs a previous temporary XP failure.
   const xp    = Number(task.xpReward) || 50;
   const award = await awardXp(uid, xp, { communityTaskId: taskId, templateId: task.templateId });
 
@@ -420,5 +423,5 @@ export async function completeTask(taskId, uid, profile, evidence = null) {
   trioCache.invalidatePrefix('communityTasks_');
   trioCache.invalidatePrefix('tasks_');
   trioCache.invalidate(`communityTask_${taskId}`);
-  return { already: false, award };
+  return { already: alreadyCompleted, award };
 }
