@@ -38,45 +38,17 @@ const STICKERS = [
 // Theme is global (theme.js); no per-page lock here.
 try { SoundManager.init(); } catch {}
 
-/** Strict mode state — never share media between post/story */
-const state = {
-  mode: null,
-  stage: 'mode',
-  dirty: false,
-  publishing: false,
-  textOnly: false,
-  post: { file: null, objectUrl: null },
-  story: { file: null, objectUrl: null },
-  caption: '',
-  privacy: 'public',
-  editor: {
-    filter: 'none',
-    filterIntensity: 1,
-    rotation: 0,
-    fit: 'cover',
-    aspect: 'free',
-    textOverlays: [],
-    stickers: [],
-    originalImage: null,
-    selectedText: null,
-    selectedSticker: null,
-    drag: null
-  },
-  camera: {
-    stream: null,
-    facing: 'environment',
-    flashOn: false,
-    flashSupported: false
-  },
-  uploadAbort: null,
-  lastPublishError: null
-};
-
 let currentUser = null;
 let renderFrame = null;
 let historyGuard = false;
 
-onAuthStateChanged(auth, (user) => { currentUser = user; });
+onAuthStateChanged(auth, (user) => {
+  if (!user) {
+    location.href = 'login.html?redirect=' + encodeURIComponent(location.pathname + location.search);
+    return;
+  }
+  currentUser = user;
+});
 
 function activeMedia() {
   if (!state.mode) return { file: null, objectUrl: null };

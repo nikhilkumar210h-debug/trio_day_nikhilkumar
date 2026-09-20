@@ -65,6 +65,16 @@ export function renderNav() {
     } else {
       row.querySelectorAll('.nav-btn').forEach(el => el.classList.toggle('active', el.dataset.nav === active));
     }
+  } else if (!document.querySelector('.nkm-create-fab')) {
+    // Page is missing bottom-nav markup (e.g., Forge lanes) — inject it
+    const nav = document.createElement('nav');
+    nav.className = 'bottom-nav';
+    nav.setAttribute('aria-label', 'Primary navigation');
+    nav.innerHTML = `<div class="nav-row">${ITEMS.map(i => {
+      const cls = 'nav-btn' + (i.key === active ? ' active' : '');
+      return `<a class="${cls}" href="${i.href}" data-nav="${i.key}" aria-label="${i.label}"><span class="nav-icon">${i.icon}</span><span class="nav-label">${i.label}</span></a>`;
+    }).join('')}</div>`;
+    document.body.appendChild(nav);
   }
 
   // ── Floating Create FAB (mobile) ──

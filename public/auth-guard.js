@@ -15,6 +15,8 @@ function activeRoom() {
   } catch { return null; }
 }
 
+// Pages that are PUBLICLY ACCESSIBLE without authentication.
+// Protected pages (chat, rooms, activity, profile, notifications, etc.) must NOT be here.
 const PUBLIC_PAGES = new Set([
   'index.html',
   'login.html',
@@ -24,38 +26,27 @@ const PUBLIC_PAGES = new Set([
   'privacy.html',
   'privacy-policy.html',
   'view_post.html',
-  'all-users.html',
-  'build.html',
-  'learn.html',
-  'challenge.html',
-  'tasks.html',
-  'task-create.html',
-  'task-detail.html',
+  'all-users.html',    // Discover
+  'build.html',        // Forge Build lane
+  'learn.html',        // Forge Learn lane
+  'challenge.html',    // Forge Challenge lane
+  'puzzle.html',       // Forge Puzzle lane (if exists)
+  'tasks.html',        // Do page
+  'task-create.html',  // Create activity (public entry, but requires auth for actual creation)
+  'task-detail.html',  // Community task detail
   'leaderboard.html',
   'admin-tasks.html',
-  'chat.html',
-  'private-chat.html',
-  'rooms.html',
-  'room.html',
-  'activity.html',
-  'create.html',
   'voice-status.html',
-  'notifications.html',
-  'profile.html',
   'search.html',
-  'sitemap.html'
 ]);
 
 onAuthStateChanged(auth, (user) => {
   const page = (location.pathname.split("/").pop() || "index.html").toLowerCase();
   const isPublic = PUBLIC_PAGES.has(page);
 
-  console.log('[auth-guard] page:', page, 'isPublic:', isPublic, 'user:', !!user);
-
   if (!user) {
     if (!isPublic) {
       const fullPage = (location.pathname.split("/").pop() || "index.html") + (location.search || "");
-      console.log('[auth-guard] Redirecting to login:', fullPage);
       window.location.href = `login.html?redirect=${encodeURIComponent(fullPage)}`;
     }
     return;
