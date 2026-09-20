@@ -31,7 +31,8 @@ export async function mountSharedBuildWorkspace(root,{db,roomId,activity,me,onSt
  root.innerHTML='<div class="room-forge-head"><div class="room-forge-title"><strong>Shared Forge Board</strong><small>Everyone in this room sees the same board.</small></div><span class="room-forge-sync"><i></i> SYNCED</span></div><div id="roomForgeBody" class="room-forge-body"></div><div id="roomForgeLast" class="room-forge-last">Waiting for the shared board…</div>';
  let current=null,tool=0;
  const ref=stateRef(db,roomId);
- const availableRoles=Array.isArray(activity.roles)&&activity.roles.length ? activity.roles : ['Planner','Maker','Reviewer'];
+ const baseRoles=Array.isArray(activity.roles)&&activity.roles.length ? activity.roles : ['Planner','Maker','Reviewer'];
+ const availableRoles=[...new Set([...baseRoles,...Array.from({length:8},(_,i)=>'Contributor '+(i+1))])];
  const write=async(next)=>{
    await runTransaction(db,async tx=>{
      const snap=await tx.get(ref);
@@ -41,16 +42,32 @@ export async function mountSharedBuildWorkspace(root,{db,roomId,activity,me,onSt
      current={...merged,version:Number(latest.version||0)+1,updatedBy:me.uid,updatedAtMs:Date.now()};
    });
  };
+ const getParticipantIds=()=>[...root.closest('.room-grid')?.querySelectorAll('.room-member[data-uid]')||[]]
+   .map(el=>el.dataset.uid).filter(Boolean);
  const pass=async()=>{
    const teamRoles=current?.teamRoles||{};
-   const activeRoles=new Set(Object.values(teamRoles));
-   const participants=Math.max(1,root.closest('.room-grid')?.querySelectorAll('.room-member').length||1);
-   const needed=Math.min(2,participants);
-   if(activeRoles.size<needed){showBuildRoleWarning();return;}
+   const participantIds=getParticipantIds();
+   const ids=participantIds.length?participantIds:[me.uid];
+   const assigned=ids.map(uid=>teamRoles[uid]).filter(Boolean);
+   const uniqueRoles=new Set(assigned);
+   const everyoneAssigned=ids.every(uid=>typeof teamRoles[uid]==='string'&&teamRoles[uid].trim());
+   const uniquePerPerson=uniqueRoles.size===ids.length;
+   if(!everyoneAssigned||!uniquePerPerson){
+     showBuildRoleWarning(ids.length);
+     return;
+   }
    await write({passed:true,passedBy:me.uid,passedAtMs:Date.now()});
-   onStateChange?.({passed:true})
+   onStateChange?.({passed:true});
  };
- const showBuildRoleWarning=()=>{const out=root.querySelector('.room-forge-status');if(out){out.textContent='Claim roles with at least one teammate before finishing the build.';out.className='room-forge-status bad'}};
+ const showBuildRoleWarning=(count=2)=>{
+   const out=root.querySelector('.room-forge-status');
+   if(out){
+     out.textContent=count>1
+       ? 'Everyone in the room must claim a different role before the team can finish.'
+       : 'Claim your role before finishing the build.';
+     out.className='room-forge-status bad';
+   }
+ };
  const render=state=>{
   current=state;
   const body=root.querySelector('#roomForgeBody');
@@ -122,13 +139,13 @@ export async function mountSharedBuildWorkspace(root,{db,roomId,activity,me,onSt
       [order[i],order[to]]=[order[to],order[i]];
       await write({order});
     });
-    body.querySelector('#roomCheck')?.addEventListener('click',()=>{
+    body.querySelector('#roomCheck')?.addEventListener('click',async()=>{
       const target=cfg.target||[];
       const ok=target.length===current.order.length&&target.every((x,i)=>x===current.order[i]);
       const out=body.querySelector('#roomResult');
       out.textContent=ok?'Build arrangement is correct.':'Not yet — compare the dependency order with the team.';
       out.className='room-forge-status '+(ok?'ok':'bad');
-      if(ok)pass();
+      if(ok)await pass();
     });
   }else if(cfg.mechanic==='allocate'){
     const updateTotal=()=>{
