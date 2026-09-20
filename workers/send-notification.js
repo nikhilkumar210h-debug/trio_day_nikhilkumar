@@ -360,12 +360,15 @@ async function fsPost(projectId, accessToken, path, data) {
 async function verifyActionExists(projectId, accessToken, actorUid, targetUid, type, data) {
   if (type === 'like') {
     if (!data.postId) return false;
+    const post = await fsGet(projectId, accessToken, `posts/${data.postId}`);
     const mood = await fsGet(projectId, accessToken, `posts/${data.postId}/moods/${actorUid}`);
-    return !!(mood && typeof mood.mood === 'string');
+    return !!(post && post.uid === targetUid && mood && typeof mood.mood === 'string');
   }
 
   if (type === 'comment') {
     if (!data.postId) return false;
+    const post = await fsGet(projectId, accessToken, `posts/${data.postId}`);
+    if (!post || post.uid !== targetUid) return false;
     const rows = await fsRunQuery(projectId, accessToken, {
       from: [{ collectionId: 'comments' }],
       where: {
