@@ -9,7 +9,6 @@ import{completeTask as completeCommunityTask}from'./gamification/community-tasks
 import{workerPost}from'./gamification/worker-config.js';
 import{showAchievement}from'./ui/achievements.js';
 import{escapeHtml as esc}from'./utils.js';
-import{workerPost}from'./gamification/worker-config.js';
 
 const params=new URLSearchParams(location.search);
 const id=params.get('id');
