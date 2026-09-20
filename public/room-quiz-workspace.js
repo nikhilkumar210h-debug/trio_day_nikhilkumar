@@ -85,7 +85,7 @@ export async function mountSharedQuizWorkspace(root, { db, roomId, activity, me,
           ? 'Team call was correct ✓'
           : 'Team call missed it. Reset the vote and try again.');
     } else if (totalVotes >= requiredVotes) {
-      resultText = 'Everyone voted. Reveal the team decision.';
+      resultText = 'Team vote is ready. Reveal the decision.';
     } else if (myVote !== null) {
       resultText = totalVotes + ' / ' + requiredVotes + ' votes in.';
     }
@@ -93,7 +93,7 @@ export async function mountSharedQuizWorkspace(root, { db, roomId, activity, me,
     body.innerHTML = lesson +
       '<div class="forge-quiz"><div class="forge-quiz-question">' + esc(cfg.question) +
       '</div><div class="room-forge-options">' + options + '</div></div>' +
-      '<div class="room-forge-vote-meta"><span>' + totalVotes + ' / ' + requiredVotes + ' voted</span><span>Talk before reveal</span></div>' +
+      '<div class="room-forge-vote-meta"><span>' + totalVotes + ' / ' + requiredVotes + ' votes needed</span><span>Talk before reveal</span></div>' +
       '<div class="room-forge-actions"><button class="room-forge-btn room-forge-btn--primary" id="sharedQuizReveal" ' +
       (state.revealed || totalVotes < requiredVotes ? 'disabled' : '') + '>Reveal team vote</button>' +
       (state.revealed && majorityIndex !== cfg.correct ? '<button class="room-forge-btn" id="sharedQuizReset">Vote again</button>' : '') +
