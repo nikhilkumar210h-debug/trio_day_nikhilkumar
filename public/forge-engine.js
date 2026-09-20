@@ -21,7 +21,7 @@ export function renderBuildWorkspace(root,activity,onPass){
    : (selectedMechanic && generic[selectedMechanic] && original?.mechanic!==selectedMechanic ? generic[selectedMechanic] : original);
  if(!cfg){root.hidden=true;return null} root.hidden=false; let passed=false;
  const baseOrder=cfg.items?.slice()||[];let order=baseOrder.slice();if(order.length>2){const shift=((activity.engineId || activity.id||'b0').charCodeAt(1)||1)%order.length;order=order.slice(shift).concat(order.slice(0,shift));if(order.every((x,i)=>x===cfg.target?.[i]))order.reverse()}const state={order,alloc:[],selectedTool:null,placed:{},assign:{}};
- const setResult=(text,ok,evidenceState=null)=>{root.querySelector('.forge-result').textContent=text;root.querySelector('.forge-result').className='forge-result '+(ok?'ok':'bad');if(ok&&!passed){passed=true;onPass?.(true,{mechanic:cfg.mechanic,state:evidenceState||{order:state.order.slice(0,8),allocation:state.alloc.slice(0,8),assign:{...state.assign},positions:{}}})}};
+ const setResult=(text,ok,evidenceState=null)=>{root.querySelector('.forge-result').textContent=text;root.querySelector('.forge-result').className='forge-result '+(ok?'ok':'bad');if(ok&&!passed){passed=true;onPass?.(true,{buildEvidence:{mechanic:cfg.mechanic,state:evidenceState||{order:state.order.slice(0,8),allocation:state.alloc.slice(0,8),assign:{...state.assign},positions:{}}}})}};
  root.innerHTML='<div class="forge-workspace-head"><div><h3>Forge Board</h3><p>Actually build the solution. Your result is checked against the activity constraints.</p></div><span class="forge-pill">LIVE LOGIC</span></div><div class="forge-board-body"></div><div class="forge-result"></div>';
  const body=root.querySelector('.forge-board-body');
  if(cfg.mechanic==='order'){
