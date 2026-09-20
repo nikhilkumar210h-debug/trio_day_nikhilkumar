@@ -11,7 +11,7 @@ service cloud.firestore {
 
     match /posts/{postId} {
       allow read: if signedIn() && (
-        (resource.data.type == 'post' && resource.data.isStory != true)
+        (resource.data.type == 'post')
         || (
           resource.data.isStory == true
           && (
