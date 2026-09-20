@@ -19,7 +19,12 @@ let me=null,profile=null,activity=null,timer=null,remaining=0,timerEndsAt=0,acti
 function fail(t){$('activityStatus').textContent=t;$('activityStatus').classList.add('error')}
 function setPassed(v,evidence=null){
   activityPassed=!!v;
-  if(evidence) activityEvidence=evidence;
+  if(evidence){
+    // Community build completion rules expect { buildEvidence: { mechanic, state } }.
+    activityEvidence = evidence.mechanic
+      ? { buildEvidence: evidence }
+      : evidence;
+  }
   updateCompleteState();
   if(v) markWorkspacePassed();
 }
