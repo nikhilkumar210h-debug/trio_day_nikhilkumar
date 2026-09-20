@@ -92,10 +92,10 @@ const Cg=[
 
 // 15 catalog items per lane. Game-type catalogue entries are intentionally not published;
 // the four user-facing lanes are Build, Learn, Challenge and Puzzle.
-const BUILD15=B.map((x,i)=>C('b'+(i+1),'build',...x,{lane:'build',roles:['Planner','Maker','Reviewer'],flow:['Split the work live','Build your piece','Merge and review','Present the result'],win:x[4],fun:'A visible team result appears at the end.'}));
-const LEARN15=L.map((x,i)=>C('l'+(i+1),'learn',...x,{lane:'learn',roles:['Explainer','Tester','Sceptic','Summariser'],flow:['Pick roles','Try the idea','Challenge it','Teach it back'],win:x[4],fun:'Everyone has to contribute an explanation, not just listen.'}));
-const CHALLENGE15=Cg.map((x,i)=>C('c'+(i+1),'challenge',...x,{lane:'challenge',roles:['Player','Player','Player'],flow:['Start round','Lock answer','Reveal score','Defend one choice'],win:x[4],fun:'Fast decisions, live reveals and a visible score chase.'}));
-const PUZZLE15=P.map((x,i)=>C(x[0]&&x[0].startsWith('p')?x[0]:'p'+(i+1),'puzzle',...x,{lane:'puzzle',roles:['Clue Keeper','Sceptic','Mapper','Final Caller'],flow:['Split clues','Share deductions','Challenge the theory','Lock the solution'],win:x[4],fun:'No single player gets the whole picture.'}));
+const BUILD15=B.map((x,i)=>C('b'+(i+1),'build',x[0],x[1],x[2],x[3],x[4],x[5],x[6],x[7],x[8],{lane:'build',roles:['Planner','Maker','Reviewer'],flow:['Split the work live','Build your piece','Merge and review','Present the result'],win:x[3],fun:'A visible team result appears at the end.'}));
+const LEARN15=L.map((x,i)=>C('l'+(i+1),'learn',x[0],x[1],x[2],x[3],x[4],x[5],x[6],x[7],x[8],{lane:'learn',roles:['Explainer','Tester','Sceptic','Summariser'],flow:['Pick roles','Try the idea','Challenge it','Teach it back'],win:x[3],fun:'Everyone has to contribute an explanation, not just listen.'}));
+const CHALLENGE15=Cg.map((x,i)=>C('c'+(i+1),'challenge',x[0],x[1],x[2],x[3],x[4],x[5],x[6],x[7],x[8],{lane:'challenge',roles:['Player','Player','Player'],flow:['Start round','Lock answer','Reveal score','Defend one choice'],win:x[3],fun:'Fast decisions, live reveals and a visible score chase.'}));
+const PUZZLE15=P.map((x,i)=>C('p'+(i+1),'puzzle',x[1],x[2],x[3],x[4],x[5],x[6],x[7],x[8],x[9],{lane:'puzzle',roles:['Clue Keeper','Sceptic','Mapper','Final Caller'],flow:['Split clues','Share deductions','Challenge the theory','Lock the solution'],win:x[4],fun:'No single player gets the whole picture.'}));
 
 export const ACTIVITY_CATALOG=[...PUZZLE15,...BUILD15,...LEARN15,...CHALLENGE15];
 
