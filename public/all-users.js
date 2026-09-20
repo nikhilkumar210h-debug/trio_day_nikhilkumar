@@ -6,7 +6,7 @@ import{activeCatalogActivities}from'./activity-catalog.js';
 import{activityCardHtml,roomCardHtml,ACTIVITY_TYPES,normalizeActivityType}from'./activity-ui.js';
 
 const $=id=>document.getElementById(id);
-const laneOrder=['puzzle','build','learn','challenge','game'];
+const laneOrder=['build','learn','challenge','puzzle'];
 const params=new URLSearchParams(location.search);
 let allActivities=[],activeType=laneOrder.includes(params.get('activity'))?params.get('activity'):'all',search='';
 
