@@ -112,43 +112,82 @@ window.TrioChatUnread = { getChatSeenMap, markChatSeen, isChatUnread, setChatNav
 
 function listenForAlerts(user) {
   clearNotificationListeners();
-  let connectedReady = false;
   const peers = new Map(), unreadPeers = new Set();
+  const followingIds = new Set(), followerIds = new Set();
+
   const refreshNavDot = () => setChatNavUnread(unreadPeers.size > 0);
+  const syncPeerListeners = () => {
+    const desired = new Set([...followingIds, ...followerIds]);
+    for (const [peerId, unsubscribe] of peers) {
+      if (!desired.has(peerId)) {
+        unsubscribe();
+        peers.delete(peerId);
+        unreadPeers.delete(peerId);
+      }
+    }
+    desired.forEach(attachChatListener);
+    refreshNavDot();
+  };
 
   const attachChatListener = peerId => {
-    if (!peerId || peers.has(peerId)) return;
+    if (!peerId || peerId === user.uid || peers.has(peerId)) return;
     let ready = false;
-    const messages = query(collection(db, 'privateChats', chatId(user.uid, peerId), 'messages'), orderBy('createdAtMs', 'desc'), limit(1));
+    const messages = query(
+      collection(db, 'privateChats', chatId(user.uid, peerId), 'messages'),
+      orderBy('createdAtMs', 'desc'),
+      limit(1)
+    );
     peers.set(peerId, onSnapshot(messages, snap => {
       const latest = snap.docs[0]?.data();
-      if (isChatUnread(user.uid, peerId, latest)) unreadPeers.add(peerId); else unreadPeers.delete(peerId);
+      if (isChatUnread(user.uid, peerId, latest)) unreadPeers.add(peerId);
+      else unreadPeers.delete(peerId);
       refreshNavDot();
       if (!ready) { ready = true; return; }
       snap.docChanges().forEach(change => {
         if (change.type !== 'added') return;
         const msg = change.doc.data();
         if (msg.uid === user.uid) return;
-        unreadPeers.add(peerId); refreshNavDot();
-        showAlert(`Message from ${msg.name || 'User'}`, msg.sharedPostId ? 'Shared a post with you' : (msg.text || 'New message'));
+        unreadPeers.add(peerId);
+        refreshNavDot();
+        showAlert(
+          `Message from ${msg.name || 'User'}`,
+          msg.sharedPostId ? 'Shared a post with you' : (msg.text || 'New message')
+        );
       });
-    }, () => { }));
+    }, () => {}));
   };
 
-  const peerIds = new Set();
-  const syncPeerListeners = () => {
-    const ids = new Set([...peers.keys()]);
-    ids.forEach(id => { if (!peerIds.has(id)) { peers.get(id)?.(); peers.delete(id); unreadPeers.delete(id); } });
-    peerIds.forEach(attachChatListener); refreshNavDot();
+  const setIds = (target, snap) => {
+    target.clear();
+    snap.docs.forEach(d => { if (d.id !== user.uid) target.add(d.id); });
+    syncPeerListeners();
   };
 
-  notificationUnsubs.push(() => { peers.forEach(unsub => unsub()); peers.clear(); unreadPeers.clear(); setChatNavUnread(false); });
-  const addPeers = snap => { snap.docs.forEach(d => peerIds.add(d.id)); syncPeerListeners(); };
+  notificationUnsubs.push(onSnapshot(
+    collection(db, 'users', user.uid, 'following'),
+    snap => setIds(followingIds, snap),
+    () => {}
+  ));
+  notificationUnsubs.push(onSnapshot(
+    collection(db, 'users', user.uid, 'followers'),
+    snap => setIds(followerIds, snap),
+    () => {}
+  ));
 
-  notificationUnsubs.push(onSnapshot(collection(db, 'users', user.uid, 'following'), snap => { connectedReady = true; addPeers(snap); }, () => { }));
-  notificationUnsubs.push(onSnapshot(collection(db, 'users', user.uid, 'followers'), snap => { addPeers(snap); }, () => { }));
+  notificationUnsubs.push(() => {
+    peers.forEach(unsubscribe => unsubscribe());
+    peers.clear();
+    followingIds.clear();
+    followerIds.clear();
+    unreadPeers.clear();
+    setChatNavUnread(false);
+  });
 
-  const onUnreadEvent = e => { const peerId = e?.detail?.peerId; if (peerId) unreadPeers.delete(peerId); refreshNavDot(); };
+  const onUnreadEvent = e => {
+    const peerId = e?.detail?.peerId;
+    if (peerId) unreadPeers.delete(peerId);
+    refreshNavDot();
+  };
   window.addEventListener('trio-chat-unread-change', onUnreadEvent);
   notificationUnsubs.push(() => window.removeEventListener('trio-chat-unread-change', onUnreadEvent));
 }
