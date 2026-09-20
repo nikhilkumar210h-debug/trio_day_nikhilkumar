@@ -1,7 +1,7 @@
 import{auth,db}from'./firebase-init.js';
 import{onAuthStateChanged}from'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
 import{doc,getDoc}from'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
-import{activeCatalogActivities}from'./activity-catalog.js?v=20260919-catalog4';
+import{activeCatalogActivities}from'./activity-catalog.js?v=20260920-audit2';
 import{activityTypeInfo}from'./activity-ui.js';
 import{renderBuildWorkspace}from'./forge-engine.js?v=20260919-engine4';
 import{getInteractiveConfig,getChallengeRounds,getGameRounds}from'./forge-interactions.js?v=20260919-interactions4';
