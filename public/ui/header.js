@@ -3,6 +3,7 @@
 // Adds theme toggle button.
 // Reuses: utils.escapeHtml, sheet.js, search.js, trio-cache
 import { attachSearch } from './search.js';
+const BELL_SVG = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg>';
 
 export function initHeader() {
   const topbar = document.querySelector('.topbar');
@@ -19,6 +20,18 @@ export function initHeader() {
     inner.appendChild(actions);
   }
   if (authStatus && authStatus.parentElement !== actions) actions.appendChild(authStatus);
+
+  // Canonical notifications control. auth-ui.js attaches the realtime badge/menu behavior.
+  if (!document.querySelector('#notificationButton')) {
+    const wrap = document.createElement('div');
+    wrap.className = 'notification-wrap';
+    wrap.innerHTML = '<button id="notificationButton" class="notification-btn" type="button" aria-label="Notifications" title="Notifications">' +
+      BELL_SVG +
+      '<span id="notificationBadge" class="notification-badge" hidden>0</span>' +
+      '</button>' +
+      '<div id="notificationMenu" class="notification-menu" hidden></div>';
+    actions.insertBefore(wrap, authStatus || null);
+  }
 
   // Inject header search slot (desktop inline, mobile via sheet)
   if (!document.querySelector('.nkm-header-search')) {
