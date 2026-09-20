@@ -665,6 +665,78 @@ function evaluateBadgesDelta(currentBadges, xp, streakCurrent, extraTemplateId) 
  * Award XP to uid. Reads authoritative user doc, computes new values,
  * writes user doc, updates all leaderboards, evaluates badges.
  */
+const CATALOG_PUZZLE_CORRECT={p1:2,p2:0,p3:1,p4:0,p5:2,p6:0,p7:1,p8:0,p9:0,p10:2,p11:2,p12:0};
+const CATALOG_LEARN_CORRECT={l1:2,l2:1,l3:1,l4:1,l5:1,l6:1,l7:0,l8:1,l9:0,l10:0,l11:0,l12:1};
+const CATALOG_CHALLENGE_ANSWERS=[2,2,0,2,2,2,1,0,0,2];
+const CATALOG_BUILD={
+ b1:{m:'order',items:['Trigger','Condition','Action','Feedback']},
+ b2:{m:'order',items:['Hard topic','Break','Easy topic','Practice','Review','Plan tomorrow']},
+ b3:{m:'order',items:['Start','Stop A','Stop B','Stop C','Destination']},
+ b4:{m:'allocate',budget:5000,mins:[1000,1500,500,300]},
+ b5:{m:'grid',required:['Desk','Lamp','Notebook'],blocked:[5,6,9,10],pairs:[['Lamp','Desk'],['Notebook','Desk']]},
+ b6:{m:'order',items:['Receive issue','Verify','Investigate','Resolve','Follow up']},
+ b7:{m:'order',items:['Key metric','Trend','Breakdown','Detail']},
+ b8:{m:'order',items:['Foundations','Core skill','Application','Practice','Review']},
+ b9:{m:'allocate',budget:12,mins:[2,3,2,1]},
+ b10:{m:'order',items:['Understand problem','Stabilize','Choose fix','Apply','Verify']},
+ b11:{m:'grid',required:['Focus','Reference','Write','Tools'],blocked:[3,7,12],pairs:[['Focus','Write'],['Reference','Tools']]},
+ b12:{m:'assign',people:['Ava','Ben','Cara','Dev'],roles:['Planner','Builder','Checker','Presenter'],correct:{Ava:'Planner',Ben:'Builder',Cara:'Checker',Dev:'Presenter'}}
+};
+function catalogAdjacent(a,b){return (Math.abs(a-b)===1&&Math.floor(a/4)===Math.floor(b/4))||Math.abs(a-b)===4;}
+function validCatalogEvidence(activityId,evidence){
+ const id=String(activityId||'').toLowerCase();
+ if(!evidence||typeof evidence!=='object')return false;
+ const proof=String(evidence.proofText||'').trim();
+ if(proof.length<20||proof.split(/\s+/).filter(Boolean).length<4)return false;
+ if(Object.prototype.hasOwnProperty.call(CATALOG_PUZZLE_CORRECT,id))return Number(evidence.answerIndex)===CATALOG_PUZZLE_CORRECT[id];
+ if(Object.prototype.hasOwnProperty.call(CATALOG_LEARN_CORRECT,id))return Number(evidence.answerIndex)===CATALOG_LEARN_CORRECT[id];
+ if(id[0]==='c'){
+  const answers=Array.isArray(evidence.answers)?evidence.answers.map(Number):[];
+  const seed=(Number(id.slice(1))||0)%10;
+  if(answers.length!==5||answers.some(a=>!Number.isInteger(a)||a<0||a>3))return false;
+  let score=0;for(let i=0;i<5;i++)if(answers[i]===CATALOG_CHALLENGE_ANSWERS[(seed+i)%10])score++;
+  return score>=3&&Number(evidence.score)===score;
+ }
+ const cfg=CATALOG_BUILD[id];
+ if(!cfg||!evidence.buildEvidence||evidence.buildEvidence.mechanic!==cfg.m)return false;
+ const state=evidence.buildEvidence.state;if(!state||typeof state!=='object')return false;
+ if(cfg.m==='order')return Array.isArray(state.order)&&state.order.length===cfg.items.length&&state.order.every((v,i)=>v===cfg.items[i]);
+ if(cfg.m==='allocate'){
+  const a=Array.isArray(state.allocation)?state.allocation.map(Number):[];
+  return a.length===cfg.mins.length&&a.every((v,i)=>Number.isFinite(v)&&v>=cfg.mins[i])&&a.reduce((s,v)=>s+v,0)<=cfg.budget;
+ }
+ if(cfg.m==='assign')return state.assign&&cfg.people.every(p=>state.assign[p]===cfg.correct[p])&&new Set(Object.values(state.assign)).size===cfg.roles.length;
+ if(cfg.m==='grid'){
+  const p=state.positions;if(!p||typeof p!=='object')return false;
+  const vals=cfg.required.map(name=>Number(p[name]));
+  if(vals.some(v=>!Number.isInteger(v)||v<0||v>15)||new Set(vals).size!==cfg.required.length)return false;
+  if(vals.some(v=>cfg.blocked.includes(v)))return false;
+  return cfg.pairs.every(pair=>p[pair[0]]!==undefined&&p[pair[1]]!==undefined&&catalogAdjacent(Number(p[pair[0]]),Number(p[pair[1]])));
+ }
+ return false;
+}
+async function handleCompleteCatalog(uid,body,env){
+ const activityId=String(body?.activityId||'').trim().toLowerCase();
+ if(!/^[pblcg](?:[1-9]|1[0-2])$/.test(activityId))throw new Error('Unknown catalog activity');
+ const now=Date.now();const expectedKey=catalogCycleKey(activityId,now);
+ if(String(body?.cycleKey||'')!==expectedKey)throw new Error('Invalid activity cycle');
+ if(!validCatalogEvidence(activityId,body?.evidence))throw new Error('Activity solution could not be verified');
+ const projectId=env.FIREBASE_PROJECT_ID;const token=await getAccessToken(env);
+ const completionPath='users/'+uid+'/activityCompletions/'+expectedKey;
+ const cycleStart=Number(expectedKey.split('_')[1])||now;const evidence=body.evidence;
+ const created=await fsCreateDoc(projectId,token,completionPath,{
+  uid,activityId,cycleKey:expectedKey,verified:true,completedAtMs:now,
+  cycleEndsAtMs:cycleStart+catalogCycleDays(activityId)*86400000,
+  proofText:String(evidence.proofText||'').trim().slice(0,500),
+  answerIndex:Number.isInteger(Number(evidence.answerIndex))?Number(evidence.answerIndex):null,
+  score:Number.isInteger(Number(evidence.score))?Number(evidence.score):null,
+  answers:Array.isArray(evidence.answers)?evidence.answers.slice(0,5).map(Number):null,
+  buildEvidence:evidence.buildEvidence&&typeof evidence.buildEvidence==='object'?evidence.buildEvidence:null
+ });
+ if(!created){const existing=await fsGet(projectId,token,completionPath);if(!existing?.verified)throw new Error('Existing completion cannot be verified');}
+ const award=await handleAwardXp(uid,{meta:{catalogActivityId:activityId,catalogCycleKey:expectedKey}},env);
+ return {ok:true,already:!created,award};
+}
 async function handleAwardXp(uid, body, env) {
   const meta = body?.meta || {};
   const communityTaskId = String(meta.communityTaskId || '').trim();
@@ -1008,7 +1080,9 @@ export default {
     const path = url.pathname.replace(/\/$/, '');
     try {
       let result;
-      if (path === '/gamification/award-xp') {
+      if (path === '/gamification/complete-catalog') {
+         result = await handleCompleteCatalog(uid, body, env);
+       } else if (path === '/gamification/award-xp') {
         result = await handleAwardXp(uid, body, env);
       } else if (path === '/gamification/bump-streak') {
         result = await handleBumpStreak(uid, env);
