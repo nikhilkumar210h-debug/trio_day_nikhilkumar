@@ -248,6 +248,6 @@ $('micBtn')?.addEventListener('click',async()=>{
  $('micBtn').classList.toggle('is-on',micEnabled);
  $('voiceStatus').textContent=micEnabled?'Others can hear you':'You can hear others';
 });
-$('chatToggleBtn')?.addEventListener('click',()=>{const chat=document.querySelector('.room-chat');const btn=$('chatToggleBtn');if(!chat||!btn)return;const collapsed=chat.classList.toggle('is-collapsed');btn.textContent=collapsed?'Chat':'Hide';btn.setAttribute('aria-expanded',String(!collapsed));});
+$('chatToggleBtn')?.addEventListener('click',()=>{const chat=document.querySelector('.room-chat');const btn=$('chatToggleBtn');if(!chat||!btn)return;const collapsed=chat.classList.toggle('is-collapsed');btn.textContent=collapsed?'Chat':'Hide';btn.setAttribute('aria-expanded',String(!collapsed));btn.setAttribute('aria-label',collapsed?'Show chat':'Hide chat');});
 onAuthStateChanged(auth,async u=>{if(!u)return location.href='login.html?redirect=room.html?id='+encodeURIComponent(id||'');me=u;const s=await getDoc(doc(db,'users',u.uid));p=s.exists()?s.data():{};await load();blockRoomNavigation()});
 window.addEventListener('beforeunload',()=>{roomLiveUnsub?.();rtcUnsubs.forEach(fn=>fn());voicePCs.forEach(pc=>pc.close());voiceAudio.forEach(a=>a.remove());localStream?.getTracks().forEach(t=>t.stop());stopSharedWorkspace?.();});

@@ -7,4 +7,11 @@
 .room-team-roles{padding:10px 12px;margin:0 0 12px;border:1px solid var(--color-border);border-radius:16px;background:var(--color-glass)}
 .room-team-roles-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px}.room-team-roles-head strong{font-size:12px}.room-team-roles-head small{font-size:9px;color:var(--color-ink-muted)}
 .room-team-role-list{display:flex;flex-wrap:wrap;gap:7px}.room-team-role{border:1px solid var(--color-border);border-radius:999px;padding:7px 10px;background:var(--color-bg-elevated);color:var(--color-ink-muted);font-size:10px;font-weight:700;cursor:pointer}.room-team-role:hover{border-color:var(--color-border-strong);color:var(--color-ink)}.room-team-role.is-active{background:var(--color-primary-soft);border-color:rgba(99,102,241,.38);color:var(--color-primary-text)}.room-team-role:disabled{opacity:.38;cursor:not-allowed}
-[data-theme="light"] .room-team-roles{background:#fff}. 
+[data-theme="light"] .room-team-roles{background:#fff}.
+
+/* Workspace container spacing */
+.room-workspace{margin-top:16px}
+.room-workspace .activity-card{margin-top:12px}
+
+/* Activity card in room sidebar */
+.room-activity .activity-card{margin:0;padding:12px} 

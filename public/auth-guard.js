@@ -16,7 +16,7 @@ function activeRoom() {
 }
 
 // Pages that are PUBLICLY ACCESSIBLE without authentication.
-// Protected pages (chat, rooms, activity, profile, notifications, etc.) must NOT be here.
+// Protected pages (chat, rooms, room, activity, profile, notifications, create, private-chat, voice-status) must NOT be here.
 const PUBLIC_PAGES = new Set([
   'index.html',
   'login.html',
@@ -40,9 +40,18 @@ const PUBLIC_PAGES = new Set([
   'search.html',
 ]);
 
+// Room and activity pages that need special handling - they redirect to login if no auth,
+// but if user has an active room, they should stay in it
+const ROOM_ACTIVITY_PAGES = new Set([
+  'room.html',
+  'activity.html',
+  'rooms.html',
+]);
+
 onAuthStateChanged(auth, (user) => {
   const page = (location.pathname.split("/").pop() || "index.html").toLowerCase();
   const isPublic = PUBLIC_PAGES.has(page);
+  const isRoomActivity = ROOM_ACTIVITY_PAGES.has(page);
 
   if (!user) {
     if (!isPublic) {
@@ -51,6 +60,14 @@ onAuthStateChanged(auth, (user) => {
     }
     return;
   }
+
+  // For room/activity pages, let the page-specific logic handle active room routing
+  // to avoid race conditions between auth-guard and page load
+  if (isRoomActivity) {
+    document.documentElement.classList.add("auth-ok");
+    return;
+  }
+
   const active = activeRoom();
   const roomId = new URLSearchParams(location.search).get("id");
   if (active && !(page === "room.html" && roomId === active.id)) {

@@ -7,3 +7,17 @@
 
 .room-main-card{background-image:linear-gradient(180deg,rgba(9,14,32,.96) 0%,rgba(9,14,32,.90) 45%,rgba(9,14,32,.98) 100%),url('assets/room-hero.svg')!important;background-size:cover!important;background-position:center!important}
 .room-main-card{background-image:linear-gradient(180deg,rgba(9,14,32,.96) 0%,rgba(9,14,32,.90) 45%,rgba(9,14,32,.98) 100%),url('assets/room-hero.svg')!important;background-size:cover!important;background-position:center!important}
+
+/* Room grid layout for desktop */
+.room-grid {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 16px;
+  align-items: start;
+}
+
+@media (max-width: 760px) {
+  .room-grid {
+    grid-template-columns: 1fr;
+  }
+}

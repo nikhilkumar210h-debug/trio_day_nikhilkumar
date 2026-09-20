@@ -18,6 +18,7 @@ const ITEMS = [
   { key: 'discover', label: 'Discover', href: 'all-users.html', icon: SVG.discover },
   { key: 'do', label: 'Do', href: 'tasks.html', icon: SVG.do },
   { key: 'chat', label: 'Chat', href: 'chat.html', icon: SVG.chat },
+  { key: 'create', label: 'Create', href: 'task-create.html', icon: SVG.create },
   { key: 'you', label: 'You', href: 'profile.html', icon: SVG.you }
 ];
 
@@ -28,6 +29,7 @@ function pathKey() {
   if (p === 'tasks.html' || p === 'task-create.html' || p === 'task-detail.html' || p === 'leaderboard.html' || p === 'admin-tasks.html') return 'do';
   if (p === 'chat.html' || p === 'private-chat.html') return 'chat';
   if (p === 'profile.html') return 'you';
+  if (p === 'task-create.html') return 'create';
   return 'today';
 }
 
