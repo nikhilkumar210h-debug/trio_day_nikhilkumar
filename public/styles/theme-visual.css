@@ -74,3 +74,13 @@ input,textarea,select{background:var(--color-bg-elevated)!important;color:var(--
 
 /* Creator/activity visuals */
 .creator-preview-activity,.preview-modal-hero{background:var(--trio-card-gradient)}
+
+.theme-choice-list{display:grid;gap:8px}
+.theme-choice{display:grid!important;grid-template-columns:32px 1fr auto;align-items:center;gap:10px;text-align:left!important}
+.theme-choice span{font-size:18px}
+.theme-choice small{color:var(--color-ink-dim);font-size:10px;font-weight:500}
+.theme-choice.is-selected{border-color:rgba(99,102,241,.38)!important;background:var(--color-primary-soft)!important;color:var(--color-ink)!important}
+[data-theme="light"] .do-note,
+[data-theme="light"] .profile-menu-item,
+[data-theme="light"] .nkm-sheet-head,
+[data-theme="light"] .nkm-sheet-body{color:var(--color-ink)!important}
