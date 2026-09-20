@@ -1,12 +1,13 @@
 import{auth,db}from'./firebase-init.js';
 import{onAuthStateChanged}from'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
-import{doc,getDoc,setDoc}from'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
+import{doc,getDoc}from'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 import{activeCatalogActivities}from'./activity-catalog.js?v=20260919-catalog4';
 import{activityTypeInfo}from'./activity-ui.js';
 import{renderBuildWorkspace}from'./forge-engine.js?v=20260919-engine4';
 import{getInteractiveConfig,getChallengeRounds}from'./forge-interactions.js?v=20260919-interactions3';
 import{completeTask as completeCommunityTask}from'./gamification/community-tasks.js?v=20260919-community5';
 import{awardXp}from'./gamification/xp-levels.js';
+import{workerPost}from'./gamification/worker-config.js';
 import{showAchievement}from'./ui/achievements.js';
 import{escapeHtml as esc}from'./utils.js';
 
@@ -273,21 +274,27 @@ $('completeBtn').onclick=async()=>{
       award=result?.award||null;
     }else{
       const cycleKey=activity.id+'_'+activity.startAtMs;
-      const ref=doc(db,'users',me.uid,'activityCompletions',cycleKey);
-      const old=await getDoc(ref);
-      if(!old.exists()){
-        await setDoc(ref,{uid:me.uid,activityId:activity.id,cycleKey,title:activity.title,type:activity.type,completedAtMs:Date.now(),cycleEndsAtMs:activity.endAtMs});
-      }else{
-        completionAlready=true;
-      }
       const xp=activity.difficulty==='Hard'?60:activity.difficulty==='Medium'?40:25;
       try{
-        award=await awardXp(me.uid,xp,{catalogActivityId:activity.id,catalogCycleKey:cycleKey});
+        const result=await workerPost('/gamification/complete-catalog',{
+          activityId:activity.id,
+          cycleKey,
+          evidence:activityEvidence
+        },me);
+        completionAlready=!!result?.already;
+        award=result?.award||null;
         if(!completionAlready){
-          showAchievement({title:activity.title,subtitle:'+'+xp+' XP',icon:activity.icon||'🎯',leveledUp:award?.leveledUp,level:award?.level,badges:award?.badgesEarned||[]});
+          showAchievement({
+            title:activity.title,
+            subtitle:'+'+xp+' XP',
+            icon:activity.icon||'🎯',
+            leveledUp:award?.leveledUp,
+            level:award?.level,
+            badges:award?.badgesEarned||[]
+          });
         }
-      }catch(xpErr){
-        console.warn('[Activity] XP award skipped; completion is still saved:',xpErr);
+      }catch(catalogErr){
+        throw catalogErr;
       }
     }
     if(timer){clearInterval(timer);timer=null;timerEndsAt=0;}
