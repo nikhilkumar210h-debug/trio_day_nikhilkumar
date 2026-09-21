@@ -12,7 +12,6 @@ const FLAGSHIP_V2={
 
 const FLAGSHIP_META={
   c1:{lane:'PLAY',label:'Reaction',tag:'Speed round',social:'Beat your best score.'},
-  l7:{lane:'PLAY',label:'Memory',tag:'Recall run',social:'Share your move count.'},
   p13:{lane:'PLAY',label:'Timeline',tag:'Heist order',social:'Challenge a friend to beat your solve.'},
   p6:{lane:'PLAY',label:'Puzzle',tag:'Route run',social:'Compare mistakes with friends.'},
   b9:{lane:'CREATE',label:'Pack Builder',tag:'Trade-off game',social:'Share your final loadout.'},
