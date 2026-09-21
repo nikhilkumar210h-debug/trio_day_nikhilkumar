@@ -65,7 +65,7 @@ function canvasToBlob(canvas, type, quality) {
 
 /**
  * Get signed upload params from Worker.
- * @param {string} kind - 'post' | 'story_image' | 'story_video' | 'profile'
+ * @param {string} kind - 'story_image' | 'story_video' | 'profile'
  * @param {string} firebaseToken - Firebase ID token
  * @returns {Promise<Object>} signed params { signature, timestamp, cloudName, apiKey, resourceType, folder, publicId, allowedFormats, overwrite, uploadUrl }
  */
@@ -150,17 +150,6 @@ async function uploadSignedVideo(file, signedParams, signal) {
     throw Error(msg);
   }
   return data.secure_url;
-}
-
-/** Post photo → Cloudinary folder trio/posts (signed) */
-export async function uploadPostImage(uid, file, firebaseToken, signal) {
-  const { blob, ext } = await compressImageFile(file, {
-    maxEdge: 1280,
-    maxBytes: 850_000,
-    startQuality: 0.78
-  });
-  const signed = await getSignedParams('post', firebaseToken);
-  return uploadSignedBlob(blob, signed, signal, `post.${ext}`);
 }
 
 /** Story media — ORIGINAL QUALITY (short term 24h) — signed upload */
