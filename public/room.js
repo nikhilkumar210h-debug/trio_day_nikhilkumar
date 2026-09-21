@@ -1,6 +1,6 @@
 import{auth,db}from'./firebase-init.js';
 import{onAuthStateChanged}from'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
-import{collection,query,where,orderBy,limit,onSnapshot,getDoc,getDocs,doc,setDoc,deleteDoc,addDoc,updateDoc,runTransaction}from'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
+import{collection,query,where,orderBy,limit,limitToLast,onSnapshot,getDoc,getDocs,doc,setDoc,deleteDoc,addDoc,updateDoc,runTransaction}from'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 import{escapeHtml as esc,avatarHtml}from'./utils.js';
 import{activityCardHtml}from'./activity-ui.js';
 import{showToast}from'./ui/toast.js';
@@ -197,7 +197,7 @@ async function load(){
    $('memberList').innerHTML=s.docs.map(d=>{const m=d.data();return '<div class="room-member" data-uid="'+esc(m.uid)+'"><span class="room-member-avatar">'+avatarHtml({name:m.name,photoURL:m.photoURL})+'</span><span class="room-member-name">'+esc(m.name||'User')+'</span><span class="room-member-role">'+(m.uid===room.hostUid?'Host':'Member')+'</span></div>'}).join('');
    if(voiceReady)renderVoiceMembers(s);
  });
- onSnapshot(query(collection(db,'rooms',id,'messages'),orderBy('createdAtMs','asc'),limit(100)),s=>{
+ onSnapshot(query(collection(db,'rooms',id,'messages'),orderBy('createdAtMs','asc'),limitToLast(100)),s=>{
    $('messageLog').innerHTML=s.docs.map(d=>{const m=d.data();return '<div class="room-msg '+(m.uid===me.uid?'mine':'')+'"><div class="room-msg-bubble"><div class="room-msg-name">'+esc(m.name||'User')+'</div><div class="room-msg-text">'+esc(m.text||'')+'</div></div></div>'}).join('');
    $('messageLog').scrollTop=$('messageLog').scrollHeight;
  });
