@@ -603,8 +603,6 @@ async function notifyPostOwner(post, type) {
 }
 
 const feed = $('feed'), feedLoading = $('feedLoading'), feedEmpty = $('feedEmpty'), feedError = $('feedError');
-const overlay = $('modalOverlay'), form = $('postForm'), message = $('message'),
-  media = $('mediaInput'), preview = $('preview'), status = $('formStatus'), submit = $('submitBtn');
 const storyOverlay = $('storyOverlay'), storyForm = $('storyForm'), storyMessage = $('storyMessage'),
   storyMedia = $('storyMedia'), storyPreview = $('storyPreview'), storyStatus = $('storyFormStatus'),
   storySubmit = $('storySubmitBtn');
@@ -612,31 +610,24 @@ const storyOverlay = $('storyOverlay'), storyForm = $('storyForm'), storyMessage
 let selectedFile = null;
 let selectedPreviewUrl = null;
 let cachedPosts = [];
-let postFilter = 'none';
-let postFilterIntensity = 1;
 
-function setStatus(t = '', err = false) { if (status) { status.textContent = t; status.classList.toggle('error', err); } }
-function setStoryStatus(t = '', err = false) { if (storyStatus) { storyStatus.textContent = t; storyStatus.classList.toggle('error', err); } }
-
-function openModal() { overlay.hidden = false; overlay.classList.remove('is-fullscreen'); document.body.style.overflow = 'hidden'; setTimeout(() => message?.focus(), 50); }
-function closeModal() {
-  overlay.hidden = true;
-  overlay.classList.remove('is-fullscreen');
-  document.body.style.overflow = '';
-  form?.reset();
-  preview.hidden = true;
-  preview.innerHTML = '';
-  selectedFile = null;
-  if (selectedPreviewUrl) { URL.revokeObjectURL(selectedPreviewUrl); selectedPreviewUrl = null; }
-  postFilter = 'none'; postFilterIntensity = 1;
-  const pf = $('postFilterPanel'); if (pf) pf.hidden = true;
-  document.querySelectorAll('#postFilterPanel .filter-btn').forEach(b => b.classList.toggle('active', b.dataset.postFilter === 'none'));
-  const pfi = $('postFilterIntensity'); if (pfi) pfi.value = 100;
-  const pfv = $('postFilterIntensityValue'); if (pfv) pfv.textContent = '100%';
-  setStatus('');
+function setStoryStatus(t = '', err = false) {
+  if (storyStatus) {
+    storyStatus.textContent = t;
+    storyStatus.classList.toggle('error', err);
+  }
 }
-function openStoryModal() { storyOverlay.hidden = false; storyOverlay.classList.remove('is-fullscreen'); document.body.style.overflow = 'hidden'; setTimeout(() => storyMessage?.focus(), 50); }
+
+function openStoryModal() {
+  if (!storyOverlay) return;
+  storyOverlay.hidden = false;
+  storyOverlay.classList.remove('is-fullscreen');
+  document.body.style.overflow = 'hidden';
+  setTimeout(() => storyMessage?.focus(), 50);
+}
+
 function closeStoryModal() {
+  if (!storyOverlay) return;
   storyOverlay.hidden = true;
   storyOverlay.classList.remove('is-fullscreen');
   document.body.style.overflow = '';
@@ -644,7 +635,10 @@ function closeStoryModal() {
   storyPreview.hidden = true;
   storyPreview.innerHTML = '';
   selectedFile = null;
-  if (selectedPreviewUrl) { URL.revokeObjectURL(selectedPreviewUrl); selectedPreviewUrl = null; }
+  if (selectedPreviewUrl) {
+    URL.revokeObjectURL(selectedPreviewUrl);
+    selectedPreviewUrl = null;
+  }
   editorState.textOverlays = [];
   editorState.stickers = [];
   editorState.filter = 'none';
@@ -655,84 +649,24 @@ function closeStoryModal() {
   setStoryStatus('');
 }
 
-function openCreateChooser(){ const c=$('createChooser'); if(!c) return; c.hidden=false; document.body.style.overflow='hidden'; }
-function closeCreateChooser(){ const c=$('createChooser'); if(!c) return; c.hidden=true; if($('storyOverlay')?.hidden && $('modalOverlay')?.hidden) document.body.style.overflow=''; }
-$('chooserStory')?.addEventListener('click', ()=>{ closeCreateChooser(); openStoryModal(); });
-$('chooserPost')?.addEventListener('click', ()=>{ closeCreateChooser(); openModal(); });
-$('chooserVoice')?.addEventListener('click', () => {
-  closeCreateChooser();
-  location.href = 'voice-status.html';
-});
-$('chooserCancel')?.addEventListener('click', closeCreateChooser);
-$('createChooser')?.addEventListener('click', e=>{ if(e.target===$('createChooser')) closeCreateChooser(); });
-document.addEventListener('keydown', e=>{ if(e.key==='Escape' && !$('createChooser')?.hidden) closeCreateChooser(); });
-
-[$('headerPlus'), $('heroPostBtn'), $('fabBtn'), $('storyPostBtn'), ...document.querySelectorAll('[data-open-post]')]
-  .forEach(b => b?.addEventListener('click', () => {
-    SoundManager.click();
-    if (b.id === 'storyPostBtn') openStoryModal();
-    else openCreateChooser();
-  }));
-document.querySelectorAll('[data-open-post]').forEach(b => b?.addEventListener('click', () => { SoundManager.click(); openCreateChooser(); }));
-$('modalClose')?.addEventListener('click', closeModal);
-$('cancelBtn')?.addEventListener('click', closeModal);
-overlay?.addEventListener('click', e => { if (e.target === overlay) closeModal(); });
-document.addEventListener('keydown', e => { if (e.key === 'Escape' && !overlay.hidden) closeModal(); });
 $('storyModalClose')?.addEventListener('click', closeStoryModal);
 $('storyCancelBtn')?.addEventListener('click', closeStoryModal);
 storyOverlay?.addEventListener('click', e => { if (e.target === storyOverlay) closeStoryModal(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && !storyOverlay.hidden) closeStoryModal(); });
 
-
-function applyPostFilter() {
-  const img = preview?.querySelector('img');
-  if (img) img.style.filter = getFilterCSS(postFilter, postFilterIntensity);
-}
-// Studio engine reuse — no duplicate filter logic (imports engine only when needed elsewhere)
-document.querySelectorAll('#postFilterPanel .filter-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
+// Legacy create triggers now open Story directly. No post composer remains.
+document.querySelectorAll('[data-open-story], #storyPostBtn, #headerPlus, #heroStoryBtn, #fabStoryBtn')
+  .forEach(b => b?.addEventListener('click', () => {
     SoundManager.click();
-    document.querySelectorAll('#postFilterPanel .filter-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    postFilter = btn.dataset.postFilter;
-    applyPostFilter();
-  });
-});
-$('postFilterIntensity')?.addEventListener('input', e => {
-  postFilterIntensity = parseInt(e.target.value) / 100;
-  const pfv = $('postFilterIntensityValue'); if (pfv) pfv.textContent = e.target.value + '%';
-  applyPostFilter();
-});
+    openStoryModal();
+  }));
 
-// Toggle privacy for story
 document.querySelectorAll('.story-privacy-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.story-privacy-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     storyPrivacy = btn.dataset.privacy;
   });
-});
-
-media?.addEventListener('change', () => {
-  const f = media.files?.[0];
-  if (selectedPreviewUrl) { URL.revokeObjectURL(selectedPreviewUrl); selectedPreviewUrl = null; }
-  preview.innerHTML = '';
-  if (!f) { selectedFile = null; preview.hidden = true; overlay?.classList.remove('is-fullscreen'); return; }
-  if (!f.type.startsWith('image/')) { setStatus('Please select an image.', true); media.value = ''; return; }
-  if (f.size > 40 * 1024 * 1024) { setStatus('Photo must be under 40MB.', true); media.value = ''; return; }
-  selectedFile = f;
-  selectedPreviewUrl = URL.createObjectURL(f);
-  const img = document.createElement('img'); img.src = selectedPreviewUrl; img.alt = 'Preview'; img.width = 800; img.height = 600; img.decoding = 'async'; img.style.aspectRatio = '4 / 3';
-  img.style.filter = getFilterCSS(postFilter, postFilterIntensity);
-  preview.appendChild(img);
-  const rm = document.createElement('button'); rm.type='button'; rm.className='preview-remove'; rm.textContent='×'; rm.title='Remove photo';
-  rm.addEventListener('click', ()=>{ preview.innerHTML=''; preview.hidden=true; selectedFile=null; media.value=''; if (selectedPreviewUrl) { URL.revokeObjectURL(selectedPreviewUrl); selectedPreviewUrl=null; } const pf=$('postFilterPanel'); if(pf) pf.hidden=true; overlay?.classList.remove('is-fullscreen'); setStatus(''); });
-  preview.appendChild(rm);
-  preview.hidden = false;
-  const pf = $('postFilterPanel'); if (pf) pf.hidden = false;
-  setStatus('');
-  overlay?.classList.add('is-fullscreen');
-  setTimeout(() => preview.scrollIntoView({ behavior: 'smooth', block: 'center' }), 120);
 });
 
 storyMedia?.addEventListener('change', () => {
