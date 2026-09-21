@@ -633,10 +633,6 @@ h1, h2, h3, .brand strong {
 }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 .modal-overlay[hidden] { display: none !important; }
-/* Compact create chooser — center create shows small popup, not full page */
-#createChooser.modal-overlay { background: rgba(0,0,0,0.45); backdrop-filter: blur(6px); align-items: center; justify-content: center; padding: 12px; }
-#createChooser .modal { max-width: 300px; width: min(300px, calc(100vw - 32px)); max-height: none; height: auto; margin: auto; padding: 18px; border-radius: 20px; }
-#createChooser .modal h3 { font-size: 18px; }
 .modal {
   width: min(560px, 100%);
   max-height: min(92vh, 720px);
