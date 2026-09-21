@@ -28,4 +28,15 @@ export function attachSearch(inputEl, resultsEl, { onSelect } = {}) {
     timer = setTimeout(render, DEBOUNCE_MS);
   });
   render();
+
+  // Keep the caller contract stable: header.js destructures the return value.
+  // Return lifecycle helpers instead of undefined so search initialization can
+  // safely be extended without crashing on pages that use the global header.
+  return {
+    render,
+    destroy() {
+      clearTimeout(timer);
+      inputEl.replaceWith(inputEl.cloneNode(true));
+    }
+  };
 }
