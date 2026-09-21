@@ -231,7 +231,7 @@ async function loadCommunityChallenges() {
       heading.className = 'challenge-community-heading';
       heading.innerHTML = '<span class="challenge-tag">COMMUNITY</span><h2>Questions from people</h2><p>Real prompts created by the community. Pick, compare and talk in public.</p>';
       host.prepend(heading);
-      custom.forEach(t => addCard({id:t.id,tag:'COMMUNITY',q:t.interaction.question,o:t.interaction.options}));
+      custom.forEach(t => addCard({id:t.id,tag:'COMMUNITY',q:t.interaction.question,o:t.interaction.options}, requestedId === t.id));
     }
     await hydrateCounts();
   } catch (err) {
@@ -247,7 +247,8 @@ onAuthStateChanged(auth, u => {
 const requestedId = new URLSearchParams(location.search).get('challenge') || new URLSearchParams(location.search).get('id');
 CHALLENGES.forEach(c => addCard(c, requestedId === c.id));
 loadCommunityChallenges().then(() => {
-  if (requestedId && !cards.has(requestedId)) {
+  if (requestedId && cards.has(requestedId)) return;
+  if (requestedId) {
     const match = [...cards.values()].find(x => x.c.id === requestedId);
     if (match) {
       match.discussion.hidden = false;
