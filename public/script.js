@@ -144,7 +144,9 @@ async function renderStoryStrip(uid) {
     // Keep the query security-compatible with the Firestore story rules:
     // public stories are readable by signed-in users; friends stories are
     // readable only when the current uid is in allowedUids.
-    const [publicSnap, friendsSnap] = await Promise.all([
+    // Run each visibility query independently. A friends/index issue must
+    // never hide valid public or own stories from the user.
+    const [publicResult, ownResult, friendsResult] = await Promise.allSettled([
       getDocs(query(
         collection(db, 'posts'),
         where('type', '==', 'story'),
@@ -157,11 +159,33 @@ async function renderStoryStrip(uid) {
         collection(db, 'posts'),
         where('type', '==', 'story'),
         where('isStory', '==', true),
+        where('uid', '==', uid),
+        where('expiresAtMs', '>', now),
+        limit(50)
+      )),
+      getDocs(query(
+        collection(db, 'posts'),
+        where('type', '==', 'story'),
+        where('isStory', '==', true),
         where('allowedUids', 'array-contains', uid),
         where('expiresAtMs', '>', now),
         limit(50)
       ))
     ]);
+
+    const publicSnap = publicResult.status === 'fulfilled' ? publicResult.value : null;
+    const ownSnap = ownResult.status === 'fulfilled' ? ownResult.value : null;
+    const friendsSnap = friendsResult.status === 'fulfilled' ? friendsResult.value : null;
+
+    for (const [label, result] of [
+      ['public', publicResult],
+      ['own', ownResult],
+      ['friends', friendsResult]
+    ]) {
+      if (result.status === 'rejected') {
+        console.warn('[stories] ' + label + ' query failed:', result.reason);
+      }
+    }
 
     const byId = new Map();
     const collect = snap => snap.forEach(docSnap => {
@@ -176,8 +200,9 @@ async function renderStoryStrip(uid) {
         byId.set(docSnap.id, { ...data, _id: docSnap.id });
       }
     });
-    collect(publicSnap);
-    collect(friendsSnap);
+    if (publicSnap) collect(publicSnap);
+    if (ownSnap) collect(ownSnap);
+    if (friendsSnap) collect(friendsSnap);
 
     const stories = Array.from(byId.values())
       .sort((a, b) => (Number(b.createdAtMs) || 0) - (Number(a.createdAtMs) || 0))
