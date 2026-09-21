@@ -77,6 +77,15 @@ function generatePublicId(kind, uid) {
   return `${uid}_${Date.now()}_${randomId()}`;
 }
 
+function base64UrlToBytes(value) {
+  const normalized = value.replace(/-/g, '+').replace(/_/g, '/');
+  const padded = normalized.padEnd(normalized.length + ((4 - (normalized.length % 4)) % 4), '=');
+  const binary = atob(padded);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes;
+}
+
 // HMAC-SHA1 for Cloudinary signature
 async function hmacSha1(secret, data) {
   const key = await crypto.subtle.importKey(
