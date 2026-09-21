@@ -213,7 +213,10 @@ function render(){
  $('activityKicker').textContent=type.icon+' '+type.label+' · '+(activity.category||'General');
  $('activityTitle').textContent=activity.title;
  $('activityDescription').textContent=activity.description||'';
- $('activityChips').innerHTML='<span class="activity-detail-chip">⏱ '+Number(activity.durationMin||20)+' min</span><span class="activity-detail-chip">'+esc(activity.difficulty||'Medium')+'</span><span class="activity-detail-chip">👥 Live team</span>';
+ const durationChip = activity.type === 'puzzle' || activity.type === 'learn'
+   ? '📖 ~'+Number(activity.durationMin||20)+' min'
+   : activity.type === 'game' ? '🎮 Live room' : '⏱ '+Number(activity.durationMin||20)+' min';
+ $('activityChips').innerHTML='<span class="activity-detail-chip">'+durationChip+'</span><span class="activity-detail-chip">'+esc(activity.difficulty||'Medium')+'</span><span class="activity-detail-chip">👥 Live team</span>';
  $('activityPremise').innerHTML='<div class="activity-brief">'+esc(activity.premise||activity.description||'')+'</div>';
  const roles=Array.isArray(activity.roles)?activity.roles.filter(Boolean):[];
  const rolesWrap=$('activityRolesWrap');
