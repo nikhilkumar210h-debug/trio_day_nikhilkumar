@@ -26,11 +26,17 @@ function pathKey() {
   if (p === 'all-users.html' || p === 'build.html' || p === 'learn.html' || p === 'puzzle.html' || p === 'activity.html' || p === 'rooms.html' || p === 'room.html') return 'discover';
   if (p === 'chat.html' || p === 'private-chat.html') return 'chat';
   if (p === 'profile.html') return 'you';
-  // Unknown/utility pages should not pretend that Today is active.
   return '';
 }
 
 const AUTH_PAGES = new Set(['login.html', '404.html', 'sitemap.html', 'offline.html']);
+
+function linkMarkup(i, active, attrName = 'data-nav') {
+  const isActive = i.key === active;
+  const cls = 'nav-btn' + (isActive ? ' active' : '');
+  const current = isActive ? ' aria-current="page"' : '';
+  return `<a class="${cls}" href="${i.href}" ${attrName}="${i.key}" aria-label="${i.label}"${current}><span class="nav-icon">${i.icon}</span><span class="nav-label">${i.label}</span></a>`;
+}
 
 export function renderNav() {
   const p = (location.pathname.split('/').pop() || '').toLowerCase();
@@ -43,21 +49,20 @@ export function renderNav() {
     const existing = row.querySelectorAll('[data-nav]');
     const hasCorrectStructure = existing.length === ITEMS.length && [...existing].every((el, idx) => el.dataset.nav === ITEMS[idx].key);
     if (!hasCorrectStructure) {
-      row.innerHTML = ITEMS.map(i => {
-        const cls = 'nav-btn' + (i.key === active ? ' active' : '');
-        return `<a class="${cls}" href="${i.href}" data-nav="${i.key}" aria-label="${i.label}"${isActive ? ' aria-current="page"' : '}><span class="nav-icon">${i.icon}</span><span class="nav-label">${i.label}</span></a>`;
-      }).join('');
+      row.innerHTML = ITEMS.map(i => linkMarkup(i, active)).join('');
     } else {
-      row.querySelectorAll('.nav-btn').forEach(el => el.classList.toggle('active', el.dataset.nav === active));
+      row.querySelectorAll('.nav-btn').forEach(el => {
+        const isActive = el.dataset.nav === active;
+        el.classList.toggle('active', isActive);
+        if (isActive) el.setAttribute('aria-current', 'page');
+        else el.removeAttribute('aria-current');
+      });
     }
   } else {
     const nav = document.createElement('nav');
     nav.className = 'bottom-nav';
     nav.setAttribute('aria-label', 'Primary navigation');
-    nav.innerHTML = `<div class="nav-row">${ITEMS.map(i => {
-      const cls = 'nav-btn' + (i.key === active ? ' active' : '');
-      return `<a class="${cls}" href="${i.href}" data-nav="${i.key}" aria-label="${i.label}"><span class="nav-icon">${i.icon}</span><span class="nav-label">${i.label}</span></a>`;
-    }).join('')}</div>`;
+    nav.innerHTML = `<div class="nav-row">${ITEMS.map(i => linkMarkup(i, active)).join('')}</div>`;
     document.body.appendChild(nav);
   }
 
@@ -65,16 +70,13 @@ export function renderNav() {
     const rail = document.createElement('nav');
     rail.className = 'nkm-rail';
     rail.setAttribute('aria-label', 'Primary navigation');
-    rail.innerHTML = ITEMS.map(i => {
-      const cls = 'nav-btn' + (i.key === active ? ' active' : '');
-      return `<a class="${cls}" href="${i.href}" data-rail="${i.key}"${isActive ? ' aria-current="page"' : '}><span class="nav-icon">${i.icon}</span><span class="nav-label">${i.label}</span></a>`;
-    }).join('');
+    rail.innerHTML = ITEMS.map(i => linkMarkup(i, active, 'data-rail')).join('');
     document.body.appendChild(rail);
   }
 }
 
 export function navHtml(active = '') {
-  return `<nav class="bottom-nav" aria-label="Primary navigation"><div class="nav-row">${ITEMS.map(i => `<a class="nav-btn${i.key===active?' active':''}" href="${i.href}"><span class="nav-icon">${i.icon}</span><span class="nav-label">${i.label}</span></a>`).join('')}</div></nav>`;
+  return `<nav class="bottom-nav" aria-label="Primary navigation"><div class="nav-row">${ITEMS.map(i => linkMarkup(i, active)).join('')}</div></nav>`;
 }
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', renderNav);
