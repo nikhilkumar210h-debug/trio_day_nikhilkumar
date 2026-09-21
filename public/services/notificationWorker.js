@@ -2,7 +2,9 @@ import { auth } from "../firebase-init.js";
 
 const API_BASE_URL = String(
   window.TRIO_API_BASE_URL ||
-  (location.hostname === "127.0.0.1" || location.hostname === "localhost" ? "http://127.0.0.1:5000" : "")
+(location.hostname === "127.0.0.1" || location.hostname === "localhost"
+  ? "http://127.0.0.1:5000"
+  : "https://trio-day-api.onrender.com")
 ).replace(/\/$/, "");
 
 async function getIdToken() {
