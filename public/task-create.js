@@ -258,9 +258,17 @@ function resetLaneDraft(){
 }
 function renderLanes() {
   const host = $('creatorLanes'); if(!host)return;
-  host.innerHTML = CREATE_LANES.map(type => { const info=ACTIVITY_TYPES[type]; return
-    '<button type="button" class="creator-lane-card creator-lane-card--'+info.tone+' '+(type===activeType?'selected':'')+'" data-lane="'+esc(type)+'"><span class="creator-lane-art">'+esc(info.icon)+'</span><span class="creator-lane-copy"><strong>'+esc(info.label)+'</strong><small>'+esc(info.desc)+'</small></span><span class="creator-lane-arrow">→</span></button>';
-}).join('');
+  const fallback = {
+    puzzle:{label:'Puzzle',icon:'🧩',tone:'violet',desc:'Logic, riddles, patterns & brain teasers.'},
+    build:{label:'Build',icon:'🛠️',tone:'cyan',desc:'Make something useful, creative or technical.'},
+    learn:{label:'Learn',icon:'🧠',tone:'green',desc:'Explore a topic, skill or idea together.'},
+    challenge:{label:'Challenge',icon:'⚡',tone:'orange',desc:'Timed, focused challenges with a clear goal.'}
+  };
+  host.innerHTML = CREATE_LANES.map(type => {
+    const info = ACTIVITY_TYPES[type] || fallback[type];
+    return '<button type="button" class="creator-lane-card creator-lane-card--'+esc(info.tone)+' '+(type===activeType?'selected':'')+'" data-lane="'+esc(type)+'"><span class="creator-lane-art">'+esc(info.icon)+'</span><span class="creator-lane-copy"><strong>'+esc(info.label)+'</strong><small>'+esc(info.desc)+'</small></span><span class="creator-lane-arrow">→</span></button>';
+  }).join('');
+
   host.querySelectorAll('[data-lane]').forEach(btn=>btn.addEventListener('click',()=>{
     activeType=btn.dataset.lane;
     selected=null;
@@ -600,8 +608,19 @@ $('creatorForm')?.addEventListener('submit', async e => {
   }
 });
 
-renderLanes();
-setStep(1);
+function bootCreator() {
+  try {
+    renderLanes();
+    setStep(1);
+  } catch (err) {
+    console.error('[Forge] Initial creator render failed:', err);
+    const host = $('creatorLanes');
+    if (host) host.innerHTML = '<div class="creator-stage-summary"><strong>Creator could not start.</strong><span>Please refresh once. If this keeps happening, the console error above identifies the failed module.</span></div>';
+  }
+}
+
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bootCreator, { once:true });
+else bootCreator();
 
 onAuthStateChanged(auth, async user => {
   if (!user) {

@@ -322,11 +322,17 @@
     // If served from project root (VS Code Live Preview at 127.0.0.1:3000), /service-worker.js 404s — fail gracefully, no console error.
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/service-worker.js', { scope: '/' })
+        // Resolve relative to the current page so both production (/index.html)
+        // and local /public/index.html use the correct worker URL/scope.
+        const swUrl = new URL('service-worker.js', window.location.href);
+        const swScope = new URL('./', window.location.href).pathname;
+        navigator.serviceWorker.register(swUrl.href, { scope: swScope })
           .then(reg => console.log('SW registered:', reg.scope))
           .catch(() => {
-            // Likely local dev serving project root instead of public/ — clean up stale SW
-            navigator.serviceWorker.getRegistrations?.().then(rs => rs.forEach(r => r.unregister()));
+            // Local/dev environments may intentionally disable service workers.
+            navigator.serviceWorker.getRegistrations?.().then(rs => rs.forEach(r => {
+              if (r.scope.startsWith(location.origin + swScope)) r.unregister();
+            }));
           });
       });
     }

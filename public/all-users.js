@@ -1,4 +1,5 @@
 import { auth, db } from './firebase-init.js';
+import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
 import { collection, query, where, limit, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 import { listCommunityTasks } from './gamification/community-tasks.js';
 import { activeCatalogActivities } from './activity-catalog.js?v=20260920-audit2';
@@ -36,18 +37,33 @@ function renderRooms(snapshot) {
   host.innerHTML = rows.length ? rows.map(roomCardHtml).join('') : '<div class="discover-empty">No live rooms right now. Open any activity to start one.</div>';
 }
 
-// Discover is a PUBLIC page — load activities for ALL users (no auth required for catalog data)
-// Real-time room listener only works for authenticated users (Firestore rules)
-if (auth.currentUser) {
-  const roomsQuery = query(collection(db, 'rooms'), where('status', '==', 'open'), limit(24));
-  onSnapshot(roomsQuery, renderRooms, () => {
-    $('discoverRoomList').innerHTML = '<div class="discover-empty">Live rooms are temporarily unavailable.</div>';
-  });
-} else {
-  // Unauthenticated: just show empty state for live rooms
+// Discover is public, but live rooms require an authenticated Firestore session.
+// Do not read auth.currentUser only once: Firebase may still be restoring the
+// persisted session when this module first executes.
+let roomsUnsubscribe = null;
+function initRoomListener(user) {
+  if (roomsUnsubscribe) {
+    roomsUnsubscribe();
+    roomsUnsubscribe = null;
+  }
+
   const host = $('discoverRoomList');
-  if (host) host.innerHTML = '<div class="discover-empty">Sign in to see live rooms.</div>';
+  if (!user) {
+    if (host) host.innerHTML = '<div class="discover-empty">Sign in to see live rooms.</div>';
+    return;
+  }
+
+  const roomsQuery = query(collection(db, 'rooms'), where('status', '==', 'open'), limit(24));
+  roomsUnsubscribe = onSnapshot(
+    roomsQuery,
+    renderRooms,
+    () => {
+      if (host) host.innerHTML = '<div class="discover-empty">Live rooms are temporarily unavailable.</div>';
+    }
+  );
 }
+
+onAuthStateChanged(auth, initRoomListener);
 
 // Load catalog + community activities for everyone
 loadActivities();
