@@ -26,7 +26,8 @@ function pathKey() {
   if (p === 'all-users.html' || p === 'build.html' || p === 'learn.html' || p === 'puzzle.html' || p === 'activity.html' || p === 'rooms.html' || p === 'room.html') return 'discover';
   if (p === 'chat.html' || p === 'private-chat.html') return 'chat';
   if (p === 'profile.html') return 'you';
-  return 'today';
+  // Unknown/utility pages should not pretend that Today is active.
+  return '';
 }
 
 const AUTH_PAGES = new Set(['login.html', '404.html', 'sitemap.html', 'offline.html']);
