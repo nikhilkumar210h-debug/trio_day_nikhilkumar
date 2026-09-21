@@ -10,7 +10,7 @@ import { createSheet } from './ui/sheet.js';
 import { getCachedUser } from './services/userCache.js';
 import { getMyGlobalRank } from './gamification/leaderboards.js';
 import { getCommunityTask } from './gamification/community-tasks.js?v=20260921-profile';
-import { signOut } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
+import { signOut, updateProfile } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
 import {
   doc, getDoc, collection, collectionGroup, getDocs, query, where, orderBy,
   setDoc, deleteDoc, serverTimestamp, updateDoc, limit
@@ -159,6 +159,9 @@ async function openEdit(u) {
       }
       const bio = overlay.querySelector('#editBio').value.trim();
       await updateDoc(doc(db, 'users', me.uid), { name, bio, photoURL, updatedAt: serverTimestamp() });
+      // Keep Firebase Auth profile in sync too, so auth.photoURL/displayName
+      // never falls back to the previous DP on pages that read auth directly.
+      await updateProfile(me, { displayName: name, photoURL: photoURL || null });
       // Invalidate cached profile so the page re-fetches fresh data
       trioCache.invalidate(`user_${me.uid}`);
       await me.reload(); close(); await loadProfile(me.uid);
