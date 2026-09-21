@@ -610,12 +610,13 @@ const storyOverlay = $('storyOverlay'), storyForm = $('storyForm'), storyMessage
   storySubmit = $('storySubmitBtn');
 
 let selectedFile = null;
+let selectedPreviewUrl = null;
 let cachedPosts = [];
 let postFilter = 'none';
 let postFilterIntensity = 1;
 
 function setStatus(t = '', err = false) { if (status) { status.textContent = t; status.classList.toggle('error', err); } }
-function setStoryStatus(t = '', err = false) { if (storyStatus) { storyStatus.textContent = t; storyStatus.classList.toggle('err', err); } }
+function setStoryStatus(t = '', err = false) { if (storyStatus) { storyStatus.textContent = t; storyStatus.classList.toggle('error', err); } }
 
 function openModal() { overlay.hidden = false; overlay.classList.remove('is-fullscreen'); document.body.style.overflow = 'hidden'; setTimeout(() => message?.focus(), 50); }
 function closeModal() {
@@ -626,6 +627,7 @@ function closeModal() {
   preview.hidden = true;
   preview.innerHTML = '';
   selectedFile = null;
+  if (selectedPreviewUrl) { URL.revokeObjectURL(selectedPreviewUrl); selectedPreviewUrl = null; }
   postFilter = 'none'; postFilterIntensity = 1;
   const pf = $('postFilterPanel'); if (pf) pf.hidden = true;
   document.querySelectorAll('#postFilterPanel .filter-btn').forEach(b => b.classList.toggle('active', b.dataset.postFilter === 'none'));
@@ -642,6 +644,7 @@ function closeStoryModal() {
   storyPreview.hidden = true;
   storyPreview.innerHTML = '';
   selectedFile = null;
+  if (selectedPreviewUrl) { URL.revokeObjectURL(selectedPreviewUrl); selectedPreviewUrl = null; }
   editorState.textOverlays = [];
   editorState.stickers = [];
   editorState.filter = 'none';
@@ -711,16 +714,19 @@ document.querySelectorAll('.story-privacy-btn').forEach(btn => {
 });
 
 media?.addEventListener('change', () => {
-  const f = media.files?.[0]; preview.innerHTML = '';
+  const f = media.files?.[0];
+  if (selectedPreviewUrl) { URL.revokeObjectURL(selectedPreviewUrl); selectedPreviewUrl = null; }
+  preview.innerHTML = '';
   if (!f) { selectedFile = null; preview.hidden = true; overlay?.classList.remove('is-fullscreen'); return; }
   if (!f.type.startsWith('image/')) { setStatus('Please select an image.', true); media.value = ''; return; }
   if (f.size > 40 * 1024 * 1024) { setStatus('Photo must be under 40MB.', true); media.value = ''; return; }
   selectedFile = f;
-  const img = document.createElement('img'); img.src = URL.createObjectURL(f); img.alt = 'Preview'; img.width = 800; img.height = 600; img.decoding = 'async'; img.style.aspectRatio = '4 / 3';
+  selectedPreviewUrl = URL.createObjectURL(f);
+  const img = document.createElement('img'); img.src = selectedPreviewUrl; img.alt = 'Preview'; img.width = 800; img.height = 600; img.decoding = 'async'; img.style.aspectRatio = '4 / 3';
   img.style.filter = getFilterCSS(postFilter, postFilterIntensity);
   preview.appendChild(img);
   const rm = document.createElement('button'); rm.type='button'; rm.className='preview-remove'; rm.textContent='×'; rm.title='Remove photo';
-  rm.addEventListener('click', ()=>{ preview.innerHTML=''; preview.hidden=true; selectedFile=null; media.value=''; const pf=$('postFilterPanel'); if(pf) pf.hidden=true; overlay?.classList.remove('is-fullscreen'); setStatus(''); });
+  rm.addEventListener('click', ()=>{ preview.innerHTML=''; preview.hidden=true; selectedFile=null; media.value=''; if (selectedPreviewUrl) { URL.revokeObjectURL(selectedPreviewUrl); selectedPreviewUrl=null; } const pf=$('postFilterPanel'); if(pf) pf.hidden=true; overlay?.classList.remove('is-fullscreen'); setStatus(''); });
   preview.appendChild(rm);
   preview.hidden = false;
   const pf = $('postFilterPanel'); if (pf) pf.hidden = false;
@@ -730,25 +736,30 @@ media?.addEventListener('change', () => {
 });
 
 storyMedia?.addEventListener('change', () => {
-  const f = storyMedia.files?.[0]; storyPreview.innerHTML = '';
+  const f = storyMedia.files?.[0];
+  if (selectedPreviewUrl) { URL.revokeObjectURL(selectedPreviewUrl); selectedPreviewUrl = null; }
+  storyPreview.innerHTML = '';
   if (!f) { selectedFile = null; storyPreview.hidden = true; storyOverlay?.classList.remove('is-fullscreen'); const ed=$('storyEditor'); if(ed) ed.hidden=true; return; }
   if (!f.type.startsWith('image/') && !f.type.startsWith('video/')) { setStoryStatus('Please select an image or video.', true); storyMedia.value = ''; return; }
-  if (f.size > 100 * 1024 * 1024) { setStoryStatus('Media must be under 100MB.', true); storyMedia.value = ''; return; }
+  if (f.type.startsWith('image/') && f.size > 12 * 1024 * 1024) { setStoryStatus('Story photo must be under 12MB.', true); storyMedia.value = ''; return; }
+  if (f.type.startsWith('video/') && f.size > 100 * 1024 * 1024) { setStoryStatus('Story video must be under 100MB.', true); storyMedia.value = ''; return; }
   selectedFile = f;
   let mediaEl;
   if (f.type.startsWith('video/')) {
-    const video = document.createElement('video'); video.src = URL.createObjectURL(f); video.controls = true; video.alt = 'Preview'; video.playsInline=true; video.width = 800; video.height = 600; video.style.aspectRatio = '4 / 3';
+    selectedPreviewUrl = URL.createObjectURL(f);
+    const video = document.createElement('video'); video.src = selectedPreviewUrl; video.controls = true; video.alt = 'Preview'; video.playsInline=true; video.width = 800; video.height = 600; video.style.aspectRatio = '4 / 3';
     storyPreview.appendChild(video); mediaEl=video;
     const ed=$('storyEditor'); if(ed) ed.hidden=true;
     storyOverlay?.classList.add('is-fullscreen');
     setStoryStatus('');
   } else {
-    const img = document.createElement('img'); img.src = URL.createObjectURL(f); img.alt = 'Preview'; img.width = 800; img.height = 600; img.decoding = 'async'; img.style.aspectRatio = '4 / 3';
+    selectedPreviewUrl = URL.createObjectURL(f);
+    const img = document.createElement('img'); img.src = selectedPreviewUrl; img.alt = 'Preview'; img.width = 800; img.height = 600; img.decoding = 'async'; img.style.aspectRatio = '4 / 3';
     storyPreview.appendChild(img); mediaEl=img;
     setStoryStatus('');
   }
   const rm = document.createElement('button'); rm.type='button'; rm.className='preview-remove'; rm.textContent='×'; rm.title='Remove';
-  rm.addEventListener('click', ()=>{ storyPreview.innerHTML=''; storyPreview.hidden=true; selectedFile=null; storyMedia.value=''; const ed=$('storyEditor'); if(ed) ed.hidden=true; editorState.originalImage=null; editorState.textOverlays=[]; editorState.stickers=[]; storyOverlay?.classList.remove('is-fullscreen'); setStoryStatus(''); });
+  rm.addEventListener('click', ()=>{ storyPreview.innerHTML=''; storyPreview.hidden=true; selectedFile=null; storyMedia.value=''; if (selectedPreviewUrl) { URL.revokeObjectURL(selectedPreviewUrl); selectedPreviewUrl=null; } const ed=$('storyEditor'); if(ed) ed.hidden=true; editorState.originalImage=null; editorState.textOverlays=[]; editorState.stickers=[]; storyOverlay?.classList.remove('is-fullscreen'); setStoryStatus(''); });
   storyPreview.appendChild(rm);
   storyPreview.hidden = false;
 });
@@ -1011,7 +1022,9 @@ form?.addEventListener('submit', async e => {
         const filtered = await applyFilterToFile(selectedFile, postFilter, postFilterIntensity);
         if (filtered) fileToUpload = filtered;
       }
-      mediaUrl = await uploadPostImage(currentUser.uid, fileToUpload); setStatus('Uploading…');
+      setStatus('Uploading…');
+      const firebaseToken = await currentUser.getIdToken();
+      mediaUrl = await uploadPostImage(currentUser.uid, fileToUpload, firebaseToken);
     }
     await addDoc(collection(db, 'posts'), {
       name: me?.name || currentUser.displayName || 'User',
