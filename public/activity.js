@@ -22,7 +22,7 @@ function setPassed(v,evidence=null){
   activityPassed=!!v;
   if(evidence){
     // Community build completion rules expect { buildEvidence: { mechanic, state } }.
-    activityEvidence = evidence.mechanic
+    activityEvidence = (activity?.source === 'community' && activity?.type === 'build' && evidence.mechanic)
       ? { buildEvidence: evidence }
       : evidence;
   }
