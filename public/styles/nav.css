@@ -1,8 +1,7 @@
-/* NKM Navigation — Mobile 4-item bottom + Desktop left rail (Phase 3)
-   Canonical: Today / Discover / Do / You.
+/* NKM Navigation — Mobile 5-item bottom + Desktop left rail.
+   Canonical: Today / Discover / Do / Chat / You.
    Uses semantic tokens from tokens.css.
-   ═══════════════════════════════════════════════════════════════ */
-/* ── Bottom nav (mobile) — 4 equal columns ── */
+*/
 .bottom-nav {
   position: fixed;
   left: 0;
@@ -16,10 +15,10 @@
   padding-bottom: env(safe-area-inset-bottom);
 }
 .nav-row {
-  width: min(520px, 100%);
+  width: min(560px, 100%);
   margin: 0 auto;
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 4px;
   padding: 6px 8px 4px;
   align-items: stretch;
@@ -61,7 +60,7 @@
 .nav-btn.active .nav-icon { transform: scale(1.06); }
 .nav-icon svg { display: block; }
 
-/* ── Desktop left rail (hidden on mobile) ── */
+/* Desktop left rail */
 .nkm-rail { display: none; }
 @media (min-width: 840px) {
   .bottom-nav { display: none; }
@@ -70,7 +69,7 @@
     flex-direction: column;
     position: fixed;
     left: 0;
-    top: 63px; /* header 60 + tricolor 3 */
+    top: 63px;
     bottom: 0;
     width: 72px;
     background: var(--color-bg-elevated);
@@ -83,7 +82,6 @@
   }
   .nkm-rail .nav-btn { width: 100%; flex-direction: column; min-height: 56px; font-size: var(--text-xs); align-items: center; justify-content: center; text-align: center; }
   .nkm-rail .nav-label { font-size: var(--text-xs); letter-spacing: .04em; }
-  /* Push main content aside — account for rail width */
   .app-main, .profile-main, .users-main, .chat-main, .tasks-main, .private-main,
   .notifications-main, .search-main, .policy-main, .view-post-main, .auth-wrap {
     margin-left: 72px;
@@ -122,22 +120,16 @@
     margin-left: 240px !important;
   }
 }
-/* Prevent white flash on navigation — keep html dark before paint */
 html { background: var(--color-bg); }
 body { background: var(--color-bg); }
-/* ── Mobile cleanup ── */
 @media (max-width: 839px) {
   .fab { display: none !important; }
-  #trioRankStrip { bottom: 62px; } /* sit clearly above 5-item nav */
+  #trioRankStrip { bottom: 62px; }
 }
-/* Avoid horizontal overflow */
 html, body { overflow-x: hidden; }
-/* Ensure nav icon SVGs render crisply and stay visible */
 .nav-icon svg { display: block; }
-/* Hide skeleton correctly even with flex display */
 .skeleton-stack[hidden], #feedLoading[hidden] { display: none !important; }
 
-/* Global desktop content offset: the rail is fixed, so page mains must reserve its width. */
 @media (min-width: 840px) {
   body.app-page > main {
     margin-left: 72px !important;
@@ -153,9 +145,9 @@ html, body { overflow-x: hidden; }
   }
 }
 
-/* 2026-09-21 navigation polish: four focused destinations, no Create/Chat duplication. */
+/* Five focused destinations: Today / Discover / Do / Chat / You. */
 @media (max-width: 839px) {
-  .bottom-nav .nav-row { max-width: 520px; padding: 7px 10px 5px; gap: 6px; }
+  .bottom-nav .nav-row { max-width: 560px; padding: 7px 8px 5px; gap: 5px; }
   .bottom-nav .nav-btn { min-height: 46px; border: 1px solid transparent; transition: background .16s ease, color .16s ease, transform .16s ease, border-color .16s ease; }
   .bottom-nav .nav-btn.active { border-color: rgba(99,102,241,.14); box-shadow: 0 4px 16px rgba(0,0,0,.08); }
   .bottom-nav .nav-btn:active { transform: scale(.97); }
