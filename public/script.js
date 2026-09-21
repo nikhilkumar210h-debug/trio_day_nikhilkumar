@@ -78,7 +78,6 @@ onAuthStateChanged(auth, async user => {
 
 async function initTodayScreen(uid) {
   renderGreeting();
-  initFocusModePicker(uid || '');
   await renderStoryStrip(uid);
   if (uid) {
     await Promise.all([
@@ -354,7 +353,7 @@ async function renderFocusAndContinue(uid) {
       <p class="today-focus-note" id="todayChallengeNote">Your answer is public. Open the challenge to compare answers and join the same discussion.</p>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <a class="nkm-btn nkm-btn--primary" href="challenge.html?id=${encodeURIComponent(challenge.id)}">Open Challenges →</a>
-        <a class="nkm-btn nkm-btn--secondary" href="chat.html?challenge=${encodeURIComponent(challenge.id)}">Discuss in Chat →</a>
+        <a class="nkm-btn nkm-btn--secondary" href="challenge.html?challenge=${encodeURIComponent(challenge.id)}">Join public discussion →</a>
       </div>
     </div>`;
 
