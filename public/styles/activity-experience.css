@@ -129,3 +129,61 @@ body[data-activity-type="game"] .forge-workspace{background:linear-gradient(145d
 @keyframes v2Target{from{transform:translate(-50%,-50%) scale(.94)}to{transform:translate(-50%,-50%) scale(1.06)}}@keyframes v2Pop{from{transform:scale(.7);opacity:.3}to{transform:scale(1);opacity:1}}
 @media(max-width:600px){.v2-stage{padding:9px}.v2-memory{gap:6px}.v2-pack-grid,.v2-choice{grid-template-columns:1fr}.v2-result-actions{width:100%}.v2-result-actions button{flex:1}.v2-head{display:grid}.v2-tag{justify-self:start}}
 @media(prefers-reduced-motion:reduce){.v2-target,.v2-result-icon{animation:none}}
+
+
+/* 2026-09-21 compact flagship pass — let the mechanic own the space. */
+@media (max-width: 760px){
+  .activity-page-shell{
+    padding:6px 9px 92px!important;
+  }
+  .activity-page-shell .activity-detail-hero{
+    min-height:112px!important;
+    padding:14px!important;
+    border-radius:18px!important;
+  }
+  .activity-page-shell .activity-hero-mark{
+    right:-16px;
+    top:-12px;
+    transform:scale(.68);
+    opacity:.65;
+  }
+  .activity-page-shell .activity-detail-hero h1,
+  .activity-page-shell .activity-detail-desc,
+  .activity-page-shell .activity-detail-chips{
+    max-width:72%;
+  }
+}
+
+/* Puzzle / learn / game do not need a session-timer column. */
+body[data-activity-type="puzzle"] .activity-detail-grid,
+body[data-activity-type="learn"] .activity-detail-grid,
+body[data-activity-type="game"] .activity-detail-grid{
+  grid-template-columns:minmax(0,1fr)!important;
+}
+body[data-activity-type="puzzle"] .activity-detail-grid>aside,
+body[data-activity-type="learn"] .activity-detail-grid>aside,
+body[data-activity-type="game"] .activity-detail-grid>aside{
+  display:none!important;
+}
+
+/* Flagship V2 stages size to their actual mechanic instead of reserving a blank block. */
+.activity-page-shell .v2-stage{
+  min-height:0!important;
+}
+.activity-page-shell .v2-mechanic{
+  gap:9px;
+}
+.activity-page-shell .forge-workspace{
+  padding:11px!important;
+}
+.activity-page-shell .play-surface-hud{
+  margin-bottom:8px;
+}
+
+/* Keep supporting brief compact; the playable surface remains the visual priority. */
+.activity-page-shell .activity-social-brief{
+  gap:6px!important;
+}
+.activity-page-shell .activity-brief-block{
+  padding:9px!important;
+}
