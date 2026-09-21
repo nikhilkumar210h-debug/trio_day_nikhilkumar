@@ -2,7 +2,6 @@ import{escapeHtml as esc}from'./utils.js';
 
 const FLAGSHIP_V2={
   c1:'reaction',
-  l7:'memory',
   p13:'timeline',
   p6:'path',
   b9:'pack',
