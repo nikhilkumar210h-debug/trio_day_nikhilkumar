@@ -1,6 +1,6 @@
 // ui/nav.js — Trio Day global navigation (Phase 3)
 // Canonical items: Today / Discover / Do / You
-// Mobile: 5-item bottom nav.
+// Mobile: 4-item bottom nav.
 // Desktop: left rail (icons at tablet, expanded at wide).
 // Reuses existing .bottom-nav markup; enhances via DOM patch + creates .nkm-rail.
 
