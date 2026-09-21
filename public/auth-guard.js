@@ -18,22 +18,19 @@ function activeRoom() {
 // Pages that are PUBLICLY ACCESSIBLE without authentication.
 // Protected pages (chat, rooms, room, activity, profile, notifications, create, private-chat, voice-status) must NOT be here.
 const PUBLIC_PAGES = new Set([
-  'index.html',
+  'login.html',
   'login.html',
   '404.html',
   'sitemap.html',
   'offline.html',
   'privacy.html',
   'privacy-policy.html',
-  'all-users.html',    // Discover
-  'build.html',        // Forge Build lane
-  'learn.html',        // Forge Learn lane
-  'challenge.html',    // Forge Challenge lane
-  'puzzle.html',       // Forge Puzzle lane (if exists)
-  'tasks.html',        // Do page
-  'leaderboard.html',
-  'admin-tasks.html',
-  'search.html',
+  'login.html',
+  '404.html',
+  'sitemap.html',
+  'offline.html',
+  'privacy.html',
+  'privacy-policy.html',
 ]);
 
 // Room and activity pages that need special handling - they redirect to login if no auth,
