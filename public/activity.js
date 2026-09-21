@@ -267,9 +267,11 @@ function updateCompleteState(){
     b.title='Creators can test their activity but do not earn XP from their own activity.';
     return;
   }
-  b.disabled=!activityPassed;
-  if(activity?.type==='game')b.textContent='Play in a room';
-  else b.textContent=activityPassed?'Mark complete':'Finish the activity first';
+  if(activity?.type==='game'){
+    b.hidden=false; b.disabled=true; b.textContent='Play in a room'; return;
+  }
+  if(!activityPassed){ b.hidden=true; return; }
+  b.hidden=false; b.disabled=false; b.textContent='Mark complete';
 }
 
 async function refreshExistingCompletion(){
