@@ -45,7 +45,7 @@ export function renderNav() {
     if (!hasCorrectStructure) {
       row.innerHTML = ITEMS.map(i => {
         const cls = 'nav-btn' + (i.key === active ? ' active' : '');
-        return `<a class="${cls}" href="${i.href}" data-nav="${i.key}" aria-label="${i.label}"><span class="nav-icon">${i.icon}</span><span class="nav-label">${i.label}</span></a>`;
+        return `<a class="${cls}" href="${i.href}" data-nav="${i.key}" aria-label="${i.label}"${isActive ? ' aria-current="page"' : '}><span class="nav-icon">${i.icon}</span><span class="nav-label">${i.label}</span></a>`;
       }).join('');
     } else {
       row.querySelectorAll('.nav-btn').forEach(el => el.classList.toggle('active', el.dataset.nav === active));
@@ -67,7 +67,7 @@ export function renderNav() {
     rail.setAttribute('aria-label', 'Primary navigation');
     rail.innerHTML = ITEMS.map(i => {
       const cls = 'nav-btn' + (i.key === active ? ' active' : '');
-      return `<a class="${cls}" href="${i.href}" data-rail="${i.key}"><span class="nav-icon">${i.icon}</span><span class="nav-label">${i.label}</span></a>`;
+      return `<a class="${cls}" href="${i.href}" data-rail="${i.key}"${isActive ? ' aria-current="page"' : '}><span class="nav-icon">${i.icon}</span><span class="nav-label">${i.label}</span></a>`;
     }).join('');
     document.body.appendChild(rail);
   }
