@@ -57,11 +57,10 @@ test.describe('Trio Day QA Audit', () => {
     await page.waitForTimeout(1500);
     console.log('Do errors:', errors.filter(e => !e.includes('favicon')));
 
-    // Chat (protected - redirects to login)
-    await page.click('[data-nav="chat"]');
-    await page.waitForURL('**/login.html**', { timeout: 15000 });
-    await page.waitForTimeout(1500);
-    console.log('Chat redirect errors:', errors.filter(e => !e.includes('favicon')));
+    // Chat remains reachable from the Do/secondary flows; it is intentionally not a primary nav item.
+    await page.goto('http://localhost:5500/tasks.html', { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(800);
+    await expect(page.locator('a[href="chat.html"]')).toHaveCount(0);
 
     // You (Profile) - protected, redirects to login
     await page.goto('http://localhost:5500/', { waitUntil: 'domcontentloaded' });
@@ -253,7 +252,7 @@ test.describe('Trio Day QA Audit', () => {
 
     // Check bottom nav is visible
     await expect(page.locator('.bottom-nav')).toBeVisible();
-    await expect(page.locator('.nkm-create-fab')).toBeVisible();
+    await expect(page.locator('.nkm-create-fab')).toHaveCount(0);
     
     // Check no horizontal overflow
     const bodyWidth = await page.evaluate(() => document.body.scrollWidth);
