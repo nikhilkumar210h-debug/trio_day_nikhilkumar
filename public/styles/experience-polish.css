@@ -161,13 +161,14 @@ main section{scroll-margin-top:82px}
 }
 .room-page-shell .room-activity .activity-card-art{min-height:190px}
 .room-page-shell .room-workspace{
-  min-height:260px;border-radius:24px!important;background:rgba(3,8,18,.58)!important;
+  min-height:260px;padding-bottom:230px;border-radius:24px!important;background:rgba(3,8,18,.58)!important;
   border:1px solid rgba(255,255,255,.09);display:flex;align-items:center;justify-content:center;
 }
 .room-page-shell .workspace-placeholder{text-align:center;max-width:560px}
 .room-page-shell .workspace-icon{font-size:38px}
 .room-page-shell .room-chat{
-  margin-top:12px;padding:0!important;border-radius:22px!important;background:rgba(3,8,18,.7)!important;
+  margin-top:-215px;margin-right:14px;margin-left:auto;width:min(390px,42%);position:relative;z-index:5;
+  padding:0!important;border-radius:22px!important;background:rgba(3,8,18,.82)!important;
   overflow:hidden;border-color:rgba(255,255,255,.09)!important;
 }
 .room-page-shell .room-chat-head{padding:13px 15px;border-bottom:1px solid rgba(255,255,255,.08)}
@@ -260,10 +261,12 @@ main section{scroll-margin-top:82px}
   .room-page-shell{padding:8px 9px 96px!important}
   .room-page-shell .room-grid{grid-template-columns:1fr!important}
   .room-page-shell .room-main-card{min-height:0;border-radius:23px!important;padding:11px!important}
-  .room-page-shell .room-side-card{position:static!important;order:-1}
+  .room-page-shell .room-side-card{position:static!important;order:2}
+  .room-page-shell .room-main-card{order:1}
+  .room-page-shell .room-chat{margin:12px 0 0;width:100%;position:relative}
   .room-page-shell .room-activity .activity-card{grid-template-columns:92px minmax(0,1fr)!important;min-height:150px}
   .room-page-shell .room-activity .activity-card-art{min-height:150px}
-  .room-page-shell .room-workspace{min-height:230px}
+  .room-page-shell .room-workspace{min-height:230px;padding-bottom:0}
   .room-page-shell .room-chat-log{height:170px!important}
   .chat-page .nkm-chat{padding:12px 10px 96px!important}
   .chat-page .nkm-chat-head{padding:4px 2px}
