@@ -38,6 +38,26 @@ function linkMarkup(i, active, attrName = 'data-nav') {
   return `<a class="${cls}" href="${i.href}" ${attrName}="${i.key}" aria-label="${i.label}"${current}><span class="nav-icon">${i.icon}</span><span class="nav-label">${i.label}</span></a>`;
 }
 
+function applyActiveState(root, active) {
+  root.querySelectorAll('.nav-btn[data-nav]').forEach(el => {
+    const isActive = el.dataset.nav === active;
+    el.classList.toggle('active', isActive);
+    if (isActive) {
+      el.setAttribute('aria-current', 'page');
+      el.style.setProperty('color', '#F5F3FF', 'important');
+      el.style.setProperty('background', 'linear-gradient(135deg, rgba(139,92,246,.42), rgba(99,102,241,.30))', 'important');
+      el.style.setProperty('border-color', 'rgba(196,181,253,.46)', 'important');
+      el.style.setProperty('box-shadow', 'inset 0 0 0 1px rgba(237,233,254,.10), 0 0 0 1px rgba(139,92,246,.12), 0 8px 24px rgba(99,102,241,.22)', 'important');
+    } else {
+      el.removeAttribute('aria-current');
+      el.style.removeProperty('color');
+      el.style.removeProperty('background');
+      el.style.removeProperty('border-color');
+      el.style.removeProperty('box-shadow');
+    }
+  });
+}
+
 export function renderNav() {
   const p = (location.pathname.split('/').pop() || '').toLowerCase();
   if (AUTH_PAGES.has(p)) return;
@@ -52,12 +72,7 @@ export function renderNav() {
     if (!hasCorrectStructure) {
       row.innerHTML = ITEMS.map(i => linkMarkup(i, active)).join('');
     } else {
-      row.querySelectorAll('.nav-btn').forEach(el => {
-        const isActive = el.dataset.nav === active;
-        el.classList.toggle('active', isActive);
-        if (isActive) el.setAttribute('aria-current', 'page');
-        else el.removeAttribute('aria-current');
-      });
+      applyActiveState(row, active);
     }
   } else {
     const nav = document.createElement('nav');
@@ -74,6 +89,11 @@ export function renderNav() {
     rail.innerHTML = ITEMS.map(i => linkMarkup(i, active, 'data-rail')).join('');
     document.body.appendChild(rail);
   }
+
+  const bottomRoot = document.querySelector('.bottom-nav');
+  const railRoot = document.querySelector('.nkm-rail');
+  if (bottomRoot) applyActiveState(bottomRoot, active);
+  if (railRoot) applyActiveState(railRoot, active);
 }
 
 export function navHtml(active = '') {
