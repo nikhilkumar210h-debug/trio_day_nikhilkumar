@@ -89,3 +89,121 @@
   .room-workspace > *{max-width:100%}
   .room-chat-form input{min-width:0}
 }
+
+
+/* Phase 4 — compact live-room spatial UI */
+.room-main-card,.room-side-card{
+  background:rgba(15,23,42,.72);
+  backdrop-filter:blur(18px) saturate(135%);
+  -webkit-backdrop-filter:blur(18px) saturate(135%);
+}
+.room-side-card{
+  background:rgba(15,23,42,.54);
+  border-color:rgba(148,163,184,.12);
+}
+.room-activity{
+  display:grid;
+  place-items:center;
+}
+.room-activity .activity-card{
+  width:min(100%,760px);
+  margin-inline:auto;
+  background:rgba(255,255,255,.035);
+  border-color:rgba(148,163,184,.12);
+}
+.room-workspace{
+  width:min(100%,760px);
+  margin-inline:auto;
+}
+.room-workspace-status{
+  width:min(100%,760px);
+  margin:7px auto 0;
+}
+.room-chat{
+  position:absolute;
+  z-index:30;
+  width:340px;
+  min-width:240px;
+  min-height:190px;
+  max-width:calc(100% - 18px);
+  max-height:calc(100% - 18px);
+  margin:0;
+  padding:10px;
+  border:1px solid rgba(148,163,184,.16);
+  border-radius:18px;
+  background:rgba(8,15,31,.90);
+  backdrop-filter:blur(22px) saturate(150%);
+  -webkit-backdrop-filter:blur(22px) saturate(150%);
+  box-shadow:0 22px 65px rgba(0,0,0,.30);
+  overflow:hidden;
+  resize:none;
+  touch-action:none;
+}
+.room-main-card{position:relative;min-height:760px}
+.room-chat-head{
+  cursor:grab;
+  user-select:none;
+  padding:7px 4px 9px;
+}
+.room-chat.is-dragging .room-chat-head{cursor:grabbing}
+.room-chat-log{height:calc(100% - 104px);min-height:95px}
+.room-chat-form{position:absolute;left:10px;right:10px;bottom:10px}
+.room-chat-resize{
+  position:absolute;
+  right:5px;
+  bottom:5px;
+  width:18px;
+  height:18px;
+  border:0;
+  background:transparent;
+  cursor:nwse-resize;
+  z-index:3;
+}
+.room-chat-resize::after{
+  content:'';
+  position:absolute;
+  right:2px;
+  bottom:2px;
+  width:8px;
+  height:8px;
+  border-right:2px solid rgba(148,163,184,.7);
+  border-bottom:2px solid rgba(148,163,184,.7);
+}
+.room-chat.is-resizing{user-select:none}
+.room-chat.is-collapsed{height:auto!important;min-height:0}
+.room-chat.is-collapsed .room-chat-resize{display:none}
+.room-side-actions{
+  grid-template-columns:repeat(2,minmax(0,1fr));
+}
+.room-side-actions #inviteBtn{
+  grid-column:1/-1;
+}
+.room-side-actions #endBtn{
+  grid-column:1/-1;
+}
+.room-voice-bar{
+  justify-content:flex-end;
+}
+.room-mic-btn{
+  width:42px;
+  height:42px;
+  border-radius:13px;
+  padding:0!important;
+}
+@media(max-width:760px){
+  .room-main-card{min-height:640px}
+  .room-chat{
+    position:relative;
+    inset:auto!important;
+    width:100%!important;
+    height:230px!important;
+    max-width:none;
+    margin-top:12px;
+  }
+  .room-chat-head{cursor:default;touch-action:auto}
+  .room-chat-resize{display:none}
+  .room-chat-log{height:165px}
+  .room-chat-form{position:static;margin-top:8px}
+  .room-side-actions{grid-template-columns:1fr 1fr}
+  .room-side-actions #inviteBtn,.room-side-actions #endBtn{grid-column:1/-1}
+}
