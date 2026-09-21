@@ -15,8 +15,6 @@ service cloud.firestore {
         || (
           resource.data.type == 'story'
           && resource.data.isStory == true
-          && resource.data.expiresAtMs is number
-          && resource.data.expiresAtMs > request.time.toMillis()
           && (
             resource.data.privacy == 'public'
             || resource.data.uid == request.auth.uid
@@ -34,8 +32,6 @@ service cloud.firestore {
         let p = get(/databases/$(database)/documents/posts/$(postId)).data;
         return (p.type == 'post')
           || (p.type == 'story' && p.isStory == true
-            && p.expiresAtMs is number
-            && p.expiresAtMs > request.time.toMillis()
             && (
             p.privacy == 'public'
             || p.uid == request.auth.uid
