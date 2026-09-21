@@ -3,6 +3,7 @@ import{onAuthStateChanged}from'https://www.gstatic.com/firebasejs/10.13.0/fireba
 import{doc,getDoc}from'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 import{activeCatalogActivities}from'./activity-catalog.js?v=20260920-audit2';
 import{activityTypeInfo}from'./activity-ui.js';
+import{renderMechanicWorkspace}from'./activity-mechanics.js?v=20260921-phase3';
 import{renderBuildWorkspace}from'./forge-engine.js?v=20260919-engine4';
 import{getInteractiveConfig,getChallengeRounds,getGameRounds}from'./forge-interactions.js?v=20260919-interactions4';
 import{completeTask as completeCommunityTask}from'./gamification/community-tasks.js?v=20260919-community5';
@@ -243,12 +244,14 @@ function render(){
  const customCfg = activity.interaction?.kind === 'quiz' ? activity.interaction : null;
  const cfg=customCfg || getInteractiveConfig(engineId);
 
- if(activity.type==='build')renderBuildWorkspace(workspace,activity,setPassed);
+ if(!renderMechanicWorkspace(workspace,activity,setPassed)){
+   if(activity.type==='build')renderBuildWorkspace(workspace,activity,setPassed);
  else if(activity.type==='puzzle'&&cfg)renderQuizWorkspace(workspace,cfg,false);
  else if(activity.type==='learn'&&cfg)renderQuizWorkspace(workspace,cfg,true);
  else if(activity.type==='challenge')renderChallengeWorkspace(workspace);
  else if(activity.type==='game')renderGameWorkspace(workspace);
  else{workspace.hidden=true;setPassed(true)}
+ }
  decorateActivityExperience();
  updateCompleteState();
  refreshExistingCompletion();
