@@ -740,19 +740,17 @@ service cloud.firestore {
           && request.resource.data.expiresAtMs == resource.data.expiresAtMs
           && request.resource.data.status == resource.data.status
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['memberCount'])
-          && (
-            request.resource.data.memberCount == resource.data.memberCount + 1
-            || request.resource.data.memberCount == resource.data.memberCount - 1
-          )
           && request.resource.data.memberCount >= 0
           && request.resource.data.memberCount <= request.resource.data.maxPlayers
           && (
             (
               request.resource.data.memberCount == resource.data.memberCount + 1
+              && !exists(/databases/$(database)/documents/rooms/$(roomId)/members/$(request.auth.uid))
               && existsAfter(/databases/$(database)/documents/rooms/$(roomId)/members/$(request.auth.uid))
             )
             || (
               request.resource.data.memberCount == resource.data.memberCount - 1
+              && exists(/databases/$(database)/documents/rooms/$(roomId)/members/$(request.auth.uid))
               && !existsAfter(/databases/$(database)/documents/rooms/$(roomId)/members/$(request.auth.uid))
             )
           )
@@ -814,10 +812,21 @@ service cloud.firestore {
         allow delete: if owner(targetUid) || get(/databases/$(database)/documents/rooms/$(roomId)).data.hostUid == request.auth.uid;
       }
       match /rtc/{pairId} {
-        allow read, create, update: if signedIn() && exists(/databases/$(database)/documents/rooms/$(roomId)/members/$(request.auth.uid));
+        allow read: if signedIn() && exists(/databases/$(database)/documents/rooms/$(roomId)/members/$(request.auth.uid));
+        allow create, update: if signedIn()
+          && exists(/databases/$(database)/documents/rooms/$(roomId)/members/$(request.auth.uid))
+          && (
+            request.resource.data.offerFrom == request.auth.uid
+            || request.resource.data.answerFrom == request.auth.uid
+          );
         allow delete: if false;
         match /candidates/{candidateId} {
-          allow read, create: if signedIn() && exists(/databases/$(database)/documents/rooms/$(roomId)/members/$(request.auth.uid));
+          allow read: if signedIn() && exists(/databases/$(database)/documents/rooms/$(roomId)/members/$(request.auth.uid));
+          allow create: if signedIn()
+            && exists(/databases/$(database)/documents/rooms/$(roomId)/members/$(request.auth.uid))
+            && request.resource.data.from == request.auth.uid
+            && request.resource.data.candidate is map
+            && request.resource.data.createdAtMs is number;
           allow update, delete: if false;
         }
       }
