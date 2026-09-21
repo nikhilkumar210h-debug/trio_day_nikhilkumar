@@ -351,7 +351,7 @@ async function renderFocusAndContinue(uid) {
           ${challenge.o.map((option,i)=>`<button type="button" data-today-choice="${i}" style="border:1px solid var(--color-border);background:var(--color-glass);color:var(--color-ink);border-radius:12px;padding:11px 9px;font:inherit;font-size:10px;font-weight:800;cursor:pointer;text-align:left">${escapeHtml(option)}</button>`).join('')}
         </div>
       </div>
-      <p class="today-focus-note" id="todayChallengeNote">Your answer starts the interaction. Open Challenges to compare and continue the conversation.</p>
+      <p class="today-focus-note" id="todayChallengeNote">Your answer is public. Open the challenge to compare answers and join the same discussion.</p>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <a class="nkm-btn nkm-btn--primary" href="challenge.html?id=${encodeURIComponent(challenge.id)}">Open Challenges →</a>
         <a class="nkm-btn nkm-btn--secondary" href="chat.html?challenge=${encodeURIComponent(challenge.id)}">Discuss in Chat →</a>
@@ -364,13 +364,13 @@ async function renderFocusAndContinue(uid) {
     localStorage.setItem('trio_last_challenge', JSON.stringify({ id: challenge.id, choice, at: Date.now() }));
     focusPrimary.querySelectorAll('[data-today-choice]').forEach(b => { b.disabled = true; b.style.opacity = '.55'; });
     const note = $('todayChallengeNote');
-    if (note) note.textContent = 'Locked in ✓ Open Challenges to compare answers and keep the interaction going.';
+    if (note) note.textContent = 'Locked in ✓ Open the challenge to see the community split and join the public discussion.';
   }));
 
   const visualTitle = $('todayVisualTitle');
   const visualMeta = $('todayVisualMeta');
   if (visualTitle) visualTitle.textContent = '3 people. 1 moment.';
-  if (visualMeta) visualMeta.textContent = 'Challenge · Compare · Chat';
+  if (visualMeta) visualMeta.textContent = 'Challenge · Compare · Discuss';
 
   focusSecondary.innerHTML = '';
   if (continueSection) continueSection.hidden = true;
