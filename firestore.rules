@@ -41,11 +41,9 @@ service cloud.firestore {
         && request.resource.data.name is string && request.resource.data.name.size() <= 50
         && request.resource.data.message is string && request.resource.data.message.size() > 0
         && request.resource.data.message.size() <= 500
-        && request.resource.data.type in ['post', 'story', 'voice']
+        && request.resource.data.type in ['story', 'voice']
         && (
-          request.resource.data.type == 'post'
-          || (
-            request.resource.data.isStory == true
+          request.resource.data.isStory == true
             && request.resource.data.privacy in ['public', 'friends']
             && request.resource.data.expiresAtMs is number
             && request.resource.data.expiresAtMs >= request.time.toMillis() + 23 * 60 * 60 * 1000
