@@ -33,6 +33,18 @@ export async function getMyProfile(uid) {
   return getCachedUser(uid);
 }
 
+/** Fresh user fetch for authoritative gamification/profile screens. */
+export async function getFreshUser(uid) {
+  if (!uid) return null;
+  try {
+    const snap = await getDoc(doc(db, 'users', uid));
+    if (!snap.exists()) return null;
+    const data = snap.data();
+    trioCache.set(`user_${uid}`, data, trioCache.TTL.DEFAULT);
+    return data;
+  } catch { return null; }
+}
+
 /**
  * Find user with fallback query on uid field if direct doc miss (legacy).
  * Previously private-chat.js findUser (uncached) — now cached wrapper.
