@@ -18,14 +18,6 @@ function activeRoom() {
 // Pages that are PUBLICLY ACCESSIBLE without authentication.
 // Protected pages (chat, rooms, room, activity, profile, notifications, create, private-chat, voice-status) must NOT be here.
 const PUBLIC_PAGES = new Set([
-  'login.html',
-  'login.html',
-  '404.html',
-  'sitemap.html',
-  'offline.html',
-  'privacy.html',
-  'privacy-policy.html',
-  'login.html',
   '404.html',
   'sitemap.html',
   'offline.html',
