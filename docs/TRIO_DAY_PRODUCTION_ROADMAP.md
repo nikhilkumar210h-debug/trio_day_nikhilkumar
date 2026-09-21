@@ -89,6 +89,6 @@ Do not experiment directly in production.
 
 ## Current status
 
-- Phase 1: completion pass / final cleanup.
-- Phase 2: Browser QA starts after the Phase 1 completion gate is verified.
+- Phase 1: code completion gate reached on GitHub; legacy route/navigation/WebMCP cleanup committed.
+- Phase 2: **ACTIVE — Browser QA started.** Current blocker: the connected localhost checkout is stale and must pull `origin/master` before the latest Phase 1 fixes can be verified locally.
 - Phase 3: not started.
