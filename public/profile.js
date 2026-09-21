@@ -12,7 +12,7 @@ import { getMyGlobalRank } from './gamification/leaderboards.js';
 import { getCommunityTask } from './gamification/community-tasks.js';
 import { normalizeActivityType, activityTypeInfo } from './activity-ui.js';
 import { activeCatalogActivities } from './activity-catalog.js?v=20260920-audit2';
-import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
+import { signOut } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
 import {
   doc, getDoc, collection, collectionGroup, getDocs, query, where, orderBy,
   setDoc, deleteDoc, serverTimestamp, updateDoc, limit
