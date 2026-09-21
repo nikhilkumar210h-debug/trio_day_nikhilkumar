@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
-Sitemap: https://nkm-ind.web.app/sitemap.xml
+Sitemap: https://trio-day.trioday-nikhil.workers.dev/sitemap.xml
 # If you later restrict crawlers, update this file. Place additional rules above the Sitemap line.
