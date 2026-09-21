@@ -1,71 +1,37 @@
 import { auth, db } from './firebase-init.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
 import { collection, query, where, limit, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
-import { listCommunityTasks } from './gamification/community-tasks.js';
-import { activeCatalogActivities } from './activity-catalog.js?v=20260920-audit2';
-import { activityCardHtml, roomCardHtml, ACTIVITY_TYPES, normalizeActivityType } from './activity-ui.js';
 
-const $ = id => document.getElementById(id);
-const laneOrder = ['build', 'learn', 'challenge', 'puzzle'];
-const params = new URLSearchParams(location.search);
-let allActivities = [], activeType = laneOrder.includes(params.get('activity')) ? params.get('activity') : 'all', search = '';
+const CHALLENGES = [
+  {id:'choice-trip',q:'You get one free trip tomorrow. Where are you going?',o:['Japan 🇯🇵','Switzerland 🇨🇭','Somewhere unexpected 🌍'],tag:'CHOICE'},
+  {id:'choice-night',q:'It is 10 PM and you have one free hour. What sounds better?',o:['Talk to someone 💬','Play something 🎮','Learn something 🧠'],tag:'MOOD'},
+  {id:'choice-build',q:'You have one weekend to make something. What do you pick?',o:['An app 💻','A game 🎮','Something useful 🛠️'],tag:'MAKE'},
+  {id:'choice-food',q:'Pick one forever: street food, home food or restaurant food?',o:['Street 🌮','Home 🍲','Restaurant 🍽️'],tag:'LIFE'}
+];
+let previewIndex=0;
 
-function renderFilters() {
-  const host = $('discoverTypeFilters');
-  if (!host) return;
-  host.innerHTML = '<button type="button" class="discover-filter ' + (activeType === 'all' ? 'active' : '') + '" data-type="all">Everything</button>' +
-    laneOrder.map(type => '<button type="button" class="discover-filter ' + (activeType === type ? 'active' : '') + '" data-type="' + type + '">' + ACTIVITY_TYPES[type].icon + ' ' + ACTIVITY_TYPES[type].label + '</button>').join('');
-  host.querySelectorAll('.discover-filter').forEach(btn => btn.onclick = () => { activeType = btn.dataset.type; renderFilters(); renderActivities() });
+function renderPreview(){
+  const host=document.getElementById('challengePreview'); if(!host)return;
+  const c=CHALLENGES[previewIndex%CHALLENGES.length];
+  host.innerHTML='<div class="challenge-card-question">'+c.q+'</div><div class="challenge-options">'+c.o.map((x,i)=>'<button class="challenge-option" type="button" data-choice="'+i+'">'+x+'<small>Choose this</small></button>').join('')+'</div>';
+  host.querySelectorAll('[data-choice]').forEach(btn=>btn.onclick=()=>{
+    const selected=Number(btn.dataset.choice);
+    localStorage.setItem('trio_last_challenge',JSON.stringify({id:c.id,choice:selected,at:Date.now()}));
+    host.innerHTML='<div class="challenge-card-question">Locked in ✓</div><p style="margin:8px 0 0;color:var(--color-ink-muted);font-size:11px">Your choice is saved. Open Challenges to continue the interaction.</p><a class="nkm-btn nkm-btn--primary" href="challenge.html?id='+encodeURIComponent(c.id)+'" style="display:inline-flex;margin-top:12px">See the room →</a>';
+  });
 }
-function renderActivities() {
-  const host = $('discoverActivityList'); if (!host) return;
-  const q = search.toLowerCase();
-  const filtered = allActivities.filter(a => { const type = normalizeActivityType(a); const haystack = [a.title, a.description, a.category, a.creatorName].filter(Boolean).join(' ').toLowerCase(); return (activeType === 'all' || type === activeType) && (!q || haystack.includes(q)) });
-  $('discoverActivityStatus').textContent = filtered.length ? filtered.length + ' activities ready' : 'No activities match this filter.';
-  host.innerHTML = filtered.length ? filtered.map(a => activityCardHtml({ ...a, activityType: normalizeActivityType(a) })).join('') : '<div class="discover-empty">Try another lane or clear the search.</div>';
+renderPreview();
+
+let roomsUnsubscribe=null;
+function initRoomListener(user){
+  if(roomsUnsubscribe){roomsUnsubscribe();roomsUnsubscribe=null;}
+  const host=document.getElementById('discoverRoomList'); if(!host)return;
+  if(!user){host.innerHTML='<div class="discover-empty">Sign in to see live rooms.</div>';return;}
+  const q=query(collection(db,'rooms'),where('status','==','open'),limit(12));
+  roomsUnsubscribe=onSnapshot(q,snap=>{
+    const now=Date.now();
+    const rows=snap.docs.map(d=>({id:d.id,...d.data()})).filter(r=>(Number(r.expiresAtMs)||now+21600000)>now).sort((a,b)=>(b.createdAtMs||0)-(a.createdAtMs||0)).slice(0,8);
+    host.innerHTML=rows.length?rows.map(room=>'<a class="live-room-card" href="room.html?id='+encodeURIComponent(room.id)+'"><span class="live-room-pulse"><i></i></span><span class="live-room-copy"><strong>'+String(room.title||'Open room')+'</strong><small><span class="live-dot">LIVE</span> '+Number(room.memberCount||0)+'/'+Number(room.maxPlayers||6)+' people</small></span><span class="live-room-arrow">↗</span></a>').join(''):'<div class="discover-empty">No live rooms right now. Start a challenge and invite someone.</div>';
+  },()=>{host.innerHTML='<div class="discover-empty">Live rooms are temporarily unavailable.</div>';});
 }
-async function loadActivities() {
-  const community = await listCommunityTasks({ status: 'active', max: 40 });
-  const built = activeCatalogActivities();
-  allActivities = [...community.filter(t => !t.hidden).map(t => ({ ...t, source: 'community', activityType: normalizeActivityType(t) })), ...built];
-  renderFilters(); renderActivities();
-}
-function renderRooms(snapshot) {
-  const host = $('discoverRoomList'); if (!host) return;
-  const now = Date.now();
-  const rows = snapshot.docs.map(d => ({ id: d.id, ...d.data() })).filter(r => (Number(r.expiresAtMs) || now + 21600000) > now).sort((a, b) => (b.createdAtMs || 0) - (a.createdAtMs || 0)).slice(0, 8);
-  host.innerHTML = rows.length ? rows.map(roomCardHtml).join('') : '<div class="discover-empty">No live rooms right now. Open any activity to start one.</div>';
-}
-
-// Discover is public, but live rooms require an authenticated Firestore session.
-// Do not read auth.currentUser only once: Firebase may still be restoring the
-// persisted session when this module first executes.
-let roomsUnsubscribe = null;
-function initRoomListener(user) {
-  if (roomsUnsubscribe) {
-    roomsUnsubscribe();
-    roomsUnsubscribe = null;
-  }
-
-  const host = $('discoverRoomList');
-  if (!user) {
-    if (host) host.innerHTML = '<div class="discover-empty">Sign in to see live rooms.</div>';
-    return;
-  }
-
-  const roomsQuery = query(collection(db, 'rooms'), where('status', '==', 'open'), limit(24));
-  roomsUnsubscribe = onSnapshot(
-    roomsQuery,
-    renderRooms,
-    () => {
-      if (host) host.innerHTML = '<div class="discover-empty">Live rooms are temporarily unavailable.</div>';
-    }
-  );
-}
-
-onAuthStateChanged(auth, initRoomListener);
-
-// Load catalog + community activities for everyone
-loadActivities();
-
-$('discoverSearch')?.addEventListener('input', e => { search = e.target.value.trim(); renderActivities() });
+onAuthStateChanged(auth,initRoomListener);
