@@ -102,7 +102,7 @@ async function getCachedUserPosts(uid) {
 async function loadConnections(uid, mode = 'followers') {
   const box = $('connectionsList'); if (!box) return;
   document.querySelectorAll('[data-connections-mode]').forEach(t => t.classList.toggle('active', t.dataset.connectionsMode === mode));
-  box.innerHTML = '<div class="td-skeleton td-skeleton--card"></div><div class="td-skeleton td-skeleton--card"></div>';
+  box.innerHTML = '<div class="connections-loading" aria-live="polite">Loading connections…</div>';
 
   const ids = mode === 'followers' ? await getCachedFollowerIds(uid) : await getCachedFollowingIds(uid);
   const filtered = ids.filter(id => id !== uid);
