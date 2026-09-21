@@ -3,70 +3,216 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#080c18">
-  <title>Sign in — Trio</title>
-  <meta name="description" content="Sign in to Trio — play, learn, build and connect.">
+  <meta name="theme-color" content="#0a0f1a">
+  <title>Sign in — Trio Day</title>
+  <meta name="description" content="Sign in to Trio Day — take challenges, compare answers and connect with people.">
   <link rel="icon" href="icons/icon-192.png" type="image/png">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"></noscript>
+  <link rel="stylesheet" href="styles/tokens.css">
+  <link rel="stylesheet" href="styles/theme-visual.css?v=1">
   <style>
-    :root{--bg:#070b15;--surface:rgba(17,24,45,.78);--surface2:rgba(20,28,52,.94);--ink:#f7f8ff;--muted:#9aa6c2;--line:rgba(148,163,184,.14);--primary:#6366f1;--primary2:#7c3aed}
-    *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif}body{min-height:100vh;overflow-x:hidden}
-    .auth-page{min-height:100vh;display:grid;place-items:center;padding:28px}
-    .auth-shell{width:min(1060px,100%);display:grid;grid-template-columns:minmax(0,1.15fr) minmax(360px,.85fr);gap:26px;align-items:stretch}
-    .auth-visual{position:relative;overflow:hidden;min-height:620px;border:1px solid var(--line);border-radius:30px;padding:34px;background:
-      radial-gradient(circle at 18% 18%,rgba(99,102,241,.28),transparent 30%),
-      radial-gradient(circle at 85% 78%,rgba(6,182,212,.18),transparent 32%),
-      linear-gradient(145deg,#0d1530,#090e1e 52%,#101634)}
-    .auth-visual:before,.auth-visual:after{content:"";position:absolute;border-radius:50%;border:1px solid rgba(129,140,248,.16);pointer-events:none}
-    .auth-visual:before{width:470px;height:470px;right:-170px;top:-140px;box-shadow:0 0 0 55px rgba(99,102,241,.03),0 0 0 110px rgba(99,102,241,.02)}
-    .auth-visual:after{width:250px;height:250px;left:-120px;bottom:-90px;box-shadow:0 0 0 40px rgba(6,182,212,.025)}
-    .auth-logo{display:flex;align-items:center;gap:12px;position:relative;z-index:2}.auth-logo img{width:46px;height:46px;border-radius:15px;box-shadow:0 10px 28px rgba(0,0,0,.25)}.auth-logo strong{font-family:"Space Grotesk",sans-serif;font-size:24px;letter-spacing:-.03em}.auth-logo small{display:block;color:var(--muted);font-size:9px;letter-spacing:.14em;text-transform:uppercase;margin-top:3px}
-    .auth-visual h1{position:relative;z-index:2;max-width:560px;font-family:"Space Grotesk",sans-serif;font-size:52px;line-height:.96;letter-spacing:-.05em;margin:92px 0 14px}.auth-visual>p{position:relative;z-index:2;max-width:520px;color:#b7c2da;line-height:1.65;margin:0;font-size:14px}
-    .visual-cards{position:absolute;z-index:2;left:34px;right:34px;bottom:34px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.visual-card{padding:15px;border:1px solid rgba(255,255,255,.08);border-radius:18px;background:rgba(7,11,21,.42);backdrop-filter:blur(14px)}.visual-card span{font-size:20px}.visual-card strong{display:block;margin-top:8px;font-size:11px}.visual-card small{display:block;color:var(--muted);font-size:9px;line-height:1.4;margin-top:3px}
-    .auth-panel{border:1px solid var(--line);border-radius:30px;background:var(--surface);backdrop-filter:blur(24px);padding:30px;display:flex;flex-direction:column;justify-content:center;box-shadow:0 24px 80px rgba(0,0,0,.28)}
-    .auth-panel-head{margin-bottom:22px}.auth-panel-head h2{font-family:"Space Grotesk",sans-serif;font-size:30px;letter-spacing:-.04em;margin:0 0 6px}.auth-panel-head p{margin:0;color:var(--muted);font-size:12px;line-height:1.5}
-    .mode-tabs{display:grid;grid-template-columns:1fr 1fr;padding:4px;border:1px solid var(--line);border-radius:13px;background:rgba(255,255,255,.025);margin-bottom:17px}.mode-tab{border:0;background:transparent;color:var(--muted);padding:9px 10px;border-radius:9px;font-weight:800;font-size:11px;cursor:pointer}.mode-tab.active{background:rgba(99,102,241,.18);color:#fff}
-    .google-btn,.submit-btn{width:100%;height:46px;border-radius:13px;font:inherit;font-weight:800;font-size:12px;cursor:pointer}.google-btn{border:1px solid var(--line);background:#fff;color:#10131d}.google-btn svg{vertical-align:middle;margin-right:8px}.divider{display:flex;align-items:center;gap:9px;color:#6f7b99;font-size:9px;margin:16px 0}.divider:before,.divider:after{content:"";flex:1;height:1px;background:var(--line)}
-    .field{display:grid;gap:6px;margin-top:11px}.field[hidden]{display:none}.label{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.09em;color:#8f9ab5}.field input{height:44px;border:1px solid var(--line);border-radius:12px;background:rgba(4,8,18,.38);color:#fff;padding:0 13px;outline:0;font:inherit;font-size:12px}.field input:focus{border-color:rgba(129,140,248,.75);box-shadow:0 0 0 3px rgba(99,102,241,.12)}
-    .submit-btn{margin-top:16px;border:0;background:linear-gradient(135deg,var(--primary),var(--primary2));color:#fff;box-shadow:0 10px 24px rgba(99,102,241,.22)}.submit-btn:disabled{opacity:.6;cursor:not-allowed}
-    .forgot{border:0;background:none;color:#9da8c1;display:block;margin:9px 0 0 auto;font:inherit;font-size:10px;cursor:pointer}.forgot:hover{color:#fff}.auth-switch{border:0;background:none;color:#aeb8cf;margin:14px auto 0;font:inherit;font-size:10px;cursor:pointer}.auth-switch strong{color:#fff}
-    .uid-note{display:none;margin-top:14px;padding:11px 12px;border-radius:13px;background:rgba(6,182,212,.06);border:1px solid rgba(6,182,212,.14);color:#aebbd4;font-size:10px;line-height:1.5}.uid-note.visible{display:block}.uid-note b{color:#fff}
-    .login-method-bar{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;margin:0 0 12px;border:1px solid var(--line);border-radius:13px;background:rgba(255,255,255,.022)}
-    .login-method-btn{border:0;background:transparent;color:#7f8ba7;border-radius:9px;padding:8px 9px;font:inherit;font-size:10px;font-weight:800;cursor:pointer;transition:background .2s,color .2s,transform .2s}.login-method-btn.active{background:rgba(99,102,241,.16);color:#fff}.login-method-btn:active{transform:scale(.98)}
-    .input-wrap{position:relative}.input-wrap input{padding-right:46px!important}.password-toggle{position:absolute;right:7px;top:50%;transform:translateY(-50%);width:34px;height:30px;border:0;border-radius:9px;background:transparent;color:#8f9ab5;font-size:11px;cursor:pointer}.password-toggle:hover{background:rgba(255,255,255,.05);color:#fff}
-    .strength{display:grid;gap:5px;margin-top:7px}.strength-track{height:4px;border-radius:99px;background:rgba(255,255,255,.07);overflow:hidden}.strength-track i{display:block;height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,#f87171,#f59e0b,#34d399);transition:width .2s}.strength-copy{font-size:9px;color:#77839e}
-    .uid-field-hint{font-size:9px;color:#6f7b99;line-height:1.35;margin-top:1px}
-    .status{min-height:18px;margin:8px 0 0;font-size:10px;color:#9fb0cb}.status.error{color:#f87171}
-    @media(max-width:860px){.auth-page{padding:16px}.auth-shell{grid-template-columns:1fr;max-width:560px}.auth-visual{min-height:340px}.auth-visual h1{font-size:40px;margin-top:58px}.visual-cards{position:relative;left:auto;right:auto;bottom:auto;margin-top:34px}.auth-panel{min-height:0}}
-    @media(max-width:520px){.auth-visual{padding:22px;min-height:300px;border-radius:24px}.auth-visual h1{font-size:34px}.visual-cards{grid-template-columns:1fr 1fr}.visual-card:last-child{display:none}.auth-panel{padding:22px;border-radius:24px}}
-    @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+    :root{
+      --login-bg:var(--color-bg-dark);
+      --login-surface:var(--color-surface-dark);
+      --login-ink:var(--color-ink-dark);
+      --login-muted:var(--color-ink-muted-dark);
+      --login-dim:var(--color-ink-dim-dark);
+      --login-border:var(--color-border-dark);
+    }
+    [data-theme="light"]{
+      --login-bg:var(--color-bg-light);
+      --login-surface:var(--color-surface-light);
+      --login-ink:var(--color-ink-light);
+      --login-muted:var(--color-ink-muted-light);
+      --login-dim:var(--color-ink-dim-light);
+      --login-border:var(--color-border-light);
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;min-height:100%;background:var(--login-bg);color:var(--login-ink);font-family:var(--font-sans,Inter,system-ui,sans-serif)}
+    body{min-height:100vh;overflow-x:hidden}
+    button,input{font:inherit}
+    button{cursor:pointer}
+    .auth-page{
+      position:relative;min-height:100vh;display:grid;place-items:center;
+      padding:28px 20px;overflow:hidden;
+      background:
+        radial-gradient(760px 430px at 13% 12%,rgba(99,102,241,.12),transparent 67%),
+        radial-gradient(620px 380px at 88% 84%,rgba(6,182,212,.075),transparent 68%),
+        var(--login-bg);
+    }
+    .auth-page:before{
+      content:"";position:absolute;width:540px;height:540px;right:-280px;top:-260px;border:1px solid rgba(129,140,248,.12);
+      border-radius:50%;box-shadow:0 0 0 38px rgba(99,102,241,.025),0 0 0 76px rgba(99,102,241,.018);pointer-events:none
+    }
+    .auth-page:after{
+      content:"";position:absolute;width:350px;height:350px;left:-240px;bottom:-210px;border:1px solid rgba(6,182,212,.10);
+      border-radius:50%;box-shadow:0 0 0 28px rgba(6,182,212,.02);pointer-events:none
+    }
+    .auth-shell{
+      position:relative;z-index:1;width:min(1060px,100%);display:grid;
+      grid-template-columns:minmax(0,1.06fr) minmax(360px,.78fr);gap:16px;align-items:stretch
+    }
+    .auth-visual,.auth-panel{
+      border:1px solid var(--login-border);border-radius:26px;
+      background:color-mix(in srgb,var(--login-surface) 92%,transparent);
+      box-shadow:0 24px 80px rgba(2,6,23,.18)
+    }
+    .auth-visual{
+      position:relative;overflow:hidden;min-height:600px;padding:28px;
+      background:
+        radial-gradient(520px 300px at 78% 12%,rgba(99,102,241,.13),transparent 70%),
+        linear-gradient(145deg,rgba(99,102,241,.05),rgba(6,182,212,.018)),
+        var(--login-surface)
+    }
+    .visual-orbit{position:absolute;right:-80px;top:-80px;width:370px;height:370px;border:1px solid rgba(129,140,248,.12);border-radius:50%}
+    .visual-orbit:before,.visual-orbit:after{content:"";position:absolute;border:1px solid rgba(129,140,248,.09);border-radius:50%;inset:35px}
+    .visual-orbit:after{inset:82px}
+    .auth-logo{position:relative;z-index:2;display:flex;align-items:center;gap:11px;width:max-content}
+    .auth-logo img{width:44px;height:44px;border-radius:14px;box-shadow:0 9px 24px rgba(79,70,229,.22)}
+    .auth-logo strong{font-family:var(--font-display);font-size:22px;letter-spacing:-.04em;color:var(--login-ink)}
+    .auth-logo small{display:block;margin-top:2px;font-size:8px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;color:var(--login-dim)}
+    .visual-copy{position:relative;z-index:2;max-width:560px;margin-top:82px}
+    .visual-kicker{display:inline-flex;align-items:center;gap:7px;padding:6px 9px;border:1px solid rgba(129,140,248,.15);border-radius:999px;
+      background:rgba(99,102,241,.07);color:var(--color-primary-text);font-size:8px;font-weight:900;letter-spacing:.13em;text-transform:uppercase}
+    .visual-kicker:before{content:"";width:6px;height:6px;border-radius:50%;background:#34d399;box-shadow:0 0 0 4px rgba(52,211,153,.08)}
+    .visual-copy h1{margin:18px 0 10px;font-family:var(--font-display);font-size:clamp(42px,5vw,62px);line-height:.94;letter-spacing:-.055em}
+    .visual-copy h1 span{color:var(--color-primary-text)}
+    .visual-copy p{max-width:500px;margin:0;color:var(--login-muted);font-size:13px;line-height:1.7}
+    .moment-line{display:flex;align-items:center;gap:8px;margin-top:18px;color:var(--login-dim);font-size:9px;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
+    .moment-line i{display:block;width:34px;height:1px;background:rgba(129,140,248,.26)}
+    .visual-cards{position:absolute;left:28px;right:28px;bottom:28px;display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+    .visual-card{
+      min-height:112px;padding:14px;border:1px solid rgba(148,163,184,.11);border-radius:17px;
+      background:rgba(255,255,255,.025);backdrop-filter:blur(12px)
+    }
+    .visual-card .icon{display:grid;place-items:center;width:30px;height:30px;border-radius:10px;background:rgba(99,102,241,.11);font-size:16px}
+    .visual-card strong{display:block;margin-top:10px;font-size:11px}
+    .visual-card small{display:block;margin-top:3px;color:var(--login-dim);font-size:9px;line-height:1.45}
+    .auth-panel{
+      padding:28px;display:flex;flex-direction:column;justify-content:center;
+      background:
+        radial-gradient(420px 240px at 100% 0,rgba(99,102,241,.085),transparent 72%),
+        color-mix(in srgb,var(--login-surface) 95%,transparent)
+    }
+    .panel-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+    .auth-panel-head{margin-bottom:18px}
+    .auth-panel-head .eyebrow{display:block;margin-bottom:7px;color:var(--login-dim);font-size:8px;font-weight:900;letter-spacing:.14em;text-transform:uppercase}
+    .auth-panel-head h2{font-family:var(--font-display);font-size:29px;line-height:1.02;letter-spacing:-.04em;margin:0 0 6px}
+    .auth-panel-head p{margin:0;color:var(--login-muted);font-size:11px;line-height:1.55}
+    .theme-btn{
+      flex:none;width:32px;height:32px;border:1px solid var(--login-border);border-radius:10px;
+      background:rgba(255,255,255,.025);color:var(--login-muted);font-size:13px
+    }
+    .theme-btn:hover{background:rgba(99,102,241,.08);color:var(--login-ink)}
+    .mode-tabs,.login-method-bar{
+      display:grid;padding:4px;border:1px solid var(--login-border);border-radius:12px;background:rgba(255,255,255,.022)
+    }
+    .mode-tabs{grid-template-columns:1fr 1fr;margin-bottom:12px}
+    .login-method-bar{grid-template-columns:1fr 1fr;gap:3px;margin:0 0 12px}
+    .mode-tab,.login-method-btn{
+      border:0;background:transparent;color:var(--login-dim);border-radius:9px;font-size:10px;font-weight:850
+    }
+    .mode-tab{padding:9px 10px}
+    .login-method-btn{padding:8px}
+    .mode-tab.active,.login-method-btn.active{background:rgba(99,102,241,.13);color:var(--login-ink)}
+    .google-btn,.submit-btn{
+      width:100%;height:44px;border-radius:12px;font-weight:850;font-size:11px
+    }
+    .google-btn{border:1px solid var(--login-border);background:var(--login-surface);color:var(--login-ink)}
+    .google-btn:hover{background:rgba(99,102,241,.055)}
+    .google-btn svg{vertical-align:middle;margin-right:7px}
+    .divider{display:flex;align-items:center;gap:8px;color:var(--login-dim);font-size:8px;margin:14px 0}
+    .divider:before,.divider:after{content:"";flex:1;height:1px;background:var(--login-border)}
+    .field{display:grid;gap:5px;margin-top:9px}.field[hidden]{display:none}
+    .label{font-size:8px;font-weight:850;text-transform:uppercase;letter-spacing:.09em;color:var(--login-dim)}
+    .field input{
+      width:100%;height:42px;border:1px solid var(--login-border);border-radius:11px;background:rgba(4,8,18,.28);
+      color:var(--login-ink);padding:0 12px;outline:0;font-size:11px
+    }
+    [data-theme="light"] .field input{background:rgba(15,23,42,.03)}
+    .field input:focus{border-color:rgba(129,140,248,.62);box-shadow:0 0 0 3px rgba(99,102,241,.10)}
+    .submit-btn{margin-top:14px;border:0;background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;box-shadow:0 10px 26px rgba(79,70,229,.18)}
+    .submit-btn:hover{transform:translateY(-1px)}
+    .submit-btn:disabled{opacity:.6;cursor:not-allowed;transform:none}
+    .input-wrap{position:relative}.input-wrap input{padding-right:44px!important}
+    .password-toggle{
+      position:absolute;right:6px;top:50%;transform:translateY(-50%);width:32px;height:28px;border:0;border-radius:8px;
+      background:transparent;color:var(--login-dim);font-size:9px
+    }
+    .password-toggle:hover{background:rgba(255,255,255,.045);color:var(--login-ink)}
+    .forgot{border:0;background:none;color:var(--login-dim);display:block;margin:8px 0 0 auto;font-size:9px}
+    .forgot:hover,.auth-switch:hover{color:var(--login-ink)}
+    .strength{display:grid;gap:5px;margin-top:6px}.strength[hidden]{display:none!important}
+    .strength-track{height:4px;border-radius:99px;background:rgba(255,255,255,.07);overflow:hidden}
+    .strength-track i{display:block;height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,#f87171,#f59e0b,#34d399);transition:width .2s}
+    .strength-copy{font-size:8px;color:var(--login-dim)}
+    .uid-field-hint{font-size:8px;color:var(--login-dim);line-height:1.4}
+    .status{min-height:17px;margin:8px 0 0;font-size:9px;color:var(--login-muted)}.status.error{color:#f87171}
+    .uid-note{display:none;margin-top:12px;padding:10px 11px;border-radius:12px;background:rgba(6,182,212,.045);border:1px solid rgba(6,182,212,.11);color:var(--login-muted);font-size:9px;line-height:1.5}
+    .uid-note.visible{display:block}.uid-note b{color:var(--login-ink)}
+    .auth-switch{border:0;background:none;color:var(--login-muted);margin:12px auto 0;font-size:9px}.auth-switch strong{color:var(--login-ink)}
+    @media(max-width:840px){
+      .auth-shell{grid-template-columns:1fr;max-width:560px}
+      .auth-visual{min-height:370px}.visual-copy{margin-top:54px}.visual-cards{position:relative;left:auto;right:auto;bottom:auto;margin-top:28px}
+      .auth-panel{min-height:0}
+    }
+    @media(max-width:520px){
+      .auth-page{padding:12px}.auth-visual,.auth-panel{border-radius:21px}.auth-visual{padding:21px;min-height:330px}
+      .auth-visual .visual-orbit{width:280px;height:280px;right:-105px;top:-95px}.visual-copy{margin-top:42px}.visual-copy h1{font-size:38px}
+      .visual-cards{grid-template-columns:1fr 1fr;margin-top:22px}.visual-card:last-child{display:none}
+      .visual-card{min-height:98px;padding:12px}.visual-card small{font-size:8px}.auth-panel{padding:20px}
+    }
+    @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
   </style>
 </head>
 <body class="auth-body">
 <main class="auth-page" id="main-content">
   <div class="auth-shell">
-    <section class="auth-visual" aria-label="Trio introduction">
-      <a class="auth-logo" href="login.html" aria-label="Trio login">
-        <img src="icons/icon-192.png" alt="Trio logo">
-        <span><strong>Trio</strong><small>Play · Learn · Grow</small></span>
+    <section class="auth-visual" aria-label="Trio Day introduction">
+      <div class="visual-orbit" aria-hidden="true"></div>
+      <a class="auth-logo" href="login.html" aria-label="Trio Day login">
+        <img src="icons/icon-192.png" alt="Trio Day logo">
+        <span><strong>trio_day</strong><small>COMMUNITY · INDIA</small></span>
       </a>
-      <h1>Make time<br>worth sharing.</h1>
-      <p>Find activities, build with friends, solve puzzles and jump into live rooms without losing the flow.</p>
-      <div class="visual-cards">
-        <div class="visual-card"><span>🧩</span><strong>Solve</strong><small>Quick puzzles and challenges.</small></div>
-        <div class="visual-card"><span>🛠️</span><strong>Build</strong><small>Create things together.</small></div>
-        <div class="visual-card"><span>🎙️</span><strong>Connect</strong><small>Chat and talk in live rooms.</small></div>
+
+      <div class="visual-copy">
+        <span class="visual-kicker">Challenge-first community</span>
+        <h1>3 people.<br><span>1 moment.</span></h1>
+        <p>Take a challenge, compare your answer with people and turn that shared moment into a conversation.</p>
+        <div class="moment-line"><i></i> Today · Challenge · Chat · You</div>
+      </div>
+
+      <div class="visual-cards" aria-label="Trio Day features">
+        <div class="visual-card">
+          <div class="icon">⚡</div>
+          <strong>Challenge</strong>
+          <small>Pick, compare and participate.</small>
+        </div>
+        <div class="visual-card">
+          <div class="icon">◉</div>
+          <strong>People</strong>
+          <small>Discover people around shared moments.</small>
+        </div>
+        <div class="visual-card">
+          <div class="icon">💬</div>
+          <strong>Chat</strong>
+          <small>Keep the conversation going.</small>
+        </div>
       </div>
     </section>
 
-    <section class="auth-panel">
-      <div class="auth-panel-head">
-        <h2 id="authTitle">Welcome back</h2>
-        <p id="authSubtitle">Sign in to continue where you left off.</p>
+    <section class="auth-panel" aria-label="Account access">
+      <div class="panel-top">
+        <div class="auth-panel-head">
+          <span class="eyebrow">Welcome to Trio Day</span>
+          <h2 id="authTitle">Welcome back</h2>
+          <p id="authSubtitle">Use email or your permanent Trio UID to sign in.</p>
+        </div>
+        <button id="themeToggle" class="theme-btn" type="button" aria-label="Toggle theme" aria-pressed="false">☀️</button>
       </div>
 
       <div class="mode-tabs" role="tablist" aria-label="Account mode">
@@ -80,7 +226,7 @@
       </div>
 
       <button id="googleBtn" type="button" class="google-btn">
-        <svg width="17" height="17" viewBox="0 0 18 18" aria-hidden="true"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84c-.21 1.13-.84 2.09-1.8 2.73v2.27h2.91c1.7-1.57 2.69-3.87 2.69-6.64z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.91-2.27c-.81.54-1.84.86-3.05.86-2.35 0-4.34-1.58-5.05-3.71H.9v2.33C2.38 15.98 5.48 18 9 18z"/><path fill="#FBBC05" d="M3.95 10.7A5.4 5.4 0 013.68 9c0-.59.1-1.16.27-1.7V4.97H.9A9 9 0 000 9c0 1.45.35 2.83.9 4.03l3.05-2.33z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.51.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0 5.48 0 2.38 2.02.9 4.97L3.95 7.3C4.66 5.17 6.65 3.58 9 3.58z"/></svg>
+        <svg width="16" height="16" viewBox="0 0 18 18" aria-hidden="true"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84c-.21 1.13-.84 2.09-1.8 2.73v2.27h2.91c1.7-1.57 2.69-3.87 2.69-6.64z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.91-2.27c-.81.54-1.84.86-3.05.86-2.35 0-4.34-1.58-5.05-3.71H.9v2.33C2.38 15.98 5.48 18 9 18z"/><path fill="#FBBC05" d="M3.95 10.7A5.4 5.4 0 013.68 9c0-.59.1-1.16.27-1.7V4.97H.9A9 9 0 000 9c0 1.45.35 2.83.9 4.03l3.05-2.33z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.51.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0 5.48 0 2.38 2.02.9 4.97L3.95 7.3C4.66 5.17 6.65 3.58 9 3.58z"/></svg>
         Continue with Google
       </button>
 
@@ -92,7 +238,7 @@
         <label class="field" id="trioUidField" hidden>
           <span class="label">Trio UID</span>
           <input id="trioUid" type="text" maxlength="13" autocomplete="username" autocapitalize="characters" spellcheck="false" placeholder="TRIO-XXXXXXXX">
-          <span class="uid-field-hint">Your Trio UID is permanent and stays the same after logout or on another device.</span>
+          <span class="uid-field-hint">Your permanent Trio UID stays the same across devices.</span>
         </label>
         <label class="field"><span class="label">Password</span>
           <div class="input-wrap">
@@ -109,12 +255,28 @@
         <button id="emailSubmitBtn" type="submit" class="submit-btn">Log in</button>
       </form>
 
-      <div id="uidNote" class="uid-note"><b>Your Trio UID is permanent.</b> After signup, the same UID works for login, connecting with friends and finding your profile. It never gets regenerated.</div>
+      <div id="uidNote" class="uid-note"><b>Your Trio UID is permanent.</b> After signup, the same UID works for login, connecting with friends and finding your profile.</div>
       <button id="modeToggle" type="button" class="auth-switch">New here? <strong>Create account</strong></button>
     </section>
   </div>
 </main>
 <script type="module" src="theme.js"></script>
-<script type="module" src="auth.js?v=20260920-auth4"></script>
+<script type="module">
+  const btn = document.getElementById('themeToggle');
+  const sync = () => {
+    const theme = document.documentElement.getAttribute('data-theme') || 'dark';
+    if (!btn) return;
+    btn.textContent = theme === 'dark' ? '☀️' : '🌙';
+    btn.setAttribute('aria-label', theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
+    btn.setAttribute('aria-pressed', String(theme === 'light'));
+  };
+  window.addEventListener('load', sync);
+  btn?.addEventListener('click', () => {
+    window.TrioTheme?.toggleTheme();
+    sync();
+  });
+  new MutationObserver(sync).observe(document.documentElement, {attributes:true,attributeFilter:['data-theme']});
+</script>
+<script type="module" src="auth.js?v=20260922-login-ui"></script>
 </body>
 </html>
