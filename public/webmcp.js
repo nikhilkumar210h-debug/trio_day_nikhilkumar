@@ -1,8 +1,11 @@
 import{activeCatalogActivities,getCatalogActivity}from'./activity-catalog.js?v=20260920-audit2';
 
-const modelContext=document.modelContext;
-if(modelContext?.registerTool){
+const modelContext=(typeof document!=='undefined'&&document.modelContext)
+  ||(typeof navigator!=='undefined'&&navigator.modelContext)
+  ||null;
+if(modelContext&&typeof modelContext.registerTool==='function'){
   const compact=a=>({id:a.id,type:a.type,title:a.title,category:a.category,difficulty:a.difficulty,durationMin:a.durationMin,xpReward:a.xpReward,icon:a.icon,description:a.description});
+  const controller=new AbortController();
   try{
     await modelContext.registerTool({
       name:'search_activities',
@@ -17,7 +20,7 @@ if(modelContext?.registerTool){
         ).slice(0,Math.min(10,Math.max(1,Number(limit)||6)));
         return JSON.stringify(items.map(compact));
       }
-    });
+    },{signal:controller.signal});
     await modelContext.registerTool({
       name:'get_activity',
       title:'Get Trio Day activity',
@@ -28,7 +31,7 @@ if(modelContext?.registerTool){
         const a=getCatalogActivity(String(activityId||''));
         return a?JSON.stringify(compact(a)):JSON.stringify({error:'Activity not found or inactive.'});
       }
-    });
+    },{signal:controller.signal});
     await modelContext.registerTool({
       name:'open_activity',
       title:'Open Trio Day activity',
@@ -41,7 +44,7 @@ if(modelContext?.registerTool){
         location.href='activity.html?id='+encodeURIComponent(a.id)+'&source=catalog';
         return null;
       }
-    });
+    },{signal:controller.signal});
   }catch(error){
     console.warn('[WebMCP] tool registration skipped:',error);
   }
