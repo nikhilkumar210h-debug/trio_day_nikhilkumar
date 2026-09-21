@@ -181,9 +181,9 @@ body:has(.profile-main) .profile-main {
 @media (max-width:760px) {
   body:has(.profile-main) .profile-main { padding:16px 10px 90px; }
   .profile-card { padding:20px 16px; border-radius:23px; }
-  .profile-head { grid-template-columns:auto minmax(0,1fr); align-items:start; gap:13px; }
+  .profile-head { grid-template-columns:auto minmax(0,1fr) 42px; align-items:start; gap:13px; }
   .profile-avatar { width:82px; height:82px; font-size:28px; }
-  .profile-menu-btn { grid-column:2; justify-self:end; margin-top:-54px; }
+  .profile-menu-btn { grid-column:auto; justify-self:end; margin-top:0; position:relative; z-index:3; display:grid; place-items:center; }
 }
 @media (max-width:430px) {
   .profile-copy h2 { font-size:25px; }
