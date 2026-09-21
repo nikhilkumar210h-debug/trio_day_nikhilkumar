@@ -959,7 +959,7 @@ storyForm?.addEventListener('submit', async e => {
             const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.9));
             setStoryStatus('Uploading…');
             if (blob) {
-              mediaUrl = await uploadPostImage(
+              mediaUrl = await uploadStoryMedia(
                 currentUser.uid,
                 new File([blob], `story-${Date.now()}.jpg`, { type: 'image/jpeg' }),
                 firebaseToken
