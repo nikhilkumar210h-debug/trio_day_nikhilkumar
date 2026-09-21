@@ -20,12 +20,14 @@ const ITEMS = [
 ];
 
 function pathKey() {
-  const p = (location.pathname.split('/').pop() || 'index.html').toLowerCase();
-  if (p === '' || p === 'index.html' || p === 'view_post.html') return 'today';
-  if (p === 'challenge.html' || p === 'task-create.html' || p === 'tasks.html' || p === 'task-detail.html') return 'challenge';
-  if (p === 'all-users.html' || p === 'build.html' || p === 'learn.html' || p === 'puzzle.html' || p === 'activity.html' || p === 'rooms.html' || p === 'room.html') return 'discover';
-  if (p === 'chat.html' || p === 'private-chat.html') return 'chat';
-  if (p === 'profile.html') return 'you';
+  const raw = (location.pathname || '/').toLowerCase().replace(/\\/+$/, '') || '/';
+  const p = raw.split('/').pop() || 'index.html';
+  // Support both the legacy .html deployment and the current clean routes.
+  if (p === '' || p === 'index.html' || p === 'view_post.html' || raw === '/' || raw === '/index') return 'today';
+  if (raw === '/challenge' || p === 'challenge.html' || p === 'task-create.html' || p === 'tasks.html' || p === 'task-detail.html') return 'challenge';
+  if (raw === '/all-users' || raw === '/discover' || p === 'all-users.html' || p === 'build.html' || p === 'learn.html' || p === 'puzzle.html' || p === 'activity.html' || p === 'rooms.html' || p === 'room.html') return 'discover';
+  if (raw === '/chat' || raw === '/private-chat' || p === 'chat.html' || p === 'private-chat.html') return 'chat';
+  if (raw === '/profile' || raw === '/you' || p === 'profile.html') return 'you';
   return '';
 }
 
