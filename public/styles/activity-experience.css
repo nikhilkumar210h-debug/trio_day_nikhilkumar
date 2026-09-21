@@ -1,0 +1,47 @@
+/* Activity experience phase — visual play surface */
+.activity-page-shell .activity-detail-hero{position:relative;overflow:hidden;isolation:isolate}
+.activity-page-shell .activity-detail-hero>*{position:relative;z-index:2}
+.activity-page-shell .activity-hero-mark{position:absolute;z-index:1!important;right:34px;top:18px;width:116px;height:116px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle,rgba(99,102,241,.18),rgba(6,182,212,.035) 62%,transparent 63%);pointer-events:none}
+.activity-page-shell .activity-hero-mark strong{width:58px;height:58px;border-radius:20px;display:grid;place-items:center;font-size:28px;background:rgba(8,12,27,.58);border:1px solid rgba(255,255,255,.1);box-shadow:0 16px 42px rgba(0,0,0,.22);backdrop-filter:blur(12px);animation:activityHeroFloat 4.5s ease-in-out infinite}
+.activity-hero-orbit{position:absolute;border:1px solid rgba(129,140,248,.2);border-radius:50%;inset:4px;animation:activityHeroSpin 10s linear infinite}.activity-hero-orbit--b{inset:18px;border-color:rgba(6,182,212,.16);animation-duration:7s;animation-direction:reverse}
+.activity-page-shell .activity-detail-hero:after{content:"";position:absolute;right:-70px;top:-90px;width:260px;height:260px;border-radius:50%;background:radial-gradient(circle,rgba(99,102,241,.16),transparent 67%);z-index:0;pointer-events:none}
+
+/* The workspace is now a deliberate play surface, not a plain content box. */
+.activity-page-shell .forge-workspace{position:relative;overflow:hidden;padding:14px!important;border-radius:20px!important;background:linear-gradient(145deg,rgba(99,102,241,.085),rgba(6,182,212,.035) 55%,rgba(255,255,255,.018))!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.035),0 18px 45px rgba(2,6,23,.08)}
+.activity-page-shell .forge-workspace:before{content:"";position:absolute;inset:auto -80px -110px auto;width:220px;height:220px;border-radius:50%;border:1px solid rgba(129,140,248,.1);box-shadow:0 0 0 22px rgba(99,102,241,.018),0 0 0 44px rgba(99,102,241,.012);pointer-events:none}
+.play-surface-hud{position:relative;z-index:3;display:flex;align-items:center;justify-content:space-between;gap:10px;margin:-2px 0 12px;padding:7px 9px;border:1px solid rgba(148,163,184,.1);border-radius:11px;background:rgba(255,255,255,.025)}
+.play-surface-mode{display:flex;align-items:center;gap:7px;min-width:0}.play-surface-mode strong{font-size:8px;letter-spacing:.13em;text-transform:uppercase}.play-surface-dot{width:6px;height:6px;border-radius:50%;background:#34d399;box-shadow:0 0 0 4px rgba(52,211,153,.08);animation:activityLivePulse 1.7s ease-out infinite}.play-surface-live{font-size:7px;letter-spacing:.1em;font-weight:900;color:var(--color-ink-dim)}
+
+/* Distinct visual language per activity lane. */
+body[data-activity-type="learn"] .forge-workspace{background:linear-gradient(145deg,rgba(6,182,212,.085),rgba(99,102,241,.035))!important}
+body[data-activity-type="challenge"] .forge-workspace{background:linear-gradient(145deg,rgba(249,115,22,.09),rgba(99,102,241,.035))!important}
+body[data-activity-type="puzzle"] .forge-workspace{background:linear-gradient(145deg,rgba(236,72,153,.075),rgba(99,102,241,.04))!important}
+body[data-activity-type="build"] .forge-workspace{background:linear-gradient(145deg,rgba(34,197,94,.075),rgba(99,102,241,.04))!important}
+body[data-activity-type="game"] .forge-workspace{background:linear-gradient(145deg,rgba(249,115,22,.09),rgba(236,72,153,.035))!important}
+
+.activity-page-shell .forge-quiz{position:relative;z-index:2;display:grid;gap:12px;padding:13px;border:1px solid rgba(148,163,184,.09);border-radius:16px;background:rgba(2,6,23,.12)}
+.activity-page-shell .forge-quiz-question{font-size:clamp(15px,2.4vw,21px)!important;line-height:1.22!important;font-weight:850!important;letter-spacing:-.025em!important}
+.activity-page-shell .forge-quiz-options{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px!important}
+.activity-page-shell .forge-option{min-height:48px!important;padding:9px 11px!important;text-align:left!important;border-radius:12px!important;border:1px solid rgba(148,163,184,.12)!important;background:rgba(255,255,255,.035)!important;color:var(--color-ink)!important;font-size:10px!important;font-weight:750!important;cursor:pointer;transition:transform .16s ease,border-color .16s ease,background .16s ease,box-shadow .16s ease}
+.activity-page-shell .forge-option:hover:not(:disabled){transform:translateY(-2px);border-color:rgba(129,140,248,.32)!important;background:rgba(99,102,241,.07)!important;box-shadow:0 10px 22px rgba(2,6,23,.1)}
+.activity-page-shell .forge-option.correct{border-color:rgba(52,211,153,.42)!important;background:rgba(34,197,94,.09)!important;box-shadow:0 0 0 2px rgba(52,211,153,.07)}
+.activity-page-shell .forge-option.wrong{border-color:rgba(251,113,133,.38)!important;background:rgba(244,63,94,.075)!important}
+.activity-page-shell .forge-scorebar{position:relative;z-index:2;padding:8px 10px;border-radius:11px;background:rgba(255,255,255,.025);border:1px solid rgba(148,163,184,.09);font-size:8px}
+.activity-page-shell .forge-scorebar strong{font-size:10px}
+.activity-page-shell .forge-proof{position:relative;z-index:2;margin-top:10px;padding:11px;border-radius:14px;border:1px solid rgba(148,163,184,.1);background:rgba(255,255,255,.025)}
+.activity-page-shell .forge-proof textarea{width:100%;min-height:82px;resize:vertical;border:1px solid rgba(148,163,184,.12);border-radius:11px;background:rgba(2,6,23,.2);color:var(--color-ink);padding:9px;font:inherit;font-size:10px;outline:none}.activity-page-shell .forge-proof textarea:focus{border-color:rgba(129,140,248,.4);box-shadow:0 0 0 3px rgba(99,102,241,.07)}
+.activity-page-shell .forge-proof-footer{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:7px}.activity-page-shell .forge-proof-footer span{font-size:7px;color:var(--color-ink-dim)}
+.activity-page-shell .forge-next{position:relative;z-index:2;margin-top:8px;min-height:38px;padding:0 13px;border:1px solid rgba(129,140,248,.22);border-radius:10px;background:rgba(99,102,241,.1);color:var(--color-ink);font-size:9px;font-weight:850;cursor:pointer}
+.activity-page-shell .forge-next:hover{background:rgba(99,102,241,.17);transform:translateY(-1px)}
+
+@media(max-width:600px){
+  .activity-page-shell .activity-detail-hero{min-height:166px!important;padding-right:16px!important}.activity-page-shell .activity-hero-mark{right:-5px;top:8px;opacity:.82;transform:scale(.84)}
+  .activity-page-shell .activity-detail-hero h1,.activity-page-shell .activity-detail-desc,.activity-page-shell .activity-detail-chips{max-width:78%}
+  .activity-page-shell .forge-quiz-options{grid-template-columns:1fr!important}
+  .activity-page-shell .forge-option{min-height:50px!important}
+  .play-surface-hud{margin-bottom:9px}
+}
+@media(prefers-reduced-motion:reduce){.activity-hero-mark strong,.activity-hero-orbit,.play-surface-dot{animation:none!important}}
+@keyframes activityHeroFloat{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-5px) rotate(2deg)}}
+@keyframes activityHeroSpin{to{transform:rotate(360deg)}}
+@keyframes activityLivePulse{0%{box-shadow:0 0 0 2px rgba(52,211,153,.08)}70%,100%{box-shadow:0 0 0 8px rgba(52,211,153,0)}}
