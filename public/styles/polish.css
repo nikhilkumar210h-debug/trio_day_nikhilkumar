@@ -447,3 +447,249 @@ button:disabled,.nkm-btn:disabled,.btn:disabled{cursor:not-allowed;opacity:.55;t
 .hero-story-circle{width:96px!important;height:96px!important;flex:0 0 96px!important;aspect-ratio:1/1!important;border-radius:18px!important}
 .hero-story-circle-inner{height:100%!important;border-radius:16px!important}
 .hero-story-circle .story-name,.hero-story-circle .hero-story-name,.hero-story-circle small{position:absolute!important;left:5px;right:5px;bottom:5px!important;padding:5px 6px!important;border-radius:9px!important;background:rgba(0,0,0,.58)!important;color:#fff!important;font-size:9px!important}
+
+
+/* 2026-09-21 Story Studio refresh — visual-first composer, mobile-safe. */
+.story-composer-modal{
+  width:min(620px,100%);
+  max-height:min(94vh,860px);
+  padding:18px;
+  border-radius:28px;
+  background:
+    radial-gradient(circle at 84% 0, rgba(99,102,241,.18), transparent 30%),
+    radial-gradient(circle at 8% 34%, rgba(236,72,153,.10), transparent 28%),
+    var(--color-surface-strong);
+  border:1px solid rgba(148,163,184,.16);
+  box-shadow:0 28px 90px rgba(0,0,0,.42);
+}
+.story-composer-head{
+  align-items:flex-start;
+  padding-bottom:14px;
+  border-bottom:1px solid var(--color-border);
+}
+.story-composer-head h2{
+  margin:2px 0 2px;
+  font-size:clamp(22px,4vw,30px);
+  letter-spacing:-.035em;
+}
+.story-composer-sub{
+  margin:0;
+  color:var(--color-ink-muted);
+  font-size:12px;
+  line-height:1.45;
+}
+.story-composer-modal .field{
+  margin-top:14px;
+}
+.story-composer-modal textarea{
+  min-height:82px;
+  resize:vertical;
+  border-radius:16px;
+  padding:13px 14px;
+  background:rgba(255,255,255,.035);
+  border:1px solid var(--color-border);
+}
+.story-composer-modal .upload-area{
+  width:100%;
+  min-width:0;
+  margin-top:7px;
+  padding:14px;
+  border-radius:18px;
+  border:1px dashed rgba(129,140,248,.42);
+  background:
+    linear-gradient(135deg,rgba(99,102,241,.10),rgba(236,72,153,.055)),
+    rgba(255,255,255,.018);
+  justify-content:flex-start;
+  color:var(--color-ink-muted);
+}
+.story-composer-modal .upload-area:hover{
+  transform:none;
+  border-color:rgba(129,140,248,.72);
+  background:
+    linear-gradient(135deg,rgba(99,102,241,.15),rgba(236,72,153,.08)),
+    rgba(255,255,255,.03);
+}
+.story-composer-modal .upload-icon{
+  width:48px;
+  height:48px;
+  border-radius:15px;
+  font-size:22px;
+  background:rgba(99,102,241,.13);
+  border-color:rgba(129,140,248,.16);
+}
+.story-composer-modal .upload-text strong{
+  font-size:13px;
+}
+.story-composer-modal .upload-text small{
+  font-size:10px;
+  line-height:1.35;
+}
+.story-overlay .media-preview{
+  width:min(100%,390px);
+  aspect-ratio:9/16;
+  max-height:none;
+  margin:14px auto 0;
+  border-radius:22px;
+  background:#070b12;
+  border:1px solid rgba(255,255,255,.12);
+  box-shadow:0 20px 55px rgba(0,0,0,.32);
+}
+.story-overlay .media-preview img,
+.story-overlay .media-preview video{
+  width:100%;
+  height:100%;
+  min-height:0;
+  max-height:none;
+  object-fit:contain;
+  background:#070b12;
+}
+.story-composer-modal .story-editor{
+  margin-top:14px;
+  border-radius:22px;
+  border-color:rgba(148,163,184,.14);
+  background:rgba(0,0,0,.12);
+}
+.story-composer-modal .editor-toolbar{
+  gap:7px;
+  padding:9px;
+  background:rgba(255,255,255,.025);
+}
+.story-composer-modal .editor-tool-btn{
+  min-width:86px;
+  width:auto;
+  height:38px;
+  padding:0 12px;
+  border-radius:12px;
+  font-size:13px;
+  font-weight:800;
+}
+.story-composer-modal .editor-tool-btn[data-tool="filters"]::after{content:'Filters';margin-left:6px;font-size:10px;letter-spacing:.04em;text-transform:uppercase}
+.story-composer-modal .editor-tool-btn[data-tool="text"]::after{content:'Text';margin-left:6px;font-size:10px;letter-spacing:.04em;text-transform:uppercase}
+.story-composer-modal .editor-tool-btn[data-tool="stickers"]::after{content:'Stickers';margin-left:6px;font-size:10px;letter-spacing:.04em;text-transform:uppercase}
+.story-composer-modal .editor-canvas-wrapper{
+  max-width:390px;
+  min-height:300px;
+  max-height:min(62vh,620px);
+  padding:8px;
+  border-radius:18px;
+  background:
+    radial-gradient(circle at 50% 10%, rgba(99,102,241,.08), transparent 38%),
+    #05080d;
+  border-color:rgba(255,255,255,.10);
+}
+.story-composer-modal .editor-panel{
+  padding:12px 4px 4px;
+}
+.story-composer-modal .filter-options{
+  gap:7px;
+  margin-bottom:11px;
+  overflow-x:auto;
+  flex-wrap:nowrap;
+  padding-bottom:3px;
+  scrollbar-width:none;
+}
+.story-composer-modal .filter-options::-webkit-scrollbar{display:none}
+.story-composer-modal .filter-btn{
+  flex:none;
+  padding:8px 11px;
+  border-radius:999px;
+  font-size:10px;
+}
+.story-composer-modal .filter-intensity{
+  padding:10px 12px;
+  border:1px solid var(--color-border);
+  border-radius:14px;
+  background:rgba(255,255,255,.025);
+}
+.story-composer-modal .text-options{
+  padding:12px;
+  border:1px solid var(--color-border);
+  border-radius:16px;
+  background:rgba(255,255,255,.018);
+}
+.story-composer-modal .sticker-grid{
+  grid-template-columns:repeat(7,1fr);
+  gap:7px;
+  max-height:210px;
+}
+.story-composer-modal .sticker-btn{
+  border-radius:12px;
+  font-size:22px;
+}
+.story-composer-modal .editor-hint{
+  margin:8px 2px 0;
+}
+.story-composer-modal .story-privacy{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  gap:7px;
+  margin-top:14px!important;
+  padding:5px;
+  border:1px solid var(--color-border);
+  border-radius:15px;
+  background:rgba(255,255,255,.022);
+}
+.story-composer-modal .story-privacy .label-text{
+  grid-column:1/-1;
+  margin:1px 5px 0!important;
+  color:var(--color-ink-dim);
+  font-size:9px!important;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+.story-composer-modal .story-privacy-btn{
+  width:100%;
+  min-height:40px;
+  border-radius:11px;
+  text-transform:none;
+  font-size:11px;
+}
+.story-composer-modal .modal-actions{
+  margin-top:16px;
+  padding-top:12px;
+  gap:8px;
+}
+.story-composer-modal .modal-actions .btn{
+  min-height:44px;
+}
+.story-composer-modal .modal-actions .btn.primary{
+  min-width:150px;
+}
+.story-composer-modal #storyFormStatus{
+  margin:10px 2px 0;
+  min-height:18px;
+  font-size:11px;
+}
+@media(max-width:640px){
+  .story-composer-modal{
+    width:100%;
+    padding:14px;
+    border-radius:24px;
+  }
+  .story-composer-head h2{font-size:23px}
+  .story-composer-modal .editor-canvas-wrapper{
+    max-height:58vh;
+  }
+  .story-composer-modal .sticker-grid{
+    grid-template-columns:repeat(6,1fr);
+  }
+  .story-composer-modal .modal-actions{
+    position:sticky;
+    bottom:0;
+    margin-left:-14px;
+    margin-right:-14px;
+    margin-bottom:-14px;
+    padding:12px 14px 14px;
+    background:linear-gradient(180deg,rgba(20,27,46,.06),var(--color-surface-strong) 32%);
+    backdrop-filter:blur(12px);
+  }
+}
+@media(max-width:420px){
+  .story-composer-modal .editor-tool-btn{
+    min-width:0;
+    flex:1;
+  }
+  .story-composer-modal .story-privacy-btn{
+    font-size:10px;
+  }
+}
