@@ -6,29 +6,29 @@
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#081018",
-  "theme_color": "#081018",
+  "background_color": "#2D1B69",
+  "theme_color": "#6366F1",
   "icons": [
     {
-      "src": "icons/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
+      "src": "icons/trio-day-square-light.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
       "purpose": "any"
     },
     {
-      "src": "icons/icon-512.png",
+      "src": "icons/trio-day-round-light.svg",
       "sizes": "512x512",
-      "type": "image/png",
+      "type": "image/svg+xml",
       "purpose": "any"
     },
     {
-      "src": "icons/icon-512-maskable.png",
+      "src": "icons/trio-day-square-purple.svg",
       "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
     },
     {
-      "src": "icons/trio-day-logo.svg",
+      "src": "icons/trio-day-round-purple.svg",
       "sizes": "512x512",
       "type": "image/svg+xml",
       "purpose": "any"
