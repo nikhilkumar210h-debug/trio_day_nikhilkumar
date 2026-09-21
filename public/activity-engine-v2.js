@@ -143,10 +143,10 @@ function word(root,a,setPassed){
 function cipher(root,a,setPassed){
   const stage=shell(root,a,'Cipher Break','Crack five tiny codes. Read the pattern, then choose the decoded word.');
   const rounds=[
-    ['GDBU','FIRE',['FIRE','FIND','FIVE']],
+    ['GJSF','FIRE',['FIRE','FIND','FIVE']],
     ['DBU','CAT',['CAR','CAT','CAN']],
     ['IPNF','HOME',['HOME','HOPE','HOLD']],
-    ['UFSO','TURN',['TURN','TUNE','TENT']],
+    ['UVSO','TURN',['TURN','TUNE','TENT']],
     ['QMBZ','PLAY',['PLAY','PLAN','PLUG']]
   ];
   let i=0,score=0;
