@@ -4,6 +4,7 @@ import{doc,getDoc}from'https://www.gstatic.com/firebasejs/10.13.0/firebase-fires
 import{activeCatalogActivities}from'./activity-catalog.js?v=20260920-audit2';
 import{activityTypeInfo}from'./activity-ui.js';
 import{renderMechanicWorkspace}from'./activity-mechanics.js?v=20260921-phase3';
+import{renderFlagshipV2}from'./activity-engine-v2.js?v=20260921-v2';
 import{renderBuildWorkspace}from'./forge-engine.js?v=20260919-engine4';
 import{getInteractiveConfig,getChallengeRounds,getGameRounds}from'./forge-interactions.js?v=20260919-interactions4';
 import{completeTask as completeCommunityTask}from'./gamification/community-tasks.js?v=20260919-community5';
@@ -99,8 +100,8 @@ function renderQuizWorkspace(root,cfg,isLesson){
      const proofText=proofInput.value.trim();
      if(!chosen) return;
      if(activityEvidence) activityEvidence.proofText=proofText;
-     if(proofText.length<20 || proofText.split(/\s+/).filter(Boolean).length<4){
-       result.textContent='Add a little more reasoning (at least 20 characters).';
+     if(proofText.length<30 && proofText.split(/\s+/).filter(Boolean).length<5){
+       result.textContent='Add a little more reasoning (at least 30 characters or 5 words).';
        result.className='forge-result bad';
        proofInput.focus();
        return;
@@ -234,11 +235,17 @@ function render(){
  remaining=Math.max(60,Number(activity.durationMin||20)*60);
  timerEndsAt=0;
  paintTimer();
- if(activity.type==='game'){
+ const timerAllowed=['build','challenge'].includes(activity.type);
+ if(!timerAllowed){
+   if(timer){clearInterval(timer);timer=null;timerEndsAt=0;}
+   $('activityTimer').hidden=true;
+   $('timerBtn').hidden=true;
+ }else if(activity.type==='game'){
    $('timerBtn').hidden=true;
    $('timerDisplay').textContent='ROOM';
    $('timerDisplay').setAttribute('aria-label','This game uses the live room timer');
- }else{
+ }else if(timerAllowed){
+   $('activityTimer').hidden=false;
    $('timerBtn').hidden=false;
    $('timerBtn').textContent='Start timer';
  }
@@ -247,13 +254,13 @@ function render(){
  const customCfg = activity.interaction?.kind === 'quiz' ? activity.interaction : null;
  const cfg=customCfg || getInteractiveConfig(engineId);
 
- if(!renderMechanicWorkspace(workspace,activity,setPassed)){
+ if(!renderFlagshipV2(workspace,activity,setPassed) && !renderMechanicWorkspace(workspace,activity,setPassed)){
    if(activity.type==='build')renderBuildWorkspace(workspace,activity,setPassed);
  else if(activity.type==='puzzle'&&cfg)renderQuizWorkspace(workspace,cfg,false);
  else if(activity.type==='learn'&&cfg)renderQuizWorkspace(workspace,cfg,true);
  else if(activity.type==='challenge')renderChallengeWorkspace(workspace);
  else if(activity.type==='game')renderGameWorkspace(workspace);
- else{workspace.hidden=true;setPassed(true)}
+ else{workspace.hidden=true;const b=$('completeBtn');if(b){b.disabled=true;b.hidden=true;b.textContent='Activity unavailable'}}
  }
  decorateActivityExperience();
  updateCompleteState();
