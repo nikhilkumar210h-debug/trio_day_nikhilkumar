@@ -1,8 +1,8 @@
-/* NKM Navigation — Mobile 5-item bottom + Desktop left rail (Phase 3)
-   Canonical: Today / Discover / Do / Chat / You.
+/* NKM Navigation — Mobile 4-item bottom + Desktop left rail (Phase 3)
+   Canonical: Today / Discover / Do / You.
    Uses semantic tokens from tokens.css.
    ═══════════════════════════════════════════════════════════════ */
-/* ── Bottom nav (mobile) — 5 equal columns, no Create inside grid ── */
+/* ── Bottom nav (mobile) — 4 equal columns ── */
 .bottom-nav {
   position: fixed;
   left: 0;
@@ -16,10 +16,10 @@
   padding-bottom: env(safe-area-inset-bottom);
 }
 .nav-row {
-  width: min(520px, 100%);
+  width: min(440px, 100%);
   margin: auto;
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 2px;
   padding: 6px 6px 4px;
   align-items: stretch;
@@ -120,7 +120,7 @@
 /* Prevent white flash on navigation — keep html dark before paint */
 html { background: var(--color-bg); }
 body { background: var(--color-bg); }
-/* ── Mobile cleanup — hide legacy floating create that collides with new nav ── */
+/* ── Mobile cleanup ── */
 @media (max-width: 839px) {
   .fab { display: none !important; }
   #trioRankStrip { bottom: 62px; } /* sit clearly above 5-item nav */
@@ -146,4 +146,12 @@ html, body { overflow-x: hidden; }
     margin-right: auto !important;
     max-width: calc(100% - 240px) !important;
   }
+}
+
+/* 2026-09-21 navigation polish: four focused destinations, no Create/Chat duplication. */
+@media (max-width: 839px) {
+  .bottom-nav .nav-row { max-width: 440px; padding: 7px 10px 5px; gap: 5px; }
+  .bottom-nav .nav-btn { min-height: 46px; border: 1px solid transparent; transition: background .16s ease, color .16s ease, transform .16s ease, border-color .16s ease; }
+  .bottom-nav .nav-btn.active { border-color: rgba(99,102,241,.14); box-shadow: 0 4px 16px rgba(0,0,0,.08); }
+  .bottom-nav .nav-btn:active { transform: scale(.97); }
 }

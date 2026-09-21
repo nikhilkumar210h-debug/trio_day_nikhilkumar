@@ -53,34 +53,6 @@
   cursor: pointer;
 }
 @media (min-width: 840px) { .nkm-header-search-btn { display: none; } }
-/* Chat — visible in all sections at top, near Notification */
-.nkm-header-chat {
-  width: 36px;
-  height: 36px;
-  border: 1px solid var(--color-border);
-  background: var(--color-glass);
-  border-radius: var(--radius-sm);
-  color: var(--color-ink-muted);
-  display: grid;
-  place-items: center;
-  cursor: pointer;
-  position: relative;
-  text-decoration: none;
-  flex: 0 0 36px;
-}
-.nkm-header-chat:hover { background: var(--color-glass-hover); color: var(--color-ink); }
-.nkm-header-chat .nav-chat-dot {
-  position: absolute;
-  top: 3px;
-  right: 3px;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--color-danger);
-  border: 2px solid var(--color-bg);
-  box-shadow: 0 0 0 1px rgba(239,68,68,.4);
-}
-.nkm-header-chat .nav-chat-dot[hidden] { display: none !important; }
 /* Keep header above content but below sheets (200+ ) */
 .topbar { z-index: 60; }
 .tricolor-strip { z-index: 61; }
@@ -116,8 +88,7 @@
 @media (max-width: 839px) {
   .topbar-actions .icon-btn,
   .topbar-actions #headerThemeBtn,
-  .topbar-actions .nkm-header-search-btn,
-  .topbar-actions .nkm-header-chat {
+  .topbar-actions .nkm-header-search-btn {
     width: 36px;
     height: 36px;
     flex: 0 0 36px;
