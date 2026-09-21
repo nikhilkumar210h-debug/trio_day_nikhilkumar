@@ -1,163 +1,25 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#0a0f1a">
-<title>Create Activity — Trio Day</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap">
-<link rel="stylesheet" href="styles/tokens.css">
-<link rel="stylesheet" href="styles/nav.css">
-<link rel="stylesheet" href="styles/header.css">
-<link rel="stylesheet" href="styles/components.css">
-<link rel="stylesheet" href="style.css">
-<link rel="stylesheet" href="styles/polish.css?v=6">
-<link rel="stylesheet" href="activities.css?v=3">
-<link rel="stylesheet" href="activity-create.css?v=4">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a0f1a"><title>Create Challenge — Trio Day</title>
+<link rel="stylesheet" href="styles/tokens.css"><link rel="stylesheet" href="styles/nav.css"><link rel="stylesheet" href="styles/header.css"><link rel="stylesheet" href="styles/components.css"><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="styles/polish.css?v=6">
+<style>
+.challenge-create{max-width:760px;margin:auto;padding:28px 18px 100px}.cc-hero{padding:24px 0 18px}.cc-kicker{font-size:11px;font-weight:800;letter-spacing:.16em;opacity:.65}.cc-hero h1{font-size:clamp(30px,6vw,48px);margin:8px 0}.cc-hero p{opacity:.72;max-width:620px}.cc-card{border:1px solid var(--color-border);background:var(--color-surface);border-radius:24px;padding:22px;margin-top:16px}.cc-label{display:block;font-size:12px;font-weight:800;margin:0 0 8px}.cc-input,.cc-textarea{width:100%;box-sizing:border-box;border:1px solid var(--color-border);background:var(--color-bg);color:var(--color-ink);border-radius:14px;padding:13px;font:inherit;outline:none}.cc-textarea{min-height:100px;resize:vertical}.cc-field{margin-bottom:18px}.cc-options{display:grid;gap:10px}.cc-option{display:flex;gap:9px;align-items:center}.cc-option input{flex:1}.cc-remove{border:0;background:transparent;color:inherit;opacity:.55;cursor:pointer}.cc-actions{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}.cc-note{font-size:12px;opacity:.6;margin-top:10px}.cc-preview{border:1px solid var(--color-border);border-radius:18px;padding:18px}.cc-preview strong{display:block;font-size:17px;margin-bottom:14px}.cc-preview button{width:100%;text-align:left;margin:5px 0;border:1px solid var(--color-border);background:var(--color-bg);color:var(--color-ink);border-radius:12px;padding:11px;cursor:pointer}
+</style>
 </head>
-<body class="app-page creator-new-page">
-<header class="topbar">
-  <div class="topbar-inner">
-    <a class="brand" href="all-users.html"><span class="brand-chakra">✦</span><span class="brand-copy"><strong>trio_day</strong><small>FORGE</small></span></a>
-    <div id="authStatus" class="auth-status"></div>
-  </div>
-</header>
-
-<main class="creator-shell creator-wizard">
-  <section class="creator-hero creator-hero--simple">
-    <div>
-      <span class="eyebrow">FORGE · CREATE</span>
-      <h1>Create in a minute.</h1>
-      <p>Start from a working idea, change the important parts, and publish. You do not need to learn how Forge works.</p>
-    </div>
-    <div class="creator-hero-orbit" aria-hidden="true"><span class="creator-orbit-dot"></span><span class="creator-orbit-ring"></span></div>
-  </section>
-
-  <div class="creator-progress" id="creatorProgress" aria-label="Create progress">
-    <button type="button" class="creator-progress-step active" data-step="1"><span>1</span><strong>Choose</strong></button>
-    <i></i>
-    <button type="button" class="creator-progress-step" data-step="2"><span>2</span><strong>Build</strong></button>
-    <i></i>
-    <button type="button" class="creator-progress-step" data-step="3"><span>3</span><strong>Publish</strong></button>
-  </div>
-
-  <section class="creator-panel creator-wizard-step" data-wizard-step="1">
-    <div class="creator-step-heading">
-      <div class="creator-step-badge">01</div>
-      <div><h2>What kind of activity?</h2><p>Choose the lane. Forge handles the complex part.</p></div>
-    </div>
-    <div id="creatorLanes" class="creator-lane-grid"></div>
-    <div class="creator-wizard-actions"><button type="button" id="toStep2" class="nkm-btn nkm-btn--primary">Next →</button></div>
-  </section>
-
-  <section class="creator-panel creator-wizard-step" data-wizard-step="2" hidden>
-    <div class="creator-step-heading">
-      <div class="creator-step-badge">02</div>
-      <div><h2>Build it your way</h2><p id="creatorStageHint">Start with a style. We will only show the choices you need next.</p></div>
-    </div>
-
-    <div class="creator-stage" id="creatorStage">
-      <div class="creator-stage-step" data-editor-stage="0">
-        <div class="creator-choice-heading">
-          <span class="creator-choice-kicker">STARTING POINT</span>
-          <strong>How do you want to start?</strong>
-          <small>Pick a ready idea or start from a genuinely blank canvas.</small>
-        </div>
-        <div id="creatorTemplates" class="creator-starter-grid"></div>
-      </div>
-
-      <form id="creatorForm" class="creator-form creator-form--simple" novalidate>
-        <div class="creator-stage-step" data-editor-stage="1" hidden>
-          <div class="creator-choice-heading">
-            <span class="creator-choice-kicker">THE IDEA</span>
-            <strong>Give people the big picture</strong>
-            <small>Just three things: name it, explain it, define the finish line.</small>
-          </div>
-          <div class="creator-stage-fields">
-            <div class="creator-field"><label for="title">Name</label><input id="title" maxlength="100" required placeholder="e.g. Decode the Mystery"></div>
-            <div class="creator-field"><label for="description">What will people do?</label><textarea id="description" maxlength="300" required rows="3" placeholder="Describe the activity in one or two clear sentences."></textarea></div>
-            <div class="creator-field"><label for="goal">Goal</label><input id="goal" maxlength="240" placeholder="What counts as finished?"></div>
-          </div>
-        </div>
-
-        <div class="creator-stage-step" data-editor-stage="2" hidden>
-          <div class="creator-choice-heading">
-            <span class="creator-choice-kicker">THE EXPERIENCE</span>
-            <strong>How should people actually do it?</strong>
-            <small>Choose the interaction first. The editor below changes to match it.</small>
-          </div>
-          <div id="customInteraction" class="creator-interaction-editor"></div>
-        </div>
-
-        <div class="creator-stage-step" data-editor-stage="3" hidden>
-          <div class="creator-choice-heading">
-            <span class="creator-choice-kicker">FINAL DETAILS</span>
-            <strong>Set the feel and limits</strong>
-            <small>These are optional controls. Safe defaults are already selected.</small>
-          </div>
-          <div class="creator-advanced-grid creator-details-grid">
-            <div class="creator-field"><label for="category">Topic</label><input id="category" maxlength="60" placeholder="Logic, SQL, Science…"></div>
-            <div class="creator-field"><label for="durationMin">Time</label><select id="durationMin"><option value="10">10 min</option><option value="15">15 min</option><option value="20" selected>20 min</option><option value="30">30 min</option><option value="45">45 min</option></select></div>
-            <div class="creator-field"><label for="difficulty">Difficulty</label><select id="difficulty"><option>Easy</option><option selected>Medium</option><option>Hard</option></select></div>
-            <div class="creator-field"><label for="expiresDays">Live for</label><select id="expiresDays"><option value="7">7 days</option><option value="14" selected>14 days</option><option value="21">21 days</option><option value="30">30 days</option><option value="40">40 days</option></select></div>
-            <div class="creator-field creator-details-wide"><label for="instructions">Extra instructions</label><textarea id="instructions" maxlength="900" rows="4" placeholder="Anything participants should know before starting."></textarea></div>
-          </div>
-        </div>
-      </form>
-    </div>
-
-    <div id="creatorCanvasVisual" class="creator-canvas-visual creator-canvas-visual--guided" aria-hidden="true">
-      <div class="creator-canvas-grid"></div>
-      <div id="creatorCanvasIcon" class="creator-canvas-icon">✦</div>
-      <div class="creator-canvas-copy"><span>LIVE DRAFT</span><strong id="creatorCanvasTitle">Your activity is taking shape</strong><small id="creatorCanvasMeta">Choose a starting point to begin.</small></div>
-      <div class="creator-canvas-signal"><i></i><i></i><i></i></div>
-    </div>
-
-    <div class="creator-wizard-actions creator-stage-actions">
-      <button type="button" id="backStep1" class="nkm-btn">← Back</button>
-      <button type="button" id="creatorStageBack" class="nkm-btn" hidden>← Previous</button>
-      <button type="button" id="creatorStageNext" class="nkm-btn nkm-btn--primary">Continue →</button>
-    </div>
-  </section>
-
-  <section class="creator-panel creator-wizard-step" data-wizard-step="3" hidden>
-    <div class="creator-step-heading">
-      <div class="creator-step-badge">03</div>
-      <div><h2>Looks good?</h2><p>Check the activity once, then put it in Discover.</p></div>
-    </div>
-    <div class="creator-preview-layout">
-      <div id="creatorLivePreviewCard"></div>
-      <div class="creator-preview-hint">
-        <button type="button" id="openCreatorPreview" class="creator-preview-open nkm-btn nkm-btn--secondary">↗ Open full preview</button>
-        <span>✦</span><div><strong>People must actually do something.</strong><small>Puzzle/Learn asks for an answer plus reasoning. Build uses a real board. Challenge uses multiple rounds. Games run in rooms.</small></div>
-      </div>
-    </div>
-    <div id="formStatus" class="status" aria-live="polite"></div>
-    <div class="creator-wizard-actions">
-      <button type="button" id="backStep2" class="nkm-btn">← Edit</button>
-      <button type="submit" form="creatorForm" id="submitBtn" class="nkm-btn nkm-btn--primary creator-publish-btn"><span>Publish activity</span><span>↗</span></button>
-    </div>
-  </section>
+<body class="app-page">
+<header class="topbar"><div class="topbar-inner"><a class="brand" href="all-users.html"><span class="brand-chakra">⚡</span><span class="brand-copy"><strong>trio_day</strong><small>CHALLENGES</small></span></a><div id="authStatus" class="auth-status"></div></div></header>
+<main class="challenge-create">
+<section class="cc-hero"><span class="cc-kicker">CREATE · CHALLENGE</span><h1>Ask something people want to answer.</h1><p>Make a quick choice, give people a reason to respond, and turn the answers into a conversation.</p></section>
+<section class="cc-card">
+<div class="cc-field"><label class="cc-label" for="question">Your question</label><textarea id="question" class="cc-textarea" maxlength="240" placeholder="e.g. You get one free trip tomorrow. Where are you going?"></textarea></div>
+<div class="cc-field"><label class="cc-label">Answer choices</label><div id="options" class="cc-options"></div><button id="addOption" type="button" class="nkm-btn">+ Add choice</button></div>
+<div class="cc-field"><label class="cc-label" for="topic">Topic <span style="opacity:.5">(optional)</span></label><input id="topic" class="cc-input" maxlength="50" placeholder="Travel, food, tech…"></div>
+<div class="cc-actions"><a class="nkm-btn" href="all-users.html">← Back</a><button id="publish" type="button" class="nkm-btn nkm-btn--primary">Publish Challenge →</button></div>
+<div id="status" class="cc-note" aria-live="polite"></div>
+</section>
+<section class="cc-card"><span class="cc-kicker">LIVE PREVIEW</span><div class="cc-preview" id="preview"><strong>Your question will appear here.</strong></div><p class="cc-note">Your challenge stays lightweight: one question, a few choices, one social moment.</p></section>
 </main>
-
-<div id="creatorPreviewModal" class="creator-preview-modal" hidden aria-hidden="true">
-  <div class="creator-preview-modal-backdrop" data-preview-close></div>
-  <section class="creator-preview-modal-card" role="dialog" aria-modal="true" aria-labelledby="creatorPreviewModalTitle">
-    <div class="creator-preview-modal-head">
-      <div><span>PREVIEW MODE</span><h2 id="creatorPreviewModalTitle">Your activity</h2></div>
-      <button type="button" class="creator-preview-modal-close" data-preview-close aria-label="Close preview">×</button>
-    </div>
-    <div id="creatorPreviewModalBody" class="creator-preview-modal-body"></div>
-    <div class="creator-preview-modal-foot"><small>This is how the activity experience will feel before publishing.</small><button type="button" class="nkm-btn nkm-btn--primary" data-preview-close>Done</button></div>
-  </section>
-</div>
-
-<script type="module" src="auth-guard.js"></script>
-<script type="module" src="auth-ui.js"></script>
-<script type="module" src="theme.js"></script>
-<script type="module" src="ui/header.js"></script>
-<script type="module" src="ui/nav.js"></script>
-<script type="module" src="task-create.js?v=20260920-createfix1"></script>
-</body>
-</html>
+<script type="module" src="auth-guard.js"></script><script type="module" src="auth-ui.js"></script><script type="module" src="theme.js"></script><script type="module" src="ui/header.js"></script><script type="module" src="ui/nav.js"></script><script type="module" src="challenge-create.js?v=20260921-phase2"></script>
+</body></html>
