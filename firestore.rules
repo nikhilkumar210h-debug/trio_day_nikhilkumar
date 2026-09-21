@@ -754,6 +754,43 @@ service cloud.firestore {
         )
       );
       allow delete: if signedIn() && resource.data.hostUid == request.auth.uid;
+
+      match /members/{memberUid} {
+        allow read: if signedIn() && (
+          owner(memberUid)
+          || exists(/databases/$(database)/documents/rooms/$(roomId)/members/$(request.auth.uid))
+        );
+        allow create: if signedIn()
+          && owner(memberUid)
+          && request.resource.data.uid == request.auth.uid
+          && request.resource.data.name is string
+          && request.resource.data.name.size() <= 50
+          && (!('photoURL' in request.resource.data) || request.resource.data.photoURL is string || request.resource.data.photoURL == null)
+          && request.resource.data.joinedAtMs is number
+          && (
+            (
+              !exists(/databases/$(database)/documents/rooms/$(roomId))
+              && getAfter(/databases/$(database)/documents/rooms/$(roomId)).data.hostUid == request.auth.uid
+              && getAfter(/databases/$(database)/documents/rooms/$(roomId)).data.status == 'open'
+              && getAfter(/databases/$(database)/documents/rooms/$(roomId)).data.memberCount == 1
+            )
+            || (
+              exists(/databases/$(database)/documents/rooms/$(roomId))
+              && get(/databases/$(database)/documents/rooms/$(roomId)).data.status == 'open'
+              && get(/databases/$(database)/documents/rooms/$(roomId)).data.expiresAtMs > request.time.toMillis()
+              && getAfter(/databases/$(database)/documents/rooms/$(roomId)).data.memberCount == get(/databases/$(database)/documents/rooms/$(roomId)).data.memberCount + 1
+              && getAfter(/databases/$(database)/documents/rooms/$(roomId)).data.memberCount <= getAfter(/databases/$(database)/documents/rooms/$(roomId)).data.maxPlayers
+            )
+          );
+        allow delete: if signedIn()
+          && owner(memberUid)
+          && exists(/databases/$(database)/documents/rooms/$(roomId))
+          && get(/databases/$(database)/documents/rooms/$(roomId)).data.hostUid != request.auth.uid
+          && getAfter(/databases/$(database)/documents/rooms/$(roomId)).data.memberCount == get(/databases/$(database)/documents/rooms/$(roomId)).data.memberCount - 1
+          && getAfter(/databases/$(database)/documents/rooms/$(roomId)).data.memberCount >= 0;
+        allow update: if false;
+      }
+
       match /invites/{targetUid} {
         allow read: if signedIn() && (owner(targetUid) || get(/databases/$(database)/documents/rooms/$(roomId)).data.hostUid == request.auth.uid);
         allow create: if signedIn()
