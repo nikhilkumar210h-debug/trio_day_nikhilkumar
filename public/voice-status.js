@@ -1,12 +1,11 @@
 import { auth, db } from './firebase-init.js';
 import { makeUserId } from './utils.js';
 import { trioCache } from './trio-cache.js';
+import { uploadStoryMedia } from './image-upload.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
 import { collection, addDoc, serverTimestamp, doc, getDoc, getDocs, query, limit } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 
 const CLOUD_NAME = 'vyhglthg';
-const UPLOAD_PRESET = 'trio_uploads';
-const VIDEO_UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/video/upload`;
 
 const $ = id => document.getElementById(id);
 
@@ -138,16 +137,10 @@ async function getMyProfile(){
 }
 
 async function uploadVoiceAudio(uid, blob){
-  const form=new FormData();
-  const fileName = `voice_${Date.now()}.webm`;
-  form.append('file', blob, fileName);
-  form.append('upload_preset', UPLOAD_PRESET);
-  form.append('folder', 'trio/voice');
-  form.append('public_id', `${uid}_${Date.now()}_${Math.random().toString(36).slice(2,8)}`);
-  const res=await fetch(VIDEO_UPLOAD_URL, { method:'POST', body: form });
-  const data=await res.json().catch(()=>({}));
-  if(!res.ok || !data.secure_url) throw Error(data?.error?.message || `Cloudinary upload failed (${res.status})`);
-  return data.secure_url;
+  const file = new File([blob], `voice_${Date.now()}.webm`, { type: blob.type || 'audio/webm' });
+  const token = await currentUser?.getIdToken();
+  if (!token) throw Error('Please sign in again before sharing voice status.');
+  return uploadStoryMedia(uid, file, token);
 }
 
 async function shareVoice(){
@@ -159,7 +152,7 @@ async function shareVoice(){
   try{
     const me = await getMyProfile();
     const mediaUrl = await uploadVoiceAudio(currentUser.uid, audioBlob);
-    setStatus('Saving post…');
+    setStatus('Saving voice status…');
     const now = Date.now();
     // Voice as story — shows in stories strip, auto-deletes after 24h
     let allowedUids = [];
@@ -191,7 +184,7 @@ async function shareVoice(){
       expiresAtMs: now + 24*60*60*1000
     });
     try{ trioCache.invalidate(`feed_recent_${currentUser.uid}`); trioCache.invalidate(`posts_${currentUser.uid}`); trioCache.invalidate('feed'); }catch{}
-    setStatus('Voice posted ✅ Redirecting…');
+    setStatus('Voice status shared ✅ Redirecting…');
     setTimeout(()=>{ location.href='index.html'; }, 2000);
   }catch(err){
     console.error(err);
