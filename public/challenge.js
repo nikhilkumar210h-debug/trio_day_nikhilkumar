@@ -127,6 +127,11 @@ function addCard(c, autoOpen = false) {
   const card = document.createElement('article');
   card.className = 'challenge-main-card';
   card.dataset.challengeId = c.id;
+  const currentIndex = CHALLENGES.findIndex(x => x.id === c.id);
+  const nextChallenge = currentIndex >= 0
+    ? CHALLENGES[(currentIndex + 1) % CHALLENGES.length]
+    : CHALLENGES[0];
+
   card.innerHTML =
     '<span class="challenge-tag">' + esc(c.tag || 'COMMUNITY') + '</span>' +
     '<h2>' + esc(c.q) + '</h2>' +
@@ -136,7 +141,7 @@ function addCard(c, autoOpen = false) {
     '<div class="challenge-result" hidden></div>' +
     '<div class="challenge-links">' +
       '<button type="button" class="nkm-btn nkm-btn--secondary challenge-discuss-btn">💬 Join the discussion</button>' +
-      '<a class="nkm-btn nkm-btn--primary" href="all-users.html">Next Challenge →</a>' +
+      '<a class="nkm-btn nkm-btn--primary" href="challenge.html?challenge=' + encodeURIComponent(nextChallenge.id) + '">Next Challenge →</a>' +
     '</div>' +
     '<section class="challenge-thread" hidden aria-label="Public challenge discussion">' +
       '<div class="challenge-thread-head"><div><strong>Open discussion</strong><span>Everyone answering this challenge can join.</span></div><span class="challenge-thread-count">Be the first voice</span></div>' +
