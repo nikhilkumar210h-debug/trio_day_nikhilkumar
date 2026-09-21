@@ -1407,6 +1407,8 @@ function buildStoryCard(data) {
   return item;
 }
 
+window.buildStoryCard = buildStoryCard;
+
 function renderHeroStories(stories){
   const wrap = document.getElementById('heroStories');
   const empty = document.getElementById('heroStoriesEmpty');
