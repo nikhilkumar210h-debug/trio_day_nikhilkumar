@@ -54,9 +54,9 @@
 }
 .nav-btn.active {
   color: #EDE9FE;
-  background: linear-gradient(135deg, rgba(139,92,246,.22), rgba(99,102,241,.16));
-  border-color: rgba(167,139,250,.28);
-  box-shadow: inset 0 0 0 1px rgba(196,181,253,.08), 0 6px 20px rgba(99,102,241,.12);
+  background: linear-gradient(135deg, rgba(139,92,246,.42), rgba(99,102,241,.30));
+  border-color: rgba(196,181,253,.46);
+  box-shadow: inset 0 0 0 1px rgba(237,233,254,.10), 0 0 0 1px rgba(139,92,246,.12), 0 8px 24px rgba(99,102,241,.22);
 }
 .nav-btn.active .nav-label { color: #F5F3FF; }
 .nkm-rail .nav-btn.active {
@@ -161,3 +161,20 @@ html, body { overflow-x: hidden; }
   .bottom-nav .nav-btn.active { border-color: rgba(167,139,250,.26); box-shadow: 0 6px 18px rgba(99,102,241,.12); }
   .bottom-nav .nav-btn:active { transform: scale(.97); }
 }
+
+/* Route-backed active state: keeps the current destination unmistakable. */
+body[data-current-nav="today"] .nav-btn[data-nav="today"],
+body[data-current-nav="discover"] .nav-btn[data-nav="discover"],
+body[data-current-nav="challenge"] .nav-btn[data-nav="challenge"],
+body[data-current-nav="chat"] .nav-btn[data-nav="chat"],
+body[data-current-nav="you"] .nav-btn[data-nav="you"] {
+  color: #F5F3FF;
+  background: linear-gradient(135deg, rgba(139,92,246,.42), rgba(99,102,241,.30));
+  border-color: rgba(196,181,253,.46);
+  box-shadow: inset 0 0 0 1px rgba(237,233,254,.10), 0 0 0 1px rgba(139,92,246,.12), 0 8px 24px rgba(99,102,241,.22);
+}
+body[data-current-nav="today"] .nav-btn[data-nav="today"] .nav-icon,
+body[data-current-nav="discover"] .nav-btn[data-nav="discover"] .nav-icon,
+body[data-current-nav="challenge"] .nav-btn[data-nav="challenge"] .nav-icon,
+body[data-current-nav="chat"] .nav-btn[data-nav="chat"] .nav-icon,
+body[data-current-nav="you"] .nav-btn[data-nav="you"] .nav-icon { color: #C4B5FD; }
