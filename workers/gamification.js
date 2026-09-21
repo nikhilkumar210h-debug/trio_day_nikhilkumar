@@ -233,12 +233,30 @@ async function handleCompleteCatalog(uid,body,env){
   return {ok:true,already:!created,award};
 }
 
+function evaluateBadgesDelta(currentBadges, xp, streak, verified = null) {
+  const have = new Set(Array.isArray(currentBadges) ? currentBadges : []);
+  const earned = [];
+  const add = id => { if (!have.has(id)) { have.add(id); earned.push(id); } };
+
+  if (verified === 'first_complete' || (Array.isArray(verified) && verified.includes('verified_first_complete'))) add('badge_first_complete');
+  if (verified === 'verified_first_post') add('badge_first_post');
+  if (verified === 'verified_monthly_engage') add('badge_engager');
+  if (Number(streak) >= 3) add('badge_streak_3');
+  if (Number(streak) >= 7) add('badge_streak_7');
+  if (Number(streak) >= 30) add('badge_streak_30');
+  if (Number(xp) >= 500) add('badge_xp_500');
+  if (Number(xp) >= 1000) add('badge_xp_1000');
+
+  return earned;
+}
+
 async function handleAwardXp(uid, body, env) {
   const meta = body?.meta || {};
+  const challengeId = String(meta.challengeId || '').trim();
   const communityTaskId = String(meta.communityTaskId || '').trim();
   const catalogActivityId = String(meta.catalogActivityId || '').trim().toLowerCase();
   const templateId = String(meta.templateId || '').trim();
-  if (!communityTaskId && !catalogActivityId && !templateId) throw new Error('activity context required');
+  if (!challengeId && !communityTaskId && !catalogActivityId && !templateId) throw new Error('activity context required');
 
   const projectId = env.FIREBASE_PROJECT_ID;
   const token = await getAccessToken(env);
@@ -246,7 +264,14 @@ async function handleAwardXp(uid, body, env) {
   let amount = 0;
   let grantKey = '';
 
-  if (communityTaskId) {
+  if (challengeId) {
+    const answer = await fsGet(projectId, token, 'challengeAnswers/' + uid + '_' + challengeId);
+    if (!answer || answer.uid !== uid || answer.challengeId !== challengeId || !Number.isInteger(Number(answer.choice))) throw new Error('Challenge answer not found');
+    const task = await fsGet(projectId, token, 'communityTasks/' + challengeId);
+    if (task && task.creatorUid === uid) throw new Error('Creators cannot earn XP from their own challenge');
+    amount = 25;
+    grantKey = 'challenge_' + challengeId;
+  } else if (communityTaskId) {
     const task = await fsGet(projectId, token, 'communityTasks/' + communityTaskId);
     if (!task || task.status !== 'active') throw new Error('Community activity is not active');
     if (task.creatorUid === uid) throw new Error('Creators cannot earn XP from their own activity');
