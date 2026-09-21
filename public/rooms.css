@@ -78,3 +78,14 @@
   .room-activity .activity-card-art{min-height:96px}
   .room-chat-log{height:165px}
 }
+
+/* Production live-room mobile hierarchy: keep the shared workspace and chat first. */
+@media(max-width:760px){
+  .room-grid{display:flex;flex-direction:column;gap:10px}
+  .room-main-card{order:1}
+  .room-side-card{order:2}
+  .room-main-card,.room-side-card{width:100%;min-width:0}
+  .room-workspace{min-width:0}
+  .room-workspace > *{max-width:100%}
+  .room-chat-form input{min-width:0}
+}
