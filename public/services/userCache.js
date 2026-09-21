@@ -54,3 +54,12 @@ export async function findUserCached(uid) {
   } catch {}
   return null;
 }
+
+// Gamification writes emit this event after XP changes. Invalidate the cached
+// user document so profile/You never waits for the normal 5-minute TTL.
+if (typeof window !== 'undefined') {
+  window.addEventListener('trio-xp-changed', event => {
+    const uid = event?.detail?.uid;
+    if (uid) trioCache.invalidate(`user_${uid}`);
+  });
+}
