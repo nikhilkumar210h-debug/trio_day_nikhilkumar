@@ -940,42 +940,6 @@ const sp = $('storyPreview');
 if (sp) storyPreviewObserver.observe(sp, { childList: true });
 setTimeout(loadEditorFromPreview, 100);
 
-form?.addEventListener('submit', async e => {
-  e.preventDefault();
-  if (!currentUser) { setStatus('Please login first.', true); return; }
-  const text = message.value.trim();
-  if (!text && !selectedFile) return setStatus('Add a caption or photo.', true);
-  submit.disabled = true; submit.textContent = 'Posting…';
-  try {
-    const me = await getMyProfile(currentUser.uid);
-    let mediaUrl = null;
-    if (selectedFile) {
-      setStatus('Compressing photo…');
-      let fileToUpload = selectedFile;
-      if (postFilter !== 'none' && selectedFile.type.startsWith('image/')) {
-        const filtered = await applyFilterToFile(selectedFile, postFilter, postFilterIntensity);
-        if (filtered) fileToUpload = filtered;
-      }
-      setStatus('Uploading…');
-      const firebaseToken = await currentUser.getIdToken();
-      mediaUrl = await uploadPostImage(currentUser.uid, fileToUpload, firebaseToken);
-    }
-    await addDoc(collection(db, 'posts'), {
-      name: me?.name || currentUser.displayName || 'User',
-      userId: me?.userId || makeUserId(currentUser.uid),
-      uid: currentUser.uid,
-      photoURL: me?.photoURL || currentUser.photoURL || null,
-      message: text || '📸', mediaUrl, type: 'post',
-      createdAt: serverTimestamp(), createdAtMs: Date.now()
-    });
-    trioCache.invalidate(`posts_${currentUser.uid}`);
-    onPostCreated(currentUser.uid);
-    SoundManager.success();
-    setStatus('Posted ✅'); setTimeout(closeModal, 250);
-  } catch (err) { console.error(err); setStatus(err.message || 'Could not save post.', true); }
-  finally { submit.disabled = false; submit.textContent = 'Post'; }
-});
-
 storyForm?.addEventListener('submit', async e => {
     e.preventDefault();
     if (!currentUser) { setStoryStatus('Please login first.', true); return; }
