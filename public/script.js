@@ -99,6 +99,15 @@ function renderGreeting() {
     const userName = currentUser?.displayName || 'Friend';
     nameEl.textContent = userName.split(' ')[0];
   }
+  const avatarEl = $('todayAvatar');
+  if (avatarEl) {
+    const name = currentUser?.displayName || 'N';
+    const initial = name.trim().charAt(0).toUpperCase() || 'N';
+    if (currentUser?.photoURL) avatarEl.innerHTML = '<img src="' + escapeHtml(currentUser.photoURL) + '" alt="">';
+    else avatarEl.textContent = initial;
+    avatarEl.title = name;
+    avatarEl.onclick = () => { location.href = 'profile.html'; };
+  }
   if (subEl) {
     const messages = [
       'Small steps create big results.',
