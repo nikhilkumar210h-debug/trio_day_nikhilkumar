@@ -228,6 +228,7 @@ function render(){
  else if(activity.type==='game')renderGameWorkspace(workspace);
  else{workspace.hidden=true;setPassed(true)}
  updateCompleteState();
+ refreshExistingCompletion();
 }
 
 function updateCompleteState(){
