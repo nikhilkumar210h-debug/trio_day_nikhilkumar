@@ -623,6 +623,8 @@ storyMedia?.addEventListener('change', () => {
     selectedPreviewUrl = URL.createObjectURL(f);
     const img = document.createElement('img'); img.src = selectedPreviewUrl; img.alt = 'Preview'; img.width = 800; img.height = 600; img.decoding = 'async'; img.style.aspectRatio = '4 / 3';
     storyPreview.appendChild(img); mediaEl=img;
+    // Desktop gets the same large stage as video preview instead of a tiny 560px modal.
+    storyOverlay?.classList.add('is-fullscreen');
     setStoryStatus('');
   }
   const rm = document.createElement('button'); rm.type='button'; rm.className='preview-remove'; rm.textContent='×'; rm.title='Remove';
