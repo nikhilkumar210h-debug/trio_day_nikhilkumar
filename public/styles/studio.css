@@ -8,7 +8,7 @@
 @media(min-width:520px){.nkm-studio-grid{grid-template-columns:repeat(3,1fr)}}
 .nkm-studio-card{border:1px solid var(--color-border);background:var(--color-surface);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:8px;cursor:pointer;text-align:left;transition:border-color .15s,transform .15s}
 .nkm-studio-card:hover{border-color:rgba(148,163,184,.2);transform:translateY(-1px)}
-.nkm-studio-card .ico{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;background:rgba(99,102,241,.14);color:var(--color-primary-text);font-size:18px}
+.nkm-studio-card .ico{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;background:rgba(139,92,246,.14);color:var(--color-primary-text);font-size:18px}
 .nkm-studio-card strong{font-size:13px;font-weight:800;line-height:1.2}
 .nkm-studio-card span{font-size:11px;color:var(--color-ink-muted);line-height:1.35}
 .nkm-studio-tabs{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
@@ -20,16 +20,16 @@
 .nkm-studio-field{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
 .nkm-studio-field label{font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--color-ink-muted);font-weight:700}
 .nkm-studio-field select,.nkm-studio-field input,.nkm-studio-field textarea{border:1px solid var(--color-border);background:var(--color-glass);color:var(--color-ink);border-radius:12px;padding:10px 12px;font-size:13px;outline:0}
-.nkm-studio-field select:focus,.nkm-studio-field input:focus,.nkm-studio-field textarea:focus{border-color:#6366f1;box-shadow:0 0 0 3px rgba(99,102,241,.18)}
+.nkm-studio-field select:focus,.nkm-studio-field input:focus,.nkm-studio-field textarea:focus{border-color:#8B5CF6;box-shadow:0 0 0 3px rgba(139,92,246,.18)}
 .nkm-studio-preview{border:1px solid var(--color-border);background:#0b1220;border-radius:16px;overflow:hidden}
 .nkm-studio-preview canvas{width:100%;height:auto;display:block;background:#0b1220}
 .nkm-studio-chips{display:flex;flex-wrap:wrap;gap:6px}
 .nkm-studio-chip{height:28px;padding:0 10px;border-radius:999px;border:1px solid var(--color-border);background:transparent;color:var(--color-ink-muted);font-size:12px;font-weight:600;cursor:pointer}
-.nkm-studio-chip.is-active{background:rgba(99,102,241,.14);border-color:rgba(99,102,241,.25);color:var(--color-primary-text)}
+.nkm-studio-chip.is-active{background:rgba(139,92,246,.14);border-color:rgba(139,92,246,.25);color:var(--color-primary-text)}
 .nkm-studio-templates{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;max-height:46vh;overflow:auto;padding-right:2px}
 @media(min-width:840px){.nkm-studio-templates{max-height:none}}
 .nkm-studio-template{border:1px solid var(--color-border);border-radius:12px;overflow:hidden;background:#0f172a;cursor:pointer}
-.nkm-studio-template.is-active{outline:2px solid #6366f1;outline-offset:1px}
+.nkm-studio-template.is-active{outline:2px solid #8B5CF6;outline-offset:1px}
 .nkm-studio-template-thumb{height:86px;background:var(--t-bg, #1e293b);display:grid;place-items:center;color:#fff;font-size:11px;font-weight:700;padding:8px;text-align:center}
 .nkm-studio-template-meta{padding:8px 10px;display:flex;justify-content:space-between;align-items:center;gap:8px}
 .nkm-studio-template-meta strong{font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -37,7 +37,7 @@
 .nkm-studio-actions{display:flex;gap:8px;flex-wrap:wrap}
 .nkm-studio-actions .nkm-btn{flex:1}
 .nkm-studio-hint{font-size:11px;color:var(--color-ink-dim);line-height:1.4}
-.nkm-studio-badge{display:inline-flex;align-items:center;height:20px;padding:0 8px;border-radius:999px;background:rgba(99,102,241,.14);color:var(--color-primary-text);font-size:11px;font-weight:700}
+.nkm-studio-badge{display:inline-flex;align-items:center;height:20px;padding:0 8px;border-radius:999px;background:rgba(139,92,246,.14);color:var(--color-primary-text);font-size:11px;font-weight:700}
 .nkm-studio-drafts{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none}
 .nkm-studio-drafts::-webkit-scrollbar{display:none}
 .nkm-studio-draft{min-width:160px;max-width:200px;border:1px solid var(--color-border);background:rgba(255,255,255,.03);border-radius:12px;padding:10px;cursor:pointer}
