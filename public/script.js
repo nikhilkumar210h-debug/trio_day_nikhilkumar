@@ -133,65 +133,104 @@ async function renderStoryStrip(uid) {
   addBtn.addEventListener('click', () => { SoundManager.click(); openStoryModal(); });
   wrap.appendChild(addBtn);
 
+  if (!uid) {
+    if (empty) empty.style.display = 'block';
+    return;
+  }
+
   try {
-    const cacheKey = uid ? `feed_recent_${uid}` : null;
-    const cachedFeed = cacheKey ? trioCache.get(cacheKey) : null;
-    if (cachedFeed && cachedFeed.length) {
-      const now = Date.now();
-      const stories = cachedFeed
-        .filter(p => p.isStory && p.createdAtMs && (now - p.createdAtMs) < 24 * 60 * 60 * 1000)
-        .slice(0, 20);
+    const now = Date.now();
 
-      if (!stories.length) {
-        if (empty) empty.style.display = 'block';
-        return;
+    // Keep the query security-compatible with the Firestore story rules:
+    // public stories are readable by signed-in users; friends stories are
+    // readable only when the current uid is in allowedUids.
+    const [publicSnap, friendsSnap] = await Promise.all([
+      getDocs(query(
+        collection(db, 'posts'),
+        where('privacy', '==', 'public'),
+        limit(50)
+      )),
+      getDocs(query(
+        collection(db, 'posts'),
+        where('allowedUids', 'array-contains', uid),
+        limit(50)
+      ))
+    ]);
+
+    const byId = new Map();
+    const collect = snap => snap.forEach(docSnap => {
+      const data = docSnap.data();
+      if (
+        data?.type === 'story' &&
+        data?.isStory === true &&
+        typeof data?.expiresAtMs === 'number' &&
+        data.expiresAtMs > now &&
+        (data.privacy === 'public' || (data.privacy === 'friends' && Array.isArray(data.allowedUids) && data.allowedUids.includes(uid)))
+      ) {
+        byId.set(docSnap.id, { ...data, _id: docSnap.id });
       }
-      if (empty) empty.style.display = 'none';
+    });
+    collect(publicSnap);
+    collect(friendsSnap);
 
-      stories.forEach(s => {
-        const btn = document.createElement('button');
-        btn.className = 'hero-story-circle';
-        btn.title = s.name || 'Story';
-        btn.setAttribute('aria-label', `Story from ${s.name || 'User'}`);
-        const seenKey = 'seenStories';
-        const seenList = JSON.parse(localStorage.getItem(seenKey) || '[]');
-        if (seenList.includes(s._id)) btn.classList.add('viewed');
-        const inner = document.createElement('span');
-        inner.className = 'hero-story-circle-inner';
-        if (s.photoURL) {
-          const img = document.createElement('img');
-          img.src = s.photoURL;
-          img.alt = '';
-          img.loading = 'lazy';
-          inner.appendChild(img);
-        } else {
-          inner.textContent = (s.name || 'U').charAt(0).toUpperCase();
-          inner.style.background = 'linear-gradient(135deg, var(--primary), var(--primary-strong))';
-        }
-        btn.appendChild(inner);
-        btn.addEventListener('click', () => {
-          SoundManager.storyTap();
-          const cur = JSON.parse(localStorage.getItem(seenKey) || '[]');
-          if (!cur.includes(s._id)) {
-            cur.push(s._id);
-            localStorage.setItem(seenKey, JSON.stringify(cur));
-            btn.classList.add('viewed');
-          }
-          const card = document.querySelector(`[data-postId="${s._id}"]`);
-          if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          else openStoryViewer(s);
-        });
-        wrap.appendChild(btn);
-      });
-    } else {
+    const stories = Array.from(byId.values())
+      .sort((a, b) => (Number(b.createdAtMs) || 0) - (Number(a.createdAtMs) || 0))
+      .slice(0, 20);
+
+    // Keep the existing cache warm so other Today surfaces can reuse the
+    // latest story data without waiting for another feed refresh.
+    trioCache.set(`feed_recent_${uid}`, stories, trioCache.TTL.SHORT);
+
+    if (!stories.length) {
       if (empty) empty.style.display = 'block';
+      return;
     }
-  } catch {
+    if (empty) empty.style.display = 'none';
+
+    stories.forEach(s => {
+      const btn = document.createElement('button');
+      btn.className = 'hero-story-circle';
+      btn.title = s.name || 'Story';
+      btn.setAttribute('aria-label', `Story from ${s.name || 'User'}`);
+      const seenKey = 'seenStories';
+      const seenList = JSON.parse(localStorage.getItem(seenKey) || '[]');
+      if (seenList.includes(s._id)) btn.classList.add('viewed');
+
+      const inner = document.createElement('span');
+      inner.className = 'hero-story-circle-inner';
+      if (s.photoURL) {
+        const img = document.createElement('img');
+        img.src = s.photoURL;
+        img.alt = '';
+        img.loading = 'lazy';
+        inner.appendChild(img);
+      } else {
+        inner.textContent = (s.name || 'U').charAt(0).toUpperCase();
+        inner.style.background = 'linear-gradient(135deg, var(--primary), var(--primary-strong))';
+      }
+      btn.appendChild(inner);
+
+      btn.addEventListener('click', () => {
+        SoundManager.storyTap();
+        const cur = JSON.parse(localStorage.getItem(seenKey) || '[]');
+        if (!cur.includes(s._id)) {
+          cur.push(s._id);
+          localStorage.setItem(seenKey, JSON.stringify(cur));
+          btn.classList.add('viewed');
+        }
+        const card = document.querySelector(`[data-postId="${s._id}"]`);
+        if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        else openStoryViewer(s);
+      });
+      wrap.appendChild(btn);
+    });
+  } catch (err) {
+    console.warn('[stories] could not load story strip:', err);
     if (empty) empty.style.display = 'block';
   }
+
   setTimeout(() => { wrap.scrollLeft = 0; }, 50);
 }
-
 function openStoryViewer(s) {
   const ov = document.createElement('div');
   ov.className = 'story-viewer-overlay';
@@ -941,6 +980,7 @@ storyForm?.addEventListener('submit', async e => {
       trioCache.invalidate(`posts_${currentUser.uid}`);
       onPostCreated(currentUser.uid);
       setStoryStatus('Story posted ✅');
+      await renderStoryStrip(currentUser.uid);
       setTimeout(closeStoryModal, 300);
     } catch (err) { console.error(err); setStoryStatus(err.message || 'Could not save story.', true); }
     finally { storySubmit.disabled = false; storySubmit.textContent = 'Share Story'; }
