@@ -33,6 +33,11 @@ export function activityCardHtml(task, { compact=false } = {}){
   const viewHref = isCatalog ? 'activity.html?id=' + encodeURIComponent(task.id || '') : 'task-detail.html?id=' + encodeURIComponent(task.id || '');
   const expiry = Number.isFinite(task.expiresInDays) ? task.expiresInDays + 'd left' : (task.endAtMs ? Math.max(0, Math.ceil((task.endAtMs-Date.now())/86400000)) + 'd left' : '30d cycle');
   const duration = Number(task.durationMin) || 0;
+  const metaDuration = type.label === 'Puzzle' || type.label === 'Learn'
+    ? (duration ? '📖 ~' + duration + ' min' : '📖 Guided')
+    : type.label === 'Game'
+      ? '🎮 Live room'
+      : (duration ? '⏱ ' + duration + ' min' : '⏱ Live');
   const actionLabel = type.label === 'Puzzle' ? 'SOLVE IT' : type.label === 'Build' ? 'MAKE IT' : type.label === 'Learn' ? 'LEARN IT' : type.label === 'Challenge' ? 'TAKE IT' : 'PLAY IT';
   const xp = Number(task.xpReward) || 0;
   const joins = Number(task.joins) || 0;
@@ -56,7 +61,7 @@ export function activityCardHtml(task, { compact=false } = {}){
         <div class="activity-mission"><span>${actionLabel}</span><i></i></div><h3>${title}</h3>
         <p>${desc}</p>
         <div class="activity-meta">
-          <span>${duration ? '⏱ ' + duration + ' min' : '⏱ Live'}</span>
+          <span>${metaDuration}</span>
           <span>${isCatalog ? '👥 2–6' : '👥 ' + joins + ' joined'}</span>
           <span>${esc(task.difficulty || (isCatalog ? 'Open' : 'Community'))}</span>
         </div>
