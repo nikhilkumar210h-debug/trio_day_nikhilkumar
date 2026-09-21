@@ -1,0 +1,71 @@
+/* Trio Day — cross-page visual consistency polish
+   Discover / Do / Activity only. No behavior or data logic changes. */
+
+.discover-shell,.do-shell,.activity-page-shell{padding-top:24px}
+.forge-brand-hero,.do-hero,.activity-detail-hero{
+  border-color:rgba(129,140,248,.26);
+  box-shadow:0 22px 65px rgba(0,0,0,.14);
+}
+.forge-brand-hero h1,.do-hero h1,.activity-detail-hero h1{
+  text-wrap:balance;
+}
+.discover-surface,.do-featured,.activity-detail-card{
+  box-shadow:0 14px 42px rgba(0,0,0,.08);
+}
+.discover-lane-card,.do-action{
+  isolation:isolate;
+}
+.discover-lane-card:focus-visible,.do-action:focus-visible{
+  outline:2px solid var(--color-primary);
+  outline-offset:3px;
+}
+.discover-filter,.creator-lane{
+  min-height:36px;
+}
+.discover-activity-rail .activity-card,.do-activity-grid .activity-card{
+  transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease;
+}
+.discover-activity-rail .activity-card:hover,.do-activity-grid .activity-card:hover{
+  transform:translateY(-3px);
+  box-shadow:0 16px 38px rgba(0,0,0,.11);
+}
+.discover-create,.do-note{
+  box-shadow:0 10px 28px rgba(0,0,0,.05);
+}
+.activity-social-brief{
+  border-radius:18px;
+}
+.activity-brief-block{
+  padding:12px 0;
+  border-bottom:1px solid var(--color-border);
+}
+.activity-brief-block:last-child{border-bottom:0}
+.activity-detail-card aside{}
+.activity-timer{
+  padding:8px 4px 12px;
+  border-radius:18px;
+  background:radial-gradient(circle at 50% 0,var(--color-primary-soft),transparent 62%);
+}
+.activity-timer-display{
+  font-size:clamp(42px,7vw,58px);
+  letter-spacing:-.06em;
+}
+.activity-actions-stack .nkm-btn{
+  min-height:44px;
+  border-radius:13px;
+}
+.activity-expiry-note{
+  border-radius:14px;
+}
+.activity-completion{
+  box-shadow:0 20px 55px rgba(16,185,129,.12);
+}
+@media(max-width:640px){
+  .discover-shell,.do-shell,.activity-page-shell{padding-top:16px}
+  .forge-brand-hero,.do-hero,.activity-detail-hero{border-radius:22px}
+}
+@media(prefers-reduced-motion:reduce){
+  .discover-lane-card,.do-action,.discover-activity-rail .activity-card,.do-activity-grid .activity-card{
+    transition:none!important;
+  }
+}
