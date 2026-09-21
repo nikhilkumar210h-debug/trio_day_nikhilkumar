@@ -721,6 +721,7 @@ service cloud.firestore {
         (
           resource.data.hostUid == request.auth.uid
           && request.resource.data.hostUid == resource.data.hostUid
+          && request.resource.data.status in ['open','closed']
           && request.resource.data.activityType == resource.data.activityType
           && request.resource.data.activitySource == resource.data.activitySource
           && request.resource.data.challengeId == resource.data.challengeId
@@ -780,14 +781,9 @@ service cloud.firestore {
           allow update, delete: if false;
         }
       }
-            match /members/{memberUid} {
-        allow read: if signedIn();
-        allow create: if owner(memberUid)
-          && getAfter(/databases/$(database)/documents/rooms/$(roomId)).data.status == 'open'
-          && getAfter(/databases/$(database)/documents/rooms/$(roomId)).data.memberCount <= getAfter(/databases/$(database)/documents/rooms/$(roomId)).data.maxPlayers;
-        allow delete: if owner(memberUid);
-        allow update: if false;
-      }
+            // Membership is created/deleted only through the room-count transaction above.
+      // Keeping a single membership rule prevents direct member-doc creation from
+      // bypassing the room capacity/memberCount invariants.
       match /messages/{messageId} {
         allow read: if signedIn() && exists(/databases/$(database)/documents/rooms/$(roomId)/members/$(request.auth.uid));
         allow create: if signedIn() && request.resource.data.uid == request.auth.uid && exists(/databases/$(database)/documents/rooms/$(roomId)/members/$(request.auth.uid)) && request.resource.data.text is string && request.resource.data.text.size() > 0 && request.resource.data.text.size() <= 500;
