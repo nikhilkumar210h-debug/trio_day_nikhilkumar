@@ -1,5 +1,5 @@
 const DETAILS={
-p1:'A team mystery where each person checks a different clue and the room builds one final suspect theory.',
+p1:'A fast clue-recall game: study a board of evidence, then pair the matching clues before the case closes.',
 p2:'Design a weekend route together by splitting stops, trade-offs and the final route vote.',
 p3:'Investigate a suspicious product claim and build a tiny evidence board before choosing a verdict.',
 p4:'Decode a short message as a team, then create the best counter-message using the same rule.',
@@ -19,7 +19,7 @@ const dayMs=86400000;
 const C=(id,type,category,title,description,goal,instructions,durationMin,difficulty,cycleDays,icon,extra={})=>({id,type,category,title,description,goal,instructions,durationMin,difficulty,cycleDays,icon,source:'catalog',...extra});
 
 const P=[
-['p1','Mystery','The Missing Notebook','Build one suspect theory from separate clues.','Each teammate owns clues that another teammate cannot see at a glance.','Share deductions, challenge weak assumptions and submit one agreed solution.','Split clue groups; compare deductions; resolve contradictions; submit the final theory.',20,'Medium',14,'🕵️'],
+['p1','Memory','Clue Recall','Remember the evidence board and recover every matching clue pair.','Study the board together, then test recall without seeing the full board again.','Clear every pair with as few moves as possible.','Study the clues; flip cards; find pairs; clear the board.',8,'Easy',14,'🧠'],
 ['p2','Adventure','Route Heist','Plan the cleanest city route before the clock runs out.','Each player proposes a section of the route and one trade-off.','Combine the best pieces into one route with no duplicate stop.','Pick a route captain; everyone proposes one segment; merge and defend the final route.',20,'Medium',21,'🗺️'],
 ['p3','Media','Claim Hunters','Investigate which product claim should survive scrutiny.','Players collect evidence, objections and missing information in chat.','Reach a team verdict and name the strongest evidence.','One player is Evidence, one Counterpoint, one Judge, then swap after each clue.',20,'Medium',14,'🔎'],
 ['p4','Code','Cipher Relay','Pass a secret message through the team without showing the whole answer.','Each player decodes one chunk and the room reconstructs the message.','Rebuild the message and correctly encode a short reply.','Split the cipher; decode in parallel; compare chunks; make the final reply.',20,'Medium',21,'🔐'],
