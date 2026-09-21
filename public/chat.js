@@ -12,6 +12,18 @@ let currentUser = null;
 let users = [];
 const conversations = new Map();
 const params = new URLSearchParams(location.search);
+const challengeId = params.get('challenge');
+const challengeContext = {
+  trip:'You get one free trip tomorrow. Where are you going?',
+  hour:'You have one free hour tonight. What sounds better?',
+  weekend:'You have one weekend to make something. What do you pick?',
+  food:'Pick one forever.'
+};
+if(challengeId && challengeContext[challengeId]){
+  const box=document.getElementById('challengeContext');
+  if(box){box.hidden=false;document.getElementById('challengeContextText').textContent=challengeContext[challengeId];}
+}
+
 
 function previewText(m) { if (!m) return ''; if (m.replyToStoryId) return '↩️ Story reply'; if (m.sharedPostId) return '📎 Shared a post'; return String(m.text || '').replace(/\s+/g, ' ').trim().slice(0,40); }
 function chatSeenKey(uid) { return `trio_chat_seen_${uid}`; }
