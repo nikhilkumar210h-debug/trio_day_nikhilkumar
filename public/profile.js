@@ -9,9 +9,7 @@ import { SoundManager } from './sound-manager.js';
 import { createSheet } from './ui/sheet.js';
 import { getCachedUser } from './services/userCache.js';
 import { getMyGlobalRank } from './gamification/leaderboards.js';
-import { getCommunityTask } from './gamification/community-tasks.js';
-import { normalizeActivityType, activityTypeInfo } from './activity-ui.js';
-import { activeCatalogActivities } from './activity-catalog.js?v=20260920-audit2';
+import { getCommunityTask } from './gamification/community-tasks.js?v=20260921-profile';
 import { signOut } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
 import {
   doc, getDoc, collection, collectionGroup, getDocs, query, where, orderBy,
@@ -433,28 +431,36 @@ async function loadProfile(uid) {
 
   const rows = [];
   const seen = new Set();
-  const catalogMap = new Map(activeCatalogActivities().map(a => [a.id, a]));
+  const builtInChallenges = new Map([
+    ['trip', { title: 'Free trip', icon: '🌍' }],
+    ['hour', { title: 'One free hour', icon: '⏱️' }],
+    ['weekend', { title: 'Make something this weekend', icon: '🛠️' }],
+    ['food', { title: 'Pick one forever', icon: '🍽️' }]
+  ]);
 
   try {
-    const [catalogSnap, communitySnap] = await Promise.all([
-      getDocs(query(collection(db, 'users', uid, 'activityCompletions'), orderBy('completedAtMs', 'desc'), limit(24))).catch(() => null),
+    const [challengeSnap, communitySnap] = await Promise.all([
+      getDocs(query(collection(db, 'challengeAnswers'), where('uid', '==', uid), orderBy('createdAtMs', 'desc'), limit(24))).catch(() => null),
       getDocs(query(collectionGroup(db, 'completions'), where('uid', '==', uid), limit(24))).catch(() => null)
     ]);
 
-    if (catalogSnap) {
-      catalogSnap.docs.forEach(d => {
+    if (challengeSnap) {
+      challengeSnap.docs.forEach(d => {
         const v = d.data() || {};
-        const activity = catalogMap.get(v.activityId);
-        const key = 'catalog:' + (v.cycleKey || v.activityId || d.id);
+        const challengeId = String(v.challengeId || '').trim();
+        const builtIn = builtInChallenges.get(challengeId);
+        const key = 'challenge:' + (challengeId || d.id);
         if (seen.has(key)) return;
         seen.add(key);
-        const difficulty = String(activity?.difficulty || 'Medium');
-        const xp = Number(activity?.xpReward) || (difficulty === 'Hard' ? 60 : difficulty === 'Medium' ? 40 : 25);
         rows.push({
-          key, activityId: v.activityId || activity?.id || '', title: v.title || activity?.title || 'Activity',
-          type: normalizeActivityType(activity || v),
-          icon: v.icon || activity?.icon || '🎯', category: v.category || activity?.category || 'Trio Day',
-          xp, atMs: Number(v.completedAtMs) || 0, source: 'catalog'
+          key,
+          title: builtIn?.title || 'Community Challenge',
+          type: 'challenge',
+          icon: builtIn?.icon || '⚡',
+          category: 'Challenge',
+          xp: 0,
+          atMs: Number(v.createdAtMs) || 0,
+          source: 'challenge'
         });
       });
     }
@@ -469,8 +475,8 @@ async function loadProfile(uid) {
         const key = 'community:' + taskId;
         return {
           key, title: task.title || 'Community activity',
-          type: normalizeActivityType(task), icon: task.icon || activityTypeInfo(task).icon,
-          category: task.category || 'Community', xp: Number(task.xpReward) || 0,
+          type: 'community', icon: task.icon || '🎯',
+          category: 'Community', xp: Number(task.xpReward) || 0,
           atMs: Number(d.data()?.atMs) || 0, source: 'community'
         };
       }));
@@ -486,15 +492,15 @@ async function loadProfile(uid) {
   const items = rows.slice(0, 10);
   if (summary) summary.textContent = items.length ? (items.length + ' recent') : 'No completions';
   if (!items.length) {
-    list.innerHTML = '<div class="profile-activity-empty"><span>✦</span><strong>Your activity history starts here.</strong><p>Complete a puzzle, build, lesson, challenge or game to see it here.</p><a href="all-users.html" class="nkm-btn nkm-btn--primary nkm-btn--sm">Explore activities</a></div>';
+    list.innerHTML = '<div class="profile-activity-empty"><span>⚡</span><strong>Your Challenge journey starts here.</strong><p>Answer a Challenge and your recent moments will appear here.</p><a href="challenge.html" class="nkm-btn nkm-btn--primary nkm-btn--sm">Open Challenges</a></div>';
     return;
   }
 
   list.innerHTML = items.map(item => {
-    const type = activityTypeInfo(item);
+    const type = { icon: item.icon || '⚡', label: item.type === 'community' ? 'Community' : 'Challenge' };
     const when = item.atMs ? new Date(item.atMs).toLocaleDateString(undefined, { day:'numeric', month:'short' }) : 'Recently';
     return '<a class="profile-activity-item" href="' +
-      (item.source === 'community' ? 'task-detail.html?id=' : 'activity.html?id=') + encodeURIComponent(item.source === 'community' ? item.key.replace('community:','') : (item.activityId || item.key.replace('catalog:','').split('_')[0])) +
+      (item.source === 'community' ? 'task-detail.html?id=' : item.source === 'challenge' ? 'challenge.html?challenge=' : 'challenge.html?challenge=') + encodeURIComponent(item.key.replace('community:','').replace('challenge:','')) +
       '" aria-label="' + esc(item.title) + '">' +
       '<span class="profile-activity-icon">' + (item.icon || type.icon) + '</span>' +
       '<span class="profile-achievement-badge">✓</span>' +
