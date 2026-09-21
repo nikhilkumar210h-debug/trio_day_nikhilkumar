@@ -1,5 +1,5 @@
 // ui/nav.js — Trio Day global navigation
-// Canonical items: Today / Discover / Do / Chat / You
+// Canonical items: Today / Discover / Challenge / Chat / You
 // Mobile: 5-item bottom nav.
 // Desktop: left rail (icons at tablet, expanded at wide).
 
@@ -14,7 +14,7 @@ const SVG = {
 const ITEMS = [
   { key: 'today', label: 'Today', href: 'index.html', icon: SVG.today },
   { key: 'discover', label: 'Discover', href: 'all-users.html', icon: SVG.discover },
-  { key: 'do', label: 'Do', href: 'tasks.html', icon: SVG.do },
+  { key: 'challenge', label: 'Challenge', href: 'challenge.html', icon: SVG.do },
   { key: 'chat', label: 'Chat', href: 'chat.html', icon: SVG.chat },
   { key: 'you', label: 'You', href: 'profile.html', icon: SVG.you }
 ];
@@ -23,7 +23,7 @@ function pathKey() {
   const p = (location.pathname.split('/').pop() || 'index.html').toLowerCase();
   if (p === '' || p === 'index.html' || p === 'view_post.html') return 'today';
   if (p === 'all-users.html' || p === 'build.html' || p === 'learn.html' || p === 'challenge.html' || p === 'puzzle.html' || p === 'activity.html' || p === 'rooms.html' || p === 'room.html') return 'discover';
-  if (p === 'tasks.html' || p === 'task-create.html' || p === 'task-detail.html' || p === 'leaderboard.html' || p === 'admin-tasks.html') return 'do';
+  if (p === 'challenge.html' || p === 'task-create.html' || p === 'tasks.html' || p === 'task-detail.html') return 'challenge';
   if (p === 'chat.html' || p === 'private-chat.html') return 'chat';
   if (p === 'profile.html') return 'you';
   return 'today';
