@@ -20,17 +20,17 @@ function renderNotificationRows(container, alerts) {
     row.className = `notification-row${alert.read ? '' : ' unread'}`;
     row.dataset.notificationId = alert.id;
     row.style.cssText = 'display:flex;align-items:flex-start;gap:12px;padding:12px;border-radius:12px;background:rgba(255,255,255,.02);border:1px solid transparent;transition:background .15s,border-color .15s';
-    if (!alert.read) { row.style.background = 'rgba(99,102,241,.08)'; row.style.borderColor = 'rgba(99,102,241,.15)'; }
+    if (!alert.read) { row.style.background = 'rgba(139,92,246,.09)'; row.style.borderColor = 'rgba(139,92,246,.18)'; }
     const avatarHtml = alert.actorPhotoURL
       ? `<img src="${esc(alert.actorPhotoURL)}" alt="" style="width:40px;height:40px;border-radius:50%;object-fit:cover">`
-      : `<div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#4f46e5);display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff">${esc((alert.actorName || 'U').charAt(0))}</div>`;
+      : `<div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#8B5CF6,#6366F1);display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff">${esc((alert.actorName || 'U').charAt(0))}</div>`;
     row.innerHTML = `
       <div style="flex-shrink:0">${avatarHtml}</div>
       <div style="flex:1;min-width:0">
         <div style="font-weight:600;font-size:14px;color:var(--ink)">${esc(notificationText(alert))}</div>
         <div style="font-size:12px;color:var(--ink-muted);margin-top:4px">${new Date(alert.createdAtMs || Date.now()).toLocaleString()}</div>
       </div>
-      ${!alert.read ? '<div style="width:8px;height:8px;border-radius:50%;background:#6366f1;flex-shrink:0;margin-top:4px"></div>' : ''}
+      ${!alert.read ? '<div style="width:8px;height:8px;border-radius:50%;background:#8B5CF6;flex-shrink:0;margin-top:4px"></div>' : ''}
     `;
     row.addEventListener('click', async () => {
       if (!alert.read) {
