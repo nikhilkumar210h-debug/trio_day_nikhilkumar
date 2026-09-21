@@ -38,7 +38,7 @@
 .nkm-today-xp-label{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--color-ink-dim);font-weight:700}
 .nkm-today-xp-val{font-size:12px;font-weight:700;color:var(--color-ink)}
 .nkm-xp-bar{height:6px;border-radius:999px;background:var(--color-glass-strong);overflow:hidden;margin-top:4px}
-.nkm-xp-bar i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#6366f1,#4f46e5);transition:width .4s}
+.nkm-xp-bar i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#8B5CF6,#6366F1);transition:width .4s}
 .nkm-activity-layout{display:grid;gap:14px;min-width:0;width:100%}
 .nkm-activity-main{min-width:0;width:100%}
 @media(min-width:1024px){
@@ -80,12 +80,12 @@
 .nkm-task-ring .progress-ring{position:relative;width:44px !important;height:44px !important;display:grid;place-items:center}
 .nkm-task-ring .progress-ring svg{width:44px;height:44px;display:block}
 .nkm-task-ring .progress-ring .ring-bg{stroke:var(--color-glass-strong)}
-.nkm-task-ring .progress-ring .ring-fg{stroke:#6366f1;stroke-linecap:round}
+.nkm-task-ring .progress-ring .ring-fg{stroke:#8B5CF6;stroke-linecap:round}
 .nkm-task-ring .progress-ring .ring-label{position:absolute;inset:0;display:grid;place-items:center;font-size:10px;font-weight:800;color:var(--color-ink);line-height:1;text-align:center;pointer-events:none}
 .nkm-today-ring .progress-ring{position:relative;width:56px !important;height:56px !important;display:grid;place-items:center}
 .nkm-today-ring .progress-ring svg{width:56px;height:56px;display:block}
 .nkm-today-ring .progress-ring .ring-bg{stroke:var(--color-glass-strong)}
-.nkm-today-ring .progress-ring .ring-fg{stroke:#6366f1;stroke-linecap:round}
+.nkm-today-ring .progress-ring .ring-fg{stroke:#8B5CF6;stroke-linecap:round}
 .nkm-today-ring .progress-ring .ring-label{position:absolute;inset:0;display:grid;place-items:center;font-size:11px;font-weight:800;color:var(--color-ink);line-height:1;text-align:center;pointer-events:none}
 .nkm-task-action{flex:none;display:flex;align-items:center;justify-content:flex-end;overflow:hidden}
 .nkm-task-action .nkm-btn--sm{height:32px;padding:0 14px;font-size:12px;border-radius:999px;min-width:64px;justify-content:center}
@@ -122,7 +122,7 @@
 .lb-row:nth-child(1) .lb-rank{background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;border-color:transparent}
 .lb-row:nth-child(2) .lb-rank{background:linear-gradient(135deg,var(--color-ink-muted),var(--color-ink-dim));color:#fff;border-color:transparent}
 .lb-row:nth-child(3) .lb-rank{background:linear-gradient(135deg,#d97706,#92400e);color:#fff;border-color:transparent}
-.lb-avatar{width:40px;height:40px;border-radius:50%;flex:none;display:grid;place-items:center;overflow:hidden;background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;font-weight:700;font-size:14px}
+.lb-avatar{width:40px;height:40px;border-radius:50%;flex:none;display:grid;place-items:center;overflow:hidden;background:linear-gradient(135deg,#8B5CF6,#6366F1);color:#fff;font-weight:700;font-size:14px}
 .lb-avatar img{width:100%;height:100%;object-fit:cover;display:block}
 #lbList{display:flex;flex-direction:column;gap:8px;margin-top:12px}
 #lbStatus{font-size:12px;color:var(--color-ink-muted);min-height:16px;margin-top:8px}
