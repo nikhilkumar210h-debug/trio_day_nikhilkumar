@@ -87,16 +87,12 @@ function base64UrlToBytes(value) {
 }
 
 // HMAC-SHA1 for Cloudinary signature
-async function hmacSha1(secret, data) {
-  const key = await crypto.subtle.importKey(
-    'raw',
-    new TextEncoder().encode(secret),
-    { name: 'HMAC', hash: 'SHA-1' },
-    false,
-    ['sign']
-  );
-  const signature = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(data));
-  return Array.from(new Uint8Array(signature))
+async function cloudinarySha1Signature(secret, data) {
+  // Cloudinary authentication signatures are SHA-1(data + api_secret),
+  // not HMAC-SHA1.
+  const bytes = new TextEncoder().encode(data + secret);
+  const digest = await crypto.subtle.digest('SHA-1', bytes);
+  return Array.from(new Uint8Array(digest))
     .map(b => b.toString(16).padStart(2, '0'))
     .join('');
 }
@@ -238,7 +234,7 @@ export default {
 
     const sortedKeys = Object.keys(paramsToSign).sort();
     const signatureString = sortedKeys.map(k => `${k}=${paramsToSign[k]}`).join('&');
-    const signature = await hmacSha1(env.CLOUDINARY_API_SECRET, signatureString);
+    const signature = await cloudinarySha1Signature(env.CLOUDINARY_API_SECRET, signatureString);
 
     const uploadUrl = `https://api.cloudinary.com/v1_1/${env.CLOUDINARY_CLOUD_NAME}/${cfg.resourceType}/upload`;
 
