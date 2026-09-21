@@ -97,8 +97,8 @@ test.describe('Navigation Visibility Audit', () => {
         // Verify expected nav items are present
         const navKeys = result.items.map(i => i.key);
         
-        // Core 5 items should be accessible
-        const coreItems = ['today', 'discover', 'do', 'chat', 'you'];
+        // Canonical 4 navigation items should be accessible
+        const coreItems = ['today', 'discover', 'do', 'you'];
         const missingCore = coreItems.filter(k => !navKeys.includes(k));
         if (missingCore.length > 0) {
           console.log('❌ MISSING CORE NAV:', missingCore);
@@ -106,13 +106,9 @@ test.describe('Navigation Visibility Audit', () => {
           console.log('✅ All 5 core nav items present');
         }
 
-        // Create button should be present
-        const hasCreate = navKeys.some(k => k === 'create');
-        if (!hasCreate) {
-          console.log('❌ MISSING CREATE button');
-        } else {
-          console.log('✅ Create button present');
-        }
+        // Legacy Create/Chat nav items must not reappear in the canonical primary navigation.
+        expect(navKeys).not.toContain('create');
+        expect(navKeys).not.toContain('chat');
 
         // Verify correct visibility for viewport
         if (viewport.width >= 840) {
