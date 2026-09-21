@@ -1544,7 +1544,7 @@ document.addEventListener('click', e => {
 // ── Comment widget ────────────────────────────────────────────────────────────
 (function () {
   const panel = document.createElement('div'); panel.className = 'comment-modal'; panel.style.display = 'none';
-  panel.innerHTML = `<div class="comment-modal-inner" role="dialog" aria-modal="true"><div class="comment-modal-head"><h3>Comments</h3><button class="close-btn" type="button" aria-label="Close comments">✕</button></div><ul class="comments-list"></ul><div class="comment-form"><textarea maxlength="199" placeholder="Write a comment…"></textarea><div class="comment-footer"><span class="char-count">0 / 199</span><button class="btn primary">Post</button></div></div></div>`;
+  panel.innerHTML = `<div class="comment-modal-inner" role="dialog" aria-modal="true"><div class="comment-modal-head"><h3>Comments</h3><button class="close-btn" type="button" aria-label="Close comments">✕</button></div><ul class="comments-list"></ul><div class="comment-form"><textarea maxlength="199" placeholder="Write a comment…"></textarea><div class="comment-footer"><span class="char-count">0 / 199</span><button class="btn primary">Send</button></div></div></div>`;
   document.body.appendChild(panel);
   const list = panel.querySelector('.comments-list'), input = panel.querySelector('textarea'), submitBtn = panel.querySelector('.comment-footer button'), counter = panel.querySelector('.char-count');
   let active = null, activeOwnerUid = null, unsub = null;
