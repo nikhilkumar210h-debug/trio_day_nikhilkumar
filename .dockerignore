@@ -1,0 +1,15 @@
+.git
+.github
+.env
+.env.*
+!.env.example
+.dev.vars
+workers/.dev.vars
+wrangler/.dev.vars
+.wrangler
+__pycache__
+*.pyc
+node_modules
+.firebase
+.vscode
+.idea
