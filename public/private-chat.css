@@ -221,3 +221,87 @@
   .message-bubble:focus-within .nkm-msg-menu { opacity: 1; display: grid; }
 }
 @media (max-width: 390px) { .message-stack { max-width: 84%; } }
+
+/* ── Premium conversation polish ───────────────────────────── */
+.private-chat-page { background:
+  radial-gradient(circle at 50% -10%, var(--color-primary-soft), transparent 34%),
+  var(--color-bg);
+}
+.private-topbar { box-shadow: 0 8px 30px rgba(0,0,0,.12); }
+.private-topbar .topbar-inner { min-height: 58px; height: 58px; }
+.back-chat, .private-top-actions .icon-link {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  transition: transform var(--duration-fast), background var(--duration-fast), border-color var(--duration-fast);
+}
+.back-chat:hover, .private-top-actions .icon-link:hover {
+  transform: translateY(-1px);
+  background: var(--color-glass-hover);
+  border-color: var(--color-border-strong);
+}
+.peer-avatar {
+  width: 38px;
+  height: 38px;
+  box-shadow: 0 0 0 3px var(--color-bg-elevated), 0 0 0 4px var(--color-border);
+}
+.peer-copy strong { font-size: 14px; }
+.peer-copy small { font-size: 10px; }
+.private-main { padding: 10px 12px 24px; }
+.private-chat-card {
+  border-radius: 24px;
+  box-shadow: var(--shadow-lg);
+  background:
+    linear-gradient(180deg, var(--color-surface), var(--color-bg-elevated));
+}
+.private-messages {
+  padding: 18px 14px;
+  gap: 8px;
+}
+.private-msg-row { gap: 9px; }
+.message-stack { max-width: min(78%, 520px); }
+.message-bubble {
+  padding: 10px 13px;
+  border-radius: 18px;
+  box-shadow: 0 2px 10px rgba(0,0,0,.06);
+}
+.private-msg-row.mine .message-bubble {
+  background: linear-gradient(135deg, var(--color-primary-soft), rgba(99,102,241,.18));
+  border-color: rgba(99,102,241,.30);
+}
+.private-msg-row.theirs .message-bubble {
+  background: var(--color-glass);
+}
+.chat-input-row {
+  padding: 10px;
+  gap: 8px;
+  background: color-mix(in srgb, var(--color-surface) 88%, transparent);
+  backdrop-filter: blur(16px);
+}
+.chat-input-row input {
+  height: 44px;
+  border-radius: 14px;
+  background: var(--color-bg-elevated);
+}
+.chat-input-row .btn {
+  min-width: 72px;
+  height: 44px;
+  border-radius: 14px;
+  font-weight: 800;
+}
+@media (max-width: 839px) {
+  .private-main { padding: 8px 8px calc(86px + env(safe-area-inset-bottom)); }
+  .private-chat-card {
+    height: calc(100dvh - 126px);
+    min-height: 360px;
+    margin-bottom: 0;
+    border-radius: 20px;
+  }
+  .private-messages { padding: 14px 10px; }
+  .message-stack { max-width: 84%; }
+}
+@media (max-width: 420px) {
+  .private-top-actions .icon-link:first-child { display: none; }
+  .private-topbar .topbar-inner { padding: 0 9px; }
+  .chat-input-row .btn { min-width: 64px; padding-inline: 12px; }
+}
