@@ -35,9 +35,9 @@ async function loadTrendingPosts() {
 function renderTrendingPosts(posts) {
   if (!posts.length) { showTrendingPosts(false); return; }
   trendingList.innerHTML = posts.slice(0, 5).map(p => {
-    const avatar = p.photoURL ? `<img src="${p.photoURL}" alt="" style="width:36px;height:36px;border-radius:50%;object-fit:cover">` : `<div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#4f46e5);display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;font-size:14px">${(p.name || 'U').charAt(0)}</div>`;
+    const avatar = p.photoURL ? `<img src="${p.photoURL}" alt="" style="width:36px;height:36px;border-radius:50%;object-fit:cover">` : `<div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#8B5CF6,#6366F1);display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;font-size:14px">${(p.name || 'U').charAt(0)}</div>`;
     const likes = p.likesCount || p.likes?.length || 0;
-    return `<a href="view_post.html?postId=${encodeURIComponent(p._id)}" style="display:block;padding:12px;border-radius:12px;background:rgba(255,255,255,.02);border:1px solid rgba(148,163,184,.08);margin-bottom:8px;text-decoration:none;color:inherit;transition:background .15s,border-color .15s" onmouseover="this.style.background='rgba(99,102,241,.08)';this.style.borderColor='rgba(99,102,241,.15)'" onmouseout="this.style.background='rgba(255,255,255,.02)';this.style.borderColor='rgba(148,163,184,.08)'">
+    return `<a href="view_post.html?postId=${encodeURIComponent(p._id)}" style="display:block;padding:12px;border-radius:12px;background:rgba(255,255,255,.02);border:1px solid rgba(148,163,184,.08);margin-bottom:8px;text-decoration:none;color:inherit;transition:background .15s,border-color .15s" onmouseover="this.style.background='rgba(139,92,246,.09)';this.style.borderColor='rgba(139,92,246,.18)'" onmouseout="this.style.background='rgba(255,255,255,.02)';this.style.borderColor='rgba(148,163,184,.08)'">
       <div style="display:flex;gap:10px;align-items:flex-start">
         <div style="flex-shrink:0">${avatar}</div>
         <div style="flex:1;min-width:0">
