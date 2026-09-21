@@ -5,11 +5,11 @@ const box=document.getElementById('postContainer');
 const postId=new URLSearchParams(location.search).get('postId');
 onAuthStateChanged(auth,async user=>{
   if(!user){location.href=`login.html?redirect=${encodeURIComponent(location.pathname+location.search)}`;return}
-  if(!postId){box.textContent='Post not found.';return}
+  if(!postId){box.textContent='Story not found.';return}
   try{
     const snap=await getDoc(doc(db,'posts',postId));
-    if(!snap.exists()){box.textContent='Post not found.';return}
+    if(!snap.exists()){box.textContent='Story not found.';return}
     const item={...snap.data(),_id:snap.id};
     if(window.buildFeedItem)box.appendChild(window.buildFeedItem(item));else box.textContent=item.message||'';
-  }catch(err){console.error(err);box.textContent='Could not load this post.'}
+  }catch(err){console.error(err);box.textContent='Could not load this story.'}
 });
