@@ -165,7 +165,7 @@ export async function uploadPostImage(uid, file, firebaseToken, signal) {
 
 /** Story media — ORIGINAL QUALITY (short term 24h) — signed upload */
 export async function uploadStoryMedia(uid, file, firebaseToken, signal) {
-  if (file?.type?.startsWith('video/')) {
+  if (file?.type?.startsWith('video/') || file?.type?.startsWith('audio/')) {
     if (file.size > 100 * 1024 * 1024) throw Error('Video must be under 100MB.');
     const signed = await getSignedParams('story_video', firebaseToken);
     return uploadSignedVideo(file, signed, signal);
