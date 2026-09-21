@@ -1,7 +1,9 @@
 import { auth } from "../firebase-init.js";
 
-const NOTIFICATION_WORKER_URL =
-  "https://trio-notifications.trioday-nikhil.workers.dev/notifications/create";
+const API_BASE_URL = String(
+  window.TRIO_API_BASE_URL ||
+  (location.hostname === "127.0.0.1" || location.hostname === "localhost" ? "http://127.0.0.1:5000" : "")
+).replace(/\/$/, "");
 
 async function getIdToken() {
   const user = auth.currentUser;
@@ -12,27 +14,23 @@ async function getIdToken() {
 export async function createNotificationViaWorker(targetUid, data) {
   const token = await getIdToken();
   if (!token) throw new Error("Not authenticated");
+  if (!API_BASE_URL) throw new Error("Trio Day API URL is not configured");
 
-  try {
-    const res = await fetch(NOTIFICATION_WORKER_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ targetUid, ...data }),
-    });
+  const res = await fetch(API_BASE_URL + "/api/notifications/create", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Bearer " + token,
+    },
+    body: JSON.stringify({ targetUid, ...data }),
+  });
 
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      const message = err.error || "Notification Worker failed";
-      throw new Error(message);
-    }
-
-    return await res.json();
-  } catch (err) {
-    throw err;
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || "Notification API failed");
   }
+
+  return res.json();
 }
 
 export async function notifyUserViaWorker(targetUid, data) {
@@ -41,7 +39,7 @@ export async function notifyUserViaWorker(targetUid, data) {
 
 export function getNotificationWorkerStatus() {
   return {
-    url: NOTIFICATION_WORKER_URL,
-    available: true,
+    url: API_BASE_URL ? API_BASE_URL + "/api/notifications/create" : null,
+    available: Boolean(API_BASE_URL),
   };
 }
