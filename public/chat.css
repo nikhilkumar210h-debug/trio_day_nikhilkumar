@@ -182,3 +182,98 @@
 .nkm-messages .msg:hover .msg-delete-btn { opacity: 1; }
 @media (max-width: 839px) { .nkm-messages .msg-delete-btn { opacity: 1; } }
 @media (max-width: 390px) { .nkm-chat-row { height: 68px; gap: 10px; padding: 8px; } .nkm-chat-avatar { width: 38px; height: 38px; } }
+
+/* ── Premium chat hub polish ───────────────────────────────── */
+.chat-page { padding-bottom: 76px; }
+.chat-topbar { box-shadow: 0 8px 30px rgba(0,0,0,.10); }
+.nkm-chat {
+  width: min(760px, 100%);
+  padding: 22px 16px 28px;
+  gap: 14px;
+}
+.nkm-chat-head {
+  padding: 2px 4px 4px;
+}
+.nkm-chat-head h1 {
+  font-size: clamp(26px, 5vw, 34px);
+  letter-spacing: -.035em;
+}
+.nkm-chat-head p { font-size: 13px; margin-top: 4px; }
+.nkm-inbox-panel {
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at 100% 0, var(--color-primary-soft), transparent 34%),
+    var(--color-surface);
+  box-shadow: var(--shadow-md);
+}
+.nkm-inbox-head {
+  padding: 16px 16px 12px;
+}
+.nkm-inbox-head strong { font-size: 15px; letter-spacing: -.01em; }
+.nkm-badge {
+  min-width: 26px;
+  height: 24px;
+  padding: 0 8px;
+  border-radius: 999px;
+  display: inline-grid;
+  place-items: center;
+  background: var(--color-primary-soft);
+  color: var(--color-primary-text);
+  border: 1px solid var(--color-border);
+  font-size: 11px;
+  font-weight: 800;
+}
+.nkm-inbox-search { padding: 12px; }
+.nkm-inbox-search .nkm-search {
+  height: 44px;
+  border-radius: 14px;
+  padding-inline: 14px;
+  background: var(--color-glass);
+  border-color: var(--color-border);
+}
+.nkm-inbox-list { padding: 8px; gap: 3px; }
+.nkm-chat-row {
+  min-height: 76px;
+  height: auto;
+  padding: 10px 12px;
+  border-radius: 16px;
+}
+.nkm-chat-row:hover {
+  transform: translateY(-1px);
+  background: var(--color-glass-hover);
+  border-color: var(--color-border-strong);
+}
+.nkm-chat-avatar {
+  width: 46px;
+  height: 46px;
+  box-shadow: 0 0 0 3px var(--color-surface), 0 0 0 4px var(--color-border);
+}
+.nkm-chat-name { font-size: 14px; }
+.nkm-chat-preview { font-size: 12px; }
+.nkm-chat-time { font-size: 11px; align-self: flex-start; padding-top: 3px; }
+.nkm-chat-unread {
+  width: 9px;
+  height: 9px;
+  margin-left: 2px;
+}
+.nkm-chat-empty {
+  min-height: 260px;
+  padding: 42px 20px;
+}
+.nkm-chat-empty > span {
+  width: 56px;
+  height: 56px;
+  display: grid;
+  place-items: center;
+  border-radius: 18px;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  font-size: 24px;
+  border: 1px solid var(--color-border);
+}
+@media (max-width: 520px) {
+  .nkm-chat { padding: 18px 10px 22px; }
+  .nkm-chat-row { min-height: 72px; padding: 9px 10px; }
+  .nkm-chat-avatar { width: 42px; height: 42px; }
+  .nkm-chat-sub { display: none; }
+}
