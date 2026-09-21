@@ -140,28 +140,6 @@ async function verifyFirebaseIdToken(idToken, projectId) {
   return payload;
 }
 
-function str2ab(str) {
-  const buf = new ArrayBuffer(str.length);
-  const view = new Uint8Array(buf);
-  for (let i = 0; i < str.length; i++) view[i] = str.charCodeAt(i);
-  return buf;
-}
-
-function base64ToPem(b64) {
-  const lines = [];
-  for (let i = 0; i < b64.length; i += 64) lines.push(b64.slice(i, i + 64));
-  return `-----BEGIN PUBLIC KEY-----\n${lines.join('\n')}\n-----END PUBLIC KEY-----`;
-}
-
-function base64UrlToBytes(b64url) {
-  const b64 = b64url.replace(/-/g, '+').replace(/_/g, '/');
-  const padded = b64.padEnd(b64.length + ((4 - (b64.length % 4)) % 4), '=');
-  const binary = atob(padded);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-  return bytes;
-}
-
 // ─── Request Handler ──────────────────────────────────────────────────────────
 
 export default {
