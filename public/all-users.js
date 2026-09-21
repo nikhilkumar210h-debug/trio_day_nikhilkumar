@@ -1,6 +1,5 @@
-import { auth, db } from './firebase-init.js';
+import { auth } from './firebase-init.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
-import { collection, query, where, limit, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 
 const CHALLENGES = [
   {id:'choice-trip',q:'You get one free trip tomorrow. Where are you going?',o:['Japan 🇯🇵','Switzerland 🇨🇭','Somewhere unexpected 🌍'],tag:'CHOICE'},
@@ -21,17 +20,3 @@ function renderPreview(){
   });
 }
 renderPreview();
-
-let roomsUnsubscribe=null;
-function initRoomListener(user){
-  if(roomsUnsubscribe){roomsUnsubscribe();roomsUnsubscribe=null;}
-  const host=document.getElementById('discoverRoomList'); if(!host)return;
-  if(!user){host.innerHTML='<div class="discover-empty">Sign in to see live rooms.</div>';return;}
-  const q=query(collection(db,'rooms'),where('status','==','open'),limit(12));
-  roomsUnsubscribe=onSnapshot(q,snap=>{
-    const now=Date.now();
-    const rows=snap.docs.map(d=>({id:d.id,...d.data()})).filter(r=>(Number(r.expiresAtMs)||now+21600000)>now).sort((a,b)=>(b.createdAtMs||0)-(a.createdAtMs||0)).slice(0,8);
-    host.innerHTML=rows.length?rows.map(room=>'<a class="live-room-card" href="room.html?id='+encodeURIComponent(room.id)+'"><span class="live-room-pulse"><i></i></span><span class="live-room-copy"><strong>'+String(room.title||'Open room')+'</strong><small><span class="live-dot">LIVE</span> '+Number(room.memberCount||0)+'/'+Number(room.maxPlayers||6)+' people</small></span><span class="live-room-arrow">↗</span></a>').join(''):'<div class="discover-empty">No live rooms right now. Start a challenge and invite someone.</div>';
-  },()=>{host.innerHTML='<div class="discover-empty">Live rooms are temporarily unavailable.</div>';});
-}
-onAuthStateChanged(auth,initRoomListener);
