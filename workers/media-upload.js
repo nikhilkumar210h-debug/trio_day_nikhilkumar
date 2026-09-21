@@ -19,7 +19,7 @@ import { corsHeaders, json, isAllowedOrigin } from "./shared/cors.js";
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const FIREBASE_PUBLIC_KEYS_URL =
-  'https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com';
+  'https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com';
 
 // Per-UID rate limiting (20 requests/minute for signature generation)
 const RATE_LIMIT_WINDOW_MS = 60 * 1000;
@@ -95,22 +95,28 @@ async function hmacSha1(secret, data) {
 async function verifyFirebaseIdToken(idToken, projectId) {
   const response = await fetch(FIREBASE_PUBLIC_KEYS_URL);
   if (!response.ok) throw new Error('Failed to fetch Firebase public keys');
-  const keys = await response.json();
+  const jwks = await response.json();
 
   const [headerB64, payloadB64, signatureB64] = idToken.split('.');
   if (!headerB64 || !payloadB64 || !signatureB64) {
     throw new Error('Invalid token format');
   }
 
-  const header = JSON.parse(atob(headerB64));
-  const payload = JSON.parse(atob(payloadB64));
+  const decodeJwtPart = (value) => {
+    const b64 = value.replace(/-/g, '+').replace(/_/g, '/');
+    const padded = b64.padEnd(b64.length + ((4 - (b64.length % 4)) % 4), '=');
+    return JSON.parse(atob(padded));
+  };
 
-  const kid = header.kid;
-  if (!kid || !keys[kid]) throw new Error('Key not found');
+  const header = decodeJwtPart(headerB64);
+  const payload = decodeJwtPart(payloadB64);
+
+  const key = Array.isArray(jwks.keys) ? jwks.keys.find(k => k.kid === header.kid) : null;
+  if (!key) throw new Error('Key not found');
 
   const publicKey = await crypto.subtle.importKey(
-    'spki',
-    str2ab(base64ToPem(keys[kid])),
+    'jwk',
+    key,
     { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
     false,
     ['verify']
