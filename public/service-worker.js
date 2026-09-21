@@ -113,13 +113,17 @@ function shouldBypass(url) {
 }
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) =>
-      Promise.all(
-        FILES_TO_CACHE.map((url) => cache.add(new Request(url, { cache: "reload" })).catch((err) => console.warn("Cache skip:", url, err)))
+  if (location.hostname === "localhost" || location.hostname === "127.0.0.1" || location.hostname === "") {
+    event.waitUntil(Promise.resolve());
+  } else {
+    event.waitUntil(
+      caches.open(CACHE_NAME).then((cache) =>
+        Promise.all(
+          FILES_TO_CACHE.map((url) => cache.add(new Request(url, { cache: "reload" })).catch((err) => console.warn("Cache skip:", url, err)))
+        )
       )
-    )
-  );
+    );
+  }
   self.skipWaiting();
 });
 
