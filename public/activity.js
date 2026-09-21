@@ -184,8 +184,30 @@ function renderGameWorkspace(root){
  }
  paint();
 }
+function decorateActivityExperience(){
+  document.body.dataset.activityType=activity?.type||'activity';
+  document.body.dataset.activityLane=activity?.category||'';
+  const hero=$('activityHero');
+  if(hero && !hero.querySelector('.activity-hero-mark')){
+    const mark=document.createElement('div');
+    mark.className='activity-hero-mark';
+    mark.setAttribute('aria-hidden','true');
+    mark.innerHTML='<span class="activity-hero-orbit activity-hero-orbit--a"></span><span class="activity-hero-orbit activity-hero-orbit--b"></span><strong>'+esc(activity?.icon||'✦')+'</strong>';
+    hero.prepend(mark);
+  }
+  const workspace=$('forgeWorkspace');
+  if(workspace && !workspace.querySelector('.play-surface-hud')){
+    const hud=document.createElement('div');
+    hud.className='play-surface-hud';
+    const type=activityTypeInfo(activity);
+    hud.innerHTML='<div class="play-surface-mode"><span class="play-surface-dot"></span><strong>'+esc(type.label||'ACTIVITY')+'</strong></div><span class="play-surface-live">PLAY SURFACE</span>';
+    workspace.prepend(hud);
+  }
+}
+
 function render(){
  const type=activityTypeInfo(activity);
+ decorateActivityExperience();
  $('activityStatus').textContent='';$('activityHero').hidden=false;$('activityGrid').hidden=false;
  $('activityKicker').textContent=type.icon+' '+type.label+' · '+(activity.category||'General');
  $('activityTitle').textContent=activity.title;
@@ -227,6 +249,7 @@ function render(){
  else if(activity.type==='challenge')renderChallengeWorkspace(workspace);
  else if(activity.type==='game')renderGameWorkspace(workspace);
  else{workspace.hidden=true;setPassed(true)}
+ decorateActivityExperience();
  updateCompleteState();
  refreshExistingCompletion();
 }
