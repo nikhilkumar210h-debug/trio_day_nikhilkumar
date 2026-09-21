@@ -7,7 +7,7 @@ import { renderBadgesHtml } from './gamification/badges.js';
 import { xpIntoLevel, XP_PER_LEVEL, levelFromXp } from './gamification/constants.js';
 import { SoundManager } from './sound-manager.js';
 import { createSheet } from './ui/sheet.js';
-import { getCachedUser } from './services/userCache.js';
+import { getCachedUser, getFreshUser } from './services/userCache.js';
 import { getMyGlobalRank } from './gamification/leaderboards.js';
 import { getCommunityTask } from './gamification/community-tasks.js?v=20260921-profile';
 import { signOut, updateProfile } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
@@ -336,7 +336,7 @@ async function copyPublicUid(value, button) {
 // ── Main profile loader ──────────────────────────────────────────────────────
 async function loadProfile(uid) {
   // 1. User document — cache first
-  const userData = await getCachedUser(uid);
+  const userData = await ((me && me.uid === uid) ? getFreshUser(uid) : getCachedUser(uid));
   if (!userData) { if ($('profileName')) $('profileName').textContent = 'User not found'; return; }
   current = { ...userData, uid: userData.uid || uid };
 
@@ -465,7 +465,7 @@ async function loadProfile(uid) {
           type: 'challenge',
           icon: builtIn?.icon || '⚡',
           category: 'Challenge',
-          xp: 0,
+          xp: 25,
           atMs: Number(v.createdAtMs) || 0,
           source: 'challenge'
         });
