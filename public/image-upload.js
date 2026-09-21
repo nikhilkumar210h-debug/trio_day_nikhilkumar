@@ -1,5 +1,6 @@
 /** Cloudinary signed upload via Worker (no unsigned preset). */
 const CLOUD_NAME = 'vyhglthg';
+import { auth } from './firebase-init.js';
 // Worker endpoint for signed upload params — set after deployment
 const MEDIA_SIGN_URL = 'https://trio-media-upload.trioday-nikhil.workers.dev/media/sign';
 
@@ -69,11 +70,13 @@ function canvasToBlob(canvas, type, quality) {
  * @returns {Promise<Object>} signed params { signature, timestamp, cloudName, apiKey, resourceType, folder, publicId, allowedFormats, overwrite, uploadUrl }
  */
 async function getSignedParams(kind, firebaseToken) {
+  const token = firebaseToken || await auth.currentUser?.getIdToken();
+  if (!token) throw Error('Please sign in again before uploading media.');
   const res = await fetch(MEDIA_SIGN_URL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${firebaseToken}`
+      'Authorization': `Bearer ${token}`
     },
     body: JSON.stringify({ kind })
   });
