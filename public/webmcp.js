@@ -1,51 +1,11 @@
-import{activeCatalogActivities,getCatalogActivity}from'./activity-catalog.js?v=20260920-audit2';
-
-const modelContext=(typeof document!=='undefined'&&document.modelContext)
-  ||(typeof navigator!=='undefined'&&navigator.modelContext)
-  ||null;
+// Trio Day WebMCP — Challenge-first surface
+// Keep model-facing tools aligned with the current product. Legacy activity tools are retired.
+const modelContext=(typeof document!=='undefined'&&document.modelContext)||(typeof navigator!=='undefined'&&navigator.modelContext)||null;
 if(modelContext&&typeof modelContext.registerTool==='function'){
-  const compact=a=>({id:a.id,type:a.type,title:a.title,category:a.category,difficulty:a.difficulty,durationMin:a.durationMin,xpReward:a.xpReward,icon:a.icon,description:a.description});
   const controller=new AbortController();
+  const go=id=>{const q=id?'?challenge='+encodeURIComponent(id):'';location.href='challenge.html'+q;return JSON.stringify({ok:true,url:'challenge.html'+q});};
   try{
-    await modelContext.registerTool({
-      name:'search_activities',
-      title:'Search Trio Day activities',
-      description:'Find active Trio Day activities by title, category, type, or difficulty. Read-only.',
-      inputSchema:{type:'object',properties:{query:{type:'string',description:'Text to match against activity title, category, or description.'},type:{type:'string',enum:['puzzle','build','learn','challenge','game']},difficulty:{type:'string',enum:['Easy','Medium','Hard']},limit:{type:'number',minimum:1,maximum:10}},required:[]},
-      annotations:{readOnlyHint:true,untrustedContentHint:true},
-      execute:async({query='',type='',difficulty='',limit=6}={})=>{
-        const q=String(query).trim().toLowerCase();
-        const items=activeCatalogActivities().filter(a=>
-          (!type||a.type===type)&&(!difficulty||a.difficulty===difficulty)&&(!q||[a.title,a.category,a.description,a.premise].some(v=>String(v||'').toLowerCase().includes(q)))
-        ).slice(0,Math.min(10,Math.max(1,Number(limit)||6)));
-        return JSON.stringify(items.map(compact));
-      }
-    },{signal:controller.signal});
-    await modelContext.registerTool({
-      name:'get_activity',
-      title:'Get Trio Day activity',
-      description:'Get the active details for one Trio Day activity by ID. Read-only.',
-      inputSchema:{type:'object',properties:{activityId:{type:'string'}},required:['activityId']},
-      annotations:{readOnlyHint:true,untrustedContentHint:true},
-      execute:async({activityId})=>{
-        const a=getCatalogActivity(String(activityId||''));
-        return a?JSON.stringify(compact(a)):JSON.stringify({error:'Activity not found or inactive.'});
-      }
-    },{signal:controller.signal});
-    await modelContext.registerTool({
-      name:'open_activity',
-      title:'Open Trio Day activity',
-      description:'Navigate the current Trio Day page to a specific active activity.',
-      inputSchema:{type:'object',properties:{activityId:{type:'string'}},required:['activityId']},
-      annotations:{readOnlyHint:false,untrustedContentHint:true},
-      execute:async({activityId})=>{
-        const a=getCatalogActivity(String(activityId||''));
-        if(!a)return JSON.stringify({error:'Activity not found or inactive.'});
-        location.href='activity.html?id='+encodeURIComponent(a.id)+'&source=catalog';
-        return null;
-      }
-    },{signal:controller.signal});
-  }catch(error){
-    console.warn('[WebMCP] tool registration skipped:',error);
-  }
+    await modelContext.registerTool({name:'search_challenges',title:'Search Trio Day challenges',description:'Find and open the current Challenge surface. Read-only.',inputSchema:{type:'object',properties:{query:{type:'string'}},required:[]},annotations:{readOnlyHint:true,untrustedContentHint:true},execute:async({query=''}={})=>JSON.stringify({surface:'challenge.html',query:String(query||'').trim(),mechanics:['PICK','PREDICT','GUESS','DEFEND','JUDGE','HELP']})},{signal:controller.signal});
+    await modelContext.registerTool({name:'open_challenge',title:'Open Trio Day challenge',description:'Open the current public Challenge surface, optionally targeting a challenge ID.',inputSchema:{type:'object',properties:{challengeId:{type:'string'}},required:[]},annotations:{readOnlyHint:false,untrustedContentHint:true},execute:async({challengeId=''})=>go(String(challengeId||''))},{signal:controller.signal});
+  }catch(error){console.warn('[WebMCP] registration skipped:',error)}
 }
