@@ -35,17 +35,17 @@
   --color-border-focus: var(--color-border-focus-dark);
 
   /* Brand primitives (used by semantic tokens above) */
-  --color-primary: #6366f1;
-  --color-primary-strong: #4f46e5;
-  --color-primary-soft: rgba(99, 102, 241, 0.12);
-  --color-primary-glow: rgba(99, 102, 241, 0.35);
+  --color-primary: #8B5CF6;
+  --color-primary-strong: #6366F1;
+  --color-primary-soft: rgba(139, 92, 246, 0.14);
+  --color-primary-glow: rgba(139, 92, 246, 0.38);
   --color-primary-ink: #ffffff;
   /* Accent text: readable brand color used as foreground on both themes */
-  --color-primary-text: #a5b4fc; /* light indigo — readable on dark surfaces */
+  --color-primary-text: #C4B5FD; /* light indigo — readable on dark surfaces */
 
-  --color-secondary: #ec4899;
-  --color-secondary-strong: #db2777;
-  --color-secondary-soft: rgba(236, 72, 153, 0.12);
+  --color-secondary: #A78BFA;
+  --color-secondary-strong: #8B5CF6;
+  --color-secondary-soft: rgba(167, 139, 250, 0.14);
   --color-secondary-ink: #ffffff;
 
   --color-accent: #10b981;
@@ -67,25 +67,25 @@
   /* ═══════════════════════════════════════════════════════════════════
      DARK THEME PRIMITIVES (default)
      ───────────────────────────────────────────────────────────────── */
-  --color-bg-dark: #0a0f1a;
-  --color-bg-elevated-dark: #111827;
-  --color-bg-hover-dark: #1a2234;
-  --color-surface-dark: #141b2e;
-  --color-surface-strong-dark: #1e293b;
-  --color-surface-hover-dark: #243049;
+  --color-bg-dark: #08051A;
+  --color-bg-elevated-dark: #0F0A27;
+  --color-bg-hover-dark: #171039;
+  --color-surface-dark: #17113A;
+  --color-surface-strong-dark: #21164A;
+  --color-surface-hover-dark: #2A1B59;
 
-  --color-glass-dark: rgba(255, 255, 255, 0.04);
-  --color-glass-strong-dark: rgba(255, 255, 255, 0.08);
-  --color-glass-hover-dark: rgba(255, 255, 255, 0.12);
+  --color-glass-dark: rgba(196, 181, 253, 0.055);
+  --color-glass-strong-dark: rgba(196, 181, 253, 0.10);
+  --color-glass-hover-dark: rgba(196, 181, 253, 0.14);
 
   --color-ink-dark: #f1f5f9;
   --color-ink-muted-dark: #94a3b8;
   --color-ink-dim-dark: #64748b;
   --color-ink-on-primary-dark: #ffffff;
 
-  --color-border-dark: rgba(148, 163, 184, 0.12);
-  --color-border-strong-dark: rgba(148, 163, 184, 0.20);
-  --color-border-focus-dark: #6366f1;
+  --color-border-dark: rgba(196, 181, 253, 0.14);
+  --color-border-strong-dark: rgba(196, 181, 253, 0.24);
+  --color-border-focus-dark: #8B5CF6;
 
   /* ═══════════════════════════════════════════════════════════════════
      SPACING — 4px base scale
@@ -252,12 +252,12 @@
   --color-border-focus: var(--color-border-focus-light);
 
   /* Light primitives */
-  --color-bg-light: #f8fafc;
-  --color-bg-elevated-light: #ffffff;
-  --color-bg-hover-light: #f1f5f9;
-  --color-surface-light: #ffffff;
-  --color-surface-strong-light: #f8fafc;
-  --color-surface-hover-light: #f1f5f9;
+  --color-bg-light: #F8F7FF;
+  --color-bg-elevated-light: #FFFFFF;
+  --color-bg-hover-light: #EDE9FE;
+  --color-surface-light: #FFFFFF;
+  --color-surface-strong-light: #F8F7FF;
+  --color-surface-hover-light: #EDE9FE;
 
   /* Glass / overlay — increased opacity for light mode */
   --color-glass-light: rgba(15, 23, 42, 0.08);
@@ -271,12 +271,12 @@
   --color-ink-on-primary-light: #ffffff;
 
   /* Accent text — darker indigo for light surfaces */
-  --color-primary-text: #4f46e5;
+  --color-primary-text: #6366F1;
 
   /* Borders — stronger opacity for light mode visibility */
-  --color-border-light: rgba(15, 23, 42, 0.12);
-  --color-border-strong-light: rgba(15, 23, 42, 0.20);
-  --color-border-focus-light: #4f46e5;
+  --color-border-light: rgba(99, 102, 241, 0.14);
+  --color-border-strong-light: rgba(99, 102, 241, 0.22);
+  --color-border-focus-light: #6366F1;
 
   /* Shadows — slightly stronger for light theme depth */
   --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.08);
