@@ -164,11 +164,13 @@
     </div>
   </div>
 
-  <div id="storyOverlay" class="modal-overlay" hidden>
-    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="storyTitle">
-      <div class="modal-head">
-        <div><span class="eyebrow">Create</span>
+  <div id="storyOverlay" class="modal-overlay story-overlay" hidden>
+    <div class="modal story-composer-modal" role="dialog" aria-modal="true" aria-labelledby="storyTitle">
+      <div class="modal-head story-composer-head">
+        <div>
+          <span class="eyebrow">Story Studio</span>
           <h2 id="storyTitle">Share your story</h2>
+          <p class="story-composer-sub">Turn a moment into something worth seeing.</p>
         </div><button id="storyModalClose" class="icon-btn" type="button">×</button>
       </div>
       <form id="storyForm" novalidate>
@@ -178,9 +180,9 @@
           <span class="label-text" style="font-size:10px; letter-spacing:0.05em; opacity:0.8">Photo / Video</span>
           <label class="upload-area" for="storyMedia" style="padding:12px">
             <span class="upload-icon" style="width:36px;height:36px;font-size:18px">🎬</span>
-            <span class="upload-text"><strong>Tap to upload</strong><small>Photo or video — up to 100MB</small></span>
+            <span class="upload-text"><strong>Choose a photo or video</strong><small>Photo up to 12MB · video up to 100MB</small></span>
           </label>
-          <input type="file" id="storyMedia" accept="image/*,video/*" hidden>
+          <input type="file" id="storyMedia" accept="image/*,video/*" capture="environment" hidden>
           <div id="storyPreview" class="media-preview" hidden></div>
         </div>
         
