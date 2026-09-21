@@ -87,8 +87,11 @@ const FILES_TO_CACHE = [
   BASE + "voice-status.js",
   BASE + "offline.html",
   BASE + "manifest.json",
-  BASE + "icons/icon-192.png",
-  BASE + "icons/icon-512.png"
+  BASE + "icons/trio-day-logo.svg",
+  BASE + "icons/trio-day-square-light.svg",
+  BASE + "icons/trio-day-round-light.svg",
+  BASE + "icons/trio-day-square-purple.svg",
+  BASE + "icons/trio-day-round-purple.svg"
 ];
 
 function shouldBypass(url) {
