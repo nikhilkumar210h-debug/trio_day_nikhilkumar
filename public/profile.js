@@ -184,7 +184,11 @@ async function connect(uid) {
       const myName = mine?.name || me.displayName || 'Someone';
       await setDoc(a, { uid, userId: current?.userId || makeUserId(uid), name: current?.name || 'User', createdAt: serverTimestamp() });
       await setDoc(b, { uid: me.uid, createdAt: serverTimestamp() });
-      await notifyUser(uid, { type: 'connect', actorUid: me.uid, actorName: myName });
+      try {
+        await notifyUser(uid, { type: 'connect', actorUid: me.uid, actorName: myName });
+      } catch (notificationErr) {
+        console.warn('[Profile] Connection saved, notification delivery failed:', notificationErr);
+      }
     }
     // Invalidate connection-related caches so counts + state refresh
     trioCache.invalidate(`connstate_${me.uid}_${uid}`);
