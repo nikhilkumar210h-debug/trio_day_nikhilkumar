@@ -440,7 +440,7 @@ async function loadProfile(uid) {
 
   try {
     const [challengeSnap, communitySnap] = await Promise.all([
-      getDocs(query(collection(db, 'challengeAnswers'), where('uid', '==', uid), orderBy('createdAtMs', 'desc'), limit(24))).catch(() => null),
+      getDocs(query(collection(db, 'challengeAnswers'), where('uid', '==', uid), limit(24))).catch(() => null),
       getDocs(query(collectionGroup(db, 'completions'), where('uid', '==', uid), limit(24))).catch(() => null)
     ]);
 
