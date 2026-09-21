@@ -25,18 +25,14 @@ const PUBLIC_PAGES = new Set([
   'offline.html',
   'privacy.html',
   'privacy-policy.html',
-  'view_post.html',
   'all-users.html',    // Discover
   'build.html',        // Forge Build lane
   'learn.html',        // Forge Learn lane
   'challenge.html',    // Forge Challenge lane
   'puzzle.html',       // Forge Puzzle lane (if exists)
   'tasks.html',        // Do page
-  'task-create.html',  // Create activity (public entry, but requires auth for actual creation)
-  'task-detail.html',  // Community task detail
   'leaderboard.html',
   'admin-tasks.html',
-  'voice-status.html',
   'search.html',
 ]);
 
