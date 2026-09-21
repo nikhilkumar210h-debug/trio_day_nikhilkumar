@@ -120,7 +120,13 @@
                 </div>
             </section>
             <section class="profile-section">
-                <h3>Connections</h3>
+                <div class="profile-section-head">
+                    <div><h3>Connections</h3><p>See who follows this profile and who it follows.</p></div>
+                </div>
+                <div class="connections-tabs" role="tablist" aria-label="Profile connections">
+                    <button type="button" class="connections-tab active" id="followersTab" data-connections-mode="followers">Followers <span id="followersTabCount">0</span></button>
+                    <button type="button" class="connections-tab" id="followingTab" data-connections-mode="following">Following <span id="followingTabCount">0</span></button>
+                </div>
                 <div id="connectionsList" class="connections-list">
                     <div class="td-skeleton td-skeleton--card"></div><div class="td-skeleton td-skeleton--card"></div>
                 </div>
@@ -131,7 +137,7 @@
         <div class="nav-row"></div>
     </nav>
     <script type="module" src="auth-guard.js"></script><script type="module" src="auth-ui.js"></script>
-    <script type="module" src="profile.js?v=20260920-audit2"></script>
+    <script type="module" src="profile.js?v=20260921-connections2"></script>
     <script src="install-prompt.js" defer></script>
   <script type="module" src="theme.js"></script>
 <script type="module" src="ui/header.js"></script>
