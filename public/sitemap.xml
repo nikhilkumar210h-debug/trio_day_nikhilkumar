@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://nkm-ind.web.app/</loc><lastmod>2026-08-31</lastmod><changefreq>daily</changefreq><priority>1.00</priority></url>
-  <url><loc>https://nkm-ind.web.app/index.html</loc><lastmod>2026-08-31</lastmod><changefreq>daily</changefreq><priority>0.90</priority></url>
-  <url><loc>https://nkm-ind.web.app/all-users.html</loc><lastmod>2026-08-31</lastmod><changefreq>daily</changefreq><priority>0.70</priority></url>
-  <url><loc>https://nkm-ind.web.app/chat.html</loc><lastmod>2026-08-31</lastmod><changefreq>daily</changefreq><priority>0.70</priority></url>
-  <url><loc>https://nkm-ind.web.app/profile.html</loc><lastmod>2026-08-31</lastmod><changefreq>daily</changefreq><priority>0.70</priority></url>
-  <url><loc>https://nkm-ind.web.app/tasks.html</loc><lastmod>2026-08-31</lastmod><changefreq>daily</changefreq><priority>0.80</priority></url>
-  <url><loc>https://nkm-ind.web.app/leaderboard.html</loc><lastmod>2026-08-31</lastmod><changefreq>daily</changefreq><priority>0.70</priority></url>
-  <url><loc>https://nkm-ind.web.app/view_post.html</loc><lastmod>2026-08-31</lastmod><changefreq>daily</changefreq><priority>0.60</priority></url>
-  <url><loc>https://nkm-ind.web.app/private-chat.html</loc><lastmod>2026-08-31</lastmod><changefreq>daily</changefreq><priority>0.60</priority></url>
-  <url><loc>https://nkm-ind.web.app/task-create.html</loc><lastmod>2026-08-31</lastmod><changefreq>weekly</changefreq><priority>0.50</priority></url>
-  <url><loc>https://nkm-ind.web.app/task-detail.html</loc><lastmod>2026-08-31</lastmod><changefreq>weekly</changefreq><priority>0.50</priority></url>
-  <url><loc>https://nkm-ind.web.app/login.html</loc><lastmod>2026-08-31</lastmod><changefreq>monthly</changefreq><priority>0.40</priority></url>
+  <url><loc>https://trio-day.trioday-nikhil.workers.dev/</loc><lastmod>2026-08-31</lastmod><changefreq>daily</changefreq><priority>1.00</priority></url>
+  <url><loc>https://trio-day.trioday-nikhil.workers.dev/index.html</loc><lastmod>2026-08-31</lastmod><changefreq>daily</changefreq><priority>0.90</priority></url>
+  <url><loc>https://trio-day.trioday-nikhil.workers.dev/all-users.html</loc><lastmod>2026-08-31</lastmod><changefreq>daily</changefreq><priority>0.70</priority></url>
+  <url><loc>https://trio-day.trioday-nikhil.workers.dev/chat.html</loc><lastmod>2026-08-31</lastmod><changefreq>daily</changefreq><priority>0.70</priority></url>
+  <url><loc>https://trio-day.trioday-nikhil.workers.dev/profile.html</loc><lastmod>2026-08-31</lastmod><changefreq>daily</changefreq><priority>0.70</priority></url>
+  <url><loc>https://trio-day.trioday-nikhil.workers.dev/tasks.html</loc><lastmod>2026-08-31</lastmod><changefreq>daily</changefreq><priority>0.80</priority></url>
+  <url><loc>https://trio-day.trioday-nikhil.workers.dev/leaderboard.html</loc><lastmod>2026-08-31</lastmod><changefreq>daily</changefreq><priority>0.70</priority></url>
+  <url><loc>https://trio-day.trioday-nikhil.workers.dev/view_post.html</loc><lastmod>2026-08-31</lastmod><changefreq>daily</changefreq><priority>0.60</priority></url>
+  <url><loc>https://trio-day.trioday-nikhil.workers.dev/private-chat.html</loc><lastmod>2026-08-31</lastmod><changefreq>daily</changefreq><priority>0.60</priority></url>
+  <url><loc>https://trio-day.trioday-nikhil.workers.dev/task-create.html</loc><lastmod>2026-08-31</lastmod><changefreq>weekly</changefreq><priority>0.50</priority></url>
+  <url><loc>https://trio-day.trioday-nikhil.workers.dev/task-detail.html</loc><lastmod>2026-08-31</lastmod><changefreq>weekly</changefreq><priority>0.50</priority></url>
+  <url><loc>https://trio-day.trioday-nikhil.workers.dev/login.html</loc><lastmod>2026-08-31</lastmod><changefreq>monthly</changefreq><priority>0.40</priority></url>
 </urlset>
