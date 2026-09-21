@@ -1,5 +1,9 @@
 import os
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
 
 def _csv(value: str) -> list[str]:
     return [item.strip() for item in (value or '').split(',') if item.strip()]
