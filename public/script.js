@@ -12,7 +12,7 @@ import {
   getDocs, limit, where, deleteField
 } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 import { makeUserId, escapeHtml, initials, formatTime, getFilterCSS } from './utils.js';
-import { listCommunityTasks, isMember, getMyJoinedTaskIds } from './gamification/community-tasks.js';
+import { listCommunityTasks, isMember, getMyJoinedTaskIds } from './gamification/community-tasks.js?v=20260921-fix2';
 import { activityCardHtml, normalizeActivityType } from './activity-ui.js';
 import { activeCatalogActivities } from './activity-catalog.js';
 
@@ -147,12 +147,18 @@ async function renderStoryStrip(uid) {
     const [publicSnap, friendsSnap] = await Promise.all([
       getDocs(query(
         collection(db, 'posts'),
+        where('type', '==', 'story'),
+        where('isStory', '==', true),
         where('privacy', '==', 'public'),
+        where('expiresAtMs', '>', now),
         limit(50)
       )),
       getDocs(query(
         collection(db, 'posts'),
+        where('type', '==', 'story'),
+        where('isStory', '==', true),
         where('allowedUids', 'array-contains', uid),
+        where('expiresAtMs', '>', now),
         limit(50)
       ))
     ]);
