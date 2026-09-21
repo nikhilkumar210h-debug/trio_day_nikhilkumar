@@ -122,48 +122,6 @@
         </div>
     </nav>
 
-  <div id="modalOverlay" class="modal-overlay" hidden>
-    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-      <div class="modal-head">
-        <div><span class="eyebrow">Create</span>
-          <h2 id="modalTitle">Share with the community</h2>
-        </div><button id="modalClose" class="icon-btn" type="button">×</button>
-      </div>
-      <form id="postForm" novalidate>
-        <label class="field" style="margin-bottom:6px"><span class="label-text" style="font-size:10px; opacity:0.85">Caption</span><textarea id="message"
-            placeholder="Add a caption…" rows="3" maxlength="500" style="font-size:14px"></textarea></label>
-        <div id="captionMount" style="margin-top:4px"></div>
-        <div class="field" style="margin-top:8px">
-          <span class="label-text" style="font-size:10px; letter-spacing:0.05em; opacity:0.8">Photo</span>
-          <label class="upload-area" for="mediaInput" style="padding:12px">
-            <span class="upload-icon" style="width:36px;height:36px;font-size:18px">📷</span>
-            <span class="upload-text"><strong>Tap to upload photo</strong><small>JPG, PNG, WEBP — up to 40MB</small></span>
-          </label>
-          <input type="file" id="mediaInput" accept="image/*" hidden>
-          <div id="preview" class="media-preview" hidden></div>
-        </div>
-        <div id="postFilterPanel" class="post-filter-panel" hidden>
-          <div class="filter-options" role="radiogroup" aria-label="Filters">
-            <button type="button" class="filter-btn active" data-post-filter="none">Normal</button>
-            <button type="button" class="filter-btn" data-post-filter="vivid">Vivid</button>
-            <button type="button" class="filter-btn" data-post-filter="warm">Warm</button>
-            <button type="button" class="filter-btn" data-post-filter="cool">Cool</button>
-            <button type="button" class="filter-btn" data-post-filter="bw">B&W</button>
-            <button type="button" class="filter-btn" data-post-filter="retro">Retro</button>
-            <button type="button" class="filter-btn" data-post-filter="cinematic">Cinematic</button>
-          </div>
-          <div class="filter-intensity">
-            <label>Intensity <span id="postFilterIntensityValue">100%</span></label>
-            <input type="range" id="postFilterIntensity" min="0" max="100" value="100">
-          </div>
-        </div>
-        <p id="formStatus" class="status" aria-live="polite"></p>
-        <div class="modal-actions"><button type="button" id="cancelBtn" class="btn secondary">Cancel</button><button
-            type="submit" id="submitBtn" class="btn primary">Post</button></div>
-      </form>
-    </div>
-  </div>
-
   <div id="storyOverlay" class="modal-overlay story-overlay" hidden>
     <div class="modal story-composer-modal" role="dialog" aria-modal="true" aria-labelledby="storyTitle">
       <div class="modal-head story-composer-head">
@@ -295,20 +253,6 @@
         <div class="modal-actions"><button type="button" id="storyCancelBtn" class="btn secondary">Cancel</button><button
             type="submit" id="storySubmitBtn" class="btn primary">Share Story</button></div>
       </form>
-    </div>
-  </div>
-
-  <!-- Create chooser — plus asks Story / Post -->
-  <div id="createChooser" class="modal-overlay" hidden>
-    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="chooserTitle" style="max-width:360px; text-align:center">
-      <h3 id="chooserTitle" style="margin:0 0 6px; font-family:var(--font-display); font-size:22px">Create New</h3>
-      <p style="color:var(--ink-muted); font-size:13px; margin:0 0 18px">What do you want to share?</p>
-      <div style="display:grid; gap:10px">
-        <button id="chooserPost" class="btn secondary" type="button" style="justify-content:center; padding:14px"><span>📝</span> Post</button>
-        <button id="chooserStory" class="btn secondary" type="button" style="justify-content:center; padding:14px"><span>📸</span> Story</button>
-        <button id="chooserVoice" class="btn secondary" type="button" style="justify-content:center; padding:14px"><span>🎙️</span> Voice Status</button>
-        <button id="chooserCancel" class="btn ghost" type="button" style="justify-content:center">Cancel</button>
-      </div>
     </div>
   </div>
 
