@@ -58,21 +58,22 @@
         <p class="greeting-sub" id="greetingSub">One clear move. Then the next.</p>
       </div>
       <div id="todayAvatar" class="today-avatar" aria-label="Your profile" role="img">N</div>
-      <div class="today-visual" aria-label="Today's visual summary">
-        <div class="today-visual-orbit" aria-hidden="true"><span>☸</span></div>
-        <div class="today-visual-copy">
-          <span class="today-visual-eyebrow">RIGHT NOW</span>
-          <strong id="todayVisualTitle">One meaningful move</strong>
-          <span id="todayVisualMeta">Pick one and start.</span>
-        </div>
-        <div class="today-visual-bars" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
-      </div>
     </section>
 
     <!-- Stories strip (preserves heroStories id) -->
     <section id="storiesStrip" class="nkm-stories-strip" aria-label="Stories">
       <div id="heroStories" style="display:flex; gap:10px; align-items:center;"></div>
       <div id="heroStoriesEmpty" class="nkm-pulse-card--empty" style="display:none; padding:10px 14px; font-size:12px; border:1px dashed var(--border); border-radius:12px; color:var(--color-ink-dim)">No stories yet</div>
+    </section>
+
+    <!-- Today's live signal -->
+    <section class="today-visual" aria-label="Today's visual summary">
+      <div class="today-visual-orbit" aria-hidden="true"><span>☸</span></div>
+      <div class="today-visual-copy">
+        <strong id="todayVisualTitle">One meaningful move</strong>
+        <span id="todayVisualMeta">Pick one and start.</span>
+      </div>
+      <div class="today-visual-bars" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
     </section>
 
     <!-- Today's Focus — real task data -->
