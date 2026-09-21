@@ -1,6 +1,6 @@
 import { auth, db } from './firebase-init.js';
 import { notifyUser } from './services/notificationHelpers.js';
-import { uploadPostImage, uploadStoryMedia } from './image-upload.js';
+import { uploadStoryMedia } from './image-upload.js';
 import { trioCache } from './trio-cache.js';
 import { getCachedUserProfile, getMyProfile, getCachedUser } from './services/userCache.js';
 import { SoundManager } from './sound-manager.js';
@@ -646,6 +646,12 @@ function closeStoryModal() {
   editorState.originalImage = null;
   const storyEditor = $('storyEditor');
   if (storyEditor) storyEditor.hidden = true;
+  storyPrivacy = 'public';
+  document.querySelectorAll('.story-privacy-btn').forEach(btn => {
+    const active = btn.dataset.privacy === 'public';
+    btn.classList.toggle('active', active);
+    btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+  });
   setStoryStatus('');
 }
 
@@ -665,6 +671,7 @@ document.querySelectorAll('.story-privacy-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.story-privacy-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
+    document.querySelectorAll('.story-privacy-btn').forEach(b => b.setAttribute('aria-pressed', b === btn ? 'true' : 'false'));
     storyPrivacy = btn.dataset.privacy;
   });
 });
@@ -975,6 +982,16 @@ storyForm?.addEventListener('submit', async e => {
       }
       const expiresAt = serverTimestamp();
       const expiresAtMs = Date.now() + 24 * 60 * 60 * 1000;
+      let allowedUids = [currentUser.uid];
+      if (storyPrivacy === 'friends') {
+        const [followingSnap, followersSnap] = await Promise.all([
+          getDocs(query(collection(db, 'users', currentUser.uid, 'following'), limit(500))),
+          getDocs(query(collection(db, 'users', currentUser.uid, 'followers'), limit(500)))
+        ]);
+        const following = new Set(followingSnap.docs.map(d => d.id));
+        const mutual = followersSnap.docs.map(d => d.id).filter(uid => following.has(uid) && uid !== currentUser.uid);
+        allowedUids = [currentUser.uid, ...mutual].slice(0, 500);
+      }
       await addDoc(collection(db, 'posts'), {
         name: me?.name || currentUser.displayName || 'User',
         userId: me?.userId || makeUserId(currentUser.uid),
