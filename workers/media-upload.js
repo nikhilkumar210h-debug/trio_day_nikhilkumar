@@ -3,7 +3,7 @@
  *
  * POST /media/sign
  *   Auth: Authorization: Bearer <firebase-id-token>
- *   Body: { "kind": "post" | "story_image" | "story_video" | "profile" }
+ *   Body: { "kind": "story_image" | "story_video" | "profile" }
  *   Returns: Cloudinary signed upload params (signature, timestamp, cloudName, apiKey, resourceType, folder, publicId, allowedFormats, overwrite)
  *
  * Security:
@@ -40,13 +40,6 @@ function checkRateLimit(uid) {
 
 // Upload kind configuration — Worker controls all Cloudinary parameters
 const UPLOAD_KINDS = {
-  post: {
-    resourceType: 'image',
-    folder: 'trio/posts',
-    allowedFormats: ['jpg', 'jpeg', 'png', 'webp'],
-    overwrite: false,
-    maxFileSize: 40 * 1024 * 1024,
-  },
   story_image: {
     resourceType: 'image',
     folder: 'trio/stories',
