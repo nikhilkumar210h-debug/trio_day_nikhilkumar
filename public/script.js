@@ -1054,17 +1054,26 @@ storyForm?.addEventListener('submit', async e => {
       const hasEditorEffects = editorState.filter !== 'none' || editorState.textOverlays.length > 0 || editorState.stickers.length > 0;
       if (selectedFile) {
         setStoryStatus('Processing…');
+        const firebaseToken = await currentUser.getIdToken();
         if (hasEditorEffects && editorState.originalImage && selectedFile.type.startsWith('image/')) {
           const c = $('storyEditorCanvas');
           if (c) {
             const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.9));
-            if (blob) mediaUrl = await uploadPostImage(currentUser.uid, new File([blob], `story-${Date.now()}.jpg`, { type: 'image/jpeg' }));
-            else mediaUrl = await uploadStoryMedia(currentUser.uid, selectedFile);
+            setStoryStatus('Uploading…');
+            if (blob) {
+              mediaUrl = await uploadPostImage(
+                currentUser.uid,
+                new File([blob], `story-${Date.now()}.jpg`, { type: 'image/jpeg' }),
+                firebaseToken
+              );
+            } else {
+              mediaUrl = await uploadStoryMedia(currentUser.uid, selectedFile, firebaseToken);
+            }
           }
         } else {
-          mediaUrl = await uploadStoryMedia(currentUser.uid, selectedFile);
+          setStoryStatus('Uploading…');
+          mediaUrl = await uploadStoryMedia(currentUser.uid, selectedFile, firebaseToken);
         }
-        setStoryStatus('Uploading…');
       }
       const expiresAt = serverTimestamp();
       const expiresAtMs = Date.now() + 24 * 60 * 60 * 1000;
