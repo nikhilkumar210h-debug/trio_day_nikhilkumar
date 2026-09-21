@@ -5,7 +5,6 @@ import {
   onAuthStateChanged, sendPasswordResetEmail, signInWithCustomToken
 } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
 import { makeUserId } from './utils.js';
-import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-functions.js';
 
 const $ = id => document.getElementById(id);
 const statusEl = $('authFormStatus');
@@ -142,14 +141,28 @@ async function handleGoogle() {
 }
 
 async function loginWithTrioUid(trioUid, password) {
-  // Cloud Function resolves Trio UID server-side, verifies the password against
-  // Firebase Auth and returns a short-lived custom token. The email never reaches the browser.
-  const functions = getFunctions();
-  const signInCallable = httpsCallable(functions, 'signInWithTrioUid');
-  const result = await signInCallable({ trioUid, password });
-  const customToken = result?.data?.customToken;
-  if (!customToken) throw new Error('UID login service returned an invalid response.');
-  return signInWithCustomToken(auth, customToken);
+  // Resolve the public Trio UID server-side. The browser never receives the
+  // account email; the Flask API verifies the password and returns a custom token.
+  const apiBase = window.TRIO_API_BASE_URL ||
+    (location.hostname === '127.0.0.1' || location.hostname === 'localhost'
+      ? 'http://127.0.0.1:5000'
+      : 'https://trio-day-api.onrender.com');
+
+  const response = await fetch(apiBase + '/api/auth/trio-uid', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ trioUid, password })
+  });
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const error = new Error(data.error || 'Unable to sign in with Trio UID.');
+    error.code = response.status === 401 ? 'auth/invalid-credential' : 'auth/api-error';
+    throw error;
+  }
+
+  if (!data.customToken) throw new Error('UID login service returned an invalid response.');
+  return signInWithCustomToken(auth, data.customToken);
 }
 
 function updateStrength() {
