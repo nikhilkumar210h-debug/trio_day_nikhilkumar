@@ -14,6 +14,7 @@ import {
   uploadStoryMedia,
 } from './image-upload.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
+import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
 import {
   collection, addDoc, serverTimestamp, Timestamp
 } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
@@ -666,31 +667,32 @@ async function publish() {
   if (retryBtn) retryBtn.hidden = true;
   if (cancelBtn) cancelBtn.hidden = false;
 
-  const controller = new AbortController();
-  state.uploadAbort = controller;
+const controller = new AbortController();
+    state.uploadAbort = controller;
 
-  try {
-    const me = await getMyProfile(currentUser.uid);
-    let mediaUrl = null;
-    const fileToUpload = media ? await exportEditedBlob() : null;
+    try {
+      const me = await getMyProfile(currentUser.uid);
+      let mediaUrl = null;
+      const fileToUpload = media ? await exportEditedBlob() : null;
 
-    if (fileToUpload) {
-      setProgress(2, 'Preparing upload…');
-      setStatus(state.mode === 'story' ? 'Uploading story…' : 'Uploading photo…');
-      if (state.mode === 'story') {
-        // CRITICAL: stories always go to trio/stories — never uploadPostImage
-        const edited =
-          !fileToUpload.type.startsWith('video/') &&
-          (state.editor.filter !== 'none' ||
-            state.editor.rotation !== 0 ||
-            state.editor.textOverlays.length ||
-            state.editor.stickers.length);
-        mediaUrl = await uploadStoryMedia(currentUser.uid, fileToUpload);
-      } else {
-        mediaUrl = await uploadPostImage(currentUser.uid, fileToUpload);
+      if (fileToUpload) {
+        setProgress(2, 'Preparing upload…');
+        setStatus(state.mode === 'story' ? 'Uploading story…' : 'Uploading photo…');
+        const token = await currentUser.getIdToken();
+        if (state.mode === 'story') {
+          // CRITICAL: stories always go to trio/stories — never uploadPostImage
+          const edited =
+            !fileToUpload.type.startsWith('video/') &&
+            (state.editor.filter !== 'none' ||
+              state.editor.rotation !== 0 ||
+              state.editor.textOverlays.length ||
+              state.editor.stickers.length);
+          mediaUrl = await uploadStoryMedia(currentUser.uid, fileToUpload, token, controller.signal);
+        } else {
+          mediaUrl = await uploadPostImage(currentUser.uid, fileToUpload, token, controller.signal);
+        }
+        setProgress(100, 'Processing…');
       }
-      setProgress(100, 'Processing…');
-    }
 
     const base = {
       name: me?.name || currentUser.displayName || 'User',

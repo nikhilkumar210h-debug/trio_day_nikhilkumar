@@ -1,10 +1,9 @@
-/** Cloudinary unsigned upload (no Firebase Storage). */
+/** Cloudinary signed upload via Worker (no unsigned preset). */
 const CLOUD_NAME = 'vyhglthg';
-const UPLOAD_PRESET = 'trio_uploads';
-const UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`;
-const VIDEO_UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/video/upload`;
+// Worker endpoint for signed upload params — set after deployment
+const MEDIA_SIGN_URL = 'https://trio-media-upload.trioday-nikhil.workers.dev/media/sign';
 
-function randomId(){
+function randomId() {
   return Math.random().toString(36).slice(2, 10);
 }
 
@@ -13,9 +12,9 @@ export async function compressImageFile(file, {
   maxEdge = 1280,
   maxBytes = 850_000,
   startQuality = 0.78
-} = {}){
+} = {}) {
   const url = URL.createObjectURL(file);
-  try{
+  try {
     const img = new Image();
     await new Promise((res, rej) => {
       img.onload = res;
@@ -32,17 +31,17 @@ export async function compressImageFile(file, {
     let type = 'image/webp';
     let quality = startQuality;
     let blob = await canvasToBlob(canvas, type, quality);
-    if(!blob || blob.type !== 'image/webp'){
+    if (!blob || blob.type !== 'image/webp') {
       type = 'image/jpeg';
       blob = await canvasToBlob(canvas, type, quality);
     }
 
-    while(blob && blob.size > maxBytes && quality > 0.42){
+    while (blob && blob.size > maxBytes && quality > 0.42) {
       quality -= 0.06;
       blob = await canvasToBlob(canvas, type, quality);
     }
 
-    if(!blob || blob.size > maxBytes){
+    if (!blob || blob.size > maxBytes) {
       throw Error('Photo too large after compression.');
     }
 
@@ -53,7 +52,7 @@ export async function compressImageFile(file, {
   }
 }
 
-function canvasToBlob(canvas, type, quality){
+function canvasToBlob(canvas, type, quality) {
   return new Promise((resolve, reject) => {
     canvas.toBlob(
       (blob) => (blob ? resolve(blob) : reject(Error('Could not compress image.'))),
@@ -64,87 +63,136 @@ function canvasToBlob(canvas, type, quality){
 }
 
 /**
- * Upload a compressed blob to Cloudinary (unsigned preset).
+ * Get signed upload params from Worker.
+ * @param {string} kind - 'post' | 'story_image' | 'story_video' | 'profile'
+ * @param {string} firebaseToken - Firebase ID token
+ * @returns {Promise<Object>} signed params { signature, timestamp, cloudName, apiKey, resourceType, folder, publicId, allowedFormats, overwrite, uploadUrl }
+ */
+async function getSignedParams(kind, firebaseToken) {
+  const res = await fetch(MEDIA_SIGN_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${firebaseToken}`
+    },
+    body: JSON.stringify({ kind })
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data.signature) {
+    const msg = data?.error?.message || data?.detail || data?.error || `Worker error (${res.status})`;
+    throw Error(msg);
+  }
+  return data;
+}
+
+/**
+ * Upload a blob to Cloudinary using signed params.
+ * @param {Blob} blob
+ * @param {Object} signedParams - from getSignedParams
+ * @param {AbortSignal} [signal] - optional abort signal
  * @returns {Promise<string>} secure_url
  */
-export async function uploadImageBlob(blob, { folder, publicId, fileName } = {}){
+async function uploadSignedBlob(blob, signedParams, signal, fileName) {
   const form = new FormData();
   form.append('file', blob, fileName || `upload.${blob.type === 'image/webp' ? 'webp' : 'jpg'}`);
-  form.append('upload_preset', UPLOAD_PRESET);
-  if(folder) form.append('folder', folder);
-  if(publicId) form.append('public_id', publicId);
+  form.append('api_key', signedParams.apiKey);
+  form.append('timestamp', String(signedParams.timestamp));
+  form.append('signature', signedParams.signature);
+  form.append('folder', signedParams.folder);
+  form.append('public_id', signedParams.publicId);
+  form.append('overwrite', String(signedParams.overwrite));
+  if (signedParams.resourceType === 'video') {
+    form.append('resource_type', 'video');
+  }
 
-  const res = await fetch(UPLOAD_URL, { method: 'POST', body: form });
+  const res = await fetch(signedParams.uploadUrl, {
+    method: 'POST',
+    body: form,
+    signal
+  });
   const data = await res.json().catch(() => ({}));
-  if(!res.ok || !data.secure_url){
+  if (!res.ok || !data.secure_url) {
     const msg = data?.error?.message || `Cloudinary upload failed (${res.status})`;
     throw Error(msg);
   }
   return data.secure_url;
 }
 
-/** Post photo → Cloudinary folder trio/posts */
-export async function uploadPostImage(uid, file){
-  const { blob, ext } = await compressImageFile(file, {
-    maxEdge: 1280,
-    maxBytes: 850_000,
-    startQuality: 0.78
-  });
-  return uploadImageBlob(blob, {
-    folder: 'trio/posts',
-    publicId: `${uid}_${Date.now()}_${randomId()}`,
-    fileName: `post.${ext}`
-  });
-}
-
-/** Story media — ORIGINAL QUALITY (short term 24h) — no compression */
-export async function uploadStoryMedia(uid, file){
-  if(file?.type?.startsWith('video/')){
-    if(file.size > 100 * 1024 * 1024) throw Error('Video must be under 100MB.');
-    return uploadVideoBlob(file, {
-      folder: 'trio/stories',
-      publicId: `${uid}_${Date.now()}_${randomId()}`
-    });
-  }
-  // Image story: upload original file directly, keep original quality (no compress, no resize)
-  if(file.size > 12 * 1024 * 1024) throw Error('Story photo must be under 12MB (original quality).');
-  // Direct upload original blob — Cloudinary will keep original
-  const form = new FormData();
-  form.append('file', file, file.name || `story_${Date.now()}_${file.type==='image/webp'?'webp':file.type==='image/png'?'png':'jpg'}`);
-  form.append('upload_preset', UPLOAD_PRESET);
-  form.append('folder', 'trio/stories');
-  form.append('public_id', `${uid}_${Date.now()}_${randomId()}`);
-  const res = await fetch(UPLOAD_URL, { method: 'POST', body: form });
-  const data = await res.json().catch(() => ({}));
-  if(!res.ok || !data.secure_url) throw Error(data?.error?.message || `Cloudinary upload failed (${res.status})`);
-  return data.secure_url;
-}
-
-async function uploadVideoBlob(file, { folder, publicId } = {}){
+/**
+ * Upload video file directly to Cloudinary using signed params.
+ * @param {File} file
+ * @param {Object} signedParams
+ * @param {AbortSignal} [signal]
+ * @returns {Promise<string>} secure_url
+ */
+async function uploadSignedVideo(file, signedParams, signal) {
   const form = new FormData();
   form.append('file', file, file.name || `video_${Date.now()}.mp4`);
-  form.append('upload_preset', UPLOAD_PRESET);
-  if(folder) form.append('folder', folder);
-  if(publicId) form.append('public_id', publicId);
-  const res = await fetch(VIDEO_UPLOAD_URL, { method: 'POST', body: form });
+  form.append('api_key', signedParams.apiKey);
+  form.append('timestamp', String(signedParams.timestamp));
+  form.append('signature', signedParams.signature);
+  form.append('folder', signedParams.folder);
+  form.append('public_id', signedParams.publicId);
+  form.append('overwrite', String(signedParams.overwrite));
+  form.append('resource_type', 'video');
+
+  const res = await fetch(signedParams.uploadUrl, {
+    method: 'POST',
+    body: form,
+    signal
+  });
   const data = await res.json().catch(() => ({}));
-  if(!res.ok || !data.secure_url){
+  if (!res.ok || !data.secure_url) {
     const msg = data?.error?.message || `Video upload failed (${res.status})`;
     throw Error(msg);
   }
   return data.secure_url;
 }
 
-/** Profile photo → Cloudinary folder trio/profiles */
-export async function uploadProfileImage(uid, file){
+/** Post photo → Cloudinary folder trio/posts (signed) */
+export async function uploadPostImage(uid, file, firebaseToken, signal) {
+  const { blob, ext } = await compressImageFile(file, {
+    maxEdge: 1280,
+    maxBytes: 850_000,
+    startQuality: 0.78
+  });
+  const signed = await getSignedParams('post', firebaseToken);
+  return uploadSignedBlob(blob, signed, signal, `post.${ext}`);
+}
+
+/** Story media — ORIGINAL QUALITY (short term 24h) — signed upload */
+export async function uploadStoryMedia(uid, file, firebaseToken, signal) {
+  if (file?.type?.startsWith('video/')) {
+    if (file.size > 100 * 1024 * 1024) throw Error('Video must be under 100MB.');
+    const signed = await getSignedParams('story_video', firebaseToken);
+    return uploadSignedVideo(file, signed, signal);
+  }
+  // Image story: upload original file directly, keep original quality (no compress, no resize)
+  if (file.size > 12 * 1024 * 1024) throw Error('Story photo must be under 12MB (original quality).');
+  const signed = await getSignedParams('story_image', firebaseToken);
+  // For original quality story images, upload the file directly (not compressed blob)
+  const form = new FormData();
+  form.append('file', file, file.name || `story_${Date.now()}.jpg`);
+  form.append('api_key', signed.apiKey);
+  form.append('timestamp', String(signed.timestamp));
+  form.append('signature', signed.signature);
+  form.append('folder', signed.folder);
+  form.append('public_id', signed.publicId);
+  form.append('overwrite', String(signed.overwrite));
+
+  const res = await fetch(signed.uploadUrl, { method: 'POST', body: form, signal });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data.secure_url) throw Error(data?.error?.message || `Cloudinary upload failed (${res.status})`);
+  return data.secure_url;
+}
+
+/** Profile photo → Cloudinary folder trio/profiles (signed, overwrite) */
+export async function uploadProfileImage(uid, file, firebaseToken, signal) {
   const { blob, ext } = await compressImageFile(file, {
     maxEdge: 640,
     maxBytes: 500_000,
     startQuality: 0.76
   });
-  return uploadImageBlob(blob, {
-    folder: 'trio/profiles',
-    publicId: `${uid}_avatar`,
-    fileName: `avatar.${ext}`
-  });
+  const signed = await getSignedParams('profile', firebaseToken);
+  return uploadSignedBlob(blob, signed, signal, `avatar.${ext}`);
 }

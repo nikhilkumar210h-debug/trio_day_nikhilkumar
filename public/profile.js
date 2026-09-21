@@ -1,6 +1,7 @@
 import { auth, db } from './firebase-init.js';
 import { notifyUser } from './services/notificationHelpers.js';
 import { uploadProfileImage } from './image-upload.js';
+import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
 import { trioCache } from './trio-cache.js';
 import { renderBadgesHtml } from './gamification/badges.js';
 import { xpIntoLevel, XP_PER_LEVEL, levelFromXp } from './gamification/constants.js';
@@ -130,7 +131,8 @@ async function openEdit(u) {
         if (!f.type.startsWith('image/')) throw Error('Only image files allowed.');
         if (f.size > 8 * 1024 * 1024) throw Error('Profile photo must be under 8MB.');
         st.textContent = 'Compressing & uploading photo…';
-        photoURL = await uploadProfileImage(me.uid, f);
+        const token = await me.getIdToken();
+        photoURL = await uploadProfileImage(me.uid, f, token);
       }
       const bio = overlay.querySelector('#editBio').value.trim();
       await updateDoc(doc(db, 'users', me.uid), { name, bio, photoURL, updatedAt: serverTimestamp() });
