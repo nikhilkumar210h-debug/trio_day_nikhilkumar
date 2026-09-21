@@ -277,3 +277,87 @@ $('micBtn')?.addEventListener('click',async()=>{
 $('chatToggleBtn')?.addEventListener('click',()=>{const chat=document.querySelector('.room-chat');const btn=$('chatToggleBtn');if(!chat||!btn)return;const collapsed=chat.classList.toggle('is-collapsed');btn.textContent=collapsed?'Chat':'Hide';btn.setAttribute('aria-expanded',String(!collapsed));btn.setAttribute('aria-label',collapsed?'Show chat':'Hide chat');});
 onAuthStateChanged(auth,async u=>{if(!u)return location.href='login.html?redirect=room.html?id='+encodeURIComponent(id||'');me=u;const s=await getDoc(doc(db,'users',u.uid));p=s.exists()?s.data():{};await load();blockRoomNavigation()});
 window.addEventListener('beforeunload',()=>{roomLiveUnsub?.();rtcUnsubs.forEach(fn=>fn());voicePCs.forEach(pc=>pc.close());voiceAudio.forEach(a=>a.remove());localStream?.getTracks().forEach(t=>t.stop());stopSharedWorkspace?.();});
+
+
+/* Floating room chat spatial controls — drag + resize with lightweight persistence. */
+(() => {
+  const initRoomChatLayout = () => {
+    const chat = document.querySelector('.room-chat');
+    const host = document.querySelector('.room-main-card');
+    const head = chat?.querySelector('.room-chat-head');
+    if (!chat || !host || !head || chat.dataset.spatialReady === '1') return;
+    chat.dataset.spatialReady = '1';
+
+    const handle = document.createElement('button');
+    handle.type = 'button';
+    handle.className = 'room-chat-resize';
+    handle.setAttribute('aria-label', 'Resize room chat');
+    handle.title = 'Resize chat';
+    handle.setAttribute('aria-hidden', 'false');
+    chat.appendChild(handle);
+
+    const key = 'trio_room_chat_layout_v1';
+    let saved = null;
+    try { saved = JSON.parse(sessionStorage.getItem(key) || 'null'); } catch {}
+    const clamp = (n,min,max) => Math.max(min,Math.min(max,n));
+    const apply = (x,y,w,h) => {
+      const hr = host.getBoundingClientRect();
+      const maxW = Math.max(240, hr.width - 18);
+      const maxH = Math.max(190, hr.height - 18);
+      w = clamp(w, 240, maxW);
+      h = clamp(h, 190, maxH);
+      x = clamp(x, 9, Math.max(9, hr.width - w - 9));
+      y = clamp(y, 9, Math.max(9, hr.height - h - 9));
+      chat.style.left = x + 'px';
+      chat.style.top = y + 'px';
+      chat.style.right = 'auto';
+      chat.style.bottom = 'auto';
+      chat.style.width = w + 'px';
+      chat.style.height = h + 'px';
+      return {x,y,w,h};
+    };
+    const current = () => {
+      const cr = chat.getBoundingClientRect();
+      const hr = host.getBoundingClientRect();
+      return {x:cr.left-hr.left,y:cr.top-hr.top,w:cr.width,h:cr.height};
+    };
+    if (saved && Number.isFinite(saved.x) && Number.isFinite(saved.y) && Number.isFinite(saved.w) && Number.isFinite(saved.h)) {
+      requestAnimationFrame(() => apply(saved.x,saved.y,saved.w,saved.h));
+    }
+
+    let mode = null;
+    let start = null;
+    const begin = (kind,e) => {
+      if (e.button !== undefined && e.button !== 0) return;
+      if (e.target.closest('button,input,textarea,a')) return;
+      e.preventDefault();
+      const base = current();
+      mode = kind;
+      start = {px:e.clientX,py:e.clientY,...base};
+      chat.classList.add(kind === 'drag' ? 'is-dragging' : 'is-resizing');
+      try { e.currentTarget.setPointerCapture(e.pointerId); } catch {}
+    };
+    const move = (e) => {
+      if (!mode || !start) return;
+      const dx=e.clientX-start.px, dy=e.clientY-start.py;
+      if (mode==='drag') apply(start.x+dx,start.y+dy,start.w,start.h);
+      else apply(start.x,start.y,start.w+dx,start.h+dy);
+    };
+    const end = () => {
+      if (!mode) return;
+      const v=current();
+      try { sessionStorage.setItem(key,JSON.stringify(v)); } catch {}
+      chat.classList.remove('is-dragging','is-resizing');
+      mode=null; start=null;
+    };
+    head.addEventListener('pointerdown',e=>begin('drag',e));
+    handle.addEventListener('pointerdown',e=>begin('resize',e));
+    window.addEventListener('pointermove',move,{passive:false});
+    window.addEventListener('pointerup',end);
+    window.addEventListener('pointercancel',end);
+    window.addEventListener('resize',()=>{const v=current();apply(v.x,v.y,v.w,v.h);});
+  };
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded',initRoomChatLayout,{once:true});
+  else initRoomChatLayout();
+})();
