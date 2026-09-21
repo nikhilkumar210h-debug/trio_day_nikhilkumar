@@ -205,53 +205,99 @@ async function renderStoryStrip(uid) {
     if (friendsSnap) collect(friendsSnap);
 
     const stories = Array.from(byId.values())
-      .sort((a, b) => (Number(b.createdAtMs) || 0) - (Number(a.createdAtMs) || 0))
-      .slice(0, 20);
+      .sort((a, b) => (Number(b.createdAtMs) || 0) - (Number(a.createdAtMs) || 0));
 
-    // Keep the existing cache warm so other Today surfaces can reuse the
-    // latest story data without waiting for another feed refresh.
-    trioCache.set(`feed_recent_${uid}`, stories, trioCache.TTL.SHORT);
+    // One story card per person. If a person has multiple active stories,
+    // the newest one becomes the visual preview while the viewer still
+    // receives the selected story object.
+    const latestByUser = new Map();
+    stories.forEach(story => {
+      const key = story.uid || story._id;
+      if (!latestByUser.has(key)) latestByUser.set(key, story);
+    });
 
-    if (!stories.length) {
+    const groupedStories = Array.from(latestByUser.values()).slice(0, 20);
+
+    // Always resolve the current profile for the card. Stories store a
+    // snapshot for historical data, but the UI should follow a changed DP/name.
+    const enrichedStories = await Promise.all(groupedStories.map(async story => {
+      const latest = story.uid ? await getCachedUserProfile(story.uid) : null;
+      return {
+        ...story,
+        name: latest?.name || story.name || 'User',
+        photoURL: latest?.photoURL || story.photoURL || null
+      };
+    }));
+
+    trioCache.set(`feed_recent_${uid}`, enrichedStories, trioCache.TTL.SHORT);
+
+    if (!enrichedStories.length) {
       if (empty) empty.style.display = 'block';
       return;
     }
     if (empty) empty.style.display = 'none';
 
-    stories.forEach(s => {
+    enrichedStories.forEach(s => {
       const btn = document.createElement('button');
       btn.className = 'hero-story-circle';
       btn.title = s.name || 'Story';
       btn.setAttribute('aria-label', `Story from ${s.name || 'User'}`);
+
       const seenKey = 'seenStories';
       const seenList = JSON.parse(localStorage.getItem(seenKey) || '[]');
-      if (seenList.includes(s._id)) btn.classList.add('viewed');
+      const userStoryIds = stories.filter(x => x.uid === s.uid).map(x => x._id);
+      if (userStoryIds.length && userStoryIds.every(id => seenList.includes(id))) {
+        btn.classList.add('viewed');
+      }
 
-      const inner = document.createElement('span');
-      inner.className = 'hero-story-circle-inner';
+      // Story preview is intentionally visible inside the card, with a
+      // readable avatar/name layer over it.
+      const preview = document.createElement('span');
+      preview.className = 'hero-story-preview';
+      if (s.mediaUrl) {
+        if (/\\.(mp4|webm|mov)(\\?|$)/i.test(s.mediaUrl)) {
+          preview.innerHTML = '<span class="hero-story-video-mark">▶</span>';
+        } else {
+          const img = document.createElement('img');
+          img.src = s.mediaUrl;
+          img.alt = '';
+          img.loading = 'lazy';
+          preview.appendChild(img);
+        }
+      } else {
+        preview.classList.add('hero-story-preview--text');
+        preview.textContent = (s.message || 'Story').slice(0, 42);
+      }
+
+      const shade = document.createElement('span');
+      shade.className = 'hero-story-shade';
+
+      const avatar = document.createElement('span');
+      avatar.className = 'hero-story-avatar';
       if (s.photoURL) {
         const img = document.createElement('img');
         img.src = s.photoURL;
         img.alt = '';
-        img.loading = 'lazy';
-        inner.appendChild(img);
+        avatar.appendChild(img);
       } else {
-        inner.textContent = (s.name || 'U').charAt(0).toUpperCase();
-        inner.style.background = 'linear-gradient(135deg, var(--primary), var(--primary-strong))';
+        avatar.textContent = (s.name || 'U').charAt(0).toUpperCase();
       }
-      btn.appendChild(inner);
+
+      const name = document.createElement('span');
+      name.className = 'hero-story-name';
+      name.textContent = s.uid === uid ? 'Your story' : (s.name || 'User');
+
+      btn.append(preview, shade, avatar, name);
 
       btn.addEventListener('click', () => {
         SoundManager.storyTap();
         const cur = JSON.parse(localStorage.getItem(seenKey) || '[]');
-        if (!cur.includes(s._id)) {
-          cur.push(s._id);
-          localStorage.setItem(seenKey, JSON.stringify(cur));
-          btn.classList.add('viewed');
-        }
-        const card = document.querySelector(`[data-postId="${s._id}"]`);
-        if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        else openStoryViewer(s);
+        stories.filter(x => x.uid === s.uid).forEach(x => {
+          if (!cur.includes(x._id)) cur.push(x._id);
+        });
+        localStorage.setItem(seenKey, JSON.stringify(cur));
+        btn.classList.add('viewed');
+        openStoryViewer(s);
       });
       wrap.appendChild(btn);
     });
