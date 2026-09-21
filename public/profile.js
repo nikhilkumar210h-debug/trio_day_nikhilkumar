@@ -68,6 +68,17 @@ async function getCachedFollowingIds(uid) {
   return ids;
 }
 
+async function getCachedFollowerIds(uid) {
+  const key = `followers_ids_${uid}`;
+  const cached = trioCache.get(key);
+  if (cached) return cached;
+  const snap = await getDocs(query(collection(db, 'users', uid, 'followers'), limit(500))).catch(() => ({ docs: [] }));
+  const ids = snap.docs.map(d => d.id);
+  trioCache.set(key, ids, trioCache.TTL.SHORT);
+  trioCache.set(`followers_${uid}`, ids.length, trioCache.TTL.SHORT);
+  return ids;
+}
+
 // ── Cached connection state check ───────────────────────────────────────────
 async function isConnected(myUid, theirUid) {
   const key = `connstate_${myUid}_${theirUid}`;
@@ -88,23 +99,37 @@ async function getCachedUserPosts(uid) {
 }
 
 // ── Load connections panel ───────────────────────────────────────────────────
-async function loadConnections(uid) {
+async function loadConnections(uid, mode = 'followers') {
   const box = $('connectionsList'); if (!box) return;
+  document.querySelectorAll('[data-connections-mode]').forEach(t => t.classList.toggle('active', t.dataset.connectionsMode === mode));
   box.innerHTML = '<div class="td-skeleton td-skeleton--card"></div><div class="td-skeleton td-skeleton--card"></div>';
-  const ids = await getCachedFollowingIds(uid);
+
+  const ids = mode === 'followers' ? await getCachedFollowerIds(uid) : await getCachedFollowingIds(uid);
   const filtered = ids.filter(id => id !== uid);
-  if (!filtered.length) { box.innerHTML = '<div class="connections-empty">No connections yet.</div>'; return; }
-  // Use cached profile for each connection — no waterfall of getDoc calls
-  const profiles = await Promise.all(filtered.map(id => getCachedUser(id)));
-  profiles.filter(Boolean).forEach(u => {
-    const a = document.createElement('a'); a.className = 'connection-row'; a.href = `profile.html?uid=${encodeURIComponent(u.uid)}`;
+  if (!filtered.length) {
+    box.innerHTML = mode === 'followers'
+      ? '<div class="connections-empty">No followers yet.</div>'
+      : '<div class="connections-empty">Not following anyone yet.</div>';
+    return;
+  }
+
+  const profiles = await Promise.all(filtered.slice(0, 100).map(id => getCachedUser(id)));
+  const visible = profiles.filter(Boolean);
+  if (!visible.length) {
+    box.innerHTML = '<div class="connections-empty">No connection profiles available.</div>';
+    return;
+  }
+
+  visible.forEach(u => {
+    const a = document.createElement('a');
+    a.className = 'connection-row';
+    a.href = `profile.html?uid=${encodeURIComponent(u.uid)}`;
     const av = u.photoURL ? `<img src="${esc(u.photoURL)}" alt="">` : (u.name || 'U').charAt(0).toUpperCase();
-    const publicUid = u.userId || makeUserId(u.uid || id);
-    a.innerHTML = `<span class="user-avatar">${av}</span><span class="meta"><strong>${esc(u.name || 'User')}</strong><small class="muted">TRIO UID · ${esc(publicUid)}</small></span><span class="connection-arrow">›</span>`;
+    const publicUid = u.userId || makeUserId(u.uid);
+    a.innerHTML = `<span class="user-avatar">${av}</span><span class="meta"><strong>${esc(u.name || 'User')}</strong><small class="muted">${mode === 'followers' ? 'Follows you' : 'You follow'} · TRIO UID · ${esc(publicUid)}</small></span><span class="connection-arrow">›</span>`;
     box.appendChild(a);
   });
 }
-
 // ── Edit profile modal ───────────────────────────────────────────────────────
 async function openEdit(u) {
   const overlay = document.createElement('div'); overlay.className = 'modal-overlay';
@@ -356,9 +381,17 @@ async function loadProfile(uid) {
   ]);
   $('followersCount').textContent = `${follCount} Followers`;
   $('followingCount').textContent = `${followingCount} Following`;
-  // Direct redirect on click — scroll to Connections
-  ['followersCount','followingCount'].forEach(id=>{
-    const e=$(id); if(e){ e.style.cursor='pointer'; e.title='View connections'; e.onclick=()=>document.getElementById('connectionsList')?.scrollIntoView({behavior:'smooth', block:'center'}); }
+  if ($('followersTabCount')) $('followersTabCount').textContent = follCount;
+  if ($('followingTabCount')) $('followingTabCount').textContent = followingCount;
+
+  const selectConnections = async mode => {
+    await loadConnections(uid, mode);
+    document.getElementById('connectionsList')?.scrollIntoView({behavior:'smooth', block:'center'});
+  };
+  if ($('followersCount')) $('followersCount').onclick = () => selectConnections('followers');
+  if ($('followingCount')) $('followingCount').onclick = () => selectConnections('following');
+  document.querySelectorAll('[data-connections-mode]').forEach(tab => {
+    tab.onclick = () => selectConnections(tab.dataset.connectionsMode);
   });
 
   // Profile menu button — show only on own profile
@@ -482,7 +515,7 @@ async function loadProfile(uid) {
   }
 
   // 4. Connections panel — cached
-  await loadConnections(uid);
+  await loadConnections(uid, 'followers');
 
 
 }
