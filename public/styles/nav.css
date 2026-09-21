@@ -81,7 +81,7 @@
     z-index: 54;
     overflow-y: auto;
   }
-  .nkm-rail .nav-btn { flex-direction: column; min-height: 56px; font-size: var(--text-xs); }
+  .nkm-rail .nav-btn { width: 100%; flex-direction: column; min-height: 56px; font-size: var(--text-xs); align-items: center; justify-content: center; text-align: center; }
   .nkm-rail .nav-label { font-size: var(--text-xs); letter-spacing: .04em; }
   /* Push main content aside — account for rail width */
   .app-main, .profile-main, .users-main, .chat-main, .tasks-main, .private-main,
@@ -101,7 +101,7 @@
   .nkm-rail { width: 240px; padding: 16px 10px; top: 63px; }
   .nkm-rail .nav-btn {
     flex-direction: row;
-    justify-content: flex-start;
+    justify-content: center;
     padding: 10px 12px;
     gap: 10px;
     font-size: var(--text-sm);
