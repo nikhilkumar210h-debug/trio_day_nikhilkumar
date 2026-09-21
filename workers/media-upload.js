@@ -227,7 +227,7 @@ export default {
 
     const kind = body?.kind;
     if (!kind || !UPLOAD_KINDS[kind]) {
-      return json({ error: 'Invalid or missing kind. Allowed: post, story_image, story_video, profile' }, 400, origin);
+      return json({ error: 'Invalid or missing kind. Allowed: story_image, story_video, profile' }, 400, origin);
     }
 
     const cfg = UPLOAD_KINDS[kind];
