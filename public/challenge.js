@@ -5,6 +5,7 @@ import {
   setDoc, addDoc, serverTimestamp, onSnapshot
 } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 import { listCommunityTasks } from './gamification/community-tasks.js?v=20260919-community5';
+import { workerPost } from './gamification/worker-config.js';
 
 const CHALLENGES = [
   {id:'trip', tag:'CHOICE', q:'You get one free trip tomorrow. Where are you going?', o:['Japan 🇯🇵','Switzerland 🇨🇭','Somewhere unexpected 🌍']},
@@ -164,6 +165,17 @@ function addCard(c, autoOpen = false) {
         createdAt:serverTimestamp(), createdAtMs:Date.now()
       }, {merge:true});
       localStorage.setItem('trio_last_challenge', JSON.stringify({id:c.id,choice,at:Date.now()}));
+      try {
+        const gamificationUser = auth.currentUser;
+        if (gamificationUser) {
+          await workerPost('/gamification/award-xp', { meta: { challengeId: c.id } }, gamificationUser);
+          await workerPost('/gamification/bump-streak', {}, gamificationUser);
+          window.dispatchEvent(new CustomEvent('trio-xp-changed', { detail: { uid: gamificationUser.uid } }));
+        }
+      } catch (gamErr) {
+        console.warn('[Challenge] gamification sync failed:', gamErr);
+      }
+
       card.querySelectorAll('[data-choice]').forEach(x => x.disabled = true);
       const counts = await getCounts(c.id);
       const total = Object.values(counts).reduce((a,b) => a+b, 0);
