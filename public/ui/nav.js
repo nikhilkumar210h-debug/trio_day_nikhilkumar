@@ -42,6 +42,7 @@ export function renderNav() {
   const p = (location.pathname.split('/').pop() || '').toLowerCase();
   if (AUTH_PAGES.has(p)) return;
   const active = pathKey();
+  document.body.dataset.currentNav = active;
 
   const bottom = document.querySelector('.bottom-nav');
   if (bottom) {
