@@ -59,20 +59,6 @@ export function initHeader() {
     if (actions && authStatus) actions.insertBefore(themeBtn, authStatus); else if (actions) actions.prepend(themeBtn);
   }
 
-  // Mobile Chat — single intentional access point near Notification (mobile only, desktop uses rail)
-  if (!document.querySelector('#headerChatBtn')) {
-    const chatBtn = document.createElement('a');
-    chatBtn.id = 'headerChatBtn';
-    chatBtn.className = 'nkm-header-chat';
-    chatBtn.href = 'chat.html';
-    chatBtn.setAttribute('aria-label', 'Chat');
-    chatBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span class="nav-chat-dot" id="headerChatDot" hidden aria-hidden="true"></span>`;
-    if (actions) {
-      if (authStatus) actions.insertBefore(chatBtn, authStatus);
-      else actions.prepend(chatBtn);
-    }
-  }
-
   // Mobile search button (opens search page)
   if (!document.querySelector('.nkm-header-search-btn')) {
     const btn = document.createElement('button');
