@@ -49,3 +49,21 @@ wrangler/.dev.vars
 *.tmp
 *.temp
 *.bak
+
+# Wrangler cache and temp directories
+.wrangler/
+workers/.wrangler/
+
+# Firebase cache
+.firebase/
+
+# Test results
+test-results/
+
+# Service account keys in any directory
+**/serviceAccountKey.json
+**/service-account*.json
+**/firebase-adminsdk-*.json
+
+# Local development vars (additional patterns)
+*.dev.vars
