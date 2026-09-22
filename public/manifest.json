@@ -1,7 +1,7 @@
 {
   "name": "Trio Day",
   "short_name": "Trio Day",
-  "description": "Trio Day - post, comment, aur chat karo",
+  "description": "Trio Day - Challenges, Stories, Chat and community",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
@@ -10,28 +10,9 @@
   "theme_color": "#6366F1",
   "icons": [
     {
-      "src": "icons/trio-day-square-light.svg",
-      "sizes": "512x512",
-      "type": "image/svg+xml",
-      "purpose": "any"
-    },
-    {
-      "src": "icons/trio-day-round-light.svg",
-      "sizes": "512x512",
-      "type": "image/svg+xml",
-      "purpose": "any"
-    },
-    {
-      "src": "icons/trio-day-square-purple.svg",
-      "sizes": "512x512",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "icons/trio-day-round-purple.svg",
+      "src": "icons/trio-day-logo.svg",
       "sizes": "512x512",
       "type": "image/svg+xml",
       "purpose": "any"
     }
-  ]
-}
+  ]}
