@@ -169,7 +169,7 @@ function addCard(c, autoOpen = false) {
         const gamificationUser = auth.currentUser;
         if (gamificationUser) {
           await workerPost('/gamification/award-xp', { meta: { challengeId: c.id } }, gamificationUser);
-          await workerPost('/gamification/bump-streak', {}, gamificationUser);
+          await workerPost('/gamification/bump-streak', { challengeId: c.id }, gamificationUser);
           window.dispatchEvent(new CustomEvent('trio-xp-changed', { detail: { uid: gamificationUser.uid } }));
         }
       } catch (gamErr) {

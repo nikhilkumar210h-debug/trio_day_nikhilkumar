@@ -25,7 +25,7 @@ if(challengeId && challengeContext[challengeId]){
 }
 
 
-function previewText(m) { if (!m) return ''; if (m.replyToStoryId) return '↩️ Story reply'; if (m.sharedPostId) return '📎 Shared a post'; return String(m.text || '').replace(/\s+/g, ' ').trim().slice(0,40); }
+function previewText(m) { if (!m) return ''; if (m.replyToStoryId) return '↩️ Story reply'; if (m.sharedPostId) return '📎 Shared a story'; return String(m.text || '').replace(/\s+/g, ' ').trim().slice(0,40); }
 function chatSeenKey(uid) { return `trio_chat_seen_${uid}`; }
 function getChatSeenMap(uid) { try { return JSON.parse(localStorage.getItem(chatSeenKey(uid)) || '{}'); } catch { return {}; } }
 function isChatUnread(uid, peerId, latest) {

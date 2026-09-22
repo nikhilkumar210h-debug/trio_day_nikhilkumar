@@ -37,10 +37,11 @@ function renderNotificationRows(container, alerts, user) {
     container.appendChild(empty); return;
   }
   alerts.forEach(alert => {
-    const row = document.createElement(alert.postId ? 'a' : 'button');
+    const row = document.createElement(alert.urlPath || alert.postId ? 'a' : 'button');
     row.className = `notification-item${alert.read ? '' : ' unread'}`;
     row.dataset.notificationId = alert.id;
-    if (alert.postId) row.href = `view_post.html?postId=${encodeURIComponent(alert.postId)}`;
+    if (alert.urlPath) row.href = alert.urlPath;
+    else if (alert.postId) row.href = 'index.html';
     else row.type = 'button';
     const title = document.createElement('strong'); title.textContent = notificationText(alert);
     const time = document.createElement('small'); time.textContent = new Date(alert.createdAtMs || Date.now()).toLocaleString();
@@ -154,7 +155,7 @@ function listenForAlerts(user) {
         refreshNavDot();
         showAlert(
           `Message from ${msg.name || 'User'}`,
-          msg.sharedPostId ? 'Shared a post with you' : (msg.text || 'New message')
+          msg.sharedPostId ? 'Shared a story with you' : (msg.text || 'New message')
         );
       });
     }, () => {}));

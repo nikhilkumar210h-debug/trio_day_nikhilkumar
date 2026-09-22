@@ -11,7 +11,7 @@ let board = 'global';
 function renderRows(entries, unit = 'XP') {
   const list = $('lbList');
   if (!entries?.length) {
-    list.innerHTML = '<div class="empty-state"><h3>No ranks yet</h3><p>Complete tasks to appear here.</p></div>';
+    list.innerHTML = '<div class="empty-state"><h3>No ranks yet</h3><p>Complete Challenges to appear here.</p></div>';
     return;
   }
   list.innerHTML = entries.map((e, i) => {

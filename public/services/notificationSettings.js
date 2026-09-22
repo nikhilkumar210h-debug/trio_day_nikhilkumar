@@ -9,39 +9,13 @@ import { trioCache } from "../trio-cache.js";
 import { SoundManager } from "../sound-manager.js";
 
 const SETTING_KEYS = [
-  { key: "like", label: "Likes", desc: "When someone likes your post" },
-  {
-    key: "comment",
-    label: "Comments",
-    desc: "When someone comments on your post",
-  },
-  { key: "share", label: "Shares", desc: "When someone shares your post" },
-  {
-    key: "connect",
-    label: "Connections",
-    desc: "When someone connects with you",
-  },
-  {
-    key: "message",
-    label: "Messages",
-    desc: "When you receive a private message",
-  },
-  { key: "badge_earned", label: "Badges", desc: "When you earn a new badge" },
-  {
-    key: "task_reminder",
-    label: "Task Reminders",
-    desc: "Daily task reminders (sent every 6 hours)",
-  },
-  {
-    key: "challenge_reminder",
-    label: "Challenge Reminders",
-    desc: "Reminders for ending challenges",
-  },
-  {
-    key: "streak_warning",
-    label: "Streak Warnings",
-    desc: "Alert when your streak is at risk",
-  },
+  { key: "like", label: "Likes", desc: "When someone reacts to your story" },
+  { key: "comment", label: "Comments", desc: "When someone comments on your story" },
+  { key: "share", label: "Shares", desc: "When someone shares your story" },
+  { key: "connect", label: "Connections", desc: "When someone connects with you" },
+  { key: "message", label: "Messages", desc: "When you receive a private message" },
+  { key: "badge_earned", label: "Badges", desc: "When you earn a Challenge badge" },
+  { key: "challenge_reminder", label: "Challenge Reminders", desc: "Reminders for active or ending Challenges" }
 ];
 
 export async function loadNotificationSettings(uid) {

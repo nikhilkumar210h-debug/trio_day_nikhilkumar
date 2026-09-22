@@ -31,4 +31,4 @@ $('publish').addEventListener('click',async()=>{
  }catch(e){console.error(e);$('status').textContent=e?.message||'Could not publish.';showToast($('status').textContent,'error');$('publish').disabled=false;}
 });
 render();
-onAuthStateChanged(auth,async user=>{if(!user){location.href='login.html?redirect=task-create.html?mode=community';return;}me=user;const s=await getDoc(doc(db,'users',user.uid)).catch(()=>null);profile=s?.exists()?s.data():{name:user.displayName||'User'};});
+onAuthStateChanged(auth,async user=>{if(!user){location.href='login.html?redirect=challenge-create.html';return;}me=user;const s=await getDoc(doc(db,'users',user.uid)).catch(()=>null);profile=s?.exists()?s.data():{name:user.displayName||'User'};});

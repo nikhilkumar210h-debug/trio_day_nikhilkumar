@@ -31,11 +31,7 @@ const ALLOWED_NOTIFICATION_TYPES = [
   "connect",
   "message",
   "badge_earned",
-  "task_reminder",
-  "challenge_reminder",
-  "streak_warning",
-  "task_complete",
-  "room_invite",
+  "challenge_reminder"
 ];
 
 function b64urlDecode(str) {
@@ -361,29 +357,23 @@ async function fsPost(projectId, accessToken, path, data) {
 async function verifyActionExists(projectId, accessToken, actorUid, targetUid, type, data) {
   if (type === 'like') {
     if (!data.postId) return false;
-    const post = await fsGet(projectId, accessToken, `posts/${data.postId}`);
+    const story = await fsGet(projectId, accessToken, `posts/${data.postId}`);
     const mood = await fsGet(projectId, accessToken, `posts/${data.postId}/moods/${actorUid}`);
-    return !!(post && post.uid === targetUid && mood && typeof mood.mood === 'string');
+    return !!(story && (story.type === 'story' || story.type === 'voice') && story.uid === targetUid && mood && typeof mood.mood === 'string');
   }
 
   if (type === 'comment') {
     if (!data.postId) return false;
-    const post = await fsGet(projectId, accessToken, `posts/${data.postId}`);
-    if (!post || post.uid !== targetUid) return false;
+    const story = await fsGet(projectId, accessToken, `posts/${data.postId}`);
+    if (!story || !['story','voice'].includes(story.type) || story.uid !== targetUid) return false;
     const rows = await fsRunQuery(projectId, accessToken, {
       from: [{ collectionId: 'comments' }],
-      where: {
-        fieldFilter: {
-          field: { fieldPath: 'uid' },
-          op: 'EQUAL',
-          value: { stringValue: actorUid }
-        }
-      },
+      where: { fieldFilter: { field: { fieldPath: 'uid' }, op: 'EQUAL', value: { stringValue: actorUid } } },
       limit: 10
     }, `projects/${projectId}/databases/(default)/documents/posts/${data.postId}`);
     return rows.some(row => {
-      const created = Number(row.createdAtMs) || 0;
-      return created >= Date.now() - 10 * 60_000;
+      const age = Date.now() - (Number(row.createdAtMs) || 0);
+      return age >= 0 && age <= 10 * 60_000;
     });
   }
 
@@ -391,23 +381,11 @@ async function verifyActionExists(projectId, accessToken, actorUid, targetUid, t
     return !!(await fsGet(projectId, accessToken, `users/${actorUid}/following/${targetUid}`));
   }
 
-  if (type === 'room_invite') {
-    if (!data.roomId) return false;
-    const invite = await fsGet(projectId, accessToken, `rooms/${data.roomId}/invites/${targetUid}`);
-    return !!(invite && invite.hostUid === actorUid && invite.targetUid === targetUid && invite.status === 'pending');
-  }
-
   if (type === 'message') {
     const chatId = [actorUid, targetUid].sort().join('_');
     const rows = await fsRunQuery(projectId, accessToken, {
       from: [{ collectionId: 'messages' }],
-      where: {
-        fieldFilter: {
-          field: { fieldPath: 'uid' },
-          op: 'EQUAL',
-          value: { stringValue: actorUid }
-        }
-      },
+      where: { fieldFilter: { field: { fieldPath: 'uid' }, op: 'EQUAL', value: { stringValue: actorUid } } },
       orderBy: [{ field: { fieldPath: 'createdAtMs' }, direction: 'DESCENDING' }],
       limit: 10
     }, `projects/${projectId}/databases/(default)/documents/privateChats/${chatId}`);
@@ -423,13 +401,7 @@ async function verifyActionExists(projectId, accessToken, actorUid, targetUid, t
     const chatId = [actorUid, targetUid].sort().join('_');
     const rows = await fsRunQuery(projectId, accessToken, {
       from: [{ collectionId: 'messages' }],
-      where: {
-        fieldFilter: {
-          field: { fieldPath: 'uid' },
-          op: 'EQUAL',
-          value: { stringValue: actorUid }
-        }
-      },
+      where: { fieldFilter: { field: { fieldPath: 'uid' }, op: 'EQUAL', value: { stringValue: actorUid } } },
       orderBy: [{ field: { fieldPath: 'createdAtMs' }, direction: 'DESCENDING' }],
       limit: 10
     }, `projects/${projectId}/databases/(default)/documents/privateChats/${chatId}`);
@@ -439,7 +411,7 @@ async function verifyActionExists(projectId, accessToken, actorUid, targetUid, t
     });
   }
 
-  if (['badge_earned','task_reminder','challenge_reminder','streak_warning','task_complete'].includes(type)) {
+  if (type === 'badge_earned' || type === 'challenge_reminder') {
     return targetUid === actorUid;
   }
 
@@ -458,64 +430,26 @@ function allowedNotification(uid) {
 function pushCopy({ type, actorName, text, title }) {
   const who = actorName || "Someone";
   const map = {
-    like: { title: "New like", body: `${who} liked your post` },
-    comment: { title: "New comment", body: `${who} commented on your post` },
-    share: { title: "Post shared", body: `${who} shared your post` },
+    like: { title: "New like", body: `${who} liked your story` },
+    comment: { title: "New comment", body: `${who} commented on your story` },
+    share: { title: "Story shared", body: `${who} shared your story` },
     connect: { title: "New connection", body: `${who} connected with you` },
     message: { title: "New message", body: `${who}: ${text || "New message"}` },
-    badge_earned: {
-      title: title || "Badge unlocked!",
-      body: text || "You earned a new badge",
-    },
-    task_reminder: {
-      title: title || "Task reminder",
-      body: text || "You have tasks waiting",
-    },
-    challenge_reminder: {
-      title: title || "Challenge reminder",
-      body: text || "A challenge needs you",
-    },
-    streak_warning: {
-      title: title || "Streak at risk!",
-      body: text || "Complete a task today",
-    },
-    task_complete: {
-      title: title || "Task complete",
-      body: text || "Nice work!",
-    },
-    room_invite: { title: title || "Live room invite", body: text || `${who} invited you to join a live room` },
+    badge_earned: { title: title || "Badge unlocked!", body: text || "You earned a new Challenge badge" },
+    challenge_reminder: { title: title || "Challenge reminder", body: text || "A Challenge is waiting for you" }
   };
-  return (
-    map[type] || {
-      title: title || "Trio Day",
-      body: text || `${who} sent you an update`,
-    }
-  );
+  return map[type] || { title: title || "Trio Day", body: text || `${who} sent you an update` };
 }
 
 function pushUrl({ type, actorUid, postId, urlPath }) {
   if (urlPath) return `${APP_BASE}/${String(urlPath).replace(/^\//, "")}`;
-  if (type === "message")
-    return `${APP_BASE}/chat.html?uid=${encodeURIComponent(actorUid || "")}`;
-  if (type === "room_invite") return urlPath ? `${APP_BASE}/${String(urlPath).replace(/^\//, "")}` : `${APP_BASE}/rooms.html`;
-  if (type === "connect") {
-    return actorUid
-      ? `${APP_BASE}/profile.html?uid=${encodeURIComponent(actorUid)}`
-      : `${APP_BASE}/all-users.html`;
-  }
-  if (
-    [
-      "task_reminder",
-      "challenge_reminder",
-      "streak_warning",
-      "task_complete",
-    ].includes(type)
-  ) {
-    return `${APP_BASE}/tasks.html`;
-  }
+  if (type === "message") return `${APP_BASE}/chat.html?uid=${encodeURIComponent(actorUid || "")}`;
+  if (type === "connect") return actorUid
+    ? `${APP_BASE}/profile.html?uid=${encodeURIComponent(actorUid)}`
+    : `${APP_BASE}/all-users.html`;
+  if (type === "challenge_reminder") return `${APP_BASE}/challenge.html`;
   if (type === "badge_earned") return `${APP_BASE}/profile.html`;
-  if (postId)
-    return `${APP_BASE}/view_post.html?postId=${encodeURIComponent(postId)}`;
+  if (postId) return `${APP_BASE}/index.html`;
   return `${APP_BASE}/index.html`;
 }
 
@@ -590,19 +524,12 @@ async function handleCreateNotification(request, env) {
     return json({ error: "Invalid notification type" }, 400, origin);
   }
   const notificationData = {};
-  for (const key of ['postId','text','title','urlPath','roomId']) {
+  for (const key of ['postId','text','title','urlPath']) {
     if (body?.[key] !== undefined) notificationData[key] = String(body[key]).slice(0, key === 'text' ? 500 : 240);
   }
 
   if (
-    targetUid === actorUid &&
-    ![
-      "badge_earned",
-      "task_reminder",
-      "challenge_reminder",
-      "streak_warning",
-      "task_complete",
-    ].includes(type)
+    targetUid === actorUid && !["badge_earned", "challenge_reminder"].includes(type)
   ) {
     return json(
       { error: "Cannot send social notification to self" },

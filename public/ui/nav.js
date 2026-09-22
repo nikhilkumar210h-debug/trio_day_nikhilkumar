@@ -20,12 +20,13 @@ const ITEMS = [
 ];
 
 function pathKey() {
-  const p = (location.pathname.split('/').pop() || 'index.html').toLowerCase();
-  if (p === '' || p === 'index.html' || p === 'view_post.html') return 'today';
-  if (p === 'challenge.html' || p === 'task-create.html' || p === 'tasks.html' || p === 'task-detail.html') return 'challenge';
-  if (p === 'all-users.html' || p === 'build.html' || p === 'learn.html' || p === 'puzzle.html' || p === 'activity.html' || p === 'rooms.html' || p === 'room.html') return 'discover';
-  if (p === 'chat.html' || p === 'private-chat.html') return 'chat';
-  if (p === 'profile.html') return 'you';
+  const raw = (location.pathname || '/').replace(/\/+$/, '') || '/';
+  const p = raw.split('/').pop().toLowerCase();
+  if (p === '' || p === 'index' || p === 'index.html' || p === 'today') return 'today';
+  if (p === 'all-users' || p === 'all-users.html' || p === 'discover') return 'discover';
+  if (p === 'challenge' || p === 'challenge.html') return 'challenge';
+  if (p === 'chat' || p === 'chat.html' || p === 'private-chat' || p === 'private-chat.html') return 'chat';
+  if (p === 'profile' || p === 'profile.html' || p === 'you') return 'you';
   return '';
 }
 

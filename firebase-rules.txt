@@ -9,11 +9,26 @@ service cloud.firestore {
         && request.auth.uid in get(/databases/$(database)/documents/config/admins).data.uids;
     }
 
+    // Stories and voice statuses share the historical `posts` collection name.
+    // The retired Post/Feed type is no longer readable or creatable.
     match /posts/{postId} {
       allow read: if signedIn() && (
-        (resource.data.type == 'post' && resource.data.isStory != true)
+        (
+          resource.data.type == 'story'
+          && resource.data.isStory == true
+          && (
+            resource.data.privacy == 'public'
+            || resource.data.uid == request.auth.uid
+            || (
+              resource.data.privacy == 'friends'
+              && resource.data.allowedUids is list
+              && request.auth.uid in resource.data.allowedUids
+            )
+          )
+        )
         || (
-          resource.data.isStory == true
+          resource.data.type == 'voice'
+          && resource.data.isVoice == true
           && (
             resource.data.privacy == 'public'
             || resource.data.uid == request.auth.uid
@@ -26,75 +41,106 @@ service cloud.firestore {
         )
       );
 
-      // Subcollections visibility helper.
-      function canReadPost(postId) {
-        let p = get(/databases/$(database)/documents/posts/$(postId)).data;
-        return (p.type == 'post' && p.isStory != true)
-          || (p.isStory == true && (
-            p.privacy == 'public'
-            || p.uid == request.auth.uid
-            || (p.privacy == 'friends' && p.allowedUids is list && request.auth.uid in p.allowedUids)
-          ));
-      }
-      allow create: if signedIn() && request.resource.data.uid == request.auth.uid
-        && request.resource.data.name is string && request.resource.data.name.size() <= 50
-        && request.resource.data.message is string && request.resource.data.message.size() > 0
-        && request.resource.data.message.size() <= 500
-        && request.resource.data.type in ['post', 'story', 'voice']
-        && (
-          request.resource.data.type == 'post'
+      function canReadStory(storyId) {
+        let s = get(/databases/$(database)/documents/posts/$(storyId)).data;
+        return (
+          (s.type == 'story' && s.isStory == true)
+          || (s.type == 'voice' && s.isVoice == true)
+        ) && (
+          s.privacy == 'public'
+          || s.uid == request.auth.uid
           || (
-            request.resource.data.isStory == true
-            && request.resource.data.privacy in ['public', 'friends']
-            && request.resource.data.expiresAtMs is number
-            && (
-              request.resource.data.privacy == 'public'
-              || (
-                request.resource.data.allowedUids is list
-                && request.resource.data.allowedUids.size() <= 500
-                && request.auth.uid in request.resource.data.allowedUids
-              )
-            )
-          )
-          || (
-            request.resource.data.type == 'voice'
-            && request.resource.data.isVoice == true
-            && request.resource.data.duration is number
-            && request.resource.data.duration > 0
-            && request.resource.data.duration <= 60
-            && request.resource.data.privacy in ['public', 'friends']
-            && request.resource.data.expiresAtMs is number
-            && request.resource.data.mediaUrl is string
-            && (
-              request.resource.data.privacy == 'public'
-              || (
-                request.resource.data.allowedUids is list
-                && request.resource.data.allowedUids.size() <= 500
-                && request.auth.uid in request.resource.data.allowedUids
-              )
-            )
+            s.privacy == 'friends'
+            && s.allowedUids is list
+            && request.auth.uid in s.allowedUids
           )
         );
+      }
+
+      function validStoryCreate() {
+        return request.resource.data.isStory == true
+          && request.resource.data.privacy in ['public', 'friends']
+          && request.resource.data.expiresAtMs is number
+          && request.resource.data.expiresAtMs >= request.time.toMillis() + 23 * 60 * 60 * 1000
+          && request.resource.data.expiresAtMs <= request.time.toMillis() + 25 * 60 * 60 * 1000
+          && (!('mediaUrl' in request.resource.data) || request.resource.data.mediaUrl is string)
+          && (!('editorMeta' in request.resource.data) || (request.resource.data.editorMeta is map && request.resource.data.editorMeta.size() <= 6))
+          && (
+            request.resource.data.privacy == 'public'
+            || (
+              request.resource.data.allowedUids is list
+              && request.resource.data.allowedUids.size() > 0
+              && request.resource.data.allowedUids.size() <= 500
+              && request.auth.uid in request.resource.data.allowedUids
+            )
+          );
+      }
+
+      function validVoiceCreate() {
+        return request.resource.data.isVoice == true
+          && request.resource.data.duration is number
+          && request.resource.data.duration > 0
+          && request.resource.data.duration <= 60
+          && request.resource.data.privacy in ['public', 'friends']
+          && request.resource.data.expiresAtMs is number
+          && request.resource.data.mediaUrl is string
+          && (
+            request.resource.data.privacy == 'public'
+            || (
+              request.resource.data.allowedUids is list
+              && request.resource.data.allowedUids.size() <= 500
+              && request.auth.uid in request.resource.data.allowedUids
+            )
+          );
+      }
+
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.name is string
+        && request.resource.data.name.size() <= 50
+        && request.resource.data.message is string
+        && request.resource.data.message.size() > 0
+        && request.resource.data.message.size() <= 500
+        && request.resource.data.type in ['story', 'voice']
+        && (
+          (request.resource.data.type == 'story' && validStoryCreate())
+          || (request.resource.data.type == 'voice' && validVoiceCreate())
+        );
+
       allow update: if false;
-      allow delete: if owner(resource.data.uid);
+      allow delete: if signedIn() && resource.data.uid == request.auth.uid;
+
       match /comments/{commentId} {
-        allow read: if signedIn() && canReadPost(postId);
-        allow create: if signedIn() && canReadPost(postId) && request.resource.data.uid == request.auth.uid
-          && request.resource.data.txt is string && request.resource.data.txt.size() > 0
-          && request.resource.data.txt.size() < 200 && request.resource.data.name is string;
+        allow read: if signedIn() && canReadStory(postId);
+        allow create: if signedIn()
+          && canReadStory(postId)
+          && request.resource.data.uid == request.auth.uid
+          && request.resource.data.txt is string
+          && request.resource.data.txt.size() > 0
+          && request.resource.data.txt.size() < 200
+          && request.resource.data.name is string;
         allow update, delete: if false;
       }
+
       match /likes/{likeUid} {
-        allow read: if signedIn() && canReadPost(postId);
-        allow create: if owner(likeUid) && canReadPost(postId) && request.resource.data.uid == request.auth.uid;
-        allow delete: if owner(likeUid);
+        allow read: if signedIn() && canReadStory(postId);
+        allow create: if signedIn()
+          && request.auth.uid == likeUid
+          && canReadStory(postId)
+          && request.resource.data.uid == request.auth.uid;
+        allow delete: if signedIn() && request.auth.uid == likeUid;
         allow update: if false;
       }
+
       match /moods/{moodUid} {
-        allow read: if signedIn() && canReadPost(postId);
-        allow create: if owner(moodUid) && canReadPost(postId) && request.resource.data.uid == request.auth.uid && request.resource.data.mood is string;
-        allow delete: if owner(moodUid);
-        allow update: if owner(moodUid);
+        allow read: if signedIn() && canReadStory(postId);
+        allow create: if signedIn()
+          && request.auth.uid == moodUid
+          && canReadStory(postId)
+          && request.resource.data.uid == request.auth.uid
+          && request.resource.data.mood is string;
+        allow delete: if signedIn() && request.auth.uid == moodUid;
+        allow update: if signedIn() && request.auth.uid == moodUid;
       }
     }
 
@@ -115,301 +161,7 @@ service cloud.firestore {
         || resource.data.userId == '';
     }
 
-    function validFourOptions(options) {
-      return options is list
-        && options.size() == 4
-        && options[0] is string && options[0].size() > 0 && options[0].size() <= 180
-        && options[1] is string && options[1].size() > 0 && options[1].size() <= 180
-        && options[2] is string && options[2].size() > 0 && options[2].size() <= 180
-        && options[3] is string && options[3].size() > 0 && options[3].size() <= 180
-        && options[0] != options[1]
-        && options[0] != options[2]
-        && options[0] != options[3]
-        && options[1] != options[2]
-        && options[1] != options[3]
-        && options[2] != options[3];
-    }
-
-    function validQuizInteraction(activityType, value) {
-      return value is map
-        && value.kind == 'quiz'
-        && value.question is string
-        && value.question.size() >= 10
-        && value.question.size() <= 500
-        && validFourOptions(value.options)
-        && value.correct is int
-        && value.correct >= 0
-        && value.correct <= 3
-        && value.proofRequired == true
-        && value.proofPrompt is string
-        && value.proofPrompt.size() >= 10
-        && value.proofPrompt.size() <= 240
-        && (
-          activityType == 'puzzle'
-          || (
-            activityType == 'learn'
-            && value.lesson is string
-            && value.lesson.size() >= 20
-            && value.lesson.size() <= 900
-          )
-        );
-    }
-
-    function validAllocationItems(items) {
-      return items is list
-        && items.size() >= 2
-        && items.size() <= 8
-        && items[0] is list && items[0].size() == 2
-        && items[0][0] is string && items[0][0].size() > 0 && items[0][0].size() <= 50
-        && items[0][1] is number && items[0][1] >= 0
-        && items[1] is list && items[1].size() == 2
-        && items[1][0] is string && items[1][0].size() > 0 && items[1][0].size() <= 50
-        && items[1][1] is number && items[1][1] >= 0
-        && (items.size() < 3 || (
-          items[2] is list && items[2].size() == 2
-          && items[2][0] is string && items[2][0].size() > 0 && items[2][0].size() <= 50
-          && items[2][1] is number && items[2][1] >= 0
-        ))
-        && (items.size() < 4 || (
-          items[3] is list && items[3].size() == 2
-          && items[3][0] is string && items[3][0].size() > 0 && items[3][0].size() <= 50
-          && items[3][1] is number && items[3][1] >= 0
-        ))
-        && (items.size() < 5 || (
-          items[4] is list && items[4].size() == 2
-          && items[4][0] is string && items[4][0].size() > 0 && items[4][0].size() <= 50
-          && items[4][1] is number && items[4][1] >= 0
-        ))
-        && (items.size() < 6 || (
-          items[5] is list && items[5].size() == 2
-          && items[5][0] is string && items[5][0].size() > 0 && items[5][0].size() <= 50
-          && items[5][1] is number && items[5][1] >= 0
-        ))
-        && (items.size() < 7 || (
-          items[6] is list && items[6].size() == 2
-          && items[6][0] is string && items[6][0].size() > 0 && items[6][0].size() <= 50
-          && items[6][1] is number && items[6][1] >= 0
-        ))
-        && (items.size() < 8 || (
-          items[7] is list && items[7].size() == 2
-          && items[7][0] is string && items[7][0].size() > 0 && items[7][0].size() <= 50
-          && items[7][1] is number && items[7][1] >= 0
-        ));
-    }
-
-    function validBuildInteraction(value) {
-      return value is map
-        && value.kind == 'build'
-        && value.mechanic in ['order','allocate','grid','assign']
-        && (
-          (
-            value.mechanic == 'order'
-            && value.items is list
-            && value.items.size() >= 3
-            && value.items.size() <= 8
-            && value.items[0] is string && value.items[0].size() > 0 && value.items[0].size() <= 70
-            && value.items[1] is string && value.items[1].size() > 0 && value.items[1].size() <= 70
-          )
-          || (
-            value.mechanic == 'allocate'
-            && value.budget is number
-            && value.budget >= 1
-            && value.budget <= 100000
-            && validAllocationItems(value.items)
-          )
-          || (
-            value.mechanic == 'grid'
-            && value.size == 4
-            && value.required is list
-            && value.required.size() >= 2
-            && value.required.size() <= 4
-            && value.required[0] is string && value.required[0].size() > 0 && value.required[0].size() <= 40
-            && value.required[1] is string && value.required[1].size() > 0 && value.required[1].size() <= 40
-            && (value.required.size() < 3 || (value.required[2] is string && value.required[2].size() > 0 && value.required[2].size() <= 40))
-            && (value.required.size() < 4 || (value.required[3] is string && value.required[3].size() > 0 && value.required[3].size() <= 40))
-            && value.blocked is list
-            && value.blocked.size() <= 8
-            && value.adjacentPairs is list
-            && value.adjacentPairs.size() <= 3
-          )
-          || (
-            value.mechanic == 'assign'
-            && value.people is list
-            && value.people.size() == 4
-            && value.roles is list
-            && value.roles.size() == 4
-            && value.people[0] is string && value.people[0].size() > 0 && value.people[0].size() <= 40
-            && value.people[1] is string && value.people[1].size() > 0 && value.people[1].size() <= 40
-            && value.people[2] is string && value.people[2].size() > 0 && value.people[2].size() <= 40
-            && value.people[3] is string && value.people[3].size() > 0 && value.people[3].size() <= 40
-            && value.roles[0] is string && value.roles[0].size() > 0 && value.roles[0].size() <= 40
-            && value.roles[1] is string && value.roles[1].size() > 0 && value.roles[1].size() <= 40
-            && value.roles[2] is string && value.roles[2].size() > 0 && value.roles[2].size() <= 40
-            && value.roles[3] is string && value.roles[3].size() > 0 && value.roles[3].size() <= 40
-            && value.correct is map
-            && value.correct[value.people[0]] is string && value.correct[value.people[0]] in value.roles
-            && value.correct[value.people[1]] is string && value.correct[value.people[1]] in value.roles
-            && value.correct[value.people[2]] is string && value.correct[value.people[2]] in value.roles
-            && value.correct[value.people[3]] is string && value.correct[value.people[3]] in value.roles
-            && value.correct[value.people[0]] != value.correct[value.people[1]]
-            && value.correct[value.people[0]] != value.correct[value.people[2]]
-            && value.correct[value.people[0]] != value.correct[value.people[3]]
-            && value.correct[value.people[1]] != value.correct[value.people[2]]
-            && value.correct[value.people[1]] != value.correct[value.people[3]]
-            && value.correct[value.people[2]] != value.correct[value.people[3]]
-          )
-        );
-    }
-
-    function validChallengeRound(round) {
-      return round is map
-        && round.q is string
-        && round.q.size() >= 8
-        && round.q.size() <= 240
-        && validFourOptions(round.o)
-        && round.a is int
-        && round.a >= 0
-        && round.a <= 3;
-    }
-
-    function validChallengeInteraction(value) {
-      return value is map
-        && value.kind == 'challenge'
-        && value.rounds is list
-        && value.rounds.size() == 5
-        && validChallengeRound(value.rounds[0])
-        && validChallengeRound(value.rounds[1])
-        && validChallengeRound(value.rounds[2])
-        && validChallengeRound(value.rounds[3])
-        && validChallengeRound(value.rounds[4]);
-    }
-
-    function validActivityInteraction(activityType, value) {
-      return value is map
-        && value.size() <= 20
-        && (
-          ((activityType == 'puzzle' || activityType == 'learn') && validQuizInteraction(activityType, value))
-          || (activityType == 'build' && validBuildInteraction(value))
-          || (activityType == 'challenge' && validChallengeInteraction(value))
-          || (activityType == 'game' && value.kind == 'room')
-        );
-    }
-
-    function gridAdjacent(a, b) {
-      return (a + 1 == b && a != 3 && a != 7 && a != 11)
-        || (b + 1 == a && b != 3 && b != 7 && b != 11)
-        || a + 4 == b
-        || b + 4 == a;
-    }
-
-    function validAllocationSolution(taskId, state) {
-      let d = get(/databases/$(database)/documents/communityTasks/$(taskId)).data;
-      let items = d.interaction.items;
-      let a = state.allocation;
-      return a is list
-        && a.size() == items.size()
-        && a[0] is number && a[0] >= items[0][1]
-        && a[1] is number && a[1] >= items[1][1]
-        && (items.size() < 3 || (a[2] is number && a[2] >= items[2][1]))
-        && (items.size() < 4 || (a[3] is number && a[3] >= items[3][1]))
-        && (items.size() < 5 || (a[4] is number && a[4] >= items[4][1]))
-        && (items.size() < 6 || (a[5] is number && a[5] >= items[5][1]))
-        && (items.size() < 7 || (a[6] is number && a[6] >= items[6][1]))
-        && (items.size() < 8 || (a[7] is number && a[7] >= items[7][1]))
-        && a[0] + a[1]
-          + (items.size() >= 3 ? a[2] : 0)
-          + (items.size() >= 4 ? a[3] : 0)
-          + (items.size() >= 5 ? a[4] : 0)
-          + (items.size() >= 6 ? a[5] : 0)
-          + (items.size() >= 7 ? a[6] : 0)
-          + (items.size() >= 8 ? a[7] : 0)
-          <= d.interaction.budget;
-    }
-
-    function validGridSolution(taskId, state) {
-      let d = get(/databases/$(database)/documents/communityTasks/$(taskId)).data;
-      let r = d.interaction.required;
-      let p = state.positions;
-      return p is map
-        && p[r[0]] is int && p[r[0]] >= 0 && p[r[0]] < 16
-        && p[r[1]] is int && p[r[1]] >= 0 && p[r[1]] < 16
-        && p[r[0]] != p[r[1]]
-        && !(p[r[0]] in d.interaction.blocked)
-        && !(p[r[1]] in d.interaction.blocked)
-        && gridAdjacent(p[r[0]], p[r[1]])
-        && (r.size() < 3 || (
-          p[r[2]] is int && p[r[2]] >= 0 && p[r[2]] < 16
-          && p[r[2]] != p[r[0]] && p[r[2]] != p[r[1]]
-          && !(p[r[2]] in d.interaction.blocked)
-          && gridAdjacent(p[r[1]], p[r[2]])
-        ))
-        && (r.size() < 4 || (
-          p[r[3]] is int && p[r[3]] >= 0 && p[r[3]] < 16
-          && p[r[3]] != p[r[0]] && p[r[3]] != p[r[1]] && p[r[3]] != p[r[2]]
-          && !(p[r[3]] in d.interaction.blocked)
-          && gridAdjacent(p[r[2]], p[r[3]])
-        ));
-    }
-
-    function validBuildCompletion(taskId) {
-      let d = get(/databases/$(database)/documents/communityTasks/$(taskId)).data;
-      let e = request.resource.data.buildEvidence;
-      let s = e.state;
-      return e is map
-        && e.mechanic is string
-        && e.mechanic == d.interaction.mechanic
-        && s is map
-        && s.size() <= 4
-        && (
-          (e.mechanic == 'order' && s.order is list && s.order == d.interaction.items)
-          || (e.mechanic == 'allocate' && validAllocationSolution(taskId, s))
-          || (e.mechanic == 'grid' && validGridSolution(taskId, s))
-          || (e.mechanic == 'assign' && s.assign is map && s.assign == d.interaction.correct)
-        );
-    }
-
-    function validXpForDifficulty(difficulty, xp) {
-      return xp is int
-        && ((difficulty == 'Easy' && xp == 25)
-          || (difficulty == 'Medium' && xp == 40)
-          || (difficulty == 'Hard' && xp == 60));
-    }
-
-    function challengeAnswerScore(taskId) {
-      let d = get(/databases/$(database)/documents/communityTasks/$(taskId)).data;
-      let a = request.resource.data.answers;
-      return (a[0] == d.interaction.rounds[0].a ? 1 : 0)
-        + (a[1] == d.interaction.rounds[1].a ? 1 : 0)
-        + (a[2] == d.interaction.rounds[2].a ? 1 : 0)
-        + (a[3] == d.interaction.rounds[3].a ? 1 : 0)
-        + (a[4] == d.interaction.rounds[4].a ? 1 : 0);
-    }
-
-    function challengeAnswersPass(taskId) {
-      let d = get(/databases/$(database)/documents/communityTasks/$(taskId)).data;
-      let a = request.resource.data.answers;
-      return a is list
-        && a.size() == 5
-        && a[0] is int && a[0] >= 0 && a[0] <= 3
-        && a[1] is int && a[1] >= 0 && a[1] <= 3
-        && a[2] is int && a[2] >= 0 && a[2] <= 3
-        && a[3] is int && a[3] >= 0 && a[3] <= 3
-        && a[4] is int && a[4] >= 0 && a[4] <= 3
-        && (
-      (a[0] == d.interaction.rounds[0].a && a[1] == d.interaction.rounds[1].a && a[2] == d.interaction.rounds[2].a) ||
-      (a[0] == d.interaction.rounds[0].a && a[1] == d.interaction.rounds[1].a && a[3] == d.interaction.rounds[3].a) ||
-      (a[0] == d.interaction.rounds[0].a && a[1] == d.interaction.rounds[1].a && a[4] == d.interaction.rounds[4].a) ||
-      (a[0] == d.interaction.rounds[0].a && a[2] == d.interaction.rounds[2].a && a[3] == d.interaction.rounds[3].a) ||
-      (a[0] == d.interaction.rounds[0].a && a[2] == d.interaction.rounds[2].a && a[4] == d.interaction.rounds[4].a) ||
-      (a[0] == d.interaction.rounds[0].a && a[3] == d.interaction.rounds[3].a && a[4] == d.interaction.rounds[4].a) ||
-      (a[1] == d.interaction.rounds[1].a && a[2] == d.interaction.rounds[2].a && a[3] == d.interaction.rounds[3].a) ||
-      (a[1] == d.interaction.rounds[1].a && a[2] == d.interaction.rounds[2].a && a[4] == d.interaction.rounds[4].a) ||
-      (a[1] == d.interaction.rounds[1].a && a[3] == d.interaction.rounds[3].a && a[4] == d.interaction.rounds[4].a) ||
-      (a[2] == d.interaction.rounds[2].a && a[3] == d.interaction.rounds[3].a && a[4] == d.interaction.rounds[4].a)
-        );
-    }
-
-    match /usersPrivate/{userId} {
+        match /usersPrivate/{userId} {
       allow read, create, update: if owner(userId);
       allow delete: if owner(userId);
     }
@@ -488,33 +240,6 @@ service cloud.firestore {
       allow write: if false; // Console-only (admins list)
     }
 
-    match /taskTemplates/{templateId} {
-      allow read: if signedIn() && (resource.data.isSystem == true || resource.data.createdBy == request.auth.uid);
-      // Users create personal templates; admins (or first-time system seed via merge) manage system ones
-      allow create: if signedIn()
-        && request.resource.data.title is string
-        && request.resource.data.title.size() > 0
-        && request.resource.data.title.size() <= 80
-        && (
-          isAdmin()
-          || (
-            request.resource.data.createdBy == request.auth.uid
-            && request.resource.data.isSystem != true
-          )
-          || (
-            isAdmin()
-            && request.resource.data.isSystem == true
-            && request.resource.data.createdBy == 'system'
-          )
-        );
-      allow update: if signedIn() && (
-        isAdmin()
-        || (resource.data.createdBy == request.auth.uid && resource.data.isSystem != true)
-      );
-      allow delete: if isAdmin()
-        || (signedIn() && resource.data.createdBy == request.auth.uid && resource.data.isSystem != true);
-    }
-
     match /badges/{badgeId} {
       allow read: if signedIn();
       allow create, update: if isAdmin();
@@ -530,36 +255,50 @@ service cloud.firestore {
     }
 
     match /communityTasks/{taskId} {
+      // Community-created Challenges are the only custom challenge records now.
       allow read: if signedIn();
-      // Any authenticated user can create community / challenge / seasonal from templates
+
+      function validChallengeInteraction() {
+        return request.resource.data.interaction is map
+          && request.resource.data.interaction.kind == 'choice'
+          && request.resource.data.interaction.question is string
+          && request.resource.data.interaction.question.size() > 0
+          && request.resource.data.interaction.question.size() <= 240
+          && request.resource.data.interaction.options is list
+          && request.resource.data.interaction.options.size() >= 2
+          && request.resource.data.interaction.options.size() <= 5;
+      }
+
       allow create: if signedIn()
         && request.resource.data.creatorUid == request.auth.uid
         && request.resource.data.title is string
         && request.resource.data.title.size() > 0
         && request.resource.data.title.size() <= 100
-        && request.resource.data.kind in ['community', 'challenge', 'seasonal']
-        && request.resource.data.activityType in ['puzzle','build','learn','challenge','game']
+        && request.resource.data.kind == 'challenge'
+        && request.resource.data.activityType == 'challenge'
         && request.resource.data.category is string
         && request.resource.data.category.size() > 0
         && request.resource.data.category.size() <= 60
         && request.resource.data.durationMin is number
-        && request.resource.data.durationMin >= 5
-        && request.resource.data.durationMin <= 180
-        && request.resource.data.difficulty in ['Easy','Medium','Hard']
+        && request.resource.data.durationMin >= 1
+        && request.resource.data.durationMin <= 30
+        && request.resource.data.difficulty == 'Easy'
         && request.resource.data.endAtMs is number
         && request.resource.data.expiresInDays in [7,14,21,30,40]
         && request.resource.data.startAtMs is number
-        && request.resource.data.startAtMs <= request.resource.data.endAtMs
+        && request.resource.data.startAtMs <= request.time.toMillis()
+        && request.resource.data.endAtMs == request.resource.data.startAtMs + request.resource.data.expiresInDays * 86400000
+        && request.resource.data.endAtMs > request.time.toMillis()
         && request.resource.data.status == 'active'
+        && request.resource.data.featured == false
+        && request.resource.data.hidden == false
         && request.resource.data.joins == 0
         && request.resource.data.likes == 0
         && request.resource.data.comments == 0
         && request.resource.data.completions == 0
-        && request.resource.data.featured == false
-        && request.resource.data.hidden == false
-        && validXpForDifficulty(request.resource.data.difficulty, request.resource.data.xpReward)
         && request.resource.data.metric == 'manual'
         && request.resource.data.target == 1
+        && request.resource.data.xpReward == 25
         && request.resource.data.description is string
         && request.resource.data.description.size() >= 10
         && request.resource.data.description.size() <= 500
@@ -575,202 +314,17 @@ service cloud.firestore {
         && request.resource.data.createdAtMs is number
         && request.resource.data.createdAtMs <= request.time.toMillis() + 60000
         && request.resource.data.createdAtMs >= request.time.toMillis() - 600000
-        && request.resource.data.startAtMs is number
-        && request.resource.data.startAtMs <= request.time.toMillis()
-        && request.resource.data.endAtMs == request.resource.data.startAtMs + request.resource.data.expiresInDays * 86400000
-        && request.resource.data.endAtMs > request.time.toMillis()
-        && validActivityInteraction(request.resource.data.activityType, request.resource.data.interaction);
-      allow update: if signedIn() && (
-        isAdmin()
-        || (
-          resource.data.creatorUid == request.auth.uid
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-            'title','description','icon','activityType','category','mechanic',
-            'durationMin','difficulty','goal','instructions','expiresInDays',
-            'startAtMs','endAtMs','templateId','metric','target','xpReward','interaction'
-          ])
-          && request.resource.data.activityType in ['puzzle','build','learn','challenge','game']
-          && request.resource.data.category is string
-          && request.resource.data.category.size() > 0
-          && request.resource.data.category.size() <= 60
-          && request.resource.data.durationMin is number
-          && request.resource.data.durationMin >= 5
-          && request.resource.data.durationMin <= 180
-          && request.resource.data.difficulty in ['Easy','Medium','Hard']
-          && validXpForDifficulty(request.resource.data.difficulty, request.resource.data.xpReward)
-          && request.resource.data.metric == 'manual'
-          && request.resource.data.target == 1
-          && request.resource.data.endAtMs is number
-          && request.resource.data.expiresInDays in [7,14,21,30,40]
-          && validActivityInteraction(request.resource.data.activityType, request.resource.data.interaction)
-          && request.resource.data.startAtMs == resource.data.startAtMs
-          && request.resource.data.createdAtMs == resource.data.createdAtMs
-          && (request.resource.data.interaction == resource.data.interaction || (resource.data.joins == 0 && resource.data.completions == 0))
-          && request.resource.data.endAtMs == request.resource.data.startAtMs + request.resource.data.expiresInDays * 86400000
-        )
-      );
-      allow delete: if isAdmin() || (signedIn() && resource.data.creatorUid == request.auth.uid);
+        && validChallengeInteraction();
+
+      allow update: if isAdmin()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['featured','hidden','status']);
+      allow delete: if isAdmin();
 
       match /members/{memberUid} {
         allow read: if signedIn();
-        allow create, delete: if owner(memberUid);
+        allow create, delete: if owner(memberUid)
+          && get(/databases/$(database)/documents/communityTasks/$(taskId)).data.kind == 'challenge';
         allow update: if false;
-      }
-      match /likes/{likeUid} {
-        allow read: if signedIn();
-        allow create, delete: if owner(likeUid);
-        allow update: if false;
-      }
-      match /comments/{commentId} {
-        allow read: if signedIn();
-        allow create: if signedIn()
-          && request.resource.data.uid == request.auth.uid
-          && request.resource.data.txt is string
-          && request.resource.data.txt.size() > 0
-          && request.resource.data.txt.size() < 200;
-        allow update, delete: if false;
-      }
-      match /completions/{uid} {
-         allow read: if owner(uid);
-        allow create: if owner(uid)
-          && get(/databases/$(database)/documents/communityTasks/$(taskId)).data.creatorUid != request.auth.uid
-          && request.resource.data.uid == request.auth.uid
-          && request.resource.data.atMs is number
-          && (
-            (
-              get(/databases/$(database)/documents/communityTasks/$(taskId)).data.activityType == 'build'
-              && get(/databases/$(database)/documents/communityTasks/$(taskId)).data.interaction.kind == 'build'
-              && validBuildCompletion(taskId)
-            )
-            || (
-              get(/databases/$(database)/documents/communityTasks/$(taskId)).data.activityType == 'challenge'
-              && get(/databases/$(database)/documents/communityTasks/$(taskId)).data.interaction.kind == 'challenge'
-              && request.resource.data.score is int
-              && request.resource.data.score >= 3
-              && request.resource.data.score <= 5
-              && request.resource.data.score == challengeAnswerScore(taskId)
-              && challengeAnswersPass(taskId)
-              && request.resource.data.proofText is string
-              && request.resource.data.proofText.size() >= 20
-              && request.resource.data.proofText.size() <= 500
-            )
-            || (
-              get(/databases/$(database)/documents/communityTasks/$(taskId)).data.activityType in ['puzzle','learn']
-              && get(/databases/$(database)/documents/communityTasks/$(taskId)).data.interaction.kind == 'quiz'
-              && request.resource.data.answerIndex is int
-              && request.resource.data.answerIndex >= 0
-              && request.resource.data.answerIndex <= 3
-              && request.resource.data.proofText is string
-              && request.resource.data.proofText.size() >= 20
-              && request.resource.data.proofText.size() <= 500
-              && request.resource.data.answerIndex == get(/databases/$(database)/documents/communityTasks/$(taskId)).data.interaction.correct
-            )
-          );
-        allow update, delete: if false;
-      }
-      match /ratings/{ratingUid} {
-        allow read: if signedIn();
-        allow create, update: if owner(ratingUid)
-          && exists(/databases/$(database)/documents/communityTasks/$(taskId)/completions/$(request.auth.uid))
-          && request.resource.data.uid == request.auth.uid
-          && request.resource.data.overall is number
-          && request.resource.data.overall >= 1 && request.resource.data.overall <= 5
-          && request.resource.data.fun is number
-          && request.resource.data.fun >= 1 && request.resource.data.fun <= 5
-          && request.resource.data.useful is number
-          && request.resource.data.useful >= 1 && request.resource.data.useful <= 5
-          && request.resource.data.teamwork is number
-          && request.resource.data.teamwork >= 1 && request.resource.data.teamwork <= 5;
-        allow delete: if owner(ratingUid);
       }
     }
-    match /rooms/{roomId} {
-      allow read: if signedIn();
-      allow create: if signedIn() && request.resource.data.hostUid == request.auth.uid
-        && request.resource.data.title is string && request.resource.data.title.size() > 0
-        && request.resource.data.title.size() <= 80
-        && request.resource.data.maxPlayers in [2,3,4,6]
-        && request.resource.data.activitySource in ['catalog','community']
-        && request.resource.data.activityType in ['puzzle','build','learn','challenge','game']
-        && request.resource.data.challengeId is string
-        && request.resource.data.challengeId.size() > 0
-        && request.resource.data.challengeId.size() <= 120
-        && request.resource.data.activityTitle is string
-        && request.resource.data.activityTitle.size() > 0
-        && request.resource.data.activityTitle.size() <= 100
-        && request.resource.data.memberCount == 1
-        && request.resource.data.expiresAtMs is number
-        && request.resource.data.expiresAtMs > request.time.toMillis()
-        && request.resource.data.status == 'open';
-      allow update: if signedIn() && (
-        (
-          resource.data.hostUid == request.auth.uid
-          && request.resource.data.hostUid == resource.data.hostUid
-          && request.resource.data.activityType == resource.data.activityType
-          && request.resource.data.activitySource == resource.data.activitySource
-          && request.resource.data.challengeId == resource.data.challengeId
-          && request.resource.data.expiresAtMs == resource.data.expiresAtMs
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['title','status','endedAtMs'])
-        )
-        || (
-          exists(/databases/$(database)/documents/rooms/$(roomId)/members/$(request.auth.uid))
-          && request.resource.data.hostUid == resource.data.hostUid
-          && request.resource.data.activityType == resource.data.activityType
-          && request.resource.data.activitySource == resource.data.activitySource
-          && request.resource.data.challengeId == resource.data.challengeId
-          && request.resource.data.expiresAtMs == resource.data.expiresAtMs
-          && request.resource.data.status == resource.data.status
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['memberCount'])
-          && (
-            request.resource.data.memberCount == resource.data.memberCount + 1
-            || request.resource.data.memberCount == resource.data.memberCount - 1
-          )
-          && request.resource.data.memberCount >= 0
-          && request.resource.data.memberCount <= request.resource.data.maxPlayers
-          && (
-            (
-              request.resource.data.memberCount == resource.data.memberCount + 1
-              && existsAfter(/databases/$(database)/documents/rooms/$(roomId)/members/$(request.auth.uid))
-            )
-            || (
-              request.resource.data.memberCount == resource.data.memberCount - 1
-              && !existsAfter(/databases/$(database)/documents/rooms/$(roomId)/members/$(request.auth.uid))
-            )
-          )
-        )
-      );
-      allow delete: if signedIn() && resource.data.hostUid == request.auth.uid;
-      match /members/{memberUid} {
-        allow read: if signedIn();
-        allow create: if owner(memberUid)
-          && getAfter(/databases/$(database)/documents/rooms/$(roomId)).data.status == 'open'
-          && getAfter(/databases/$(database)/documents/rooms/$(roomId)).data.memberCount < getAfter(/databases/$(database)/documents/rooms/$(roomId)).data.maxPlayers;
-        allow delete: if owner(memberUid);
-        allow update: if false;
-      }
-      match /messages/{messageId} {
-        allow read: if signedIn() && exists(/databases/$(database)/documents/rooms/$(roomId)/members/$(request.auth.uid));
-        allow create: if signedIn() && request.resource.data.uid == request.auth.uid && exists(/databases/$(database)/documents/rooms/$(roomId)/members/$(request.auth.uid)) && request.resource.data.text is string && request.resource.data.text.size() > 0 && request.resource.data.text.size() <= 500;
-        allow update, delete: if false;
-      }
-      match /state/{stateId} {
-        allow read: if signedIn()
-          && exists(/databases/$(database)/documents/rooms/$(roomId)/members/$(request.auth.uid));
-        allow create, update: if signedIn()
-          && exists(/databases/$(database)/documents/rooms/$(roomId)/members/$(request.auth.uid))
-          && request.resource.data.updatedBy == request.auth.uid
-          && request.resource.data.state is map
-          && request.resource.data.state.size() <= 30
-          && request.resource.data.version is number
-          && request.resource.data.updatedAtMs is number
-          && request.resource.data.activityId is string
-          && request.resource.data.activityId.size() > 0
-          && request.resource.data.activityId.size() <= 80
-          && request.resource.data.activityId == get(/databases/$(database)/documents/rooms/$(roomId)).data.challengeId
-          && request.resource.data.mechanic in ['order','allocate','grid','assign','shared-puzzle','shared-learn','shared-challenge'];
-        allow delete: if signedIn()
-          && get(/databases/$(database)/documents/rooms/$(roomId)).data.hostUid == request.auth.uid;
-      }
-    }
-
   }}
