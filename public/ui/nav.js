@@ -42,6 +42,7 @@ function applyActiveState(root, active) {
   root.querySelectorAll('.nav-btn[data-nav]').forEach(el => {
     const isActive = el.dataset.nav === active;
     el.classList.toggle('active', isActive);
+    el.toggleAttribute('data-active', isActive);
     if (isActive) {
       el.setAttribute('aria-current', 'page');
       el.style.setProperty('color', '#F5F3FF', 'important');
@@ -56,6 +57,17 @@ function applyActiveState(root, active) {
       el.style.removeProperty('box-shadow');
     }
   });
+}
+
+function forceNavVisibility(el) {
+  if (!el) return;
+  el.hidden = false;
+  const desktop = window.matchMedia('(min-width: 840px)').matches;
+  const isRail = el.classList.contains('nkm-rail');
+  el.style.setProperty('display', isRail ? (desktop ? 'flex' : 'none') : (desktop ? 'none' : 'flex'), 'important');
+  el.style.setProperty('visibility', 'visible', 'important');
+  el.style.setProperty('opacity', '1', 'important');
+  el.style.setProperty('pointer-events', 'auto', 'important');
 }
 
 export function renderNav() {
@@ -92,13 +104,20 @@ export function renderNav() {
 
   const bottomRoot = document.querySelector('.bottom-nav');
   const railRoot = document.querySelector('.nkm-rail');
-  if (bottomRoot) applyActiveState(bottomRoot, active);
-  if (railRoot) applyActiveState(railRoot, active);
+  if (bottomRoot) { applyActiveState(bottomRoot, active); forceNavVisibility(bottomRoot); }
+  if (railRoot) { applyActiveState(railRoot, active); forceNavVisibility(railRoot); }
 }
 
 export function navHtml(active = '') {
   return `<nav class="bottom-nav" aria-label="Primary navigation"><div class="nav-row">${ITEMS.map(i => linkMarkup(i, active)).join('')}</div></nav>`;
 }
 
-if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', renderNav);
-else renderNav();
+function bootNav() {
+  try { renderNav(); } catch (error) { console.warn('[Trio Nav] render failed', error); }
+  window.setTimeout(() => { try { renderNav(); } catch (error) { console.warn('[Trio Nav] retry failed', error); } }, 0);
+  window.setTimeout(() => { try { renderNav(); } catch (error) { console.warn('[Trio Nav] delayed retry failed', error); } }, 250);
+  window.setTimeout(() => { try { renderNav(); } catch (error) { console.warn('[Trio Nav] recovery render failed', error); } }, 1000);
+  window.addEventListener('resize', () => renderNav(), { passive: true });
+}
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bootNav);
+else bootNav();
