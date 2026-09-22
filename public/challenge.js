@@ -46,6 +46,20 @@ function formatTime(ms) {
   return new Date(ms).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
 }
 
+function creatorMeta(c) {
+  const creatorUid = c.creatorUid || '';
+  const creatorName = c.creatorName || 'Admin';
+  const role = c.creatorRole || (creatorUid ? 'Member' : 'Admin');
+  const safeName = esc(creatorName);
+  const roleHtml = '<span class="challenge-creator-role">' + esc(role) + '</span>';
+  const nameHtml = creatorUid
+    ? '<a class="challenge-creator-name" href="profile.html?uid=' + encodeURIComponent(creatorUid) + '">' + safeName + '</a>'
+    : '<span class="challenge-creator-name">' + safeName + '</span>';
+  return '<div class="challenge-creator">' +
+    '<span class="challenge-creator-label">by</span>' + nameHtml + roleHtml +
+    '</div>';
+}
+
 function renderThreadMessage(m) {
   const row = document.createElement('article');
   row.className = 'challenge-thread-message';
@@ -136,6 +150,7 @@ function addCard(c, autoOpen = false) {
   card.innerHTML =
     '<span class="challenge-tag">' + esc(c.tag || 'COMMUNITY') + '</span>' +
     '<h2>' + esc(c.q) + '</h2>' +
+    creatorMeta(c) +
     '<div class="challenge-main-options">' +
       c.o.map((x,i) => '<button type="button" data-choice="' + i + '">' + esc(x) + '</button>').join('') +
     '</div>' +
@@ -243,7 +258,15 @@ async function loadCommunityChallenges() {
       heading.className = 'challenge-community-heading';
       heading.innerHTML = '<span class="challenge-tag">COMMUNITY</span><h2>Questions from people</h2><p>Real prompts created by the community. Pick, compare and talk in public.</p>';
       host.prepend(heading);
-      custom.forEach(t => addCard({id:t.id,tag:'COMMUNITY',q:t.interaction.question,o:t.interaction.options}, requestedId === t.id));
+      custom.forEach(t => addCard({
+        id:t.id,
+        tag:'COMMUNITY',
+        q:t.interaction.question,
+        o:t.interaction.options,
+        creatorUid:t.creatorUid || '',
+        creatorName:t.creatorName || 'Admin',
+        creatorRole:t.creatorRole || (t.creatorUid ? 'Member' : 'Admin')
+      }, requestedId === t.id));
     }
     await hydrateCounts();
   } catch (err) {
@@ -257,7 +280,12 @@ onAuthStateChanged(auth, u => {
 });
 
 const requestedId = new URLSearchParams(location.search).get('challenge') || new URLSearchParams(location.search).get('id');
-CHALLENGES.forEach(c => addCard(c, requestedId === c.id));
+CHALLENGES.forEach(c => addCard({
+  ...c,
+  creatorName:'Admin',
+  creatorRole:'Admin',
+  creatorUid:''
+}, requestedId === c.id));
 loadCommunityChallenges().then(() => {
   if (requestedId && cards.has(requestedId)) return;
   if (requestedId) {
