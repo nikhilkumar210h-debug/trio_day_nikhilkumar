@@ -88,14 +88,6 @@ async function isConnected(myUid, theirUid) {
   return result;
 }
 
-// ── Cached posts list ────────────────────────────────────────────────────────
-// Profile posts don't change that often — 2 min TTL
-async function getCachedUserPosts(uid) {
-  // Posts are intentionally not rendered on profiles; Trio Day profiles focus on identity,
-  // progress, activities and connections. Keep this stub for compatibility with older callers.
-  return [];
-}
-
 // ── Load connections panel ───────────────────────────────────────────────────
 async function loadConnections(uid, mode = 'followers') {
   const box = $('connectionsList'); if (!box) return;
