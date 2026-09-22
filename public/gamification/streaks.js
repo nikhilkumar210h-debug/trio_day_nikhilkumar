@@ -5,13 +5,13 @@ import { workerPost } from './worker-config.js';
  * Increment the current Challenge streak through the secure Worker.
  * The Worker is idempotent per local calendar day.
  */
-export async function bumpChallengeStreak(uid) {
-  if (!uid) return null;
+export async function bumpChallengeStreak(uid, challengeId) {
+  if (!uid || !challengeId) return null;
   const user = auth.currentUser;
   if (!user || user.uid !== uid) return null;
 
   try {
-    const result = await workerPost('/gamification/bump-streak', {}, user);
+    const result = await workerPost('/gamification/bump-streak', { challengeId }, user);
     if (!result?.ok) return null;
     return {
       streakCurrent: result.streakCurrent,
