@@ -27,7 +27,7 @@ const FILES_TO_CACHE = [
   BASE + "auth-guard.js",
   BASE + "all-users.js",
   BASE + "challenge.html",
-  BASE + "task-create.html",
+  BASE + "challenge-create.html",
   BASE + "utils.js",
   BASE + "trio-cache.js",
   BASE + "install-prompt.js",
