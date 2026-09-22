@@ -42,7 +42,7 @@ function applyActiveState(root, active) {
   root.querySelectorAll('.nav-btn[data-nav]').forEach(el => {
     const isActive = el.dataset.nav === active;
     el.classList.toggle('active', isActive);
-    el.toggleAttribute('data-active', isActive);
+    el.dataset.active = isActive ? 'true' : 'false';
     if (isActive) {
       el.setAttribute('aria-current', 'page');
       el.style.setProperty('color', '#F5F3FF', 'important');
