@@ -33,7 +33,6 @@
   <link rel="stylesheet" href="style.css?v=20260921-story4">
 <link rel="stylesheet" href="styles/polish.css?v=7">
   <link rel="stylesheet" href="styles/home.css?v=36">
-  <link rel="manifest" href="manifest.json">
   <link rel="sitemap" href="sitemap.xml">
   <link rel="stylesheet" href="styles/experience-polish.css?v=1">
 </head>
@@ -250,28 +249,7 @@
   <script type="module" src="auth-ui.js"></script>
   <script type="module" src="theme.js"></script>
   <script type="module" src="ui/header.js"></script>
-  <script src="install-prompt.js" defer></script>
-  <script>
-    // Production: Firebase Hosting serves public/ at / — /service-worker.js is valid.
-    // Local: serve public/ as root (e.g. `npx serve public -p 3000` or `firebase emulators:start --only hosting`).
-    // If served from project root (VS Code Live Preview at 127.0.0.1:3000), /service-worker.js 404s — fail gracefully, no console error.
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        // Resolve relative to the current page so both production (/index.html)
-        // and local /public/index.html use the correct worker URL/scope.
-        const swUrl = new URL('service-worker.js', window.location.href);
-        const swScope = new URL('./', window.location.href).pathname;
-        navigator.serviceWorker.register(swUrl.href, { scope: swScope })
-          .then(reg => console.log('SW registered:', reg.scope))
-          .catch(() => {
-            // Local/dev environments may intentionally disable service workers.
-            navigator.serviceWorker.getRegistrations?.().then(rs => rs.forEach(r => {
-              if (r.scope.startsWith(location.origin + swScope)) r.unregister();
-            }));
-          });
-      });
-    }
-  </script>
+
   <script type="module" src="ui/nav.js?v=20260922-nav7"></script>
   <script type="module" src="ui/sheet.js"></script>
 </body>
