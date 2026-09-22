@@ -39,7 +39,7 @@ async function loadList() {
         <button type="button" class="btn secondary danger-action remove-btn" data-id="${esc(t.id)}">Remove</button>
         <button type="button" class="btn secondary danger-action delete-btn" data-id="${esc(t.id)}" data-title="${esc(t.title)}">Delete</button>
       </div>
-    </div>`).join('') || '<p class="muted">No Challenges yet — users can create them from the Create Challenge action..</p>';
+    </div>`).join('') || '<p class="muted">No Challenges yet — users can create them from the Create Challenge action.</p>';
 
   $('adminTasks').querySelectorAll('.feat-btn').forEach(btn => {
     btn.onclick = async () => {
@@ -102,7 +102,7 @@ onAuthStateChanged(auth, async user => {
   };
   $('expireBtn').onclick = async () => {
     const n = await expireOldTasks();
-    $('adminStatus').textContent = `Expired ${n} task(s)`;
+    $('adminStatus').textContent = `Expired ${n} Challenge(s)`;
     await loadList();
   };
 });
