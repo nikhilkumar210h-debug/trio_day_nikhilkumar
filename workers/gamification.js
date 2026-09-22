@@ -495,6 +495,7 @@ async function handleBumpStreak(uid, body, env) {
   const answer=await fsGet(projectId,token,'challengeAnswers/'+uid+'_'+challengeId);
   if(!answer || answer.uid!==uid || answer.challengeId!==challengeId || !Number.isInteger(Number(answer.choice))) throw new Error('Challenge answer not found');
   const task=await fsGet(projectId,token,'communityTasks/'+challengeId);
+  if(!task && !BUILTIN_CHALLENGE_IDS.has(challengeId)) throw new Error('Challenge not found');
   if(task && (task.kind!=='challenge' || task.activityType!=='challenge')) throw new Error('Not a Challenge');
   if(task?.creatorUid===uid) throw new Error('Creators cannot earn streaks from their own Challenge');
   const userData=await fsGet(projectId,token,'users/'+uid)||{};
