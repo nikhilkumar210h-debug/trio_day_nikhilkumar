@@ -1,6 +1,6 @@
 /* Offline cache + efficient cache lifetimes (95 KiB savings fix). OneSignal SW lives under push/onesignal/. */
-const CACHE_NAME = "trio-day-cache-v54";
-const STATIC_CACHE = "trio-static-v42";
+const CACHE_NAME = "trio-day-cache-v55";
+const STATIC_CACHE = "trio-static-v43";
 const BASE = "/";
 const FILES_TO_CACHE = [
   BASE,
@@ -11,9 +11,6 @@ const FILES_TO_CACHE = [
   BASE + "all-users.html",
   BASE + "all-users.js",
   BASE + "private-chat.html",
-  BASE + "view_post.html",
-  BASE + "tasks.html",
-  BASE + "tasks.js",
   BASE + "leaderboard.html",
   BASE + "leaderboard.js",
   BASE + "style.css",
@@ -29,34 +26,8 @@ const FILES_TO_CACHE = [
   BASE + "auth-ui.js",
   BASE + "auth-guard.js",
   BASE + "all-users.js",
-  BASE + "puzzle.html",
-  BASE + "build.html",
-  BASE + "learn.html",
   BASE + "challenge.html",
-  BASE + "game.html",
-  BASE + "activity.html",
-  BASE + "activity.js",
-  BASE + "activity-ui.js",
-  BASE + "activity-catalog.js",
-  BASE + "forge-engine.js",
-  BASE + "forge-interactions.js",
-  BASE + "forge-lane.js",
-  BASE + "forge-mechanics.js",
-  BASE + "rooms.html",
-  BASE + "rooms.js",
-  BASE + "rooms.css",
-  BASE + "room.html",
-  BASE + "room.js",
-  BASE + "room-workspace.js",
-  BASE + "room-challenge-workspace.js",
-  BASE + "room-puzzle-workspace.js",
-  BASE + "room-quiz-workspace.js",
-  BASE + "room-workspace.css",
   BASE + "task-create.html",
-  BASE + "task-create.js",
-  BASE + "activity-create.css?v=4",
-  BASE + "task-detail.html",
-  BASE + "task-detail.js",
   BASE + "utils.js",
   BASE + "trio-cache.js",
   BASE + "install-prompt.js",
@@ -65,7 +36,6 @@ const FILES_TO_CACHE = [
   BASE + "image-upload.js",
   BASE + "onesignal.js",
   BASE + "notifications.js",
-  BASE + "view_post.js",
   BASE + "ui/toast.js",
   BASE + "services/userCache.js",
   BASE + "services/notificationHelpers.js",
@@ -88,10 +58,6 @@ const FILES_TO_CACHE = [
   BASE + "offline.html",
   BASE + "manifest.json",
   BASE + "icons/trio-day-logo.svg",
-  BASE + "icons/trio-day-square-light.svg",
-  BASE + "icons/trio-day-round-light.svg",
-  BASE + "icons/trio-day-square-purple.svg",
-  BASE + "icons/trio-day-round-purple.svg"
 ];
 
 function shouldBypass(url) {
@@ -201,7 +167,7 @@ self.addEventListener("fetch", (event) => {
         if (isNavigation) {
           return caches.match(event.request).then(cached => cached || caches.match(BASE + 'offline.html'));
         }
-        // API/JSON: return empty array fallback (legacy behavior for feed APIs)
+        // API/JSON: keep a small offline fallback for non-page requests.
         return caches.match(event.request).then(r => r || new Response(JSON.stringify({items:[]}), {status: 200, headers:{'Content-Type':'application/json'}}));
       })
   );
