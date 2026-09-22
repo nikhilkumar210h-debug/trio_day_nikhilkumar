@@ -213,9 +213,6 @@ async function openProfileMenu(userData) {
           <span>🔊</span> Sound Effects
           <input type="checkbox" id="sheetSoundToggle" ${SoundManager.isEnabled() ? 'checked' : ''} style="margin-left:auto">
         </label>
-        <button type="button" class="profile-menu-item" data-action="install">
-          <span>📲</span> Install App
-        </button>
         <button type="button" class="profile-menu-item profile-menu-danger" data-action="logout">
           <span>🚪</span> Logout
         </button>
@@ -284,10 +281,6 @@ async function openProfileMenu(userData) {
             closeTheme();
           });
         });
-      } else if (action === 'install') {
-        // Trigger install prompt
-        const event = new CustomEvent('app-install-prompt');
-        window.dispatchEvent(event);
       } else if (action === 'logout') {
         try {
           await signOut(auth);
