@@ -539,7 +539,7 @@ function buildChallengeCard(c) {
         </div>
         <div class="challenge-progress"><div class="challenge-progress-bar" style="width:${progress}%"></div></div>
       </div>
-      <a href="task-detail.html?id=${encodeURIComponent(c.id)}" class="challenge-cta nkm-btn nkm-btn--secondary">View</a>
+      <a href="challenge.html?challenge=${encodeURIComponent(c.id)}" class="challenge-cta nkm-btn nkm-btn--secondary">View</a>
     </article>
   `;
 }
