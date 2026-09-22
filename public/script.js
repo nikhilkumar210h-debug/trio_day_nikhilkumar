@@ -1132,7 +1132,7 @@ function buildStoryCard(data) {
   const replyComposer = document.createElement('div'); replyComposer.className='story-reply-composer'; replyComposer.hidden=true;
   replyComposer.innerHTML = `<input type="text" maxlength="200" placeholder="Reply to ${escapeHtml(data.name||'story')}…" aria-label="Reply text"><button type="button" class="btn primary sm">Send</button><button type="button" class="btn ghost sm cancel-reply">Cancel</button>`;
 
-  // —— Reaction logic (same as posts, per-story moods) ——
+  // —— Reaction logic (per-Story moods) ——
   onSnapshot(collection(db, 'posts', postId, 'moods'), moodSnap => {
     const moodCounts = {}; let myMood=null, total=0;
     moodSnap.forEach(d=>{ const m=d.data()?.mood; if(m){ moodCounts[m]=(moodCounts[m]||0)+1; total++; } if(d.id===currentUser?.uid) myMood=m; });
@@ -1169,8 +1169,7 @@ function buildStoryCard(data) {
           if(!s.exists()){
             const me=await getMyProfile(currentUser.uid);
             await notifyUser(data.uid, {type:'like', actorUid:currentUser.uid, actorName: me?.name||currentUser.displayName||'Someone', postId}).catch(()=>{});
-if(data.uid && data.uid!==currentUser.uid)
-}
+          }
         }
         reactionPicker.hidden=true;
       }catch(err){ console.error(err); alert(err.message||'React failed.'); }
