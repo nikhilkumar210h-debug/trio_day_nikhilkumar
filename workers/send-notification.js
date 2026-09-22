@@ -524,19 +524,12 @@ async function handleCreateNotification(request, env) {
     return json({ error: "Invalid notification type" }, 400, origin);
   }
   const notificationData = {};
-  for (const key of ['postId','text','title','urlPath','roomId']) {
+  for (const key of ['postId','text','title','urlPath']) {
     if (body?.[key] !== undefined) notificationData[key] = String(body[key]).slice(0, key === 'text' ? 500 : 240);
   }
 
   if (
-    targetUid === actorUid &&
-    ![
-      "badge_earned",
-      "task_reminder",
-      "challenge_reminder",
-      "streak_warning",
-      "task_complete",
-    ].includes(type)
+    targetUid === actorUid && !["badge_earned", "challenge_reminder"].includes(type)
   ) {
     return json(
       { error: "Cannot send social notification to self" },
