@@ -142,27 +142,61 @@ async function handleGoogle() {
 
 async function loginWithTrioUid(trioUid, password) {
   // Resolve the public Trio UID server-side. The browser never receives the
-  // account email; the Flask API verifies the password and returns a custom token.
+  // account email; the backend verifies the password and returns a custom token.
   const apiBase = window.TRIO_API_BASE_URL ||
     (location.hostname === '127.0.0.1' || location.hostname === 'localhost'
       ? 'http://127.0.0.1:5000'
       : 'https://trio-day-api.onrender.com');
 
-  const response = await fetch(apiBase + '/api/auth/trio-uid', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ trioUid, password })
-  });
+  let primaryError = null;
 
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) {
+  try {
+    const response = await fetch(apiBase + '/api/auth/trio-uid', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ trioUid, password })
+    });
+
+    const data = await response.json().catch(() => ({}));
+    if (response.ok) {
+      if (!data.customToken) throw new Error('UID login service returned an invalid response.');
+      return signInWithCustomToken(auth, data.customToken);
+    }
+
     const error = new Error(data.error || 'Unable to sign in with Trio UID.');
     error.code = response.status === 401 ? 'auth/invalid-credential' : 'auth/api-error';
-    throw error;
+    if (response.status < 500) throw error;
+    primaryError = error;
+  } catch (error) {
+    if (error?.code === 'auth/invalid-credential') throw error;
+    primaryError = error;
   }
 
-  if (!data.customToken) throw new Error('UID login service returned an invalid response.');
-  return signInWithCustomToken(auth, data.customToken);
+  // Resilience fallback: the repository also ships a Firebase callable with
+  // the same server-side UID resolution. If the Render API is unavailable,
+  // use the Firebase function instead.
+  try {
+    const [{ getFunctions, httpsCallable }, { app }] = await Promise.all([
+      import('https://www.gstatic.com/firebasejs/10.13.0/firebase-functions.js'),
+      import('./firebase-auth.js')
+    ]);
+    const functions = getFunctions(app, 'us-central1');
+    const callable = httpsCallable(functions, 'signInWithTrioUid');
+    const result = await callable({ trioUid, password });
+    const customToken = result?.data?.customToken;
+    if (!customToken) throw new Error('UID login service returned an invalid response.');
+    return signInWithCustomToken(auth, customToken);
+  } catch (fallbackError) {
+    if (fallbackError?.code === 'functions/unauthenticated') {
+      const error = new Error('Invalid Trio UID or password.');
+      error.code = 'auth/invalid-credential';
+      throw error;
+    }
+    if (primaryError?.code === 'auth/invalid-credential') throw primaryError;
+    const error = new Error('Trio UID login service is temporarily unavailable.');
+    error.code = 'auth/api-error';
+    throw error;
+  }
 }
 
 function updateStrength() {
