@@ -507,7 +507,7 @@ async function loadProfile(uid) {
     const type = { icon: item.icon || '⚡', label: item.type === 'community' ? 'Community' : 'Challenge' };
     const when = item.atMs ? new Date(item.atMs).toLocaleDateString(undefined, { day:'numeric', month:'short' }) : 'Recently';
     return '<a class="profile-activity-item" href="' +
-      (item.source === 'community' ? 'task-detail.html?id=' : item.source === 'challenge' ? 'challenge.html?challenge=' : 'challenge.html?challenge=') + encodeURIComponent(item.key.replace('community:','').replace('challenge:','')) +
+      'challenge.html?challenge=' + encodeURIComponent(item.key.replace('community:','').replace('challenge:','')) +
       '" aria-label="' + esc(item.title) + '">' +
       '<span class="profile-activity-icon">' + (item.icon || type.icon) + '</span>' +
       '<span class="profile-achievement-badge">✓</span>' +
