@@ -11,7 +11,7 @@ import {
   getDocs, limit, where
 } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 import { makeUserId, escapeHtml, initials, formatTime, getFilterCSS } from './utils.js';
-import { listCommunityTasks, isMember, getMyJoinedTaskIds } from './gamification/community-tasks.js?v=20260921-fix2';
+import { listCommunityTasks, getMyJoinedTaskIds } from './gamification/community-tasks.js?v=20260921-fix2';
 
 const $ = id => document.getElementById(id);
 let currentUser = null;
@@ -221,7 +221,7 @@ async function renderStoryStrip(uid) {
       };
     }));
 
-    trioCache.set(`feed_recent_${uid}`, enrichedStories, trioCache.TTL.SHORT);
+    trioCache.set(`stories_recent_${uid}`, enrichedStories, trioCache.TTL.SHORT);
 
     if (!enrichedStories.length) {
       if (empty) empty.style.display = 'block';
