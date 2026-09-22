@@ -235,7 +235,6 @@ Key modules:
 
 ### Confirmed unused or duplicate candidates
 - README.txt is a legacy documentation file; this repository now uses README.md.
-- public/gamification/activities.js.bak is a backup artifact and should not be part of the production source tree.
 - legacy/activity/ contains an older copy of activity code that duplicates current public/ activity modules. It is not part of the active page imports and should remain archived or be removed in a dedicated cleanup pass.
 - .firebase/hosting.cHVibGlj.cache is generated deployment metadata, not application source.
 - Old post/view-post files are still referenced by legacy notification/search paths, so they cannot be safely deleted merely because the main Today surface no longer exposes posts. They should be removed as one coordinated migration if the old post data/links are no longer required.
