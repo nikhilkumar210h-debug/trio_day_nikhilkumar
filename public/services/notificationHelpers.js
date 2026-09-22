@@ -12,9 +12,9 @@ export async function notifyUser(targetUid, data) {
 export function pushCopy({ type, actorName, text, title }) {
   const who = actorName || 'Someone';
   const map = {
-    like: { title: 'New like', body: `${who} liked your post` },
-    comment: { title: 'New comment', body: `${who} commented on your post` },
-    share: { title: 'Post shared', body: `${who} shared your post` },
+    like: { title: 'New like', body: `${who} liked your story` },
+    comment: { title: 'New comment', body: `${who} commented on your story` },
+    share: { title: 'Story shared', body: `${who} shared your story` },
     connect: { title: 'New connection', body: `${who} connected with you` },
     message: { title: 'New message', body: `${who}: ${text || 'New message'}` },
     badge_earned: { title: title || 'Badge unlocked!', body: text || 'You earned a new badge' },
@@ -39,7 +39,7 @@ export function pushUrl({ type, actorUid, postId, urlPath }) {
     return `${APP_BASE}/tasks.html`;
   }
   if (type === 'badge_earned') return `${APP_BASE}/profile.html`;
-  if (postId) return `${APP_BASE}/view_post.html?postId=${encodeURIComponent(postId)}`;
+  if (postId) return `${APP_BASE}/index.html`;
   return `${APP_BASE}/index.html`;
 }
 
@@ -49,16 +49,10 @@ export function notificationText(notification) {
     return notification.title + (notification.text ? ` — ${notification.text}` : '');
   }
   return {
-    like: `${who} liked your post`,
-    comment: `${who} commented on your post`,
-    share: `${who} shared your post`,
+    like: `${who} liked your story`,
+    comment: `${who} commented on your story`,
+    share: `${who} shared your story`,
     connect: `${who} connected with you`,
     message: `${who}: ${notification.text || 'New message'}`,
-    badge_earned: notification.title || 'New badge unlocked!',
-    task_reminder: notification.title || 'Daily tasks waiting',
-    challenge_reminder: notification.title || 'Challenge reminder',
-    streak_warning: notification.title || 'Streak at risk!',
-    task_complete: notification.title || 'Task completed',
-    room_invite: notification.title || 'You were invited to a live room'
-  }[notification.type] || `${who} sent you an update`;
+    badge_earned: notification.title || 'New badge unlocked!'  }[notification.type] || `${who} sent you an update`;
 }
