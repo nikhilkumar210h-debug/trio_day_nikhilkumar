@@ -25,9 +25,10 @@ export async function listCommunityTasks({ status = 'active', max = 40, includeH
       .map(d => ({ id: d.id, ...d.data() }))
       .filter(t => t.activityType === 'challenge' && (includeHidden || !t.hidden))
       .filter(t => (Number(t.startAtMs) || 0) <= now && (Number(t.endAtMs) || 0) > now);
+    // Feed order is strictly newest first. Featured is an admin flag, not a
+    // reason to move an older challenge above a newer one.
     list.sort((a, b) =>
-      ((b.featured ? 1 : 0) - (a.featured ? 1 : 0)) ||
-      ((Number(b.createdAtMs) || 0) - (Number(a.createdAtMs) || 0))
+      (Number(b.createdAtMs) || 0) - (Number(a.createdAtMs) || 0)
     );
     trioCache.set(cacheKey, list, trioCache.TTL.SHORT);
     return list;
