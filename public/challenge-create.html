@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a0f1a"><title>Create Challenge — Trio Day</title>
+<link rel="stylesheet" href="styles/tokens.css"><link rel="stylesheet" href="styles/nav.css"><link rel="stylesheet" href="styles/header.css"><link rel="stylesheet" href="styles/components.css"><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="styles/polish.css?v=6">
+<style>
+.challenge-create{max-width:760px;margin:auto;padding:28px 18px 100px}.cc-hero{padding:24px 0 18px}.cc-kicker{font-size:11px;font-weight:800;letter-spacing:.16em;opacity:.65}.cc-hero h1{font-size:clamp(30px,6vw,48px);margin:8px 0}.cc-hero p{opacity:.72;max-width:620px}.cc-card{border:1px solid var(--color-border);background:var(--color-surface);border-radius:24px;padding:22px;margin-top:16px}.cc-label{display:block;font-size:12px;font-weight:800;margin:0 0 8px}.cc-input,.cc-textarea{width:100%;box-sizing:border-box;border:1px solid var(--color-border);background:var(--color-bg);color:var(--color-ink);border-radius:14px;padding:13px;font:inherit;outline:none}.cc-textarea{min-height:100px;resize:vertical}.cc-field{margin-bottom:18px}.cc-options{display:grid;gap:10px}.cc-option{display:flex;gap:9px;align-items:center}.cc-option input{flex:1}.cc-remove{border:0;background:transparent;color:inherit;opacity:.55;cursor:pointer}.cc-actions{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}.cc-note{font-size:12px;opacity:.6;margin-top:10px}.cc-preview{border:1px solid var(--color-border);border-radius:18px;padding:18px}.cc-preview strong{display:block;font-size:17px;margin-bottom:14px}.cc-preview button{width:100%;text-align:left;margin:5px 0;border:1px solid var(--color-border);background:var(--color-bg);color:var(--color-ink);border-radius:12px;padding:11px;cursor:pointer}
+</style>
+</head>
+<body class="app-page">
+<header class="topbar"><div class="topbar-inner"><a class="brand" href="all-users.html"><span class="brand-chakra">⚡</span><span class="brand-copy"><strong>trio_day</strong><small>CHALLENGES</small></span></a><div id="authStatus" class="auth-status"></div></div></header>
+<main class="challenge-create">
+<section class="cc-hero"><span class="cc-kicker">CREATE · CHALLENGE</span><h1>Ask something people want to answer.</h1><p>Make a quick choice, give people a reason to respond, and turn the answers into a conversation.</p></section>
+<section class="cc-card">
+<div class="cc-field"><label class="cc-label" for="question">Your question</label><textarea id="question" class="cc-textarea" maxlength="240" placeholder="e.g. You get one free trip tomorrow. Where are you going?"></textarea></div>
+<div class="cc-field"><label class="cc-label">Answer choices</label><div id="options" class="cc-options"></div><button id="addOption" type="button" class="nkm-btn">+ Add choice</button></div>
+<div class="cc-field"><label class="cc-label" for="topic">Topic <span style="opacity:.5">(optional)</span></label><input id="topic" class="cc-input" maxlength="50" placeholder="Travel, food, tech…"></div>
+<div class="cc-actions"><a class="nkm-btn" href="all-users.html">← Back</a><button id="publish" type="button" class="nkm-btn nkm-btn--primary">Publish Challenge →</button></div>
+<div id="status" class="cc-note" aria-live="polite"></div>
+</section>
+<section class="cc-card"><span class="cc-kicker">LIVE PREVIEW</span><div class="cc-preview" id="preview"><strong>Your question will appear here.</strong></div><p class="cc-note">One question, a few choices, one social moment.</p></section>
+</main>
+<nav class="bottom-nav" aria-label="Primary navigation"><div class="nav-row"></div></nav>
+<script type="module" src="auth-guard.js"></script><script type="module" src="auth-ui.js"></script><script type="module" src="theme.js"></script><script type="module" src="ui/header.js"></script><script type="module" src="ui/nav.js?v=20260922-nav7"></script><script type="module" src="challenge-create.js?v=20260922-challenge-create"></script>
+</body></html>
