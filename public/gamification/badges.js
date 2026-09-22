@@ -1,5 +1,5 @@
 import { db } from '../firebase-init.js';
-import { collection, getDocs, setDoc, doc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
+import { setDoc, doc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 import { SYSTEM_BADGES } from './constants.js';
 import { trioCache } from '../trio-cache.js';
 import { escapeHtml as escapeAttr } from '../utils.js';
