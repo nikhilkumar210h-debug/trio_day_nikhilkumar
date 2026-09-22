@@ -2,10 +2,10 @@ import { auth } from './firebase-init.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
 
 const CHALLENGES = [
-  {id:'choice-trip',q:'You get one free trip tomorrow. Where are you going?',o:['Japan 🇯🇵','Switzerland 🇨🇭','Somewhere unexpected 🌍'],tag:'CHOICE'},
-  {id:'choice-night',q:'It is 10 PM and you have one free hour. What sounds better?',o:['Talk to someone 💬','Play something 🎮','Learn something 🧠'],tag:'MOOD'},
-  {id:'choice-build',q:'You have one weekend to make something. What do you pick?',o:['An app 💻','A game 🎮','Something useful 🛠️'],tag:'MAKE'},
-  {id:'choice-food',q:'Pick one forever: street food, home food or restaurant food?',o:['Street 🌮','Home 🍲','Restaurant 🍽️'],tag:'LIFE'}
+  {id:'trip',q:'You get one free trip tomorrow. Where are you going?',o:['Japan 🇯🇵','Switzerland 🇨🇭','Somewhere unexpected 🌍'],tag:'CHOICE'},
+  {id:'hour',q:'It is 10 PM and you have one free hour. What sounds better?',o:['Talk to someone 💬','Play something 🎮','Learn something 🧠'],tag:'MOOD'},
+  {id:'weekend',q:'You have one weekend to make something. What do you pick?',o:['An app 💻','A game 🎮','Something useful 🛠️'],tag:'MAKE'},
+  {id:'food',q:'Pick one forever: street food, home food or restaurant food?',o:['Street 🌮','Home 🍲','Restaurant 🍽️'],tag:'LIFE'}
 ];
 let previewIndex=0;
 
