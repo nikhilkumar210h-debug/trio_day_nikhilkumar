@@ -367,9 +367,15 @@ function openStoryViewer(s) {
         else {
           await setDoc(ref, { uid: currentUser.uid, mood, createdAt: serverTimestamp() });
           if (!snap.exists()) {
-            getMyProfile(currentUser.uid).then(me => notifyUser(s.uid, { type: 'like', actorUid: currentUser.uid, actorName: me?.name || currentUser.displayName || 'Someone', postId: s._id }).catch(() => {})).catch(() => {});
-if (s.uid && s.uid !== currentUser.uid)
-}
+            getMyProfile(currentUser.uid)
+              .then(me => notifyUser(s.uid, {
+                type: 'like',
+                actorUid: currentUser.uid,
+                actorName: me?.name || currentUser.displayName || 'Someone',
+                postId: s._id
+              }).catch(() => {}))
+              .catch(() => {});
+          }
         }
         SoundManager.moodSelect();
       } catch (e) { alert(e.message || 'React failed'); }
