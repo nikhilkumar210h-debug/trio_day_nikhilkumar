@@ -82,17 +82,5 @@
   <script type="module" src="theme.js"></script>
 <script type="module" src="ui/header.js"></script>
   <script type="module" src="ui/nav.js?v=20260922-nav3"></script>
-  <script type="module" src="ui/sheet.js"></script>
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/service-worker.js', { scope: '/' })
-          .then(reg => console.log('SW registered:', reg.scope))
-          .catch(() => {
-            navigator.serviceWorker.getRegistrations?.().then(rs => rs.forEach(r => r.unregister()));
-          });
-      });
-    }
-  </script>
-</body>
+  <script type="module" src="ui/sheet.js"></script>/body>
 </html>
