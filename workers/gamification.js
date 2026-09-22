@@ -23,6 +23,7 @@
 
 const XP_PER_LEVEL = 100;
 const LEADERBOARD_TOP_N = 50;
+const BUILTIN_CHALLENGE_IDS = new Set(['trip', 'hour', 'weekend', 'food']);
 const MAX_XP_AWARD = 500;          // per single call
 const FIREBASE_PUBLIC_KEYS_URL =
   'https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com';
@@ -456,6 +457,7 @@ async function handleAwardXp(uid, body, env) {
   const answer=await fsGet(projectId,token,'challengeAnswers/'+uid+'_'+challengeId);
   if(!answer || answer.uid!==uid || answer.challengeId!==challengeId || !Number.isInteger(Number(answer.choice))) throw new Error('Challenge answer not found');
   const task=await fsGet(projectId,token,'communityTasks/'+challengeId);
+  if(!task && !BUILTIN_CHALLENGE_IDS.has(challengeId)) throw new Error('Challenge not found');
   if(task && (task.kind!=='challenge' || task.activityType!=='challenge')) throw new Error('Not a Challenge');
   if(task?.creatorUid===uid) throw new Error('Creators cannot earn XP from their own Challenge');
 
