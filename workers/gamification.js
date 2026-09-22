@@ -485,8 +485,16 @@ async function handleAwardXp(uid, body, env) {
   return {ok:true,xp:newXp,level:newLevel,leveledUp:newLevel>levelFromXp(prevXp),awarded:amount,alreadyAwarded:false,badgesEarned:earned.map(id=>SYSTEM_BADGES.find(b=>b.id===id)||{id})};
 }
 
-async function handleBumpStreak(uid, env) {
+async function handleBumpStreak(uid, body, env) {
+  const challengeId = String(body?.challengeId || '').trim();
+  if (!challengeId) throw new Error('challengeId required');
+
   const projectId=env.FIREBASE_PROJECT_ID, token=await getAccessToken(env);
+  const answer=await fsGet(projectId,token,'challengeAnswers/'+uid+'_'+challengeId);
+  if(!answer || answer.uid!==uid || answer.challengeId!==challengeId || !Number.isInteger(Number(answer.choice))) throw new Error('Challenge answer not found');
+  const task=await fsGet(projectId,token,'communityTasks/'+challengeId);
+  if(task && (task.kind!=='challenge' || task.activityType!=='challenge')) throw new Error('Not a Challenge');
+  if(task?.creatorUid===uid) throw new Error('Creators cannot earn streaks from their own Challenge');
   const userData=await fsGet(projectId,token,'users/'+uid)||{};
   const today=localDateKey(),yesterday=yesterdayDateKey(),last=userData.streakLastDate||null;
   if(last===today) return {ok:true,streakCurrent:Number(userData.streakCurrent)||0,streakBest:Number(userData.streakBest)||0,alreadyCounted:true};
@@ -572,7 +580,7 @@ export default {
     try {
       let result;
       if (path === '/gamification/award-xp') result = await handleAwardXp(uid, body, env);
-      else if (path === '/gamification/bump-streak') result = await handleBumpStreak(uid, env);
+      else if (path === '/gamification/bump-streak') result = await handleBumpStreak(uid, body, env);
       else return json({ error: 'Unknown route' }, 404, origin);
       return json(result, 200, origin);
     } catch (err) {
