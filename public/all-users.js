@@ -16,7 +16,7 @@ function renderPreview(){
   host.querySelectorAll('[data-choice]').forEach(btn=>btn.onclick=()=>{
     const selected=Number(btn.dataset.choice);
     localStorage.setItem('trio_last_challenge',JSON.stringify({id:c.id,choice:selected,at:Date.now()}));
-    host.innerHTML='<div class="challenge-card-question">Locked in ✓</div><p style="margin:8px 0 0;color:var(--color-ink-muted);font-size:11px">Your choice is saved. Open Challenges to continue the interaction.</p><a class="nkm-btn nkm-btn--primary" href="challenge.html?id='+encodeURIComponent(c.id)+'" style="display:inline-flex;margin-top:12px">See the room →</a>';
+    host.innerHTML='<div class="challenge-card-question">Locked in ✓</div><p style="margin:8px 0 0;color:var(--color-ink-muted);font-size:11px">Your choice is ready. Open the Challenge to continue.</p><a class="nkm-btn nkm-btn--primary" href="challenge.html?id='+encodeURIComponent(c.id)+'" style="display:inline-flex;margin-top:12px">Open Challenge →</a>';
   });
 }
 renderPreview();
