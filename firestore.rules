@@ -9,10 +9,11 @@ service cloud.firestore {
         && request.auth.uid in get(/databases/$(database)/documents/config/admins).data.uids;
     }
 
+    // Stories and voice statuses share the historical `posts` collection name.
+    // The retired Post/Feed type is no longer readable or creatable.
     match /posts/{postId} {
       allow read: if signedIn() && (
-        (resource.data.type == 'post')
-        || (
+        (
           resource.data.type == 'story'
           && resource.data.isStory == true
           && (
@@ -25,19 +26,37 @@ service cloud.firestore {
             )
           )
         )
+        || (
+          resource.data.type == 'voice'
+          && resource.data.isVoice == true
+          && (
+            resource.data.privacy == 'public'
+            || resource.data.uid == request.auth.uid
+            || (
+              resource.data.privacy == 'friends'
+              && resource.data.allowedUids is list
+              && request.auth.uid in resource.data.allowedUids
+            )
+          )
+        )
       );
 
-      // Subcollections visibility helper.
-      function canReadPost(postId) {
-        let p = get(/databases/$(database)/documents/posts/$(postId)).data;
-        return (p.type == 'post')
-          || (p.type == 'story' && p.isStory == true
-            && (
-            p.privacy == 'public'
-            || p.uid == request.auth.uid
-            || (p.privacy == 'friends' && p.allowedUids is list && request.auth.uid in p.allowedUids)
-          ));
+      function canReadStory(storyId) {
+        let s = get(/databases/$(database)/documents/posts/$(storyId)).data;
+        return (
+          (s.type == 'story' && s.isStory == true)
+          || (s.type == 'voice' && s.isVoice == true)
+        ) && (
+          s.privacy == 'public'
+          || s.uid == request.auth.uid
+          || (
+            s.privacy == 'friends'
+            && s.allowedUids is list
+            && request.auth.uid in s.allowedUids
+          )
+        );
       }
+
       function validStoryCreate() {
         return request.resource.data.isStory == true
           && request.resource.data.privacy in ['public', 'friends']
@@ -87,31 +106,41 @@ service cloud.firestore {
           (request.resource.data.type == 'story' && validStoryCreate())
           || (request.resource.data.type == 'voice' && validVoiceCreate())
         );
+
       allow update: if false;
-      allow delete: if owner(resource.data.uid);
+      allow delete: if signedIn() && resource.data.uid == request.auth.uid;
+
       match /comments/{commentId} {
-        allow read: if signedIn() && canReadPost(postId);
-        allow create: if signedIn() && canReadPost(postId) && request.resource.data.uid == request.auth.uid
-          && request.resource.data.txt is string && request.resource.data.txt.size() > 0
-          && request.resource.data.txt.size() < 200 && request.resource.data.name is string;
+        allow read: if signedIn() && canReadStory(postId);
+        allow create: if signedIn()
+          && canReadStory(postId)
+          && request.resource.data.uid == request.auth.uid
+          && request.resource.data.txt is string
+          && request.resource.data.txt.size() > 0
+          && request.resource.data.txt.size() < 200
+          && request.resource.data.name is string;
         allow update, delete: if false;
       }
+
       match /likes/{likeUid} {
-        allow read: if signedIn() && canReadPost(postId);
-        allow create: if owner(likeUid) && canReadPost(postId) && request.resource.data.uid == request.auth.uid;
-        allow delete: if owner(likeUid);
+        allow read: if signedIn() && canReadStory(postId);
+        allow create: if signedIn()
+          && request.auth.uid == likeUid
+          && canReadStory(postId)
+          && request.resource.data.uid == request.auth.uid;
+        allow delete: if signedIn() && request.auth.uid == likeUid;
         allow update: if false;
       }
+
       match /moods/{moodUid} {
-        allow read: if signedIn() && canReadPost(postId);
-        allow create: if owner(moodUid) && canReadPost(postId)
+        allow read: if signedIn() && canReadStory(postId);
+        allow create: if signedIn()
+          && request.auth.uid == moodUid
+          && canReadStory(postId)
           && request.resource.data.uid == request.auth.uid
-          && request.resource.data.mood is string
-          && request.resource.data.mood in ['❤️','😂','😍','🔥','💯','🎉'];
-        allow delete: if owner(moodUid);
-        // Mood changes are modelled as delete/create from the client. Disallow
-        // arbitrary in-place updates so users cannot inject extra fields.
-        allow update: if false;
+          && request.resource.data.mood is string;
+        allow delete: if signedIn() && request.auth.uid == moodUid;
+        allow update: if signedIn() && request.auth.uid == moodUid;
       }
     }
 
