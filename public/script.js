@@ -627,11 +627,11 @@ async function ensureUserProfile(user) {
 
 async function notifyStoryOwner(story, type) {
   const me = await getMyProfile(currentUser.uid);
-  return notifyUser(post.uid, {
+  return notifyUser(story.uid, {
     type,
     actorUid: currentUser?.uid,
     actorName: me?.name || currentUser?.displayName || 'Someone',
-    postId: post._id
+    postId: story._id
   });
 }
 
