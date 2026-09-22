@@ -178,3 +178,37 @@ body[data-current-nav="discover"] .nav-btn[data-nav="discover"] .nav-icon,
 body[data-current-nav="challenge"] .nav-btn[data-nav="challenge"] .nav-icon,
 body[data-current-nav="chat"] .nav-btn[data-nav="chat"] .nav-icon,
 body[data-current-nav="you"] .nav-btn[data-nav="you"] .nav-icon { color: #C4B5FD; }
+
+
+/* Strong current-page signal: active item stays obvious even on compact/mobile layouts. */
+.nav-btn[data-active="true"] {
+  position: relative;
+  isolation: isolate;
+}
+.nav-btn[data-active="true"]::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 3px;
+  width: 22px;
+  height: 3px;
+  border-radius: 999px;
+  background: currentColor;
+  transform: translateX(-50%);
+  opacity: .95;
+}
+.nkm-rail .nav-btn[data-active="true"]::after {
+  left: 7px;
+  top: 50%;
+  bottom: auto;
+  width: 3px;
+  height: 22px;
+  transform: translateY(-50%);
+}
+@media (min-width: 1280px) {
+  .nkm-rail .nav-btn[data-active="true"]::after {
+    left: 6px;
+    width: 3px;
+    height: 22px;
+  }
+}
