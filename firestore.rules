@@ -589,5 +589,12 @@ service cloud.firestore {
       allow update: if isAdmin()
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['featured','hidden','status']);
       allow delete: if isAdmin();
+
+      match /members/{memberUid} {
+        allow read: if signedIn();
+        allow create, delete: if owner(memberUid)
+          && get(/databases/$(database)/documents/communityTasks/$(taskId)).data.kind == 'challenge';
+        allow update: if false;
+      }
     }
   }}
