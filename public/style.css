@@ -1939,11 +1939,6 @@ position: absolute;
 #settingsSection .check-row input { accent-color: var(--color-primary); width: 18px; height: 18px; }
 #settingsSection .check-row strong { color: var(--color-ink); font-size: var(--text-sm); }
 
-/* ── PWA install button ─────────────────────────────────────── */
-@media (display-mode: standalone), (display-mode: fullscreen), (display-mode: minimal-ui) {
-  #installBtn { display: none !important; }
-}
-
 /* ── Fun animations ─────────────────────────────────────────────── */
 @keyframes pulse-glow {
   0%, 100% { opacity: 0.4; }
