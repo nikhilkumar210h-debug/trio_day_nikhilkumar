@@ -1363,15 +1363,3 @@ input.value = ''; counter.textContent = '0 / 199';
   window.CommentWidget = { openFor, close };
 })();
 
-if ('serviceWorker' in navigator) {
-  // Production and correct local serve (public/ as root) — /service-worker.js should be at site root.
-  // VS Code Live Preview serves project root, so /service-worker.js 404s — handle gracefully, no console error.
-  // Correct local command: `npx serve public -p 3000` or `firebase emulators:start --only hosting`
-  const swPath = '/service-worker.js';
-  navigator.serviceWorker.register(swPath, { scope: '/' })
-    .then(() => console.log('Service worker registered'))
-    .catch(() => {
-      // No SW at this path (likely serving project root locally) — clean up stale registrations
-      navigator.serviceWorker.getRegistrations?.().then(rs => rs.forEach(r => r.unregister()));
-    });
-}
