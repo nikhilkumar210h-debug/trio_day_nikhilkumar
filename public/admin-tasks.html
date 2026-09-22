@@ -41,32 +41,13 @@
       <h1>Challenge admin</h1>
       <p class="muted">Users create challenges themselves. Here you feature, hide, archive, or remove.</p>
       <div class="tasks-toolbar">
-        <button type="button" class="btn primary" id="seedBtn">Re-seed system templates</button>
+        
         <button type="button" class="btn secondary" id="expireBtn">Expire old community tasks</button>
         <button type="button" class="btn secondary" id="badgesBtn">Seed badges</button>
       </div>
       <p id="adminStatus" class="status"></p>
 
-      <h3>Create system-style template</h3>
-      <div class="form-card">
-        <label class="field"><span class="label-text">Title</span><input id="tTitle"></label>
-        <label class="field"><span class="label-text">Description</span><textarea id="tDesc" rows="2"></textarea></label>
-        <label class="field"><span class="label-text">Cadence</span>
-          <select id="tCadence"><option>daily</option><option>weekly</option><option>monthly</option></select>
-        </label>
-        <label class="field"><span class="label-text">Metric</span>
-          <select id="tMetric">
-            <option>manual</option><option>drink_water</option><option>read_minutes</option>
-            <option>comment_posts</option><option>give_likes</option><option>get_likes</option>
-            <option>create_post</option><option>custom</option>
-          </select>
-        </label>
-        <label class="field"><span class="label-text">Target</span><input id="tTarget" type="number" value="1"></label>
-        <label class="field"><span class="label-text">XP</span><input id="tXp" type="number" value="40"></label>
-        <button type="button" class="btn primary" id="createTpl">Save template</button>
-      </div>
-
-      <h3 style="margin-top:1.5rem">All user challenges (incl. hidden)</h3>
+      <h3 style="margin-top:1.5rem">All user Challenges (including hidden)</h3>
       <div id="adminTasks" class="task-list"></div>
     </div>
   </main>
