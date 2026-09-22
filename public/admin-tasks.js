@@ -1,6 +1,6 @@
-import { auth } from './firebase-init.js';
+import { auth, db } from './firebase-init.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
-import { isAdmin, ensureSystemTemplates, createTemplate } from './gamification/templates.js';
+import { getDoc, doc } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 import { ensureBadgeCatalog } from './gamification/badges.js';
 import {
   listCommunityTasks, expireOldTasks, archiveTask,
@@ -13,6 +13,12 @@ import { showToast } from './ui/toast.js';
 const $ = id => document.getElementById(id);
 
 
+
+async function isAdmin(uid) {
+  if (!uid) return false;
+  const snap = await getDoc(doc(db, 'config', 'admins')).catch(() => null);
+  return !!(snap?.exists() && Array.isArray(snap.data()?.uids) && snap.data().uids.includes(uid));
+}
 
 async function loadList() {
   // Admins see hidden challenges too
@@ -33,7 +39,7 @@ async function loadList() {
         <button type="button" class="btn secondary danger-action remove-btn" data-id="${esc(t.id)}">Remove</button>
         <button type="button" class="btn secondary danger-action delete-btn" data-id="${esc(t.id)}" data-title="${esc(t.title)}">Delete</button>
       </div>
-    </div>`).join('') || '<p class="muted">No challenges yet — users create them from task-create.html.</p>';
+    </div>`).join('') || '<p class="muted">No Challenges yet — users can create them from the Create Challenge action..</p>';
 
   $('adminTasks').querySelectorAll('.feat-btn').forEach(btn => {
     btn.onclick = async () => {
@@ -89,12 +95,6 @@ onAuthStateChanged(auth, async user => {
   $('adminPanel').hidden = false;
   await loadList();
 
-  $('seedBtn').onclick = async () => {
-    trioCache.invalidate('templates_seeded');
-    trioCache.invalidate('task_templates_active');
-    await ensureSystemTemplates();
-    $('adminStatus').textContent = 'Templates seeded ✅';
-  };
   $('badgesBtn').onclick = async () => {
     trioCache.invalidate('badge_catalog');
     await ensureBadgeCatalog();
@@ -104,33 +104,5 @@ onAuthStateChanged(auth, async user => {
     const n = await expireOldTasks();
     $('adminStatus').textContent = `Expired ${n} task(s)`;
     await loadList();
-  };
-  $('createTpl').onclick = async () => {
-    const btn = $('createTpl');
-    const statusEl = $('adminStatus');
-    btn.disabled = true;
-    btn.textContent = 'Saving…';
-    statusEl.textContent = '';
-    try {
-      await createTemplate(user.uid, {
-        title: $('tTitle').value.trim() || 'New template',
-        description: $('tDesc').value.trim(),
-        cadence: $('tCadence').value,
-        metric: $('tMetric').value,
-        target: Number($('tTarget').value) || 1,
-        xpReward: Number($('tXp').value) || 40,
-        icon: '✅'
-      }, { isAdmin: true });
-      statusEl.textContent = 'Template saved ✅';
-      showToast('Template saved successfully! ✅');
-      setTimeout(() => { location.href = 'tasks.html'; }, 1400);
-    } catch (err) {
-      console.error(err);
-      const msg = err.message || 'Save failed';
-      statusEl.textContent = msg;
-      showToast(msg, 'error');
-      btn.disabled = false;
-      btn.textContent = 'Save template';
-    }
   };
 });
