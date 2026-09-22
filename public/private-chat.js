@@ -21,15 +21,13 @@ import { showToast } from './ui/toast.js';
 function messageHtml(m) {
   const text = m?.text ?? m?.message ?? '';
   if (m?.replyToStoryId) {
-    const storyUrl = `view_post.html?postId=${encodeURIComponent(m.replyToStoryId)}`;
+    const storyUrl = 'index.html';
     const preview = m.storyPreview ? `<img src="${esc(m.storyPreview)}" alt="Story preview" style="width:100%;border-radius:10px;margin:6px 0;max-height:180px;object-fit:cover;display:block;border:1px solid var(--color-border)">` : '';
     const orig = m.originalStoryText ? `<span class="shared-post-label" style="opacity:.8">Original: ${esc(String(m.originalStoryText).slice(0,60))}</span>` : '';
     return `${orig}${preview}<span class="msg-text-content">${esc(text)}</span><a class="shared-post-link" href="${storyUrl}">View story →</a>`;
   }
   if (!m?.sharedPostId) return `<span class="msg-text-content">${esc(text)}</span>`;
-  const postUrl = `view_post.html?postId=${encodeURIComponent(m.sharedPostId)}`;
-  // Show text even for shared posts (was hiding message)
-  return `<span class="msg-text-content">${esc(text)}</span><span class="shared-post-label">📎 Shared a post</span><a class="shared-post-link" href="${postUrl}">Open post →</a>`;
+  return `<span class="msg-text-content">${esc(text)}</span>`;
 }
 
 async function findUser(uid) {
