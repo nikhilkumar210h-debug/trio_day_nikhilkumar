@@ -4,17 +4,14 @@ import { uploadStoryMedia } from './image-upload.js';
 import { trioCache } from './trio-cache.js';
 import { getCachedUserProfile, getMyProfile, getCachedUser } from './services/userCache.js';
 import { SoundManager } from './sound-manager.js';
-import { onPostCreated, onLikeGiven, onLikeReceived, onCommentCreated } from './gamification/auto-metrics.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
 import {
   collection, addDoc, onSnapshot, serverTimestamp,
   doc, getDoc, setDoc, deleteDoc, query, orderBy,
-  getDocs, limit, where, deleteField
+  getDocs, limit, where
 } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 import { makeUserId, escapeHtml, initials, formatTime, getFilterCSS } from './utils.js';
 import { listCommunityTasks, isMember, getMyJoinedTaskIds } from './gamification/community-tasks.js?v=20260921-fix2';
-import { activityCardHtml, normalizeActivityType } from './activity-ui.js';
-import { activeCatalogActivities } from './activity-catalog.js';
 
 const $ = id => document.getElementById(id);
 let currentUser = null;
@@ -65,15 +62,11 @@ onAuthStateChanged(auth, async user => {
   currentUser = user;
   if (user) {
     await ensureUserProfile(user);
-    import('./gamification/reminders.js')
-      .then(m => m.runAppOpenReminders(user.uid))
-      .catch(() => { });
     initTodayScreen(user.uid);
     startNotificationDot(user.uid);
   } else {
     initTodayScreen(null);
   }
-  if (feed && cachedPosts.length) render(cachedPosts);
 });
 
 async function initTodayScreen(uid) {
@@ -86,7 +79,6 @@ async function initTodayScreen(uid) {
       renderPeople(uid),
     ]);
   }
-  // Posts/feed are intentionally removed from Today. Stories and Today activities remain.
 }
 
 function renderGreeting() {
@@ -341,7 +333,7 @@ function openStoryViewer(s) {
   const shareBtn = ov.querySelector('[data-share]');
   if (shareBtn) {
     shareBtn.addEventListener('click', async () => {
-      const url = new URL(`view_post.html?postId=${encodeURIComponent(s._id)}`, location.href).href;
+      const url = new URL('index.html', location.href).href;
       try {
         if (navigator.share) await navigator.share({ title: s.name || 'Story', url });
         else { await navigator.clipboard.writeText(url); alert('Link copied ✅'); }
@@ -376,9 +368,8 @@ function openStoryViewer(s) {
           await setDoc(ref, { uid: currentUser.uid, mood, createdAt: serverTimestamp() });
           if (!snap.exists()) {
             getMyProfile(currentUser.uid).then(me => notifyUser(s.uid, { type: 'like', actorUid: currentUser.uid, actorName: me?.name || currentUser.displayName || 'Someone', postId: s._id }).catch(() => {})).catch(() => {});
-            onLikeGiven(currentUser.uid);
-            if (s.uid && s.uid !== currentUser.uid) onLikeReceived(s.uid);
-          }
+if (s.uid && s.uid !== currentUser.uid)
+}
         }
         SoundManager.moodSelect();
       } catch (e) { alert(e.message || 'React failed'); }
@@ -634,7 +625,7 @@ async function ensureUserProfile(user) {
   trioCache.set(`user_${user.uid}`, { ...existing, ...profileData, updatedAt: Date.now() });
 }
 
-async function notifyPostOwner(post, type) {
+async function notifyStoryOwner(story, type) {
   const me = await getMyProfile(currentUser.uid);
   return notifyUser(post.uid, {
     type,
@@ -644,14 +635,12 @@ async function notifyPostOwner(post, type) {
   });
 }
 
-const feed = $('feed'), feedLoading = $('feedLoading'), feedEmpty = $('feedEmpty'), feedError = $('feedError');
 const storyOverlay = $('storyOverlay'), storyForm = $('storyForm'), storyMessage = $('storyMessage'),
   storyMedia = $('storyMedia'), storyPreview = $('storyPreview'), storyStatus = $('storyFormStatus'),
   storySubmit = $('storySubmitBtn');
 
 let selectedFile = null;
 let selectedPreviewUrl = null;
-let cachedPosts = [];
 
 function setStoryStatus(t = '', err = false) {
   if (storyStatus) {
@@ -1055,223 +1044,12 @@ storyForm?.addEventListener('submit', async e => {
         }
       });
       trioCache.invalidate(`posts_${currentUser.uid}`);
-      onPostCreated(currentUser.uid);
-      setStoryStatus('Story posted ✅');
+setStoryStatus('Story posted ✅');
       await renderStoryStrip(currentUser.uid);
       setTimeout(closeStoryModal, 300);
     } catch (err) { console.error(err); setStoryStatus(err.message || 'Could not save story.', true); }
     finally { storySubmit.disabled = false; storySubmit.textContent = 'Share Story'; }
   });
-
-function buildFeedItem(data) {
-  const postId = data._id;
-  const item = document.createElement('article'); item.className = 'feed-item nkm-post'; item.dataset.postId = postId;
-  const head = document.createElement('div'); head.className = 'feed-post-head nkm-post-head';
-  const av = document.createElement('div'); av.className = 'feed-avatar nkm-post-avatar';
-  if (data.photoURL) { const img = document.createElement('img'); img.src = data.photoURL; img.alt = ''; img.width = 36; img.height = 36; img.decoding = 'async'; img.loading = 'lazy'; av.appendChild(img); } else av.textContent = initials(data.name);
-  const identity = document.createElement('div'); identity.className = 'feed-identity nkm-post-meta';
-  const name = document.createElement('div'); name.className = 'pname nkm-post-name'; name.textContent = data.name || 'User'; name.title = 'Open profile';
-  name.addEventListener('click', () => data.uid && (location.href = `profile.html?uid=${encodeURIComponent(data.uid)}`));
-  const uid = document.createElement('div'); uid.className = 'puid nkm-post-id'; uid.textContent = data.userId || '';
-  const time = document.createElement('div'); time.className = 'ptime nkm-post-time'; time.textContent = formatTime(data);
-  identity.append(name, uid, time); head.append(av, identity);
-
-  if (data.uid) {
-    getCachedUserProfile(data.uid).then(latest => {
-      if (!latest) return;
-      if (latest.name) { name.textContent = latest.name; if (!data.photoURL) av.textContent = initials(latest.name); }
-      if (latest.userId) uid.textContent = latest.userId;
-      if (latest.photoURL) {
-        let img = av.querySelector('img');
-        if (!img) { av.textContent = ''; img = document.createElement('img'); img.alt = ''; img.width = 44; img.height = 44; img.decoding = 'async'; img.loading = 'lazy'; av.appendChild(img); }
-        img.src = latest.photoURL;
-      }
-    }).catch(() => { });
-  }
-
-  const mediaWrap = document.createElement('div'); mediaWrap.className = 'feed-media nkm-post-media';
-  if (data.mediaUrl) {
-    const img = document.createElement('img'); img.className = 'media'; img.loading = 'lazy'; img.decoding = 'async'; img.src = data.mediaUrl; img.alt = `Photo from ${data.name || 'User'}`; img.width = 800; img.height = 450;
-    img.style.aspectRatio = '16 / 9';
-    mediaWrap.appendChild(img);
-  } else {
-    mediaWrap.classList.add('text-only-media');
-    const quote = document.createElement('div'); quote.className = 'text-only-copy'; quote.textContent = data.message || '🇮🇳';
-    mediaWrap.appendChild(quote);
-  }
-
-  const content = document.createElement('div'); content.className = 'feed-content-panel nkm-post-content'; content.appendChild(head);
-  if (data.message) { const cap = document.createElement('p'); cap.className = 'feed-caption nkm-post-caption'; cap.textContent = data.message; content.appendChild(cap); }
-
-  const commentsPreview = document.createElement('div'); commentsPreview.className = 'comments-preview';
-  content.appendChild(commentsPreview);
-  function renderCommentsPreview(arr) {
-    commentsPreview.innerHTML = '';
-    if (!arr.length) return;
-    const c = arr[0]; if (!c) return;
-    const p = document.createElement('div'); p.className = 'comment-preview-item';
-    p.innerHTML = `<strong>${escapeHtml(c.name || 'User')}</strong> <span class="preview-txt">${escapeHtml(c.txt || '')}</span>`;
-    commentsPreview.appendChild(p);
-    commentsPreview.style.cursor = 'pointer';
-    commentsPreview.onclick = (e) => { e.stopPropagation(); window.CommentWidget?.openFor(postId, data.name || 'Comments', data.uid); };
-  }
-  try {
-    onSnapshot(query(collection(db, 'posts', postId, 'comments'), orderBy('createdAtMs', 'desc'), limit(1)),
-      snap => { const arr = []; snap.forEach(d => arr.push(d.data())); renderCommentsPreview(arr); },
-      () => { commentsPreview.innerHTML = ''; });
-  } catch (e) { }
-
-  const actions = document.createElement('div'); actions.className = 'post-actions nkm-post-actions';
-  const reacts = ['❤️', '😂', '😍', '🔥', '💯', '🎉'];
-  const reactWrap = document.createElement('div'); reactWrap.className = 'react-wrap'; reactWrap.style.position='relative';
-  const reactBtn = document.createElement('button'); reactBtn.className='action-btn react-btn'; reactBtn.type='button';
-  reactBtn.innerHTML='<span class="react-sample" aria-hidden="true"></span><span class="react-btn-text">React</span>';
-  reactBtn.setAttribute('aria-haspopup','true'); reactBtn.setAttribute('aria-expanded','false');
-  const reactionPicker = document.createElement('div'); reactionPicker.className='reaction-picker'; reactionPicker.hidden=true; reactionPicker.setAttribute('role','menu');
-  reactionPicker.innerHTML = reacts.map(m => `<button class="action-btn mood-btn" type="button" role="menuitem" title="${m}" data-mood="${m}">${m} <span class="mood-count"></span></button>`).join('');
-  reactWrap.append(reactBtn, reactionPicker);
-  actions.append(reactWrap);
-
-  onSnapshot(collection(db, 'posts', postId, 'moods'), moodSnap => {
-    const moodCounts = {};
-    let myMood = null; let total=0;
-    moodSnap.forEach(d => {
-      const m = d.data()?.mood;
-      if (m) { moodCounts[m] = (moodCounts[m] || 0) + 1; total++; }
-      if (d.id === currentUser?.uid) myMood = m;
-    });
-    reactionPicker.querySelectorAll('.mood-btn').forEach(btn => {
-      const mood = btn.dataset.mood;
-      const c = moodCounts[mood] || 0;
-      const span = btn.querySelector('.mood-count');
-      if (span) span.textContent = c > 0 ? String(c) : '';
-      btn.classList.toggle('liked', myMood === mood);
-    });
-    const sample = reactBtn.querySelector('.react-sample');
-    const rText = reactBtn.querySelector('.react-btn-text');
-    if(sample){
-      if(total>0){
-        const sorted = Object.entries(moodCounts).sort((a,b)=> b[1]-a[1]).slice(0,3);
-        sample.innerHTML = sorted.map(([emoji])=>`<span class="react-sample-emoji">${emoji}</span>`).join('') + `<span style="margin-left:4px;font-size:12px;color:var(--ink-muted)">${total}</span>`;
-      } else sample.innerHTML='';
-    }
-    if(rText) rText.textContent = myMood ? `${myMood} React` : 'React';
-    reactBtn.classList.toggle('liked', !!myMood);
-    reactBtn.setAttribute('aria-expanded', String(!reactionPicker.hidden));
-  }, () => { });
-
-  reactBtn.addEventListener('click', e=>{
-    e.stopPropagation(); SoundManager.moodSelect();
-    document.querySelectorAll('.reaction-picker').forEach(p=>{ if(p!==reactionPicker) p.hidden=true; });
-    document.querySelectorAll('.share-menu.open').forEach(m=>m.classList.remove('open'));
-    const isHidden = reactionPicker.hidden;
-    reactionPicker.hidden = !isHidden;
-    reactBtn.setAttribute('aria-expanded', String(!reactionPicker.hidden));
-  });
-
-  reactionPicker.querySelectorAll('.mood-btn').forEach(btn => {
-    btn.addEventListener('click', async e => {
-      e.stopPropagation();
-      SoundManager.moodSelect();
-      if (!currentUser) return alert('Login karke react karo.');
-      const mood = btn.dataset.mood;
-      const moodRef = doc(db, 'posts', postId, 'moods', currentUser.uid);
-      try {
-        const s = await getDoc(moodRef);
-        if (s.exists() && s.data()?.mood === mood) {
-          await deleteDoc(moodRef);
-        } else {
-          await setDoc(moodRef, { uid: currentUser.uid, mood, createdAt: serverTimestamp() });
-          if (!s.exists()) {
-            await notifyPostOwner(data, 'like').catch(() => {});
-            onLikeGiven(currentUser.uid);
-            if (data.uid && data.uid !== currentUser.uid) onLikeReceived(data.uid);
-          }
-        }
-        reactionPicker.hidden=true;
-      } catch (err) { console.error(err); alert(err.message || 'React failed.'); }
-    });
-  });
-
-  const comment = document.createElement('button'); comment.className = 'action-btn comment-toggle-btn'; comment.type = 'button'; comment.innerHTML = '💬 <span>Comment</span>';
-  comment.addEventListener('click', e => { e.stopPropagation(); window.CommentWidget?.openFor(postId, data.name || 'Comments', data.uid); });
-
-  const share = document.createElement('button'); share.className = 'action-btn'; share.type = 'button'; share.innerHTML = '↗ <span>Share</span>';
-  const menu = document.createElement('div'); menu.className = 'share-menu';
-  const copy = document.createElement('button'); copy.type = 'button'; copy.textContent = 'Copy link';
-  const native = document.createElement('button'); native.type = 'button'; native.textContent = 'Share…';
-  const connectedTitle = document.createElement('div'); connectedTitle.className = 'share-title'; connectedTitle.textContent = 'Connected users';
-  const connectedBox = document.createElement('div'); connectedBox.className = 'connected-share-list';
-  menu.append(copy, native, connectedTitle, connectedBox);
-  const postUrl = new URL(`view_post.html?postId=${encodeURIComponent(postId)}`, location.href).href;
-
-  async function loadConnected() {
-    connectedBox.innerHTML = '<div class="share-loading">Loading connections…</div>';
-    if (!currentUser) { connectedBox.innerHTML = '<div class="share-loading">Login to share with connections.</div>'; return; }
-    try {
-      const cacheKey = `connections_${currentUser.uid}`;
-      let followingIds = trioCache.get(cacheKey);
-      if (!followingIds) {
-        const snap = await getDocs(collection(db, 'users', currentUser.uid, 'following'));
-        followingIds = snap.docs.map(d => d.id);
-        trioCache.set(cacheKey, followingIds, trioCache.TTL.SHORT);
-      }
-      if (!followingIds.length) { connectedBox.innerHTML = '<div class="share-loading">No connected users yet.</div>'; return; }
-      const users = (await Promise.all(followingIds.map(id => getCachedUserProfile(id)))).filter(Boolean);
-      connectedBox.innerHTML = '';
-      users.forEach(u => {
-        const b = document.createElement('button'); b.type = 'button'; b.className = 'connected-share-user';
-        b.innerHTML = `<span class="user-avatar">${u.photoURL ? `<img src="${escapeHtml(u.photoURL)}" alt="">` : (u.name || 'U').charAt(0).toUpperCase()}</span><span><strong>${escapeHtml(u.name || 'User')}</strong><small>${escapeHtml(u.userId || u.uid)}</small></span><b>Send</b>`;
-        b.onclick = async () => {
-          b.disabled = true; b.lastElementChild.textContent = '…';
-          try {
-            const me = await getMyProfile(currentUser.uid);
-            const cid = [currentUser.uid, u.uid].sort().join('_');
-            await addDoc(collection(db, 'privateChats', cid, 'messages'), { uid: currentUser.uid, name: me?.name || currentUser.displayName || 'User', userId: me?.userId || makeUserId(currentUser.uid), text: `📎 Shared a post: ${postUrl}`, createdAt: Date.now(), createdAtMs: Date.now(), sharedPostId: postId });
-            await Promise.all([notifyPostOwner(data, 'share'), notifyUser(u.uid, { type: 'share', actorUid: currentUser.uid, actorName: me?.name || currentUser.displayName || 'Someone', postId })]);
-            b.lastElementChild.textContent = 'Sent ✓';
-          } catch (err) { console.error(err); b.lastElementChild.textContent = 'Retry'; alert(err.message || 'Share failed.'); }
-          finally { b.disabled = false; }
-        };
-        connectedBox.appendChild(b);
-      });
-    } catch (err) { console.error(err); connectedBox.innerHTML = '<div class="share-loading">Could not load connections.</div>'; }
-  }
-
-  copy.addEventListener('click', async () => { try { await navigator.clipboard.writeText(postUrl); await notifyPostOwner(data, 'share').catch(() => { }); alert('Post link copied ✅'); } catch { prompt('Copy link', postUrl); } menu.classList.remove('open'); });
-  native.addEventListener('click', async () => { if (navigator.share) { try { await navigator.share({ title: `${data.name || 'Trio Day'} on Trio Day`, url: postUrl }); await notifyPostOwner(data, 'share').catch(() => { }); } catch { } } else { try { await navigator.clipboard.writeText(postUrl); await notifyPostOwner(data, 'share').catch(() => { }); alert('Link copied ✅'); } catch { prompt('Copy link', postUrl); } } menu.classList.remove('open'); });
-  share.addEventListener('click', e => { e.stopPropagation(); document.querySelectorAll('.share-menu.open').forEach(m => m !== menu && m.classList.remove('open')); menu.classList.toggle('open'); if (menu.classList.contains('open')) loadConnected(); });
-
-  if (data.uid && currentUser?.uid && data.uid === currentUser.uid) {
-    const remove = document.createElement('button'); remove.className = 'action-btn danger-action'; remove.type = 'button'; remove.textContent = 'Delete';
-    remove.addEventListener('click', async e => {
-      e.stopPropagation();
-      if (!confirm('Is this post delete karna chahte ho?')) return;
-      SoundManager.delete();
-      try {
-        await deleteDoc(doc(db, 'posts', postId));
-        trioCache.invalidate(`posts_${currentUser.uid}`);
-      } catch (err) {
-        console.error(err);
-        const msg = String(err?.code || err?.message || '');
-        alert(/permission|insufficient/i.test(msg) ? 'Delete blocked: Firebase rules update karo.' : (err.message || 'Delete failed.'));
-      }
-    });
-    actions.append(remove);
-  }
-
-  actions.append(comment, share, menu);
-  item.append(mediaWrap, content, actions);
-  return item;
-}
-window.buildFeedItem = buildFeedItem;
-if(!window.__reactionGlobalClose){
-  window.__reactionGlobalClose = true;
-  document.addEventListener('click', (e)=>{
-    if(!e.target.closest('.react-wrap')) document.querySelectorAll('.reaction-picker').forEach(p=> p.hidden=true);
-    document.querySelectorAll('.react-btn').forEach(b=> b.setAttribute('aria-expanded','false'));
-  });
-}
 
 function buildStoryCard(data) {
   const postId = data._id;
@@ -1385,8 +1163,8 @@ function buildStoryCard(data) {
           if(!s.exists()){
             const me=await getMyProfile(currentUser.uid);
             await notifyUser(data.uid, {type:'like', actorUid:currentUser.uid, actorName: me?.name||currentUser.displayName||'Someone', postId}).catch(()=>{});
-            onLikeGiven(currentUser.uid); if(data.uid && data.uid!==currentUser.uid) onLikeReceived(data.uid);
-          }
+if(data.uid && data.uid!==currentUser.uid)
+}
         }
         reactionPicker.hidden=true;
       }catch(err){ console.error(err); alert(err.message||'React failed.'); }
@@ -1414,7 +1192,7 @@ function buildStoryCard(data) {
     try{
       const me=await getMyProfile(currentUser.uid);
       const chatId=[currentUser.uid, data.uid].sort().join('_');
-      const storyUrl = new URL(`view_post.html?postId=${encodeURIComponent(postId)}`, location.href).href;
+      const storyUrl = new URL('index.html', location.href).href;
       const msgText = `↩️ Replied to your story: "${text}"`;
       await addDoc(collection(db,'privateChats', chatId, 'messages'),{
         uid: currentUser.uid,
@@ -1439,7 +1217,7 @@ function buildStoryCard(data) {
   // —— Share story (copy link / native share / send to connection) ——
   shareBtn.addEventListener('click', async e=>{
     e.stopPropagation();
-    const storyUrl = new URL(`view_post.html?postId=${encodeURIComponent(postId)}`, location.href).href;
+    const storyUrl = new URL('index.html', location.href).href;
     if(navigator.share){
       try{ await navigator.share({title: `${data.name||'Story'} on Trio Day`, url: storyUrl}); }catch{}
     } else {
@@ -1506,7 +1284,7 @@ function renderHeroStories(stories){
           ov.querySelector('[data-close]').addEventListener('click',()=>ov.remove());
           ov.addEventListener('click',e=>{ if(e.target===ov) ov.remove(); });
           const delBtn=ov.querySelector('[data-del]'); if(delBtn){ delBtn.addEventListener('click', async ()=>{ if(!confirm('Delete this story?')) return; try{ await deleteDoc(doc(db,'posts', s._id)); ov.remove(); }catch(err){ alert(err.message||'Delete failed'); } }); }
-          const shareBtn=ov.querySelector('[data-share]'); if(shareBtn){ shareBtn.addEventListener('click', async ()=>{ const url=new URL(`view_post.html?postId=${encodeURIComponent(s._id)}`,location.href).href; try{ if(navigator.share) await navigator.share({title:s.name||'Story',url}); else { await navigator.clipboard.writeText(url); alert('Link copied ✅'); } }catch{} }); }
+          const shareBtn=ov.querySelector('[data-share]'); if(shareBtn){ shareBtn.addEventListener('click', async ()=>{ const url=new URL(new URL('index.html', location.href).href,location.href).href; try{ if(navigator.share) await navigator.share({title:s.name||'Story',url}); else { await navigator.clipboard.writeText(url); alert('Link copied ✅'); } }catch{} }); }
           // React logic for viewer
           const reacts=ov.querySelectorAll('.mood-btn');
           // Live counts
@@ -1573,8 +1351,7 @@ document.addEventListener('click', e => {
       const me = await getMyProfile(currentUser.uid);
       await addDoc(collection(db, 'posts', active, 'comments'), { txt, name: me?.name || currentUser.displayName || 'User', uid: currentUser.uid, userId: me?.userId || makeUserId(currentUser.uid), createdAt: serverTimestamp(), createdAtMs: Date.now() });
       await notifyUser(activeOwnerUid, { type: 'comment', actorUid: currentUser.uid, actorName: me?.name || currentUser.displayName || 'Someone', postId: active });
-      onCommentCreated(currentUser.uid);
-      input.value = ''; counter.textContent = '0 / 199';
+input.value = ''; counter.textContent = '0 / 199';
     } catch (err) { console.error(err); alert('Comment save nahi ho paya.'); }
     finally { submitBtn.disabled = false; }
   });
