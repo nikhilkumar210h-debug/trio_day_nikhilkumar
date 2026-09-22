@@ -468,7 +468,8 @@ async function handleAwardXp(uid, body, env) {
   const weekKey=localWeekKey(), monthKey=localMonthKey();
   const weeklyXp=(userData.weeklyXpKey===weekKey?Number(userData.weeklyXp)||0:0)+amount;
   const monthlyXp=(userData.monthlyXpKey===monthKey?Number(userData.monthlyXp)||0:0)+amount;
-  const currentBadges=Array.isArray(userData.badges)?userData.badges:[];
+  const allowedBadges = new Set(SYSTEM_BADGES.map(b => b.id));
+  const currentBadges=Array.isArray(userData.badges) ? userData.badges.filter(id => allowedBadges.has(id)) : [];
   const earned=evaluateBadgesDelta(currentBadges,newXp,Number(userData.streakCurrent)||0);
   const patch={xp:newXp,level:newLevel,weeklyXp,monthlyXp,weeklyXpKey:weekKey,monthlyXpKey:monthKey};
   if(earned.length) patch.badges=[...currentBadges,...earned];
