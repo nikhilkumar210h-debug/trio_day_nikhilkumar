@@ -291,3 +291,11 @@ No merge to master and no production deployment was performed during this audit.
 - Fixed malformed closing markup in `voice-status.html` (`</body>`).
 - Fixed the Admin denial fallback link from retired `tasks.html` to the current `challenge.html` route.
 - Normalized legacy header glyphs to the canonical logo through `ui/header.js` instead of maintaining per-page logo variants.
+
+### Theme & Help UI pass — 23 September 2026
+
+- Added a persistent Help Center entry to the shared header and Account menu.
+- Help Center title/branding now uses Trio Day instead of the retired Forge identity.
+- Help Center cards, hero and flow surfaces now have explicit light/dark treatments rather than relying on dark-only translucent backgrounds.
+- Story Studio now follows the active theme: light mode uses light surfaces and dark mode uses dark surfaces, while the editor/canvas remains visually distinct.
+- Discover, Challenge and Today hero surfaces now have theme-specific variants so light mode does not contain a large dark hero and dark mode does not contain an accidental light hero.
