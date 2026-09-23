@@ -232,9 +232,11 @@ function addCard(c, autoOpen = false) {
       }
 
       card.querySelectorAll('[data-choice]').forEach(x => {
-        x.disabled = true;
+        x.disabled = false;
         x.classList.toggle('is-selected', Number(x.dataset.choice) === choice);
       });
+      const changeHint = card.querySelector('.challenge-change-hint');
+      if (changeHint) changeHint.textContent = 'Your choice is saved. You can change it anytime.';
       const counts = await getCounts(c.id);
       renderCommunityResult(result, c, counts, choice);
       renderAnswerCounts(card, c, counts);
@@ -277,7 +279,7 @@ async function hydrateCounts() {
     const mySnap = currentUser ? await getDoc(doc(db,'challengeAnswers',currentUser.uid + '_' + id)).catch(() => null) : null;
     if (mySnap?.exists()) {
       const myChoice = Number(mySnap.data().choice);
-      card.querySelectorAll('[data-choice]').forEach((x,i) => x.disabled = true);
+      card.querySelectorAll('[data-choice]').forEach((x,i) => x.disabled = false);
       const result = card.querySelector('.challenge-result');
       if (result) {
         card.querySelectorAll('[data-choice]').forEach((x,i) => x.classList.toggle('is-selected', i === myChoice));
