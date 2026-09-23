@@ -31,13 +31,18 @@
   function enhanceProfile() {
     const bio = document.getElementById('profileBio');
     if (!bio || document.querySelector('.core-loop-bio-cta')) return;
+    if (new URLSearchParams(location.search).has('uid')) return;
     if (!bio.textContent.trim().toLowerCase().includes('no bio')) return;
     const actions = document.getElementById('profileActions');
     if (!actions) return;
     const link = document.createElement('a');
     link.className = 'nkm-btn nkm-btn--secondary core-loop-bio-cta';
-    link.href = 'settings.html';
+    link.href = '#';
     link.textContent = '+ Add a short bio';
+    link.addEventListener('click', (event) => {
+      event.preventDefault();
+      document.getElementById('profileMenuBtn')?.click();
+    });
     link.setAttribute('aria-label', 'Add a short profile bio');
     actions.appendChild(link);
   }
