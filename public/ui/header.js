@@ -69,6 +69,13 @@ export function initHeader() {
     btn.addEventListener('click', () => { location.href = 'search.html'; });
     if (actions) actions.prepend(btn);
   }
+  if (!document.querySelector('link[data-trio-experience-v3]')) {
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'styles/experience-v3.css?v=20260923-v3';
+    link.dataset.trioExperienceV3 = '1';
+    document.head.appendChild(link);
+  }
   if (!document.querySelector('link[data-trio-experience-v2]')) {
     const link = document.createElement('link');
     link.rel = 'stylesheet';
