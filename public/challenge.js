@@ -374,7 +374,7 @@ async function loadCommunityChallenges() {
       const heading = document.createElement('div');
       heading.className = 'challenge-community-heading';
       heading.innerHTML = '<span class="challenge-tag">COMMUNITY</span><h2>Questions from people</h2><p>Real prompts created by the community. Pick, compare and talk in public.</p>';
-      host.prepend(heading);
+      host.appendChild(heading);
       custom.forEach(t => addCard({
         id:t.id,
         tag:'COMMUNITY',
