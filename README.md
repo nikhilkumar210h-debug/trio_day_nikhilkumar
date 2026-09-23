@@ -286,3 +286,8 @@ A successful Firebase Auth session is no longer blocked by non-critical profile 
 The branch contains a large pre-existing history and many legacy/support files. GitHub currently reports the branch as substantially ahead of master. The audit focused on the current application routes and the source files that control authentication, navigation, challenges, creation, data rules and the current product surfaces. Legacy snapshots are not treated as active product routes.
 
 No merge to master and no production deployment was performed during this audit.
+
+### Additional source audit fixes
+- Fixed malformed closing markup in `voice-status.html` (`</body>`).
+- Fixed the Admin denial fallback link from retired `tasks.html` to the current `challenge.html` route.
+- Normalized legacy header glyphs to the canonical logo through `ui/header.js` instead of maintaining per-page logo variants.
