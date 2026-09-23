@@ -444,7 +444,7 @@ async function loadCommunityChallenges() {
         creatorRole:t.creatorRole || (t.creatorUid ? 'Member' : 'Admin'),
         format:t.interaction.format || 'quick',
         twist:t.interaction.twist || ''
-      }, requestedId === t.id));
+      }, requestedId === t.id && requestedDiscussion));
     }
     await hydrateCounts();
   } catch (err) {
@@ -457,13 +457,15 @@ onAuthStateChanged(auth, u => {
   if (u) hydrateCounts();
 });
 
-const requestedId = new URLSearchParams(location.search).get('challenge') || new URLSearchParams(location.search).get('id');
+const params = new URLSearchParams(location.search);
+const requestedId = params.get('challenge') || params.get('id');
+const requestedDiscussion = params.get('discussion') === '1';
 CHALLENGES.forEach(c => addCard({
   ...c,
   creatorName:'Admin',
   creatorRole:'Admin',
   creatorUid:''
-}, requestedId === c.id));
+}, requestedId === c.id && requestedDiscussion));
 loadCommunityChallenges().then(() => {
   if (requestedId && cards.has(requestedId)) return;
   if (requestedId) {
