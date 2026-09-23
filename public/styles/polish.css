@@ -693,3 +693,18 @@ button:disabled,.nkm-btn:disabled,.btn:disabled{cursor:not-allowed;opacity:.55;t
     font-size:10px;
   }
 }
+
+/* 2026-09-23 — Story Studio adapts to light/dark instead of forcing dark surfaces. */
+[data-theme="light"] .story-composer-modal{background:radial-gradient(circle at 84% 0,rgba(139,92,246,.12),transparent 30%),radial-gradient(circle at 8% 34%,rgba(236,72,153,.07),transparent 28%),#fff;box-shadow:0 28px 90px rgba(40,28,90,.20);border-color:rgba(118,87,255,.16)}
+[data-theme="dark"] .story-composer-modal{background:radial-gradient(circle at 84% 0,rgba(139,92,246,.18),transparent 30%),radial-gradient(circle at 8% 34%,rgba(236,72,153,.10),transparent 28%),var(--color-surface-strong)}
+[data-theme="light"] .story-composer-modal textarea{background:#f7f5ff;color:#17152c}
+[data-theme="dark"] .story-composer-modal textarea{background:rgba(255,255,255,.035);color:var(--color-ink)}
+[data-theme="light"] .story-composer-modal .upload-area{background:linear-gradient(135deg,rgba(139,92,246,.07),rgba(236,72,153,.04)),#faf9ff}
+[data-theme="dark"] .story-composer-modal .upload-area{background:linear-gradient(135deg,rgba(139,92,246,.10),rgba(236,72,153,.055)),rgba(255,255,255,.018)}
+[data-theme="light"] .story-composer-modal .story-editor{background:#f5f3ff;border-color:rgba(118,87,255,.12)}
+[data-theme="dark"] .story-composer-modal .story-editor{background:rgba(0,0,0,.12)}
+[data-theme="light"] .story-composer-modal .editor-toolbar,[data-theme="light"] .story-composer-modal .text-options,[data-theme="light"] .story-composer-modal .filter-intensity{background:#fff}
+[data-theme="dark"] .story-composer-modal .editor-toolbar,[data-theme="dark"] .story-composer-modal .text-options,[data-theme="dark"] .story-composer-modal .filter-intensity{background:rgba(255,255,255,.025)}
+[data-theme="light"] .story-composer-modal .modal-actions{background:linear-gradient(180deg,rgba(255,255,255,.06),#fff 32%)}
+[data-theme="dark"] .story-composer-modal .modal-actions{background:linear-gradient(180deg,rgba(20,27,46,.06),var(--color-surface-strong) 32%)}
+.story-composer-modal{transition:background .25s ease,box-shadow .25s ease}
