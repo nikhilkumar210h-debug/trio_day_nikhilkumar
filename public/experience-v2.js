@@ -37,6 +37,49 @@ function enrichFocus(){
 function challengeMotion(){
  document.querySelectorAll('.challenge-main-options button').forEach(b=>{b.addEventListener('pointerdown',()=>b.classList.add('td-v2-press'),{passive:true});b.addEventListener('pointerup',()=>setTimeout(()=>b.classList.remove('td-v2-press'),160),{passive:true});});
 }
-function run(){if(isToday){addPulse();addSparkSection();enrichFocus();}if(isChallenge)challengeMotion();}
+
+async function loadFreshCommunity(){
+ const feed=document.getElementById('todayFreshChallenges'); if(!feed||feed.dataset.loaded)return;
+ try{
+  const mod=await import('./gamification/community-tasks.js?v=20260923-v2feed');
+  const items=await mod.listCommunityTasks({status:'active',max:12});
+  const fresh=Array.isArray(items)?items.slice(0,3):[];
+  if(!fresh.length){
+   feed.innerHTML='<article class="td-v2-feed-card"><div class="td-v2-feed-top"><span class="td-v2-feed-tag">START HERE</span><span class="td-v2-feed-time">NOW</span></div><h3>Be the person who starts the next conversation.</h3><div class="td-v2-feed-options"><span>Create a challenge</span><span>Invite someone</span></div><div class="td-v2-feed-foot"><small>Your next moment can be yours.</small><a href="challenge-create.html">Create →</a></div></article>';
+  }else{
+   feed.innerHTML=fresh.map((c,i)=>{
+    const title=escapeHtmlV2(c.title||c.question||'Community challenge');
+    const desc=escapeHtmlV2(c.description||'Make a quick choice and compare.');
+    const icon=escapeHtmlV2(c.icon||['⚡','✦','◎'][i%3]);
+    const id=encodeURIComponent(c.id||'');
+    const count=Number(c.joins||c.completions||0);
+    return '<article class="td-v2-feed-card"><div><div class="td-v2-feed-top"><span class="td-v2-feed-tag">'+icon+' · COMMUNITY</span><span class="td-v2-feed-time">FRESH</span></div><h3>'+title+'</h3><div class="td-v2-feed-options"><span>'+desc.slice(0,55)+'</span></div></div><div class="td-v2-feed-foot"><small>'+count+' people moving through it</small><a href="challenge.html?challenge='+id+'">Open →</a></div></article>';
+   }).join('');
+  }
+  feed.dataset.loaded='1';
+ }catch(e){
+  console.warn('[experience-v2] fresh community feed failed',e);
+  feed.innerHTML='<article class="td-v2-feed-card"><div><span class="td-v2-feed-tag">YOUR MOMENT</span><h3>What would you choose if nobody could judge the answer?</h3></div><div class="td-v2-feed-foot"><small>Start with the daily challenge.</small><a href="challenge.html">Go →</a></div></article>';
+  feed.dataset.loaded='1';
+ }
+}
+function escapeHtmlV2(value){
+ return String(value).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+}
+function rotateNextMoment(){
+ const title=document.getElementById('todayNextTitle'),text=document.getElementById('todayNextText'),copy=document.getElementById('todayLiveCopy');
+ if(!title)return;
+ const moments=[
+ ['Make one choice.','Then see who thinks differently.','Fresh challenges are waiting.'],
+ ['Find one person.','Start with something you both answered.','Someone new can change the moment.'],
+ ['Ask something.','Give the community a reason to respond.','New questions keep Today moving.'],
+ ['Come back later.','The room should feel different in an hour.','Today is a moving timeline, not a checklist.']
+ ];
+ let i=Math.floor(Date.now()/60000)%moments.length;
+ const paint=()=>{const m=moments[i%moments.length];title.textContent=m[0];text.textContent=m[1];if(copy)copy.textContent=m[2];i++;};
+ paint();setInterval(paint,60000);
+}
+
+function run(){if(isToday){addPulse();addSparkSection();enrichFocus();loadFreshCommunity();rotateNextMoment();}if(isChallenge)challengeMotion();}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',run,{once:true});else run();setTimeout(run,1200);
 })();
