@@ -1,0 +1,34 @@
+name: Trio Day Core Loop QA
+
+on:
+  push:
+    branches:
+      - feature/trio-day-core-loop-v1
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  static-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install
+        run: npm ci
+      - name: Syntax check changed JavaScript
+        run: |
+          node --check public/core-loop.js
+          node --check public/webmcp.js
+          node --check public/ui/header.js
+          node --check public/script.js
+          node --check public/challenge.js
+          node --check server.js
+      - name: Verify Playwright test discovery
+        run: npm test -- --list
