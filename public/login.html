@@ -155,6 +155,27 @@
     .uid-note{display:none;margin-top:12px;padding:10px 11px;border-radius:12px;background:rgba(6,182,212,.045);border:1px solid rgba(6,182,212,.11);color:var(--login-muted);font-size:9px;line-height:1.5}
     .uid-note.visible{display:block}.uid-note b{color:var(--login-ink)}
     .auth-switch{border:0;background:none;color:var(--login-muted);margin:12px auto 0;font-size:9px}.auth-switch strong{color:var(--login-ink)}
+
+    /* Auth entrance: calm, intentional motion rather than a static form. */
+    .auth-shell{animation:authShellIn .7s cubic-bezier(.16,1,.3,1) both}
+    .auth-visual{animation:authVisualIn .8s cubic-bezier(.16,1,.3,1) .04s both}
+    .auth-panel{animation:authPanelIn .72s cubic-bezier(.16,1,.3,1) .1s both}
+    .visual-orbit{animation:authOrbitDrift 14s linear infinite}
+    .visual-card{transition:transform .22s cubic-bezier(.16,1,.3,1),border-color .22s ease,background .22s ease}
+    .visual-card:hover{transform:translateY(-4px);border-color:rgba(139,92,246,.22);background:rgba(255,255,255,.04)}
+    .mode-tab,.login-method-btn{transition:background .2s ease,color .2s ease,transform .18s ease}
+    .mode-tab:active,.login-method-btn:active{transform:scale(.97)}
+    .submit-btn{position:relative;overflow:hidden;transition:transform .2s cubic-bezier(.16,1,.3,1),box-shadow .2s ease,filter .2s ease}
+    .submit-btn::after{content:"";position:absolute;top:-30%;bottom:-30%;width:42%;left:-50%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.28),transparent);transform:skewX(-15deg);transition:left .7s ease}
+    .submit-btn:hover::after{left:115%}
+    .submit-btn.is-busy::before{content:"";display:inline-block;width:11px;height:11px;margin-right:7px;border:1.5px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;vertical-align:-2px;animation:authSpin .7s linear infinite}
+    .submit-btn.is-busy{filter:saturate(1.12);box-shadow:0 12px 32px rgba(99,102,241,.28)}
+    @keyframes authShellIn{from{opacity:0;transform:translateY(16px) scale(.985)}to{opacity:1;transform:none}}
+    @keyframes authVisualIn{from{opacity:0;transform:translateX(-14px)}to{opacity:1;transform:none}}
+    @keyframes authPanelIn{from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:none}}
+    @keyframes authOrbitDrift{to{transform:rotate(360deg)}}
+    @keyframes authSpin{to{transform:rotate(360deg)}}
+    @media(prefers-reduced-motion:reduce){.auth-shell,.auth-visual,.auth-panel,.visual-orbit{animation:none}.submit-btn::after{display:none}.submit-btn.is-busy::before{animation:none}}
     @media(max-width:840px){
       .auth-shell{grid-template-columns:1fr;max-width:560px}
       .auth-visual{min-height:370px}.visual-copy{margin-top:54px}.visual-cards{position:relative;left:auto;right:auto;bottom:auto;margin-top:28px}
