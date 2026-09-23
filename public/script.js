@@ -71,6 +71,7 @@ onAuthStateChanged(auth, async user => {
 
 async function initTodayScreen(uid) {
   renderGreeting();
+  renderTodayLive();
   await renderStoryStrip(uid);
   if (uid) {
     await Promise.all([
@@ -427,6 +428,37 @@ function openStoryViewer(s) {
   replyInput?.addEventListener('keydown', e => { if (e.key === 'Enter') doReply(); });
 
   document.body.appendChild(ov);
+}
+
+async function renderTodayLive() {
+  const host = $('todayFreshChallenges');
+  if (!host) return;
+  const fallback = [
+    {id:'trip', tag:'QUICK PICK', q:'You get one free trip tomorrow. Where are you going?', o:['Japan 🇯🇵','Switzerland 🇨🇭','Somewhere unexpected 🌍']},
+    {id:'hour', tag:'MOOD', q:'You have one free hour tonight. What sounds better?', o:['Talk to someone 💬','Play something 🎮','Learn something 🧠']},
+    {id:'weekend', tag:'MAKE', q:'One weekend. One thing to build. What are you making?', o:['An app 💻','A game 🎮','Something useful 🛠️']}
+  ];
+  const render = items => {
+    host.innerHTML = items.slice(0,3).map((x,i) => `
+      <article class="td-v2-live-card" style="--i:${i}">
+        <div class="td-v2-live-card-top"><span>${escapeHtml(x.tag || 'MOMENT')}</span><b>${i===0?'LIVE NOW':i===1?'NEW':'NEXT'}</b></div>
+        <h3>${escapeHtml(x.q)}</h3>
+        <div class="td-v2-live-options">${x.o.slice(0,3).map((o,j)=>`<span><i>${String.fromCharCode(65+j)}</i>${escapeHtml(o)}</span>`).join('')}</div>
+        <a href="challenge.html?challenge=${encodeURIComponent(x.id)}">Make your choice <span>↗</span></a>
+      </article>`).join('');
+  };
+  render(fallback);
+  try {
+    const tasks = await listCommunityTasks({kind:'challenge', status:'active', max:12});
+    const custom = tasks.filter(t => t.interaction?.kind === 'choice' && t.interaction?.question && Array.isArray(t.interaction?.options));
+    if (custom.length) {
+      render(custom.map(t => ({id:t.id,tag:t.interaction.format ? String(t.interaction.format).replace(/^./,m=>m.toUpperCase()) : 'COMMUNITY',q:t.interaction.question,o:t.interaction.options})));
+      const copy = $('todayLiveCopy');
+      if (copy) copy.textContent = `${custom.length} fresh moments from the community. Pick one, then see the room split.`;
+    }
+  } catch (err) {
+    console.warn('[Today] live feed fallback:', err);
+  }
 }
 
 async function renderFocusAndContinue(uid) {
