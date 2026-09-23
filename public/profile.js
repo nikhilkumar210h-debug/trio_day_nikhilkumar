@@ -206,8 +206,11 @@ async function openProfileMenu(userData) {
         <button type="button" class="profile-menu-item" data-action="theme">
           <span>🎨</span> Theme
         </button>
+        <a class="profile-menu-item" href="help.html">
+          <span>?</span> Help Center
+        </a>
         <a class="profile-menu-item" href="privacy.html">
-          <span>🔒</span> Privacy Policy
+          <span>🔒</span> Privacy & Data
         </a>
         <label class="profile-menu-item profile-menu-toggle" style="cursor:pointer">
           <span>🔊</span> Sound Effects
