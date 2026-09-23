@@ -33,6 +33,7 @@ function setBusy(busy, label = '') {
   const btn = $('emailSubmitBtn');
   if (!btn) return;
   btn.disabled = busy;
+  btn.classList.toggle('is-busy', busy);
   if (busy) {
     btn.dataset.originalLabel = btn.textContent;
     btn.textContent = label || 'Please wait…';
