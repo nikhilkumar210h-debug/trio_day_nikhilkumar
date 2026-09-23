@@ -25,7 +25,7 @@ jobs:
       - name: Syntax check changed JavaScript
         run: |
           node --check public/core-loop.js
-          node --check public/webmcp.js
+          node --input-type=module --check < public/webmcp.js
           node --check public/ui/header.js
           node --check public/script.js
           node --check public/challenge.js
