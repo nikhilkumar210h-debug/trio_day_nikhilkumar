@@ -413,13 +413,13 @@ async function hydrateCounts() {
     const responses = await getResponses(id);
     const counts = countsFromResponses(responses);
     renderAnswerCounts(card,c,counts);
-    await renderVoterPeek(result, c, responses);
     const mySnap = currentUser ? await getDoc(doc(db,'challengeAnswers',currentUser.uid + '_' + id)).catch(() => null) : null;
-    if (mySnap?.exists()) {
-      const myChoice = Number(mySnap.data().choice);
+    const myChoice = mySnap?.exists() ? Number(mySnap.data().choice) : null;
+    renderCommunityResult(result, c, counts, Number.isInteger(myChoice) ? myChoice : null);
+    await renderVoterPeek(result, c, responses);
+    if (Number.isInteger(myChoice)) {
       card.querySelectorAll('[data-choice]').forEach((x,i) => x.disabled = false);
       card.querySelectorAll('[data-choice]').forEach((x,i) => x.classList.toggle('is-selected', i === myChoice));
-      renderCommunityResult(result, c, counts, myChoice);
     }
   }
 }
