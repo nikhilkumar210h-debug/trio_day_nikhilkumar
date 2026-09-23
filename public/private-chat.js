@@ -47,7 +47,7 @@ function setPeerHeader() {
   $('peerProfile').href = profileUrl;
   $('peerProfileIcon').href = profileUrl;
   $('peerName').textContent = nameOf(activePeer);
-  $('peerId').textContent = activePeer.userId || activePeer.uid;
+  const peerIdEl = $('peerId'); if (peerIdEl) { peerIdEl.textContent = ''; peerIdEl.hidden = true; }
   $('peerAvatar').innerHTML = avatarHtml(activePeer);
 }
 
