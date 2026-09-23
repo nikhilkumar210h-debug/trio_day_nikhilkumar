@@ -123,45 +123,116 @@ async function loadConnections(uid, mode = 'followers') {
 // ── Edit profile modal ───────────────────────────────────────────────────────
 async function openEdit(u) {
   const overlay = document.createElement('div'); overlay.className = 'modal-overlay';
-  overlay.innerHTML = `<div class="modal edit-dialog">
-    <div class="modal-head"><div><span class="eyebrow">Your profile</span><h2>Edit profile</h2></div><button class="icon-btn close-edit" type="button">×</button></div>
+  overlay.innerHTML = `<div class="modal edit-dialog profile-edit-dialog">
+    <div class="modal-head"><div><span class="eyebrow">Your profile</span><h2>Edit profile</h2><p class="profile-edit-sub">Your profile photo follows you everywhere on Trio Day.</p></div><button class="icon-btn close-edit" type="button">×</button></div>
     <label class="field"><span class="label-text">Name</span><input id="editName" type="text" maxlength="50" value="${esc(u.name || '')}"></label>
     <div class="field"><span class="label-text">Trio UID</span><div class="field-readonly">${esc(u.userId || makeUserId(me.uid))}</div><small class="field-help">Permanent account ID used to sign in and connect with friends. It cannot be changed.</small></div>
     <label class="field"><span class="label-text">Bio</span><textarea id="editBio" maxlength="180" rows="4" placeholder="Tell people a little about you…">${esc(u.bio || '')}</textarea></label>
-    <label class="field"><span class="label-text">Profile photo</span><input id="editPhoto" type="file" accept="image/*"></label>
+    <div class="field profile-photo-field">
+      <div class="profile-photo-field-head"><span class="label-text">Profile photo</span><span class="profile-photo-hint">Square crop · drag to move · zoom to frame</span></div>
+      <label class="profile-photo-picker" for="editPhoto"><span class="profile-photo-picker-icon">＋</span><span><strong>Choose profile picture</strong><small>JPG, PNG or WebP · up to 8MB</small></span></label>
+      <input id="editPhoto" class="profile-photo-file-input" type="file" accept="image/*">
+      <div id="profileCropEditor" class="profile-crop-editor" hidden>
+        <div class="profile-crop-stage-wrap">
+          <div class="profile-crop-stage" id="profileCropStage"><canvas id="profileCropCanvas" width="360" height="360"></canvas><div class="profile-crop-grid" aria-hidden="true"></div></div>
+          <div class="profile-crop-preview-row"><span>Preview</span><div class="profile-crop-avatar-preview"><canvas id="profileCropPreview" width="92" height="92"></canvas></div></div>
+        </div>
+        <div class="profile-crop-controls">
+          <div><strong>Adjust your photo</strong><small>Drag the image inside the frame.</small></div>
+          <label class="crop-range"><span>Zoom</span><input id="profileCropZoom" type="range" min="1" max="3" step="0.01" value="1"><output id="profileCropZoomValue">1×</output></label>
+          <button type="button" class="btn secondary profile-crop-reset">Reset crop</button>
+          <button type="button" class="btn secondary profile-crop-remove" hidden>Remove new photo</button>
+        </div>
+      </div>
+    </div>
     <p class="status" id="editStatus"></p>
     <div class="modal-actions"><button class="btn secondary cancel-edit" type="button">Cancel</button><button class="btn primary save-edit" type="button">Save profile</button></div>
   </div>`;
   document.body.appendChild(overlay);
+
   const close = () => overlay.remove();
   overlay.querySelector('.close-edit').onclick = close;
   overlay.querySelector('.cancel-edit').onclick = close;
   overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
+
+  const fileInput = overlay.querySelector('#editPhoto');
+  const editor = overlay.querySelector('#profileCropEditor');
+  const stage = overlay.querySelector('#profileCropStage');
+  const canvas = overlay.querySelector('#profileCropCanvas');
+  const previewCanvas = overlay.querySelector('#profileCropPreview');
+  const zoomInput = overlay.querySelector('#profileCropZoom');
+  const zoomValue = overlay.querySelector('#profileCropZoomValue');
+  const resetBtn = overlay.querySelector('.profile-crop-reset');
+  const removeBtn = overlay.querySelector('.profile-crop-remove');
+  const ctx = canvas.getContext('2d');
+  const previewCtx = previewCanvas.getContext('2d');
+  let image = null, imageUrl = null, crop = { x: 0, y: 0, zoom: 1 }, dragging = false, dragStart = null, fileForUpload = null;
+
+  const draw = () => {
+    if (!image) return;
+    const size = canvas.width;
+    const scale = Math.max(size / image.naturalWidth, size / image.naturalHeight) * crop.zoom;
+    const w = image.naturalWidth * scale, h = image.naturalHeight * scale;
+    const maxX = Math.max(0, (w - size) / 2), maxY = Math.max(0, (h - size) / 2);
+    crop.x = Math.max(-maxX, Math.min(maxX, crop.x));
+    crop.y = Math.max(-maxY, Math.min(maxY, crop.y));
+    ctx.clearRect(0, 0, size, size); ctx.fillStyle = '#05060b'; ctx.fillRect(0, 0, size, size);
+    ctx.drawImage(image, (size - w) / 2 + crop.x, (size - h) / 2 + crop.y, w, h);
+    previewCtx.clearRect(0, 0, 92, 92); previewCtx.drawImage(canvas, 0, 0, 92, 92);
+  };
+  const resetCrop = () => { crop = { x: 0, y: 0, zoom: 1 }; zoomInput.value = '1'; zoomValue.textContent = '1×'; draw(); };
+
+  const loadFile = file => new Promise((resolve, reject) => {
+    if (!file?.type?.startsWith('image/')) return reject(Error('Only image files are allowed.'));
+    if (file.size > 8 * 1024 * 1024) return reject(Error('Profile photo must be under 8MB.'));
+    if (imageUrl) URL.revokeObjectURL(imageUrl);
+    imageUrl = URL.createObjectURL(file); image = new Image();
+    image.onload = () => { resetCrop(); editor.hidden = false; removeBtn.hidden = false; resolve(); };
+    image.onerror = () => reject(Error('Could not read this image.')); image.src = imageUrl;
+  });
+
+  const pointerPos = e => { const rect = stage.getBoundingClientRect(); return { x: e.clientX - rect.left, y: e.clientY - rect.top }; };
+  stage.addEventListener('pointerdown', e => { if (!image) return; dragging = true; stage.setPointerCapture?.(e.pointerId); const p = pointerPos(e); dragStart = { pointer: p, x: crop.x, y: crop.y }; });
+  stage.addEventListener('pointermove', e => { if (!dragging || !dragStart) return; const p = pointerPos(e); crop.x = dragStart.x + p.x - dragStart.pointer.x; crop.y = dragStart.y + p.y - dragStart.pointer.y; draw(); });
+  const stopDrag = () => { dragging = false; dragStart = null; };
+  stage.addEventListener('pointerup', stopDrag); stage.addEventListener('pointercancel', stopDrag);
+  zoomInput.addEventListener('input', () => { crop.zoom = Number(zoomInput.value); zoomValue.textContent = crop.zoom.toFixed(2).replace(/0$/, '') + '×'; draw(); });
+  resetBtn.addEventListener('click', resetCrop);
+  removeBtn.addEventListener('click', () => { fileInput.value = ''; fileForUpload = null; editor.hidden = true; image = null; if (imageUrl) { URL.revokeObjectURL(imageUrl); imageUrl = null; } ctx.clearRect(0,0,360,360); previewCtx.clearRect(0,0,92,92); });
+
+  fileInput.addEventListener('change', async () => {
+    const file = fileInput.files?.[0], st = overlay.querySelector('#editStatus'); if (!file) return;
+    try { await loadFile(file); fileForUpload = file; st.textContent = 'Crop ready — frame your photo, then save.'; }
+    catch (err) { fileInput.value = ''; st.textContent = err.message || 'Could not load photo.'; }
+  });
+
+  const cropToFile = () => new Promise((resolve, reject) => {
+    if (!image || !fileForUpload) return resolve(null);
+    const out = document.createElement('canvas'); out.width = 640; out.height = 640; const outCtx = out.getContext('2d');
+    const size = canvas.width, scale = Math.max(size / image.naturalWidth, size / image.naturalHeight) * crop.zoom;
+    const w = image.naturalWidth * scale, h = image.naturalHeight * scale;
+    const sx = (size / 2 - crop.x - (size - w) / 2) / scale, sy = (size / 2 - crop.y - (size - h) / 2) / scale;
+    outCtx.drawImage(image, sx, sy, size / scale, size / scale, 0, 0, 640, 640);
+    out.toBlob(blob => blob ? resolve(new File([blob], 'profile-crop.webp', {type:'image/webp'})) : reject(Error('Could not prepare cropped photo.')), 'image/webp', .9);
+  });
+
   overlay.querySelector('.save-edit').onclick = async () => {
     const st = overlay.querySelector('#editStatus'), btn = overlay.querySelector('.save-edit'); btn.disabled = true;
     try {
       const name = overlay.querySelector('#editName').value.trim() || 'User';
-      let photoURL = u.photoURL || null; const f = overlay.querySelector('#editPhoto').files?.[0];
-      if (f) {
-        if (!f.type.startsWith('image/')) throw Error('Only image files allowed.');
-        if (f.size > 8 * 1024 * 1024) throw Error('Profile photo must be under 8MB.');
-        st.textContent = 'Compressing & uploading photo…';
-        const token = await me.getIdToken();
-        photoURL = await uploadProfileImage(me.uid, f, token);
+      let photoURL = u.photoURL || null;
+      if (fileForUpload) {
+        st.textContent = 'Preparing your crop…'; const croppedFile = await cropToFile();
+        st.textContent = 'Uploading profile photo…'; const token = await me.getIdToken(); photoURL = await uploadProfileImage(me.uid, croppedFile, token);
       }
       const bio = overlay.querySelector('#editBio').value.trim();
       await updateDoc(doc(db, 'users', me.uid), { name, bio, photoURL, updatedAt: serverTimestamp() });
-      // Keep Firebase Auth profile in sync too, so auth.photoURL/displayName
-      // never falls back to the previous DP on pages that read auth directly.
       await updateProfile(me, { displayName: name, photoURL: photoURL || null });
-      // Invalidate cached profile so the page re-fetches fresh data
-      trioCache.invalidate(`user_${me.uid}`);
-      await me.reload(); close(); await loadProfile(me.uid);
+      trioCache.invalidate(`user_${me.uid}`); await me.reload(); close(); await loadProfile(me.uid);
     } catch (err) { console.error(err); st.textContent = err.message || 'Save failed.'; }
     finally { btn.disabled = false; }
   };
 }
-
 // ── Connect / disconnect ─────────────────────────────────────────────────────
 async function connect(uid) {
   if (!me || uid === me.uid) { alert('You cannot connect with yourself.'); return; }
