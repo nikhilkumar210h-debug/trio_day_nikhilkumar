@@ -299,3 +299,15 @@ No merge to master and no production deployment was performed during this audit.
 - Help Center cards, hero and flow surfaces now have explicit light/dark treatments rather than relying on dark-only translucent backgrounds.
 - Story Studio now follows the active theme: light mode uses light surfaces and dark mode uses dark surfaces, while the editor/canvas remains visually distinct.
 - Discover, Challenge and Today hero surfaces now have theme-specific variants so light mode does not contain a large dark hero and dark mode does not contain an accidental light hero.
+
+
+### Challenge feed + voter visibility pass — 23 September 2026
+
+- Community Challenges remain strictly newest-first after active-window filtering.
+- The feed now reads a wider recent window before filtering, so expired/future records do not consume the visible limit.
+- Challenge-list cache keys include the requested maximum size, preventing a smaller cached result from being reused for a larger request.
+- Each Challenge can now show **Who chose what**: compact profile chips with a small avatar and name grouped under the selected option.
+- Voter profiles link to the existing profile page, but the UI intentionally avoids large profile cards so the Challenge surface stays clean.
+- Extra voters are collapsed behind **+ N more** per option and expand only within that option group.
+- No Firestore rule relaxation was needed: Challenge answers are already readable by signed-in users, while writes remain restricted to the answering user.
+- No merge to master and no production deployment were performed.
