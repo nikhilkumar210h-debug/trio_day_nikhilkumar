@@ -279,6 +279,13 @@ service cloud.firestore {
         && resource.data.uid == request.auth.uid;
     }
 
+    // Collection-group reads for challenge membership. Firestore collectionGroup()
+    // queries do not use the nested /communityTasks/{taskId}/members rule above;
+    // this recursive match is required for the query to be authorized.
+    match /{path=**}/members/{memberUid} {
+      allow read: if signedIn();
+    }
+
     // ── Gamification ──────────────────────────────────────────────
     match /config/{docId} {
       allow read: if signedIn();
