@@ -136,3 +136,45 @@ Before a production release, run the QA suite against the final deployed revisio
 - Chat and notifications.
 - Mobile and desktop navigation active state.
 - Service-worker cache refresh.
+
+
+## Development branch — Trio Day Core Loop V1 / Experience V2
+
+Current working branch: `feature/trio-day-core-loop-v1`
+
+This branch is intentionally separate from `master` and production. It contains the functional Core Loop work plus the Experience V2 visual redesign.
+
+### Experience V2 changes
+
+- **Today redesigned as the product home:** stronger hero hierarchy, stories, a daily challenge, live/fresh community moments, next-move cards and paths into people/chat/profile.
+- **Living Today surface:** community challenges are loaded from the existing challenge system when available; the home also rotates contextual micro-prompts so the page does not feel static between sessions.
+- **Challenge visual pass:** larger visual hero, richer choice cards, animated selection/result treatment, stronger community-result hierarchy and responsive layouts.
+- **Brand refresh:** new Trio Day purple/yellow lightning mark and wordmark assets:
+  - `public/icons/trio-day-mark.svg`
+  - `public/icons/trio-day-wordmark.svg`
+  - `public/icons/trio-day-logo.svg` updated to the new mark
+- **Shared header branding:** the new mark is applied through `styles/header.css` so legacy glyph-based headers use the same brand system.
+- **No new framework:** the redesign uses the existing HTML/CSS/ES-module architecture and preserves Firebase/Auth/Firestore contracts.
+- **Accessibility:** reduced-motion handling remains enabled for the new motion layer.
+
+### How to preview this branch locally
+
+```bash
+git fetch origin
+git switch feature/trio-day-core-loop-v1
+git pull origin feature/trio-day-core-loop-v1
+npm install
+npm start
+```
+
+Open `http://127.0.0.1:5500/` and hard-refresh with `Ctrl+Shift+R`.
+
+Recommended review path:
+
+**Today → answer the daily challenge → See the split → Challenge → Discover → Chat → You**
+
+### Change log
+
+The latest Experience V2 commits are intentionally small and reviewable. They add the visual system, the living Today layer, the new brand assets, and the README documentation without merging into `master`.
+
+> Production deployment is intentionally unchanged until this branch has been reviewed and tested.
