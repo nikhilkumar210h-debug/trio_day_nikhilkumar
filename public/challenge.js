@@ -194,6 +194,7 @@ function addCard(c, autoOpen = false) {
     '<div class="challenge-main-options">' +
       c.o.map((x,i) => '<button type="button" data-choice="' + i + '"><span class="choice-letter">' + String.fromCharCode(65+i) + '</span><span>' + esc(x) + '</span></button>').join('') +
     '</div>' +
+    '<div class="challenge-change-hint">Pick a side — you can change your choice anytime.</div>' +
     '<div class="challenge-result" hidden></div>' +
     '<div class="challenge-links">' +
       '<button type="button" class="nkm-btn nkm-btn--secondary challenge-discuss-btn">💬 Join the discussion</button>' +
