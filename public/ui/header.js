@@ -12,7 +12,7 @@ const BELL_SVG = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" st
   const loader=document.createElement('div');
   loader.id='trioPageLoader';
   loader.className='trio-page-loader';
-  loader.innerHTML='<div class="trio-page-loader-card"><img src="icons/trio-day-logo.svg" alt="Trio Day"><span>TRIO DAY</span><i aria-hidden="true"></i></div>';
+  loader.innerHTML='<div class="trio-page-loader-card" aria-label="Loading Trio Day"><div class="trio-loader-orbit"><i></i><i></i><i></i></div><span>TRIO DAY</span><small>connecting</small></div>';
   document.documentElement.classList.add('trio-loading');
   if (document.body) document.body.prepend(loader);
   else document.addEventListener('DOMContentLoaded',()=>document.body.prepend(loader),{once:true});
