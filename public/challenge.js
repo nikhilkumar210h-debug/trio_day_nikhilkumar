@@ -230,15 +230,19 @@ function creatorMeta(c) {
     '</div>';
 }
 
-function renderThreadMessage(m, challengeId) {
+async function renderThreadMessage(m, challengeId, profile = null) {
   const row = document.createElement('article');
   row.className = 'challenge-thread-message';
-  const initial = (m.name || 'U').charAt(0).toUpperCase();
+  const resolved = profile || {};
+  const name = resolved.name || m.name || 'User';
+  const avatar = resolved.photoURL
+    ? '<img src="' + esc(resolved.photoURL) + '" alt="" loading="lazy">'
+    : '<span class="challenge-thread-avatar-initial">' + esc(name.charAt(0).toUpperCase()) + '</span>';
   const mine = currentUser && m.uid === currentUser.uid;
   row.innerHTML =
-    '<div class="challenge-thread-avatar">' + esc(initial) + '</div>' +
+    '<a class="challenge-thread-avatar" href="profile.html?uid=' + encodeURIComponent(m.uid || '') + '" aria-label="Open ' + esc(name) + ' profile">' + avatar + '</a>' +
     '<div class="challenge-thread-body">' +
-      '<div class="challenge-thread-meta"><strong>' + esc(m.name || 'User') + '</strong><span>' + esc(formatTime(m.createdAtMs)) + '</span>' +
+      '<div class="challenge-thread-meta"><a class="challenge-thread-author" href="profile.html?uid=' + encodeURIComponent(m.uid || '') + '">' + esc(name) + '</a><span>' + esc(formatTime(m.createdAtMs)) + '</span>' +
       (mine ? '<button type="button" class="thread-message-menu" aria-label="Message options">•••</button>' : '') +
       '</div>' +
       '<p>' + esc(m.text || '') + '</p>' +
@@ -259,7 +263,6 @@ function renderThreadMessage(m, challengeId) {
   }
   return row;
 }
-
 function attachDiscussion(c, card, discussion) {
   const feed = discussion.querySelector('.challenge-thread-feed');
   const input = discussion.querySelector('.challenge-thread-input');
@@ -275,14 +278,18 @@ function attachDiscussion(c, card, discussion) {
   const oldUnsub = threadUnsubs.get(c.id);
   if (oldUnsub) oldUnsub();
 
-  const unsub = onSnapshot(threadQuery, snap => {
+  const unsub = onSnapshot(threadQuery, async snap => {
     const rows = snap.docs.map(d => ({id:d.id, ...d.data()}));
     feed.innerHTML = '';
     if (!rows.length) {
       empty.hidden = false;
     } else {
       empty.hidden = true;
-      rows.forEach(m => feed.appendChild(renderThreadMessage(m, c.id)));
+      const profiles = new Map(await Promise.all(rows.map(async m => [m.uid, await getCachedUser(m.uid).catch(() => null)])));
+      rows.forEach(m => {
+        const row = renderThreadMessage(m, c.id, profiles.get(m.uid));
+        Promise.resolve(row).then(node => feed.appendChild(node));
+      });
     }
     count.textContent = rows.length ? rows.length + ' voices' : 'Be the first voice';
     feed.scrollTop = 0;
