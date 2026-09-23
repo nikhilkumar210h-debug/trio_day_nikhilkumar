@@ -44,7 +44,7 @@ function renderInbox(filter = '') {
   const qText = filter.trim().toLowerCase(); list.innerHTML = '';
   const rows = users
     .filter(u => u.uid && u.uid !== currentUser.uid && conversations.has(u.uid))
-    .filter(u => { const text = `${nameOf(u)} ${u.userId || u.uid} ${previewText(conversations.get(u.uid)?.latest)}`.toLowerCase(); return !qText || text.includes(qText); })
+    .filter(u => { const text = `${nameOf(u)} ${previewText(conversations.get(u.uid)?.latest)}`.toLowerCase(); return !qText || text.includes(qText); })
     .sort((a, b) => (conversations.get(b.uid)?.latest?.createdAtMs || 0) - (conversations.get(a.uid)?.latest?.createdAtMs || 0))
     .slice(0,20);
   const countBadge = $('conversationCount'); if (countBadge) countBadge.textContent = String(rows.length);
@@ -59,8 +59,7 @@ function renderInbox(filter = '') {
       <span class="nkm-chat-meta">
         <span class="nkm-chat-name">${esc(nameOf(peer))}</span>
         <span class="nkm-chat-preview">${esc(previewText(latest) || 'Start conversation')}</span>
-        <span class="nkm-chat-sub"><span>${esc(peer.userId || peer.uid)}</span></span>
-      </span>
+        </span>
       <span class="nkm-chat-time">${esc(timeOf(latest?.createdAtMs))}</span>
       ${unread ? '<span class="nkm-chat-unread" title="New"></span>' : ''}`;
     list.appendChild(row);
