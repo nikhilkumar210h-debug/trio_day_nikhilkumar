@@ -95,3 +95,9 @@
     font-size: 15px;
   }
 }
+/* Trio Day brand system v2 — shared mark replaces legacy glyphs */
+.brand-chakra{position:relative;display:block!important;flex:0 0 36px;width:36px!important;height:36px!important;border-radius:11px!important;background:url('../icons/trio-day-mark.svg') center/cover no-repeat!important;box-shadow:0 7px 22px rgba(99,102,241,.22);font-size:0!important;overflow:hidden}
+.brand-chakra img{display:none!important}
+.brand-copy strong{font-family:Inter,system-ui,sans-serif;font-weight:850;letter-spacing:-.045em}
+.brand-copy small{color:var(--color-ink-dim);font-weight:800}
+@media(max-width:839px){.brand-chakra{flex-basis:32px;width:32px!important;height:32px!important;border-radius:10px!important}.brand-copy strong{font-size:14px!important}}
