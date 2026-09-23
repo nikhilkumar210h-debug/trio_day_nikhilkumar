@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 
 const root = path.resolve(
-  process.env.TRIO_PUBLIC_ROOT || 'C:\\Users\\Nikhil Kumar\\Documents\\trio_day_main\\public'
+  process.env.TRIO_PUBLIC_ROOT || path.join(__dirname, 'public')
 );
 const host = process.env.TRIO_HOST || '127.0.0.1';
 const port = Number(process.env.PORT || 5500);
