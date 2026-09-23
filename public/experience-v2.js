@@ -25,7 +25,7 @@ function addSparkSection(){
  const home=document.querySelector('.nkm-home'),focus=document.getElementById('todayFocus');if(!home||!focus||document.querySelector('.td-v2-section'))return;
  const section=el('section','td-v2-section');section.innerHTML='<div class="td-v2-section-head"><h2>Little things worth doing</h2><span>FRESH MOMENTS</span></div><div class="td-v2-sparks"></div>';
  const grid=section.querySelector('.td-v2-sparks');
- sparks.slice(0,3).forEach((s,idx)=>{const c=el('article','td-v2-spark',\`<b>\${s[0]}</b><strong>\${s[1]}</strong><span>\${s[2]}</span>\`);c.dataset.spark=idx;grid.appendChild(c);});
+ sparks.slice(0,3).forEach((s,idx)=>{const c=el('article','td-v2-spark',`<b>${s[0]}</b><strong>${s[1]}</strong><span>${s[2]}</span>`);c.dataset.spark=idx;grid.appendChild(c);});
  const rail=el('div','td-v2-rail');rail.innerHTML='<span class="td-v2-chip"><b>Today</b> · make one choice</span><span class="td-v2-chip"><b>Explore</b> · meet a new perspective</span><span class="td-v2-chip"><b>Connect</b> · start a conversation</span>';section.appendChild(rail);
  home.insertBefore(section,document.getElementById('continueSection')||null);
 }
