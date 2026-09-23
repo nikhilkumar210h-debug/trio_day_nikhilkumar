@@ -139,6 +139,11 @@ async function openVoterModal(c, group, responses) {
   }
 
   more.onclick = renderBatch;
+  const observer = new IntersectionObserver(entries => {
+    if (entries.some(entry => entry.isIntersecting) && loaded < people.length) renderBatch();
+  }, { root: list, rootMargin: '80px' });
+  observer.observe(more);
+  modal.querySelector('[data-voter-close]').addEventListener('click', () => observer.disconnect(), { once: true });
   await renderBatch();
 }
 
