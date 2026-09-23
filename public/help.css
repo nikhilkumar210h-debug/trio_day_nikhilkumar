@@ -2,3 +2,21 @@
 /* Desktop rail clearance: page-local shell rules load after nav.css. */
 @media(min-width:840px){.help-shell{margin-left:calc(72px + max(16px,(100% - 72px - 1040px)/2) + 24px)!important;margin-right:0!important;width:min(1040px,calc(100% - 72px - 56px))!important;max-width:none;box-sizing:border-box}}
 @media(min-width:1280px){.help-shell{margin-left:calc(240px + max(16px,(100% - 240px - 1040px)/2) + 24px)!important;width:min(1040px,calc(100% - 240px - 56px))!important}}
+
+/* 2026-09-23 — Help Center visual system: follows the active app theme. */
+[data-theme="light"] body.app-page{background:radial-gradient(circle at 8% 0%,rgba(118,87,255,.08),transparent 28%),#f8f8ff;color:#17152c}
+[data-theme="dark"] body.app-page{background:radial-gradient(circle at 8% 0%,rgba(118,87,255,.18),transparent 30%),#090719;color:#f4f2ff}
+[data-theme="light"] .help-hero{background:radial-gradient(circle at 86% 18%,rgba(118,87,255,.18),transparent 34%),linear-gradient(135deg,#ffffff,#f5f2ff 55%,#fff9e8);box-shadow:0 24px 65px rgba(70,50,150,.10)}
+[data-theme="dark"] .help-hero{background:radial-gradient(circle at 86% 18%,rgba(118,87,255,.24),transparent 34%),linear-gradient(135deg,#171238,#0d0a20 60%,#19112f);box-shadow:0 24px 65px rgba(0,0,0,.28)}
+[data-theme="light"] .help-card,[data-theme="light"] .help-wide{background:rgba(255,255,255,.82);box-shadow:0 16px 40px rgba(42,30,100,.08)}
+[data-theme="dark"] .help-card,[data-theme="dark"] .help-wide{background:rgba(23,17,58,.78);box-shadow:0 16px 40px rgba(0,0,0,.22)}
+[data-theme="light"] .help-demo{background:linear-gradient(145deg,#fff,#f6f3ff)}
+[data-theme="dark"] .help-demo{background:linear-gradient(145deg,#201947,#100d25)}
+[data-theme="light"] .help-step-icon{background:#fff}
+[data-theme="dark"] .help-step-icon{background:rgba(255,255,255,.04)}
+[data-theme="light"] .help-orbit{background:rgba(118,87,255,.06)}
+[data-theme="dark"] .help-orbit{background:rgba(255,255,255,.025)}
+.help-hero,.help-card,.help-wide,.help-step-icon,.help-demo,.help-orbit{transition:background .25s ease,border-color .25s ease,box-shadow .25s ease,color .25s ease}
+.header-help-btn{width:38px;height:38px;display:grid;place-items:center;border-radius:12px;border:1px solid var(--color-border);background:var(--color-glass);color:var(--color-ink);text-decoration:none;font-weight:900;font-size:15px;transition:transform .18s,background .18s,border-color .18s}
+.header-help-btn:hover{transform:translateY(-2px);border-color:rgba(118,87,255,.35);background:rgba(118,87,255,.10)}
+@media(max-width:640px){.header-help-btn{width:34px;height:34px;border-radius:10px;font-size:14px}.help-shell{padding-top:14px}.help-hero{padding:21px 18px}.help-path{margin:14px 0}.help-card,.help-wide{padding:14px}}
