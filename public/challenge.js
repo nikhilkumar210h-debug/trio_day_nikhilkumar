@@ -19,7 +19,6 @@ const host = document.getElementById('challengeList');
 let currentUser = null;
 const cards = new Map();
 const threadUnsubs = new Map();
-let currentThreadChallengeId = null;
 
 async function getCounts(id) {
   try {
@@ -79,7 +78,7 @@ function creatorMeta(c) {
     '</div>';
 }
 
-function renderThreadMessage(m) {
+function renderThreadMessage(m, challengeId) {
   const row = document.createElement('article');
   row.className = 'challenge-thread-message';
   const initial = (m.name || 'U').charAt(0).toUpperCase();
@@ -98,7 +97,7 @@ function renderThreadMessage(m) {
       if (!confirm('Delete this comment?')) return;
       menu.disabled = true;
       try {
-        await deleteDoc(doc(db, 'challengeThreads', currentThreadChallengeId, 'messages', m.id));
+        await deleteDoc(doc(db, 'challengeThreads', challengeId, 'messages', m.id));
       } catch (err) {
         console.error('comment delete failed', err);
         menu.disabled = false;
@@ -110,7 +109,6 @@ function renderThreadMessage(m) {
 }
 
 function attachDiscussion(c, card, discussion) {
-  currentThreadChallengeId = c.id;
   const feed = discussion.querySelector('.challenge-thread-feed');
   const input = discussion.querySelector('.challenge-thread-input');
   const send = discussion.querySelector('.challenge-thread-send');
@@ -132,7 +130,7 @@ function attachDiscussion(c, card, discussion) {
       empty.hidden = false;
     } else {
       empty.hidden = true;
-      rows.forEach(m => feed.appendChild(renderThreadMessage(m)));
+      rows.forEach(m => feed.appendChild(renderThreadMessage(m, c.id)));
     }
     count.textContent = rows.length ? rows.length + ' voices' : 'Be the first voice';
     feed.scrollTop = feed.scrollHeight;
