@@ -211,8 +211,10 @@ async function openEdit(u) {
     const out = document.createElement('canvas'); out.width = 640; out.height = 640; const outCtx = out.getContext('2d');
     const size = canvas.width, scale = Math.max(size / image.naturalWidth, size / image.naturalHeight) * crop.zoom;
     const w = image.naturalWidth * scale, h = image.naturalHeight * scale;
-    const sx = (size / 2 - crop.x - (size - w) / 2) / scale, sy = (size / 2 - crop.y - (size - h) / 2) / scale;
-    outCtx.drawImage(image, sx, sy, size / scale, size / scale, 0, 0, 640, 640);
+    const drawX = (size - w) / 2 + crop.x, drawY = (size - h) / 2 + crop.y;
+    const sx = Math.max(0, -drawX / scale), sy = Math.max(0, -drawY / scale);
+    const sw = Math.min(image.naturalWidth - sx, size / scale), sh = Math.min(image.naturalHeight - sy, size / scale);
+    outCtx.drawImage(image, sx, sy, sw, sh, 0, 0, 640, 640);
     out.toBlob(blob => blob ? resolve(new File([blob], 'profile-crop.webp', {type:'image/webp'})) : reject(Error('Could not prepare cropped photo.')), 'image/webp', .9);
   });
 
