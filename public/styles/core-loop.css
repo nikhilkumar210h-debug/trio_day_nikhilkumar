@@ -9,3 +9,7 @@
 .challenge-thread{scroll-margin-top:90px}.challenge-discuss-btn{transition:transform var(--duration-fast) var(--ease-out)}.challenge-discuss-btn:active{transform:scale(.985)}
 [data-theme="light"] .core-loop-continue,[data-theme="light"] .core-loop-discover{background:linear-gradient(135deg,#fff,#f8f7ff);box-shadow:var(--shadow-sm)}[data-theme="light"] .challenge-thread{background:#f8f7ff;border-color:rgba(99,102,241,.16)}[data-theme="light"] .challenge-result{background:rgba(16,185,129,.055);color:#166534}
 @keyframes trio-result-in{from{transform:scaleX(0)}to{transform:scaleX(1)}}@media(max-width:640px){.core-loop-continue,.core-loop-discover{align-items:flex-start;flex-direction:column}.core-loop-discover-actions{width:100%;justify-content:flex-start}.core-loop-discover-actions a{flex:1;text-align:center}.challenge-result .result-bar-row{grid-template-columns:minmax(72px,1fr) 1.2fr auto}}@media(prefers-reduced-motion:reduce){.challenge-result .result-fill{animation:none}}
+/* Global Help Center entry */
+.header-help-btn{width:38px;height:38px;display:grid;place-items:center;border-radius:12px;border:1px solid var(--color-border);background:var(--color-glass);color:var(--color-ink);text-decoration:none;font-weight:900;font-size:15px;transition:transform .18s,background .18s,border-color .18s}
+.header-help-btn:hover{transform:translateY(-2px);border-color:rgba(118,87,255,.35);background:rgba(118,87,255,.10)}
+@media(max-width:640px){.header-help-btn{width:34px;height:34px;border-radius:10px;font-size:14px}}
