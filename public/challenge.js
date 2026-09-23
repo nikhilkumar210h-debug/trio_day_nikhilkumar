@@ -36,8 +36,11 @@ async function getCounts(id) {
 }
 
 function renderAnswerCounts(card, c, counts) {
+  // Keep choice controls clean. Counts belong in the visual community result,
+  // not inside the answer labels.
   card.querySelectorAll('[data-choice]').forEach((x,i) => {
-    x.textContent = c.o[i] + (counts[i] ? ' · ' + counts[i] : '');
+    const label = x.querySelector('span:last-child');
+    if (label) label.textContent = c.o[i];
   });
 }
 
@@ -194,7 +197,6 @@ function addCard(c, autoOpen = false) {
     '<div class="challenge-main-options">' +
       c.o.map((x,i) => '<button type="button" data-choice="' + i + '"><span class="choice-letter">' + String.fromCharCode(65+i) + '</span><span>' + esc(x) + '</span></button>').join('') +
     '</div>' +
-    '<div class="challenge-change-hint">Pick a side — you can change your choice anytime.</div>' +
     '<div class="challenge-result" hidden></div>' +
     '<div class="challenge-links">' +
       '<button type="button" class="nkm-btn nkm-btn--secondary challenge-discuss-btn">💬 Join the discussion</button>' +
@@ -236,8 +238,6 @@ function addCard(c, autoOpen = false) {
         x.disabled = false;
         x.classList.toggle('is-selected', Number(x.dataset.choice) === choice);
       });
-      const changeHint = card.querySelector('.challenge-change-hint');
-      if (changeHint) changeHint.textContent = 'Your choice is saved. You can change it anytime.';
       const counts = await getCounts(c.id);
       renderCommunityResult(result, c, counts, choice);
       renderAnswerCounts(card, c, counts);
