@@ -200,7 +200,6 @@ $('privateForm').addEventListener('submit', async e => {
     await addDoc(collection(db, 'privateChats', chatId(currentUser.uid, activePeer.uid), 'messages'), {
       uid: currentUser.uid,
       name: senderName,
-      userId: me.userId || currentUser.uid,
       text,
       createdAt: now,
       createdAtMs: now
