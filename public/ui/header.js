@@ -69,6 +69,20 @@ export function initHeader() {
     btn.addEventListener('click', () => { location.href = 'search.html'; });
     if (actions) actions.prepend(btn);
   }
+  if (!document.querySelector('link[data-trio-experience-v2]')) {
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'styles/experience-v2.css?v=20260923-v2';
+    link.dataset.trioExperienceV2 = '1';
+    document.head.appendChild(link);
+  }
+  if (!document.querySelector('script[data-trio-experience-v2]')) {
+    const script = document.createElement('script');
+    script.src = 'experience-v2.js?v=20260923-v2';
+    script.dataset.trioExperienceV2 = '1';
+    document.body.appendChild(script);
+  }
+
   if (!document.querySelector('script[data-trio-core-loop]')) {
     const script = document.createElement('script');
     script.type = 'module';
