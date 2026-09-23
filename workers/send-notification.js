@@ -22,7 +22,7 @@ const FIREBASE_PUBLIC_KEYS_URL =
 const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
 const PROJECT_ID = "nkm-ind";
 const ONESIGNAL_API_URL = "https://api.onesignal.com/notifications";
-const APP_BASE = "https://nkm-ind.web.app";
+const APP_BASE = "https://trio-day.trioday-nikhil.workers.dev";
 
 const ALLOWED_NOTIFICATION_TYPES = [
   "like",
