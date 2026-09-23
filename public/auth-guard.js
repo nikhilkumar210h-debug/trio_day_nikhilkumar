@@ -10,6 +10,8 @@ const PUBLIC_PAGES = new Set([
   'privacy-policy.html'
 ]);
 
+const authGateStartedAt = Date.now();
+
 onAuthStateChanged(auth, (user) => {
   const page = (location.pathname.split('/').pop() || 'index.html').toLowerCase();
   if (!user) {
@@ -20,4 +22,12 @@ onAuthStateChanged(auth, (user) => {
     }
   }
   document.documentElement.classList.add('auth-ok');
+  document.documentElement.classList.remove('auth-pending');
 });
+
+
+setTimeout(() => {
+  if (!document.documentElement.classList.contains('auth-ok') && location.pathname.split('/').pop() !== 'login.html') {
+    window.location.href = 'login.html?redirect=' + encodeURIComponent((location.pathname.split('/').pop() || 'index.html') + location.search);
+  }
+}, 15000);
