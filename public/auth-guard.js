@@ -10,8 +10,6 @@ const PUBLIC_PAGES = new Set([
   'privacy-policy.html'
 ]);
 
-const authGateStartedAt = Date.now();
-
 onAuthStateChanged(auth, (user) => {
   const page = (location.pathname.split('/').pop() || 'index.html').toLowerCase();
   if (!user) {
