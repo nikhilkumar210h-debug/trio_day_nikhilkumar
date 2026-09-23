@@ -349,3 +349,16 @@ Limits are intentionally **surface-specific**, not one global number. The next p
 - Private chat no longer displays the permanent Trio UID in conversation rows/header, and new messages no longer write the display-only UID field.
 - Challenge discussion chat was tightened for a smaller, cleaner footprint.
 - Next Challenge now uses a smoother outgoing transition and button sweep/pulse while navigating.
+
+
+### Challenge feed + progressive UX correction — 23 September 2026
+
+- Selecting an answer no longer opens or redirects into discussion/comments.
+- Community results are collapsed by default behind a compact response control with only the two newest voter avatars as a visual peek.
+- Expanding results reveals option-level counts and at most two newest avatars per option; clicking an option's avatar/+N opens the small voter modal with progressive profile loading.
+- Voters are ordered newest-first by `createdAtMs`; public challenge comments are also newest-first.
+- Built-in and community challenges now share one `createdAtMs`-based ordering, so newly created community prompts can appear above older built-ins instead of being forced below them.
+- Next Challenge is now an in-page switch with smooth enter/exit motion; it does not reload the page.
+- Challenge response/profile hydration is now viewport-aware through IntersectionObserver instead of eagerly hydrating every card on first paint.
+- A canonical Trio Day logo loader is shown during page startup and removed after the page load/short safety timeout.
+- The remaining backend optimization to plan next is authoritative challenge response counters; the current voter/count implementation still reads answer documents when a challenge enters the viewport, which is intentionally bounded by viewport hydration but can be further reduced for very high-volume challenges.
