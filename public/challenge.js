@@ -450,20 +450,40 @@ function inputFocusIfNeeded(discussion) {
   setTimeout(() => discussion.querySelector('.challenge-thread-input')?.focus(), 80);
 }
 
-async function hydrateCounts() {
-  for (const [id,{card,c,resultPreview,result}] of cards) {
-    const responses = await getResponses(id);
-    const counts = countsFromResponses(responses);
-    renderAnswerCounts(card,c,counts);
-    const mySnap = currentUser ? await getDoc(doc(db,'challengeAnswers',currentUser.uid + '_' + id)).catch(() => null) : null;
-    const myChoice = mySnap?.exists() ? Number(mySnap.data().choice) : null;
-    renderCommunityResult(result, c, counts, Number.isInteger(myChoice) ? myChoice : null);
-    await renderVoterPeek(result, c, responses);
-    if (Number.isInteger(myChoice)) {
-      card.querySelectorAll('[data-choice]').forEach((x,i) => x.disabled = false);
-      card.querySelectorAll('[data-choice]').forEach((x,i) => x.classList.toggle('is-selected', i === myChoice));
-    }
+const hydratedCards = new Set();
+
+async function hydrateCard(id) {
+  if (hydratedCards.has(id)) return;
+  const entry = cards.get(id);
+  if (!entry) return;
+  hydratedCards.add(id);
+  const {card,c,resultPreview,result} = entry;
+  const responses = await getResponses(id);
+  const counts = countsFromResponses(responses);
+  renderAnswerCounts(card,c,counts);
+  const mySnap = currentUser ? await getDoc(doc(db,'challengeAnswers',currentUser.uid + '_' + id)).catch(() => null) : null;
+  const myChoice = mySnap?.exists() ? Number(mySnap.data().choice) : null;
+  renderCommunityResult(result,c,counts,Number.isInteger(myChoice) ? myChoice : null);
+  await renderResultPreview(resultPreview,c,responses);
+  if (Number.isInteger(myChoice)) {
+    card.querySelectorAll('[data-choice]').forEach((x,i) => x.disabled = false);
+    card.querySelectorAll('[data-choice]').forEach((x,i) => x.classList.toggle('is-selected', i === myChoice));
   }
+}
+
+async function hydrateVisibleCards() {
+  const entries=[...cards.values()];
+  if (!('IntersectionObserver' in window)) {
+    await Promise.all(entries.slice(0,4).map(x => hydrateCard(x.c.id)));
+    return;
+  }
+  const observer=new IntersectionObserver(entries => {
+    entries.filter(e => e.isIntersecting).forEach(e => {
+      observer.unobserve(e.target);
+      hydrateCard(e.target.dataset.challengeId);
+    });
+  }, {rootMargin:'520px 0px'});
+  entries.forEach(({card}) => observer.observe(card));
 }
 
 async function loadCommunityChallenges() {
@@ -499,7 +519,7 @@ async function loadCommunityChallenges() {
       host.insertBefore(heading, host.firstChild);
     }
 
-    await hydrateCounts();
+    await hydrateVisibleCards();
     if (requestedId) {
       const match = [...cards.values()].find(x => x.c.id === requestedId);
       if (match) setTimeout(() => match.card.scrollIntoView({behavior:'smooth', block:'center'}), 100);
@@ -511,14 +531,14 @@ async function loadCommunityChallenges() {
       .slice()
       .sort((a,b) => (Number(b.createdAtMs)||0) - (Number(a.createdAtMs)||0))
       .forEach(c => addCard({...c, creatorName:'Admin', creatorRole:'Admin', creatorUid:''}, false));
-    await hydrateCounts();
+    await hydrateVisibleCards();
   }
 }
 
 
 onAuthStateChanged(auth, u => {
   currentUser = u;
-  if (u) hydrateCounts();
+  if (u) hydrateVisibleCards();
 });
 
 const params = new URLSearchParams(location.search);
