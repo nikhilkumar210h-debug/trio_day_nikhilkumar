@@ -201,17 +201,18 @@
           "order": "ASCENDING"
         }
       ]
-    },
+    }
+  ],
+  "fieldOverrides": [
     {
       "collectionGroup": "members",
-      "queryScope": "COLLECTION_GROUP",
-      "fields": [
+      "fieldPath": "uid",
+      "indexes": [
         {
-          "fieldPath": "uid",
-          "order": "ASCENDING"
+          "order": "ASCENDING",
+          "queryScope": "COLLECTION_GROUP"
         }
       ]
     }
-  ],
-  "fieldOverrides": []
+  ]
 }
