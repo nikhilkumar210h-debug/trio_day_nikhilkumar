@@ -12,15 +12,18 @@
 <header class="topbar"><div class="topbar-inner"><a class="brand" href="all-users.html"><span class="brand-chakra">⚡</span><span class="brand-copy"><strong>trio_day</strong><small>CHALLENGES</small></span></a><div id="authStatus" class="auth-status"></div></div></header>
 <main class="challenge-create">
 <section class="cc-hero"><span class="cc-kicker">CREATE · CHALLENGE</span><h1>Ask something people want to answer.</h1><p>Make a quick choice, give people a reason to respond, and turn the answers into a conversation.</p></section>
-<section class="cc-card">
-<div class="cc-field"><label class="cc-label" for="question">Your question</label><textarea id="question" class="cc-textarea" maxlength="240" placeholder="e.g. You get one free trip tomorrow. Where are you going?"></textarea></div>
+<section class="cc-card cc-builder-card">
+<div class="cc-builder-intro"><span class="cc-builder-icon">✦</span><div><span class="cc-kicker">MOMENT BUILDER</span><strong>Give your idea a shape.</strong><p>Pick a format, add a little twist, and let people play with it.</p></div></div>
+<div class="cc-field"><label class="cc-label" for="format">Moment shape</label><div id="formatPicker" class="cc-format-grid"><button type="button" data-format="quick">⚡<b>Quick Pick</b><small>Fast choice</small></button><button type="button" data-format="rather">↔<b>Would You</b><small>Two sides</small></button><button type="button" data-format="hot">🔥<b>Hot Take</b><small>Agree or disagree</small></button><button type="button" data-format="scenario">✦<b>Scenario</b><small>Imagine it</small></button></div><input type="hidden" id="format" value="quick"></div>
+<div class="cc-field"><label class="cc-label" for="twist">The little twist <span style="opacity:.5">(optional)</span></label><input id="twist" class="cc-input" maxlength="120" placeholder="e.g. You cannot choose the safe option."></div>
+<div class="cc-field"><label class="cc-label" for="question">Your question</label><label class="cc-label" for="question">Your question</label><textarea id="question" class="cc-textarea" maxlength="240" placeholder="e.g. You get one free trip tomorrow. Where are you going?"></textarea></div>
 <div class="cc-field"><label class="cc-label">Answer choices</label><div id="options" class="cc-options"></div><button id="addOption" type="button" class="nkm-btn">+ Add choice</button></div>
 <div class="cc-field"><label class="cc-label" for="topic">Topic <span style="opacity:.5">(optional)</span></label><input id="topic" class="cc-input" maxlength="50" placeholder="Travel, food, tech…"></div>
 <div class="cc-actions"><a class="nkm-btn" href="all-users.html">← Back</a><button id="publish" type="button" class="nkm-btn nkm-btn--primary">Publish Challenge →</button></div>
 <div id="status" class="cc-note" aria-live="polite"></div>
 </section>
-<section class="cc-card"><span class="cc-kicker">LIVE PREVIEW</span><div class="cc-preview" id="preview"><strong>Your question will appear here.</strong></div><p class="cc-note">One question, a few choices, one social moment.</p></section>
+<section class="cc-card"><span class="cc-kicker">LIVE PREVIEW</span><div class="cc-preview" id="preview"><strong>Your question will appear here.</strong></div><p class="cc-note">No correct answer. The fun is in the choice, the split, and what people say next.</p></section>
 </main>
 <nav class="bottom-nav" aria-label="Primary navigation"><div class="nav-row"></div></nav>
-<script type="module" src="auth-guard.js"></script><script type="module" src="auth-ui.js"></script><script type="module" src="theme.js"></script><script type="module" src="ui/header.js"></script><script type="module" src="ui/nav.js?v=20260922-nav7"></script><script type="module" src="challenge-create.js?v=20260922-challenge-create"></script>
+<script type="module" src="auth-guard.js"></script><script type="module" src="auth-ui.js"></script><script type="module" src="theme.js"></script><script type="module" src="ui/header.js"></script><script type="module" src="ui/nav.js?v=20260922-nav7"></script><script type="module" src="challenge-create.js?v=20260923-moment-builder"></script>
 </body></html>
