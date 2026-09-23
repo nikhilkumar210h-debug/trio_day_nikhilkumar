@@ -10,6 +10,19 @@ export function initHeader() {
   const inner = document.querySelector('.topbar-inner');
   if (!topbar || !inner) return;
 
+  // Normalize legacy glyph headers to the canonical Trio Day logo.
+  const brand = inner.querySelector('.brand');
+  const brandMark = brand?.querySelector('.brand-chakra');
+  if (brandMark && !brandMark.querySelector('img')) {
+    brandMark.textContent = '';
+    const logo = document.createElement('img');
+    logo.src = 'icons/trio-day-logo.svg';
+    logo.alt = '';
+    logo.width = 32;
+    logo.height = 32;
+    brandMark.appendChild(logo);
+  }
+
   // Normalise legacy pages that put #authStatus directly in .topbar-inner.
   // The global header CSS expects .topbar-actions on every authenticated page.
   let actions = inner.querySelector('.topbar-actions');
