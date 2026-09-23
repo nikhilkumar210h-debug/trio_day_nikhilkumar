@@ -9,7 +9,15 @@ import { makeUserId } from './utils.js';
 const $ = id => document.getElementById(id);
 const statusEl = $('authFormStatus');
 const params = new URLSearchParams(location.search);
-const redirectTo = params.get('redirect') || 'index.html';
+const requestedRedirect = params.get('redirect') || 'index.html';
+const redirectTo = (() => {
+  try {
+    const url = new URL(requestedRedirect, location.href);
+    return url.origin === location.origin ? (url.pathname.replace(/^\//, '') + url.search + url.hash) : 'index.html';
+  } catch {
+    return 'index.html';
+  }
+})();
 const urlMode = params.get('mode');
 const isResetMode = urlMode === 'reset';
 let mode = 'login';
@@ -141,61 +149,69 @@ async function handleGoogle() {
 }
 
 async function loginWithTrioUid(trioUid, password) {
-  // Resolve the public Trio UID server-side. The browser never receives the
-  // account email; the backend verifies the password and returns a custom token.
+  // Firebase Callable is the primary UID-login path because it is part of the
+  // same Firebase project as Auth. Render remains a resilience fallback.
+  const [{ getFunctions, httpsCallable }, { app }] = await Promise.all([
+    import('https://www.gstatic.com/firebasejs/10.13.0/firebase-functions.js'),
+    import('./firebase-auth.js')
+  ]);
+
+  let firebaseError = null;
+  try {
+    const functions = getFunctions(app, 'us-central1');
+    const callable = httpsCallable(functions, 'signInWithTrioUid');
+    const result = await Promise.race([
+      callable({ trioUid, password }),
+      new Promise((_, reject) => setTimeout(() => {
+        const error = new Error('UID login service timed out.');
+        error.code = 'auth/api-timeout';
+        reject(error);
+      }, 8000))
+    ]);
+    const customToken = result?.data?.customToken;
+    if (!customToken) throw new Error('UID login service returned an invalid response.');
+    return signInWithCustomToken(auth, customToken);
+  } catch (error) {
+    firebaseError = error;
+    if (error?.code === 'functions/unauthenticated') {
+      const invalid = new Error('Invalid Trio UID or password.');
+      invalid.code = 'auth/invalid-credential';
+      throw invalid;
+    }
+  }
+
   const apiBase = window.TRIO_API_BASE_URL ||
     (location.hostname === '127.0.0.1' || location.hostname === 'localhost'
       ? 'http://127.0.0.1:5000'
       : 'https://trio-day-api.onrender.com');
 
-  let primaryError = null;
-
   try {
-    const response = await fetch(apiBase + '/api/auth/trio-uid', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ trioUid, password })
-    });
-
-    const data = await response.json().catch(() => ({}));
-    if (response.ok) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 8000);
+    try {
+      const response = await fetch(apiBase + '/api/auth/trio-uid', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ trioUid, password }),
+        signal: controller.signal
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        const error = new Error(data.error || 'Unable to sign in with Trio UID.');
+        error.code = response.status === 401 ? 'auth/invalid-credential' : 'auth/api-error';
+        throw error;
+      }
       if (!data.customToken) throw new Error('UID login service returned an invalid response.');
       return signInWithCustomToken(auth, data.customToken);
+    } finally {
+      clearTimeout(timer);
     }
-
-    const error = new Error(data.error || 'Unable to sign in with Trio UID.');
-    error.code = response.status === 401 ? 'auth/invalid-credential' : 'auth/api-error';
-    if (response.status < 500) throw error;
-    primaryError = error;
   } catch (error) {
     if (error?.code === 'auth/invalid-credential') throw error;
-    primaryError = error;
-  }
-
-  // Resilience fallback: the repository also ships a Firebase callable with
-  // the same server-side UID resolution. If the Render API is unavailable,
-  // use the Firebase function instead.
-  try {
-    const [{ getFunctions, httpsCallable }, { app }] = await Promise.all([
-      import('https://www.gstatic.com/firebasejs/10.13.0/firebase-functions.js'),
-      import('./firebase-auth.js')
-    ]);
-    const functions = getFunctions(app, 'us-central1');
-    const callable = httpsCallable(functions, 'signInWithTrioUid');
-    const result = await callable({ trioUid, password });
-    const customToken = result?.data?.customToken;
-    if (!customToken) throw new Error('UID login service returned an invalid response.');
-    return signInWithCustomToken(auth, customToken);
-  } catch (fallbackError) {
-    if (fallbackError?.code === 'functions/unauthenticated') {
-      const error = new Error('Invalid Trio UID or password.');
-      error.code = 'auth/invalid-credential';
-      throw error;
-    }
-    if (primaryError?.code === 'auth/invalid-credential') throw primaryError;
-    const error = new Error('Trio UID login service is temporarily unavailable.');
-    error.code = 'auth/api-error';
-    throw error;
+    if (firebaseError?.code === 'auth/invalid-credential') throw firebaseError;
+    const unavailable = new Error('Trio UID login service is temporarily unavailable. Try again in a moment.');
+    unavailable.code = 'auth/api-error';
+    throw unavailable;
   }
 }
 
@@ -280,16 +296,25 @@ $('emailForm')?.addEventListener('submit', async event => {
 
   setBusy(true, mode === 'signup' ? 'Creating…' : 'Signing in…');
   try {
+    let signedInUser;
     if (mode === 'signup') {
       const c = await createUserWithEmailAndPassword(auth, email, password);
+      signedInUser = c.user;
       if (name) await updateProfile(c.user, { displayName: name });
-      await saveUserProfile(c.user, name);
     } else if (loginMethod === 'uid') {
       const c = await loginWithTrioUid(trioUid, password);
-      await saveUserProfile(c.user);
+      signedInUser = c.user;
     } else {
       const c = await signInWithEmailAndPassword(auth, email, password);
-      await saveUserProfile(c.user);
+      signedInUser = c.user;
+    }
+
+    // Authentication success must never be held hostage by a secondary
+    // profile-sync write. The auth listener will redirect after sign-in.
+    try {
+      await saveUserProfile(signedInUser, mode === 'signup' ? name : '');
+    } catch (profileError) {
+      console.warn('[Auth] profile sync failed after successful sign-in:', profileError);
     }
     status('Success. Redirecting…');
   } catch (e) {
