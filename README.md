@@ -339,3 +339,13 @@ Limits are intentionally **surface-specific**, not one global number. The next p
 - Choosing an answer no longer automatically opens/focuses the discussion. **Join the discussion** is an explicit action.
 - Discussion UI is intentionally smaller/denser and the Next Challenge transition now uses a short exit animation before navigation.
 - Removed visible Trio UID/ID from Chat inbox rows, private-chat header, and Chat search copy. Internal UID fields remain in data/URLs where required for routing and Firestore identity.
+
+
+### Challenge interaction correction — 23 September 2026
+
+- Removed the separate **Who chose what** panel; voter avatars now live inside each existing community-result row.
+- Each option shows a maximum of two small overlapping avatars plus a compact +N control; clicking opens the small scrollable voter window.
+- Challenge navigation no longer auto-opens discussion. **Join the discussion** is an explicit user action.
+- Private chat no longer displays the permanent Trio UID in conversation rows/header, and new messages no longer write the display-only UID field.
+- Challenge discussion chat was tightened for a smaller, cleaner footprint.
+- Next Challenge now uses a smoother outgoing transition and button sweep/pulse while navigating.
