@@ -182,12 +182,17 @@ function addCard(c, autoOpen = false) {
     ? CHALLENGES[(currentIndex + 1) % CHALLENGES.length]
     : CHALLENGES[0];
 
+  const formatLabels = {quick:'⚡ QUICK PICK',rather:'↔ WOULD YOU',hot:'🔥 HOT TAKE',scenario:'✦ SCENARIO'};
+  const format = c.format || 'quick';
+  const twist = c.twist || '';
   card.innerHTML =
-    '<span class="challenge-tag">' + esc(c.tag || 'COMMUNITY') + '</span>' +
+    '<div class="challenge-moment-head"><span class="challenge-tag">' + esc(c.tag || 'COMMUNITY') + '</span><span class="challenge-format">' + esc(formatLabels[format] || '⚡ QUICK PICK') + '</span></div>' +
     '<h2>' + esc(c.q) + '</h2>' +
+    (twist ? '<div class="challenge-twist">✦ ' + esc(twist) + '</div>' : '') +
+    '<div class="challenge-no-right">No right answer · pick your side</div>' +
     creatorMeta(c) +
     '<div class="challenge-main-options">' +
-      c.o.map((x,i) => '<button type="button" data-choice="' + i + '">' + esc(x) + '</button>').join('') +
+      c.o.map((x,i) => '<button type="button" data-choice="' + i + '"><span class="choice-letter">' + String.fromCharCode(65+i) + '</span><span>' + esc(x) + '</span></button>').join('') +
     '</div>' +
     '<div class="challenge-result" hidden></div>' +
     '<div class="challenge-links">' +
@@ -299,7 +304,9 @@ async function loadCommunityChallenges() {
         o:t.interaction.options,
         creatorUid:t.creatorUid || '',
         creatorName:t.creatorName || 'Admin',
-        creatorRole:t.creatorRole || (t.creatorUid ? 'Member' : 'Admin')
+        creatorRole:t.creatorRole || (t.creatorUid ? 'Member' : 'Admin'),
+        format:t.interaction.format || 'quick',
+        twist:t.interaction.twist || ''
       }, requestedId === t.id));
     }
     await hydrateCounts();
