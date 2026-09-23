@@ -467,13 +467,8 @@ CHALLENGES.forEach(c => addCard({
   creatorUid:''
 }, requestedId === c.id && requestedDiscussion));
 loadCommunityChallenges().then(() => {
-  if (requestedId && cards.has(requestedId)) return;
   if (requestedId) {
     const match = [...cards.values()].find(x => x.c.id === requestedId);
-    if (match) {
-      match.discussion.hidden = false;
-      attachDiscussion(match.c, match.card, match.discussion);
-      setTimeout(() => match.card.scrollIntoView({behavior:'smooth', block:'center'}), 80);
-    }
+    if (match) setTimeout(() => match.card.scrollIntoView({behavior:'smooth', block:'center'}), 80);
   }
 });
