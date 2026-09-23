@@ -72,6 +72,18 @@ export function initHeader() {
     if (actions && authStatus) actions.insertBefore(themeBtn, authStatus); else if (actions) actions.prepend(themeBtn);
   }
 
+  // Help is a first-class global destination; keep it reachable on every page.
+  if (!document.querySelector('#headerHelpBtn')) {
+    const help = document.createElement('a');
+    help.id = 'headerHelpBtn';
+    help.className = 'header-help-btn';
+    help.href = 'help.html';
+    help.setAttribute('aria-label', 'Help Center');
+    help.title = 'Help Center';
+    help.textContent = '?';
+    if (actions) actions.insertBefore(help, actions.querySelector('#headerThemeBtn') || actions.firstChild);
+  }
+
   // Mobile search button (opens search page)
   if (!document.querySelector('.nkm-header-search-btn')) {
     const btn = document.createElement('button');
