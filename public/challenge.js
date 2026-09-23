@@ -41,6 +41,24 @@ function renderAnswerCounts(card, c, counts) {
   });
 }
 
+function renderCommunityResult(result, c, counts, selectedChoice) {
+  const total = Object.values(counts).reduce((a,b) => a + b, 0);
+  const safeTotal = Math.max(1, total);
+  const same = counts[selectedChoice] || 1;
+  const enoughForPercent = total >= 5;
+  const rows = c.o.map((label, index) => {
+    const count = counts[index] || 0;
+    const pct = Math.round((count / safeTotal) * 100);
+    const value = enoughForPercent ? pct + '%' : count + (count === 1 ? ' person' : ' people');
+    return '<div class="result-bar-row"><span class="result-bar-label">' + esc(label) + '</span><span class="result-track"><span class="result-fill" style="width:' + Math.max(2, pct) + '%"></span></span><span class="result-bar-value">' + value + '</span></div>';
+  }).join('');
+  result.hidden = false;
+  result.innerHTML =
+    '<div class="result-summary"><strong>' + same + ' ' + (same === 1 ? 'person' : 'people') + ' chose your answer</strong><span>' +
+      total + ' total response' + (total === 1 ? '' : 's') + (enoughForPercent ? ' · community split' : '') +
+    '</span></div><div class="result-bars">' + rows + '</div>';
+}
+
 function formatTime(ms) {
   if (!ms) return '';
   return new Date(ms).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
@@ -191,12 +209,12 @@ function addCard(c, autoOpen = false) {
         console.warn('[Challenge] gamification sync failed:', gamErr);
       }
 
-      card.querySelectorAll('[data-choice]').forEach(x => x.disabled = true);
+      card.querySelectorAll('[data-choice]').forEach(x => {
+        x.disabled = true;
+        x.classList.toggle('is-selected', Number(x.dataset.choice) === choice);
+      });
       const counts = await getCounts(c.id);
-      const total = Object.values(counts).reduce((a,b) => a+b, 0);
-      const same = counts[choice] || 1;
-      result.hidden = false;
-      result.innerHTML = '<strong>' + same + ' people</strong> chose this answer · ' + total + ' total response' + (total === 1 ? '' : 's');
+      renderCommunityResult(result, c, counts, choice);
       renderAnswerCounts(card, c, counts);
       discussion.hidden = false;
       discussBtn.textContent = '💬 Discussion open';
@@ -240,9 +258,8 @@ async function hydrateCounts() {
       card.querySelectorAll('[data-choice]').forEach((x,i) => x.disabled = true);
       const result = card.querySelector('.challenge-result');
       if (result) {
-        const total = Object.values(counts).reduce((a,b) => a+b, 0);
-        result.hidden = false;
-        result.innerHTML = '<strong>' + (counts[myChoice] || 1) + ' people</strong> chose this answer · ' + total + ' total response' + (total === 1 ? '' : 's');
+        card.querySelectorAll('[data-choice]').forEach((x,i) => x.classList.toggle('is-selected', i === myChoice));
+        renderCommunityResult(result, c, counts, myChoice);
       }
     }
   }
