@@ -707,6 +707,7 @@ const storyOverlay = $('storyOverlay'), storyForm = $('storyForm'), storyMessage
 
 let selectedFile = null;
 let selectedPreviewUrl = null;
+let overlayFileMeta = null;
 
 function setStoryStatus(t = '', err = false) {
   if (storyStatus) {
@@ -731,6 +732,7 @@ function closeStoryModal() {
   storyForm?.reset();
   storyPreview.hidden = true;
   storyPreview.innerHTML = '';
+  overlayFileMeta?.remove(); overlayFileMeta = null;
   selectedFile = null;
   if (selectedPreviewUrl) {
     URL.revokeObjectURL(selectedPreviewUrl);
@@ -799,9 +801,14 @@ storyMedia?.addEventListener('change', () => {
     setStoryStatus('');
   }
   const rm = document.createElement('button'); rm.type='button'; rm.className='preview-remove'; rm.textContent='×'; rm.title='Remove';
-  rm.addEventListener('click', ()=>{ storyPreview.innerHTML=''; storyPreview.hidden=true; selectedFile=null; storyMedia.value=''; if (selectedPreviewUrl) { URL.revokeObjectURL(selectedPreviewUrl); selectedPreviewUrl=null; } const ed=$('storyEditor'); if(ed) ed.hidden=true; editorState.originalImage=null; editorState.textOverlays=[]; editorState.stickers=[]; storyOverlay?.classList.remove('is-fullscreen'); setStoryStatus(''); });
+  rm.addEventListener('click', ()=>{ storyPreview.innerHTML=''; storyPreview.hidden=true; overlayFileMeta?.remove(); overlayFileMeta=null; selectedFile=null; storyMedia.value=''; if (selectedPreviewUrl) { URL.revokeObjectURL(selectedPreviewUrl); selectedPreviewUrl=null; } const ed=$('storyEditor'); if(ed) ed.hidden=true; editorState.originalImage=null; editorState.textOverlays=[]; editorState.stickers=[]; storyOverlay?.classList.remove('is-fullscreen'); setStoryStatus(''); });
   storyPreview.appendChild(rm);
   storyPreview.hidden = false;
+  overlayFileMeta?.remove();
+  overlayFileMeta = document.createElement('div');
+  overlayFileMeta.className = 'story-file-meta';
+  overlayFileMeta.innerHTML = '<span><strong>' + escapeHtml(f.name) + '</strong><small>' + (f.type.startsWith('video/') ? 'Video' : 'Photo') + ' · ' + (Math.max(1, f.size / 1024 / 1024)).toFixed(1) + ' MB</small></span><label for="storyMedia">Change</label>';
+  storyPreview.insertAdjacentElement('afterend', overlayFileMeta);
 });
 
 // ── Story Editor ──────────────────────────────────────────────
