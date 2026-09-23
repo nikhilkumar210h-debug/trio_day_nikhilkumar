@@ -237,3 +237,52 @@ On the challenge surface:
 - Users can delete their own discussion comments through the message menu
 
 The Firestore rules already permit an authenticated user to delete only their own challenge discussion message; no rule relaxation was required for this feature.
+
+## Audit — 23 September 2026
+
+A local browser pass was run against the current branch across the main product routes: Today, Discover, Challenge, Create Challenge, Chat, You, Search, Help, Privacy and Login. Authentication, Firestore rules, Firebase initialization, the UID-login callable and the local server were also reviewed.
+
+### Bugs found and fixed in this pass
+
+1. **Challenge answer controls had unnecessary copy.**
+   - Removed the persistent "Your choice is saved..." message.
+   - Choice buttons no longer show response counts inside the answer label; counts belong in the result visualization.
+   - Choices remain editable.
+
+2. **Trio UID login could appear stuck.**
+   - The previous flow tried the Render UID endpoint first without a request timeout.
+   - A slow/cold/unavailable Render service could hold the login state in "Signing in…" before the Firebase fallback was reached.
+   - Firebase Callable `signInWithTrioUid` is now the primary path with an 8-second timeout.
+   - Render remains a timed fallback.
+   - Successful Firebase authentication no longer gets treated as a failed login merely because the secondary Firestore profile-sync write fails.
+   - Redirect targets are restricted to the current origin.
+
+3. **Legacy headers were still showing glyphs instead of the current logo.**
+   - The shared header now normalizes legacy brand marks to `public/icons/trio-day-logo.svg`.
+
+4. **Help Center was describing retired Forge / Room / Puzzle / Build / Learn / Game systems.**
+   - Rewritten around the current Challenge → Compare → Discuss product loop.
+
+5. **Privacy page contained retired product concepts.**
+   - Updated to describe the current Account, Challenges, Stories, Private Chat and Progress model.
+
+6. **Earlier Today/Create regressions were also verified during this audit.**
+   - Today live moments render instead of remaining blank skeletons.
+   - Create Challenge has a single "Your question" field.
+   - Moment Builder formats and optional twists remain available.
+
+### Login architecture
+
+Trio UID authentication now follows:
+
+Trio UID + password → Firebase Callable → Firebase custom token → Firebase Auth
+
+If the Callable is unavailable, the Render endpoint is attempted as a bounded fallback. Email/password and Google authentication remain separate Firebase Auth paths.
+
+A successful Firebase Auth session is no longer blocked by non-critical profile synchronization.
+
+### Audit limitation
+
+The branch contains a large pre-existing history and many legacy/support files. GitHub currently reports the branch as substantially ahead of master. The audit focused on the current application routes and the source files that control authentication, navigation, challenges, creation, data rules and the current product surfaces. Legacy snapshots are not treated as active product routes.
+
+No merge to master and no production deployment was performed during this audit.
