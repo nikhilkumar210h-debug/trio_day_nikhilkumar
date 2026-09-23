@@ -178,3 +178,38 @@ Recommended review path:
 The latest Experience V2 commits are intentionally small and reviewable. They add the visual system, the living Today layer, the new brand assets, and the README documentation without merging into `master`.
 
 > Production deployment is intentionally unchanged until this branch has been reviewed and tested.
+
+## Experience V3 — actual product redesign
+
+The latest iteration is a structural product pass, not only a visual polish layer.
+
+### Today
+- Treats Today as a living home instead of a static dashboard.
+- Strong visual moment/hero area.
+- Daily choice remains the primary interaction.
+- Fresh community moments and next actions create reasons to return.
+- People, chat and journey paths are visible as part of the same loop.
+
+### Challenge
+- Reframed around **Choose → Compare → Discuss**.
+- The question and choices are the primary visual object.
+- Choice cards have larger touch targets and stronger selected/hover states.
+- Community results and discussion are visually connected to the choice.
+- Desktop uses a richer two-column card rhythm; mobile collapses to one column.
+
+### Discover
+- Removed the visually disconnected dark hero treatment from the light experience.
+- Uses the Trio Day light visual language: lavender, white, violet and warm accent.
+- Discovery lanes are presented as interactive visual cards.
+
+### Chat
+- Adds a Trio-native “shared moment” entry point so Chat connects back to Challenges.
+- Conversation rows receive stronger hierarchy, avatars and interaction states.
+- The goal is not to copy a generic messenger; it is to turn shared choices into conversations.
+
+### Brand
+- New purple/yellow lightning mark and wordmark assets are available under `public/icons/`.
+- Shared header branding uses the same mark.
+
+### Safety of the rollout
+All V3 changes remain on `feature/trio-day-core-loop-v1`. No merge or production deployment is part of this pass.
