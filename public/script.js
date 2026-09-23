@@ -160,6 +160,7 @@ async function renderStoryStrip(uid) {
         collection(db, 'posts'),
         where('type', '==', 'story'),
         where('isStory', '==', true),
+        where('privacy', '==', 'friends'),
         where('allowedUids', 'array-contains', uid),
         where('expiresAtMs', '>', now),
         limit(50)
