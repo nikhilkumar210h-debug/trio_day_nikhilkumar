@@ -9,10 +9,10 @@ import { workerPost } from './gamification/worker-config.js';
 import { getCachedUser } from './services/userCache.js';
 
 const CHALLENGES = [
-  {id:'trip', tag:'CHOICE', q:'You get one free trip tomorrow. Where are you going?', o:['Japan 🇯🇵','Switzerland 🇨🇭','Somewhere unexpected 🌍']},
-  {id:'hour', tag:'MOOD', q:'You have one free hour tonight. What sounds better?', o:['Talk to someone 💬','Play something 🎮','Learn something 🧠']},
-  {id:'weekend', tag:'MAKE', q:'You have one weekend to make something. What do you pick?', o:['An app 💻','A game 🎮','Something useful 🛠️']},
-  {id:'food', tag:'LIFE', q:'Pick one forever.', o:['Street food 🌮','Home food 🍲','Restaurant food 🍽️']}
+  {id:'trip', tag:'CHOICE', q:'You get one free trip tomorrow. Where are you going?', o:['Japan 🇯🇵','Switzerland 🇨🇭','Somewhere unexpected 🌍'], createdAtMs:1790121600000},
+  {id:'hour', tag:'MOOD', q:'You have one free hour tonight. What sounds better?', o:['Talk to someone 💬','Play something 🎮','Learn something 🧠'], createdAtMs:1790035200000},
+  {id:'weekend', tag:'MAKE', q:'You have one weekend to make something. What do you pick?', o:['An app 💻','A game 🎮','Something useful 🛠️'], createdAtMs:1789948800000},
+  {id:'food', tag:'LIFE', q:'Pick one forever.', o:['Street food 🌮','Home food 🍲','Restaurant food 🍽️'], createdAtMs:1789862400000}
 ];
 
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -24,7 +24,8 @@ const threadUnsubs = new Map();
 async function getResponses(id) {
   try {
     const snap = await getDocs(query(collection(db,'challengeAnswers'), where('challengeId','==',id)));
-    return snap.docs.map(d => ({ id:d.id, ...d.data() }));
+    return snap.docs.map(d => ({ id:d.id, ...d.data() }))
+      .sort((a,b) => (Number(b.createdAtMs)||0) - (Number(a.createdAtMs)||0));
   } catch (err) {
     console.warn('challenge responses unavailable', err);
     return [];
@@ -65,14 +66,32 @@ function renderCommunityResult(result, c, counts, selectedChoice) {
       '<span class="result-bar-value">' + value + '</span>' +
     '</div>';
   }).join('');
-  result.hidden = false;
   result.innerHTML =
     '<div class="result-summary"><strong>' +
       (Number.isInteger(selectedChoice) ? same + ' ' + (same === 1 ? 'person' : 'people') + ' chose your answer' : 'Community choices') +
     '</strong><span>' +
       total + ' total response' + (total === 1 ? '' : 's') + (enoughForPercent ? ' · community split' : '') +
     '</span></div><div class="result-bars">' + rows + '</div>';
+  result.hidden = true;
 }
+
+async function renderResultPreview(preview, c, responses) {
+  const latest = responses.slice(0, 2);
+  const avatars = await loadProfilesForPeople(latest, latest.length);
+  preview.innerHTML =
+    '<span class="challenge-result-preview-label">' + responses.length + ' ' + (responses.length === 1 ? 'response' : 'responses') + '</span>' +
+    '<span class="challenge-result-preview-avatars">' +
+      latest.map(r => {
+        const u = avatars.get(r.uid) || {};
+        const name = u.name || 'Trio member';
+        return '<span class="challenge-result-preview-avatar" title="' + esc(name) + '">' + avatarMarkup(u, name) + '</span>';
+      }).join('') +
+    '</span>' +
+    '<span class="challenge-result-preview-arrow">⌄</span>';
+  preview.hidden = false;
+}
+
+
 async function loadProfilesForPeople(people, count = 2) {
   const visible = people.slice(0, count);
   const entries = await Promise.all(visible.map(async r => [r.uid, await getCachedUser(r.uid).catch(() => null)]));
@@ -114,7 +133,8 @@ async function openVoterModal(c, group, responses) {
   const more = modal.querySelector('#challengeVoterLoadMore');
   const title = modal.querySelector('#challengeVoterModalTitle');
   const meta = modal.querySelector('#challengeVoterModalMeta');
-  const people = responses.filter(r => Number(r.choice) === group.index);
+  const people = responses.filter(r => Number(r.choice) === group.index)
+    .sort((a,b) => (Number(b.createdAtMs)||0) - (Number(a.createdAtMs)||0));
   let loaded = 0;
   const batch = 12;
   const cache = new Map();
@@ -256,7 +276,7 @@ function attachDiscussion(c, card, discussion) {
   if (oldUnsub) oldUnsub();
 
   const unsub = onSnapshot(threadQuery, snap => {
-    const rows = snap.docs.map(d => ({id:d.id, ...d.data()})).reverse();
+    const rows = snap.docs.map(d => ({id:d.id, ...d.data()}));
     feed.innerHTML = '';
     if (!rows.length) {
       empty.hidden = false;
@@ -265,7 +285,7 @@ function attachDiscussion(c, card, discussion) {
       rows.forEach(m => feed.appendChild(renderThreadMessage(m, c.id)));
     }
     count.textContent = rows.length ? rows.length + ' voices' : 'Be the first voice';
-    feed.scrollTop = feed.scrollHeight;
+    feed.scrollTop = 0;
   }, err => {
     console.warn('challenge discussion unavailable', err);
     empty.hidden = false;
@@ -326,6 +346,7 @@ function addCard(c, autoOpen = false) {
     '<div class="challenge-main-options">' +
       c.o.map((x,i) => '<button type="button" data-choice="' + i + '"><span class="choice-letter">' + String.fromCharCode(65+i) + '</span><span>' + esc(x) + '</span></button>').join('') +
     '</div>' +
+    '<button type="button" class="challenge-result-preview" hidden aria-expanded="false"></button>' +
     '<div class="challenge-result" hidden></div>' +
     '<div class="challenge-links">' +
       '<button type="button" class="nkm-btn nkm-btn--secondary challenge-discuss-btn">💬 Join the discussion</button>' +
@@ -338,10 +359,11 @@ function addCard(c, autoOpen = false) {
       '<div class="challenge-thread-compose"><input class="challenge-thread-input" maxlength="280" placeholder="Why did you pick that?"><button type="button" class="nkm-btn nkm-btn--primary challenge-thread-send">Send</button></div>' +
     '</section>';
 
+  const resultPreview = card.querySelector('.challenge-result-preview');
   const result = card.querySelector('.challenge-result');
   const discussion = card.querySelector('.challenge-thread');
   const discussBtn = card.querySelector('.challenge-discuss-btn');
-  cards.set(c.id, {card, result, discussion, c});
+  cards.set(c.id, {card, resultPreview, result, discussion, c});
 
   card.querySelectorAll('[data-choice]').forEach(btn => btn.addEventListener('click', async () => {
     if (!currentUser) return;
@@ -371,7 +393,7 @@ function addCard(c, autoOpen = false) {
       const counts = countsFromResponses(responses);
       renderCommunityResult(result, c, counts, choice);
       renderAnswerCounts(card, c, counts);
-      await renderVoterPeek(result, c, responses);
+      await renderResultPreview(resultPreview, c, responses);
     } catch (err) {
       console.error(err);
       result.hidden = false;
@@ -381,9 +403,35 @@ function addCard(c, autoOpen = false) {
 
   card.querySelector('.challenge-next-btn')?.addEventListener('click', e => {
     e.preventDefault();
-    const href = e.currentTarget.href;
+    const ordered = [...cards.values()];
+    const currentPos = ordered.findIndex(x => x.card === card);
+    const next = ordered[(currentPos + 1) % ordered.length];
+    if (!next || next.card === card) return;
+    card.classList.remove('challenge-switching-in');
     card.classList.add('challenge-switching-out');
-    setTimeout(() => { window.location.href = href; }, 220);
+    next.card.classList.remove('challenge-switching-out');
+    next.card.classList.add('challenge-switching-in');
+    setTimeout(() => {
+      card.classList.remove('challenge-switching-out');
+      next.card.scrollIntoView({behavior:'smooth', block:'center'});
+      setTimeout(() => next.card.classList.remove('challenge-switching-in'), 520);
+    }, 260);
+  });
+
+  resultPreview.addEventListener('click', async () => {
+    const expanded = !result.hidden;
+    result.hidden = expanded;
+    resultPreview.setAttribute('aria-expanded', String(!expanded));
+    resultPreview.classList.toggle('is-open', !expanded);
+    if (!expanded) {
+      const responses = await getResponses(c.id);
+      const counts = countsFromResponses(responses);
+      const mySnap = currentUser ? await getDoc(doc(db,'challengeAnswers',currentUser.uid + '_' + c.id)).catch(() => null) : null;
+      const myChoice = mySnap?.exists() ? Number(mySnap.data().choice) : null;
+      renderCommunityResult(result, c, counts, Number.isInteger(myChoice) ? myChoice : null);
+      result.hidden = false;
+      await renderVoterPeek(result, c, responses);
+    }
   });
 
   discussBtn.addEventListener('click', () => {
@@ -395,12 +443,6 @@ function addCard(c, autoOpen = false) {
     }
   });
 
-  if (autoOpen) {
-    discussion.hidden = false;
-    attachDiscussion(c, card, discussion);
-    setTimeout(() => card.scrollIntoView({behavior:'smooth', block:'center'}), 60);
-  }
-
   host?.appendChild(card);
 }
 
@@ -409,7 +451,7 @@ function inputFocusIfNeeded(discussion) {
 }
 
 async function hydrateCounts() {
-  for (const [id,{card,c,result}] of cards) {
+  for (const [id,{card,c,resultPreview,result}] of cards) {
     const responses = await getResponses(id);
     const counts = countsFromResponses(responses);
     renderAnswerCounts(card,c,counts);
@@ -427,30 +469,52 @@ async function hydrateCounts() {
 async function loadCommunityChallenges() {
   if (!host) return;
   try {
-    const tasks = await listCommunityTasks({kind:'challenge',status:'active',max:12});
-    const custom = tasks.filter(t => t.interaction?.kind === 'choice' && t.interaction?.question && Array.isArray(t.interaction?.options));
+    const tasks = await listCommunityTasks({kind:'challenge',status:'active',max:24});
+    const custom = tasks
+      .filter(t => t.interaction?.kind === 'choice' && t.interaction?.question && Array.isArray(t.interaction?.options))
+      .map(t => ({
+        id:t.id, tag:'COMMUNITY', q:t.interaction.question, o:t.interaction.options,
+        creatorUid:t.creatorUid || '', creatorName:t.creatorName || 'Admin',
+        creatorRole:t.creatorRole || (t.creatorUid ? 'Member' : 'Admin'),
+        format:t.interaction.format || 'quick', twist:t.interaction.twist || '',
+        createdAtMs:Number(t.createdAtMs || t.createdAt?.toMillis?.() || 0)
+      }));
+
+    const builtIns = CHALLENGES.map(c => ({...c, creatorName:'Admin', creatorRole:'Admin', creatorUid:''}));
+    const all = [...builtIns, ...custom].sort((a,b) =>
+      (Number(b.createdAtMs)||0) - (Number(a.createdAtMs)||0)
+    );
+
+    const seen = new Set();
+    all.forEach(c => {
+      if (seen.has(c.id)) return;
+      seen.add(c.id);
+      addCard(c, false);
+    });
+
     if (custom.length) {
       const heading = document.createElement('div');
       heading.className = 'challenge-community-heading';
       heading.innerHTML = '<span class="challenge-tag">COMMUNITY</span><h2>Questions from people</h2><p>Real prompts created by the community. Pick, compare and talk in public.</p>';
-      host.appendChild(heading);
-      custom.forEach(t => addCard({
-        id:t.id,
-        tag:'COMMUNITY',
-        q:t.interaction.question,
-        o:t.interaction.options,
-        creatorUid:t.creatorUid || '',
-        creatorName:t.creatorName || 'Admin',
-        creatorRole:t.creatorRole || (t.creatorUid ? 'Member' : 'Admin'),
-        format:t.interaction.format || 'quick',
-        twist:t.interaction.twist || ''
-      }, requestedId === t.id && requestedDiscussion));
+      host.insertBefore(heading, host.firstChild);
     }
+
     await hydrateCounts();
+    if (requestedId) {
+      const match = [...cards.values()].find(x => x.c.id === requestedId);
+      if (match) setTimeout(() => match.card.scrollIntoView({behavior:'smooth', block:'center'}), 100);
+    }
   } catch (err) {
     console.warn('community challenges unavailable', err);
+    // Keep the built-in set usable if community retrieval fails.
+    CHALLENGES
+      .slice()
+      .sort((a,b) => (Number(b.createdAtMs)||0) - (Number(a.createdAtMs)||0))
+      .forEach(c => addCard({...c, creatorName:'Admin', creatorRole:'Admin', creatorUid:''}, false));
+    await hydrateCounts();
   }
 }
+
 
 onAuthStateChanged(auth, u => {
   currentUser = u;
@@ -460,15 +524,4 @@ onAuthStateChanged(auth, u => {
 const params = new URLSearchParams(location.search);
 const requestedId = params.get('challenge') || params.get('id');
 const requestedDiscussion = params.get('discussion') === '1';
-CHALLENGES.forEach(c => addCard({
-  ...c,
-  creatorName:'Admin',
-  creatorRole:'Admin',
-  creatorUid:''
-}, requestedId === c.id && requestedDiscussion));
-loadCommunityChallenges().then(() => {
-  if (requestedId) {
-    const match = [...cards.values()].find(x => x.c.id === requestedId);
-    if (match) setTimeout(() => match.card.scrollIntoView({behavior:'smooth', block:'center'}), 80);
-  }
-});
+loadCommunityChallenges();
