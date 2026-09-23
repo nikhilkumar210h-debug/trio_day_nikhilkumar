@@ -40,12 +40,6 @@ function countsFromResponses(responses) {
   return counts;
 }
 
-async function profilesForResponses(responses) {
-  const uids = [...new Set(responses.map(r => r.uid).filter(Boolean))];
-  const entries = await Promise.all(uids.map(async uid => [uid, await getCachedUser(uid).catch(() => null)]));
-  return new Map(entries);
-}
-
 function renderAnswerCounts(card, c, counts) {
   // Keep choice controls clean. Counts belong in the visual community result,
   // not inside the answer labels.
