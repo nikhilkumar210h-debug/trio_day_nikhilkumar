@@ -29,6 +29,7 @@ jobs:
           node --check public/ui/header.js
           node --check public/script.js
           node --check public/challenge.js
+          node --check public/profile.js
           node --check server.js
       - name: Verify Playwright test discovery
         run: npm test -- --list
