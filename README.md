@@ -328,3 +328,14 @@ The UI now follows a progressive-loading rule instead of treating every collecti
 | Profile connections | 500-count bound for counts | Connection list should be paged when opened | Counts do not require rendering hundreds of profiles. |
 
 Limits are intentionally **surface-specific**, not one global number. The next pagination pass should use Firestore cursors (`startAfter`) and IntersectionObserver where scrolling is the natural interaction; explicit **View more / Load more** remains the fallback for accessibility and users who prefer deliberate loading.
+
+
+### Challenge interaction + chat cleanup pass — 23 September 2026
+
+- Removed the standalone **Who chose what** panel. Voter avatars now live directly inside the existing community-result rows, beside each option/count.
+- Only the first two voter avatars are shown as a compact overlapping peek; clicking an avatar or +N opens the small people sheet for that option.
+- The people sheet loads profile details in batches of 12 and auto-loads another batch near the bottom instead of rendering the full voter list at once.
+- Community result + voter peek are now visible after challenge data hydrates, so a user does not need to answer first to see the community activity.
+- Choosing an answer no longer automatically opens/focuses the discussion. **Join the discussion** is an explicit action.
+- Discussion UI is intentionally smaller/denser and the Next Challenge transition now uses a short exit animation before navigation.
+- Removed visible Trio UID/ID from Chat inbox rows, private-chat header, and Chat search copy. Internal UID fields remain in data/URLs where required for routing and Firestore identity.
