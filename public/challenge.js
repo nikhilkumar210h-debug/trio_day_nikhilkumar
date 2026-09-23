@@ -6,6 +6,7 @@ import {
 } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 import { listCommunityTasks } from './gamification/community-tasks.js?v=20260919-community5';
 import { workerPost } from './gamification/worker-config.js';
+import { getCachedUser } from './services/userCache.js';
 
 const CHALLENGES = [
   {id:'trip', tag:'CHOICE', q:'You get one free trip tomorrow. Where are you going?', o:['Japan 🇯🇵','Switzerland 🇨🇭','Somewhere unexpected 🌍']},
@@ -20,19 +21,29 @@ let currentUser = null;
 const cards = new Map();
 const threadUnsubs = new Map();
 
-async function getCounts(id) {
+async function getResponses(id) {
   try {
     const snap = await getDocs(query(collection(db,'challengeAnswers'), where('challengeId','==',id)));
-    const counts = {};
-    snap.forEach(d => {
-      const n = Number(d.data().choice);
-      if (Number.isInteger(n)) counts[n] = (counts[n] || 0) + 1;
-    });
-    return counts;
+    return snap.docs.map(d => ({ id:d.id, ...d.data() }));
   } catch (err) {
-    console.warn('challenge counts unavailable', err);
-    return {};
+    console.warn('challenge responses unavailable', err);
+    return [];
   }
+}
+
+function countsFromResponses(responses) {
+  const counts = {};
+  responses.forEach(r => {
+    const n = Number(r.choice);
+    if (Number.isInteger(n)) counts[n] = (counts[n] || 0) + 1;
+  });
+  return counts;
+}
+
+async function profilesForResponses(responses) {
+  const uids = [...new Set(responses.map(r => r.uid).filter(Boolean))];
+  const entries = await Promise.all(uids.map(async uid => [uid, await getCachedUser(uid).catch(() => null)]));
+  return new Map(entries);
 }
 
 function renderAnswerCounts(card, c, counts) {
@@ -47,7 +58,7 @@ function renderAnswerCounts(card, c, counts) {
 function renderCommunityResult(result, c, counts, selectedChoice) {
   const total = Object.values(counts).reduce((a,b) => a + b, 0);
   const safeTotal = Math.max(1, total);
-  const same = counts[selectedChoice] || 1;
+  const same = Number.isInteger(selectedChoice) ? (counts[selectedChoice] || 0) : 0;
   const enoughForPercent = total >= 5;
   const rows = c.o.map((label, index) => {
     const count = counts[index] || 0;
@@ -57,9 +68,69 @@ function renderCommunityResult(result, c, counts, selectedChoice) {
   }).join('');
   result.hidden = false;
   result.innerHTML =
-    '<div class="result-summary"><strong>' + same + ' ' + (same === 1 ? 'person' : 'people') + ' chose your answer</strong><span>' +
+    '<div class="result-summary"><strong>' +
+      (Number.isInteger(selectedChoice) ? same + ' ' + (same === 1 ? 'person' : 'people') + ' chose your answer' : 'Community choices') +
+    '</strong><span>' +
       total + ' total response' + (total === 1 ? '' : 's') + (enoughForPercent ? ' · community split' : '') +
     '</span></div><div class="result-bars">' + rows + '</div>';
+}
+
+function renderChoiceVoters(container, c, responses, profiles) {
+  if (!container) return;
+  if (!responses.length) {
+    container.hidden = true;
+    container.innerHTML = '';
+    return;
+  }
+
+  const grouped = c.o.map((label, index) => ({
+    label,
+    index,
+    people: responses.filter(r => Number(r.choice) === index)
+  })).filter(group => group.people.length);
+
+  container.hidden = false;
+  container.innerHTML =
+    '<div class="challenge-voters-head"><div><strong>Who chose what</strong><span>See the people behind each answer.</span></div></div>' +
+    '<div class="challenge-voter-groups">' +
+    grouped.map(group => {
+      const visible = group.people.slice(0, 6);
+      const extra = Math.max(0, group.people.length - visible.length);
+      const peopleHtml = visible.map(r => {
+        const u = profiles.get(r.uid) || {};
+        const name = u.name || 'Trio member';
+        const avatarHtml = u.photoURL
+          ? '<img src="' + esc(u.photoURL) + '" alt="" loading="lazy">'
+          : '<span class="challenge-voter-initial">' + esc(name.charAt(0).toUpperCase()) + '</span>';
+        return '<a class="challenge-voter-chip" href="profile.html?uid=' + encodeURIComponent(r.uid || '') + '" title="Open ' + esc(name) + ' profile">' +
+          '<span class="challenge-voter-avatar">' + avatarHtml + '</span><span class="challenge-voter-name">' + esc(name) + '</span></a>';
+      }).join('');
+      const moreHtml = extra
+        ? '<button type="button" class="challenge-voter-more" data-voter-more="' + group.index + '">+ ' + extra + ' more</button>'
+        : '';
+      const allHtml = extra ? group.people.slice(6).map(r => {
+        const u = profiles.get(r.uid) || {};
+        const name = u.name || 'Trio member';
+        const avatarHtml = u.photoURL
+          ? '<img src="' + esc(u.photoURL) + '" alt="" loading="lazy">'
+          : '<span class="challenge-voter-initial">' + esc(name.charAt(0).toUpperCase()) + '</span>';
+        return '<a class="challenge-voter-chip challenge-voter-extra" hidden href="profile.html?uid=' + encodeURIComponent(r.uid || '') + '" title="Open ' + esc(name) + ' profile">' +
+          '<span class="challenge-voter-avatar">' + avatarHtml + '</span><span class="challenge-voter-name">' + esc(name) + '</span></a>';
+      }).join('') : '';
+      return '<section class="challenge-voter-group" data-voter-group="' + group.index + '">' +
+        '<div class="challenge-voter-option"><span class="challenge-voter-letter">' + String.fromCharCode(65 + group.index) + '</span><strong>' + esc(group.label) + '</strong><span>' + group.people.length + '</span></div>' +
+        '<div class="challenge-voter-people">' + peopleHtml + moreHtml + allHtml + '</div>' +
+      '</section>';
+    }).join('') +
+    '</div>';
+
+  container.querySelectorAll('.challenge-voter-more').forEach(button => {
+    button.addEventListener('click', () => {
+      const group = button.closest('[data-voter-group]');
+      group?.querySelectorAll('.challenge-voter-extra').forEach(x => x.hidden = false);
+      button.remove();
+    });
+  });
 }
 
 function formatTime(ms) {
@@ -198,6 +269,7 @@ function addCard(c, autoOpen = false) {
       c.o.map((x,i) => '<button type="button" data-choice="' + i + '"><span class="choice-letter">' + String.fromCharCode(65+i) + '</span><span>' + esc(x) + '</span></button>').join('') +
     '</div>' +
     '<div class="challenge-result" hidden></div>' +
+    '<div class="challenge-voters" hidden></div>' +
     '<div class="challenge-links">' +
       '<button type="button" class="nkm-btn nkm-btn--secondary challenge-discuss-btn">💬 Join the discussion</button>' +
       '<a class="nkm-btn nkm-btn--primary" href="challenge.html?challenge=' + encodeURIComponent(nextChallenge.id) + '">Next Challenge →</a>' +
@@ -210,9 +282,10 @@ function addCard(c, autoOpen = false) {
     '</section>';
 
   const result = card.querySelector('.challenge-result');
+  const voters = card.querySelector('.challenge-voters');
   const discussion = card.querySelector('.challenge-thread');
   const discussBtn = card.querySelector('.challenge-discuss-btn');
-  cards.set(c.id, {card, result, discussion, c});
+  cards.set(c.id, {card, result, voters, discussion, c});
 
   card.querySelectorAll('[data-choice]').forEach(btn => btn.addEventListener('click', async () => {
     if (!currentUser) return;
@@ -238,9 +311,11 @@ function addCard(c, autoOpen = false) {
         x.disabled = false;
         x.classList.toggle('is-selected', Number(x.dataset.choice) === choice);
       });
-      const counts = await getCounts(c.id);
+      const responses = await getResponses(c.id);
+      const counts = countsFromResponses(responses);
       renderCommunityResult(result, c, counts, choice);
       renderAnswerCounts(card, c, counts);
+      renderChoiceVoters(voters, c, responses, await profilesForResponses(responses));
       discussion.hidden = false;
       discussBtn.textContent = '💬 Discussion open';
       inputFocusIfNeeded(discussion);
@@ -274,18 +349,18 @@ function inputFocusIfNeeded(discussion) {
 }
 
 async function hydrateCounts() {
-  for (const [id,{card,c}] of cards) {
-    const counts = await getCounts(id);
+  for (const [id,{card,c,result,voters}] of cards) {
+    const responses = await getResponses(id);
+    const counts = countsFromResponses(responses);
     renderAnswerCounts(card,c,counts);
+    const profiles = await profilesForResponses(responses);
+    renderChoiceVoters(voters, c, responses, profiles);
     const mySnap = currentUser ? await getDoc(doc(db,'challengeAnswers',currentUser.uid + '_' + id)).catch(() => null) : null;
     if (mySnap?.exists()) {
       const myChoice = Number(mySnap.data().choice);
       card.querySelectorAll('[data-choice]').forEach((x,i) => x.disabled = false);
-      const result = card.querySelector('.challenge-result');
-      if (result) {
-        card.querySelectorAll('[data-choice]').forEach((x,i) => x.classList.toggle('is-selected', i === myChoice));
-        renderCommunityResult(result, c, counts, myChoice);
-      }
+      card.querySelectorAll('[data-choice]').forEach((x,i) => x.classList.toggle('is-selected', i === myChoice));
+      renderCommunityResult(result, c, counts, myChoice);
     }
   }
 }
