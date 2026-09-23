@@ -325,15 +325,10 @@ function attachDiscussion(c, card, discussion) {
   };
 }
 
-function addCard(c, autoOpen = false) {
+function addCard(c) {
   const card = document.createElement('article');
   card.className = 'challenge-main-card';
   card.dataset.challengeId = c.id;
-  const currentIndex = CHALLENGES.findIndex(x => x.id === c.id);
-  const nextChallenge = currentIndex >= 0
-    ? CHALLENGES[(currentIndex + 1) % CHALLENGES.length]
-    : CHALLENGES[0];
-
   const formatLabels = {quick:'⚡ QUICK PICK',rather:'↔ WOULD YOU',hot:'🔥 HOT TAKE',scenario:'✦ SCENARIO'};
   const format = c.format || 'quick';
   const twist = c.twist || '';
@@ -350,7 +345,7 @@ function addCard(c, autoOpen = false) {
     '<div class="challenge-result" hidden></div>' +
     '<div class="challenge-links">' +
       '<button type="button" class="nkm-btn nkm-btn--secondary challenge-discuss-btn">💬 Join the discussion</button>' +
-      '<a class="nkm-btn nkm-btn--primary challenge-next-btn" href="challenge.html?challenge=' + encodeURIComponent(nextChallenge.id) + '">Next Challenge →</a>' +
+      '<a class="nkm-btn nkm-btn--primary challenge-next-btn" href="#">Next Challenge →</a>' +
     '</div>' +
     '<section class="challenge-thread" hidden aria-label="Public challenge discussion">' +
       '<div class="challenge-thread-head"><div><strong>Open discussion</strong><span>Everyone answering this challenge can join.</span></div><span class="challenge-thread-count">Be the first voice</span></div>' +
@@ -509,7 +504,7 @@ async function loadCommunityChallenges() {
     all.forEach(c => {
       if (seen.has(c.id)) return;
       seen.add(c.id);
-      addCard(c, false);
+      addCard(c);
     });
 
     if (custom.length) {
@@ -530,7 +525,7 @@ async function loadCommunityChallenges() {
     CHALLENGES
       .slice()
       .sort((a,b) => (Number(b.createdAtMs)||0) - (Number(a.createdAtMs)||0))
-      .forEach(c => addCard({...c, creatorName:'Admin', creatorRole:'Admin', creatorUid:''}, false));
+      .forEach(c => addCard({...c, creatorName:'Admin', creatorRole:'Admin', creatorUid:''}));
     await hydrateVisibleCards();
   }
 }
@@ -543,5 +538,4 @@ onAuthStateChanged(auth, u => {
 
 const params = new URLSearchParams(location.search);
 const requestedId = params.get('challenge') || params.get('id');
-const requestedDiscussion = params.get('discussion') === '1';
 loadCommunityChallenges();
