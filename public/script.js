@@ -471,12 +471,40 @@ async function renderFocusAndContinue(uid) {
     </div>`;
 
   focusPrimary.classList.add('focus-activity-wrap');
-  focusPrimary.querySelectorAll('[data-today-choice]').forEach(btn => btn.addEventListener('click', () => {
+  focusPrimary.querySelectorAll('[data-today-choice]').forEach(btn => btn.addEventListener('click', async () => {
+    if (!currentUser) {
+      location.href = 'login.html?redirect=' + encodeURIComponent('index.html');
+      return;
+    }
     const choice = Number(btn.dataset.todayChoice);
-    localStorage.setItem('trio_last_challenge', JSON.stringify({ id: challenge.id, choice, at: Date.now() }));
-    focusPrimary.querySelectorAll('[data-today-choice]').forEach(b => { b.disabled = true; b.style.opacity = '.55'; });
+    const answerNow = Date.now();
+    focusPrimary.querySelectorAll('[data-today-choice]').forEach(b => { b.disabled = true; b.classList.toggle('is-selected', b === btn); });
+    localStorage.setItem('trio_last_challenge', JSON.stringify({ id: challenge.id, choice, at: answerNow }));
     const note = $('todayChallengeNote');
-    if (note) note.textContent = 'Locked in ✓ Open the challenge to see the community split and join the public discussion.';
+    if (note) note.textContent = 'Saving your answer…';
+    try {
+      await setDoc(doc(db, 'challengeAnswers', currentUser.uid + '_' + challenge.id), {
+        challengeId: challenge.id,
+        uid: currentUser.uid,
+        choice,
+        createdAt: serverTimestamp(),
+        createdAtMs: answerNow
+      }, { merge: true });
+      if (note) note.textContent = 'Locked in ✓ Your answer is saved. Compare the community split and join the discussion.';
+      const compare = document.createElement('a');
+      compare.className = 'nkm-btn nkm-btn--primary nkm-btn--sm';
+      compare.href = 'challenge.html?challenge=' + encodeURIComponent(challenge.id);
+      compare.textContent = 'See the split →';
+      const actionRow = focusPrimary.querySelector('.today-focus-frame > div:last-of-type');
+      if (actionRow && !actionRow.querySelector('[data-today-compare]')) {
+        compare.dataset.todayCompare = '1';
+        actionRow.appendChild(compare);
+      }
+    } catch (err) {
+      console.warn('[Today] answer save failed:', err);
+      focusPrimary.querySelectorAll('[data-today-choice]').forEach(b => { b.disabled = false; b.classList.remove('is-selected'); });
+      if (note) note.textContent = 'Could not save your answer. Try again.';
+    }
   }));
 
   const visualTitle = $('todayVisualTitle');
