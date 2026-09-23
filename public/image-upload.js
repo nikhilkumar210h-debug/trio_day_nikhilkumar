@@ -2,9 +2,7 @@
 const CLOUD_NAME = 'vyhglthg';
 import { auth } from './firebase-init.js';
 // Worker endpoint for signed upload params — set after deployment
-const MEDIA_SIGN_URL = ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname)
-  ? 'http://127.0.0.1:8787/media/sign'
-  : 'https://trio-media-upload.trioday-nikhil.workers.dev/media/sign';
+const MEDIA_SIGN_URL = 'https://trio-media-upload.trioday-nikhil.workers.dev/media/sign';
 
 function randomId() {
   return Math.random().toString(36).slice(2, 10);
