@@ -69,6 +69,14 @@ export function initHeader() {
     btn.addEventListener('click', () => { location.href = 'search.html'; });
     if (actions) actions.prepend(btn);
   }
+  if (!document.querySelector('script[data-trio-core-loop]')) {
+    const script = document.createElement('script');
+    script.type = 'module';
+    script.src = 'core-loop.js?v=20260923-core-loop1';
+    script.dataset.trioCoreLoop = '1';
+    document.body.appendChild(script);
+  }
+
   window.dispatchEvent(new CustomEvent('trio-header-ready'));
 }
 
