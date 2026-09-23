@@ -58,7 +58,12 @@ function renderCommunityResult(result, c, counts, selectedChoice) {
     const count = counts[index] || 0;
     const pct = Math.round((count / safeTotal) * 100);
     const value = enoughForPercent ? pct + '%' : count + (count === 1 ? ' person' : ' people');
-    return '<div class="result-bar-row"><span class="result-bar-label">' + esc(label) + '</span><span class="result-track"><span class="result-fill" style="width:' + Math.max(2, pct) + '%"></span></span><span class="result-bar-value">' + value + '</span></div>';
+    return '<div class="result-bar-row" data-result-option="' + index + '">' +
+      '<span class="result-bar-label">' + esc(label) + '</span>' +
+      '<span class="result-track"><span class="result-fill" style="width:' + Math.max(2, pct) + '%"></span></span>' +
+      '<span class="result-voter-slot" aria-label="People who chose this option"></span>' +
+      '<span class="result-bar-value">' + value + '</span>' +
+    '</div>';
   }).join('');
   result.hidden = false;
   result.innerHTML =
@@ -68,7 +73,6 @@ function renderCommunityResult(result, c, counts, selectedChoice) {
       total + ' total response' + (total === 1 ? '' : 's') + (enoughForPercent ? ' · community split' : '') +
     '</span></div><div class="result-bars">' + rows + '</div>';
 }
-
 async function loadProfilesForPeople(people, count = 2) {
   const visible = people.slice(0, count);
   const entries = await Promise.all(visible.map(async r => [r.uid, await getCachedUser(r.uid).catch(() => null)]));
@@ -157,9 +161,13 @@ async function renderVoterPeek(result, c, responses) {
   }));
 
   const rows = await Promise.all(grouped.map(async group => {
+    const row = result.querySelector('[data-result-option="' + group.index + '"] .result-voter-slot');
+    if (!row) return;
     if (!group.people.length) {
-      return '<div class="result-voter-row result-voter-row--empty"><span class="result-bar-label">' + esc(group.label) + '</span><span class="result-voter-count">0</span></div>';
+      row.innerHTML = '';
+      return;
     }
+
     const profiles = await loadProfilesForPeople(group.people, 2);
     const peeks = group.people.slice(0, 2).map(r => {
       const u = profiles.get(r.uid) || {};
@@ -170,18 +178,18 @@ async function renderVoterPeek(result, c, responses) {
     const more = group.people.length > 2
       ? '<button type="button" class="result-voter-more" data-voter-option="' + group.index + '">+' + (group.people.length - 2) + '</button>'
       : '';
-    return '<div class="result-voter-row"><span class="result-bar-label">' + esc(group.label) + '</span><span class="result-voter-peek">' + peeks + more + '</span><button type="button" class="result-voter-open" data-voter-option="' + group.index + '">' + group.people.length + '</button></div>';
+
+    row.innerHTML = '<span class="result-voter-peek">' + peeks + more + '</span>';
   }));
 
-  result.insertAdjacentHTML('beforeend',
-    '<div class="result-voters-head"><strong>Who chose what</strong><span>Tap the small people dots to see names.</span></div>' +
-    '<div class="result-voters">' + rows.join('') + '</div>'
-  );
+  await Promise.all(rows);
 
-  result.querySelectorAll('[data-voter-option]').forEach(btn => btn.addEventListener('click', () => {
-    const index = Number(btn.dataset.voterOption);
-    openVoterModal(c, grouped[index], responses);
-  }));
+  result.querySelectorAll('[data-voter-option]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const index = Number(btn.dataset.voterOption);
+      openVoterModal(c, grouped[index], responses);
+    });
+  });
 }
 function formatTime(ms) {
   if (!ms) return '';
@@ -321,7 +329,7 @@ function addCard(c, autoOpen = false) {
     '<div class="challenge-result" hidden></div>' +
     '<div class="challenge-links">' +
       '<button type="button" class="nkm-btn nkm-btn--secondary challenge-discuss-btn">💬 Join the discussion</button>' +
-      '<a class="nkm-btn nkm-btn--primary" href="challenge.html?challenge=' + encodeURIComponent(nextChallenge.id) + '">Next Challenge →</a>' +
+      '<a class="nkm-btn nkm-btn--primary challenge-next-btn" href="challenge.html?challenge=' + encodeURIComponent(nextChallenge.id) + '">Next Challenge →</a>' +
     '</div>' +
     '<section class="challenge-thread" hidden aria-label="Public challenge discussion">' +
       '<div class="challenge-thread-head"><div><strong>Open discussion</strong><span>Everyone answering this challenge can join.</span></div><span class="challenge-thread-count">Be the first voice</span></div>' +
@@ -364,15 +372,19 @@ function addCard(c, autoOpen = false) {
       renderCommunityResult(result, c, counts, choice);
       renderAnswerCounts(card, c, counts);
       await renderVoterPeek(result, c, responses);
-      discussion.hidden = false;
-      discussBtn.textContent = '💬 Discussion open';
-      inputFocusIfNeeded(discussion);
     } catch (err) {
       console.error(err);
       result.hidden = false;
       result.textContent = 'Could not save your answer. Please try again.';
     }
   }));
+
+  card.querySelector('.challenge-next-btn')?.addEventListener('click', e => {
+    e.preventDefault();
+    const href = e.currentTarget.href;
+    card.classList.add('challenge-switching-out');
+    setTimeout(() => { window.location.href = href; }, 220);
+  });
 
   discussBtn.addEventListener('click', () => {
     discussion.hidden = !discussion.hidden;
