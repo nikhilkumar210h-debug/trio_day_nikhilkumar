@@ -120,7 +120,10 @@ async function openVoterModal(c, group, responses) {
   list.innerHTML = '<div class="challenge-voter-loading">Loading people…</div>';
   modal.hidden = false;
 
+  let loading = false;
   async function renderBatch() {
+    if (loading || loaded >= people.length) return;
+    loading = true;
     const slice = people.slice(loaded, loaded + batch);
     const profiles = await loadProfilesForPeople(slice, slice.length);
     slice.forEach(r => cache.set(r.uid, profiles.get(r.uid) || null));
@@ -136,14 +139,13 @@ async function openVoterModal(c, group, responses) {
     list.insertAdjacentHTML('beforeend', html);
     loaded += slice.length;
     more.hidden = loaded >= people.length;
+    loading = false;
   }
 
   more.onclick = renderBatch;
-  const observer = new IntersectionObserver(entries => {
-    if (entries.some(entry => entry.isIntersecting) && loaded < people.length) renderBatch();
-  }, { root: list, rootMargin: '80px' });
-  observer.observe(more);
-  modal.querySelector('[data-voter-close]').addEventListener('click', () => observer.disconnect(), { once: true });
+  list.addEventListener('scroll', () => {
+    if (list.scrollTop + list.clientHeight >= list.scrollHeight - 70) renderBatch();
+  });
   await renderBatch();
 }
 
