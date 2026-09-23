@@ -2,7 +2,7 @@ import { auth, db } from './firebase-init.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
 import {
   collection, doc, getDocs, getDoc, query, where, orderBy, limit,
-  setDoc, addDoc, serverTimestamp, onSnapshot
+  setDoc, addDoc, deleteDoc, serverTimestamp, onSnapshot
 } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 import { listCommunityTasks } from './gamification/community-tasks.js?v=20260919-community5';
 import { workerPost } from './gamification/worker-config.js';
@@ -19,6 +19,7 @@ const host = document.getElementById('challengeList');
 let currentUser = null;
 const cards = new Map();
 const threadUnsubs = new Map();
+let currentThreadChallengeId = null;
 
 async function getCounts(id) {
   try {
@@ -82,16 +83,34 @@ function renderThreadMessage(m) {
   const row = document.createElement('article');
   row.className = 'challenge-thread-message';
   const initial = (m.name || 'U').charAt(0).toUpperCase();
+  const mine = currentUser && m.uid === currentUser.uid;
   row.innerHTML =
     '<div class="challenge-thread-avatar">' + esc(initial) + '</div>' +
     '<div class="challenge-thread-body">' +
-      '<div class="challenge-thread-meta"><strong>' + esc(m.name || 'User') + '</strong><span>' + esc(formatTime(m.createdAtMs)) + '</span></div>' +
+      '<div class="challenge-thread-meta"><strong>' + esc(m.name || 'User') + '</strong><span>' + esc(formatTime(m.createdAtMs)) + '</span>' +
+      (mine ? '<button type="button" class="thread-message-menu" aria-label="Message options">•••</button>' : '') +
+      '</div>' +
       '<p>' + esc(m.text || '') + '</p>' +
     '</div>';
+  if (mine) {
+    const menu = row.querySelector('.thread-message-menu');
+    menu.addEventListener('click', async () => {
+      if (!confirm('Delete this comment?')) return;
+      menu.disabled = true;
+      try {
+        await deleteDoc(doc(db, 'challengeThreads', currentThreadChallengeId, 'messages', m.id));
+      } catch (err) {
+        console.error('comment delete failed', err);
+        menu.disabled = false;
+        alert('Could not delete the comment.');
+      }
+    });
+  }
   return row;
 }
 
 function attachDiscussion(c, card, discussion) {
+  currentThreadChallengeId = c.id;
   const feed = discussion.querySelector('.challenge-thread-feed');
   const input = discussion.querySelector('.challenge-thread-input');
   const send = discussion.querySelector('.challenge-thread-send');
