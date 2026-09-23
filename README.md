@@ -213,3 +213,27 @@ The latest iteration is a structural product pass, not only a visual polish laye
 
 ### Safety of the rollout
 All V3 changes remain on `feature/trio-day-core-loop-v1`. No merge or production deployment is part of this pass.
+
+### Challenge V3.1 — Moment Builder
+
+Challenges are no longer presented as question + answer like an exam.
+
+Creators can choose a **moment shape**:
+- Quick Pick — fast choice
+- Would You — two-sided decision
+- Hot Take — agree/disagree energy
+- Scenario — imagine a situation
+
+Creators can also add an optional **little twist** such as a constraint or playful rule. The preview shows the actual social moment before publishing.
+
+On the challenge surface:
+- No-right-answer framing
+- A/B/C/D visual choice chips
+- Format badge
+- Optional twist card
+- Stronger choice interactions
+- Community result as a visual split
+- Public discussion attached to the moment
+- Users can delete their own discussion comments through the message menu
+
+The Firestore rules already permit an authenticated user to delete only their own challenge discussion message; no rule relaxation was required for this feature.
