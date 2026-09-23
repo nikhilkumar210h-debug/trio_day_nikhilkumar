@@ -311,3 +311,20 @@ No merge to master and no production deployment was performed during this audit.
 - Extra voters are collapsed behind **+ N more** per option and expand only within that option group.
 - No Firestore rule relaxation was needed: Challenge answers are already readable by signed-in users, while writes remain restricted to the answering user.
 - No merge to master and no production deployment were performed.
+
+
+### Progressive loading UX standard — 23 September 2026
+
+The UI now follows a progressive-loading rule instead of treating every collection as “load everything”: show the useful first slice, then reveal more on demand or as the user approaches the end.
+
+| Surface | Initial load | More data | Reason |
+| --- | ---: | --- | --- |
+| Challenge feed | Daily picks + 12 active community prompts | Future pagination/auto-load | Questions are the main discovery surface; keep first paint compact. |
+| Challenge voters | 2 small avatars per option | Small modal, 12 profiles/batch + load-more fallback | Profile details are secondary and should never create a large card. |
+| Challenge discussion | 30 recent messages | Future cursor pagination | Discussion needs context, but the whole history should not be loaded. |
+| Private chat | 50 messages | Future cursor pagination | Keep the live conversation responsive; older history is on demand. |
+| Chat inbox | 20 conversations | Future incremental loading | Only recent active conversations are useful in the first viewport. |
+| Notifications | 50 live notifications | Future pagination | Recent alerts are the primary use case; avoid unbounded realtime reads. |
+| Profile connections | 500-count bound for counts | Connection list should be paged when opened | Counts do not require rendering hundreds of profiles. |
+
+Limits are intentionally **surface-specific**, not one global number. The next pagination pass should use Firestore cursors (`startAfter`) and IntersectionObserver where scrolling is the natural interaction; explicit **View more / Load more** remains the fallback for accessibility and users who prefer deliberate loading.
