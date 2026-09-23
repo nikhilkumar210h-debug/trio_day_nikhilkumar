@@ -8,28 +8,33 @@ import { trioCache } from '../trio-cache.js';
 const COLLECTION = 'communityTasks';
 
 export async function listCommunityTasks({ status = 'active', max = 40, includeHidden = false } = {}) {
-  const cacheKey = `ctasks_challenge_${status}_${includeHidden ? 'all' : 'pub'}`;
+  const requestedMax = Math.max(1, Number(max) || 40);
+  const cacheKey = `ctasks_challenge_${status}_${includeHidden ? 'all' : 'pub'}_${requestedMax}`;
   const cached = trioCache.get(cacheKey);
   if (cached) return cached;
 
   try {
+    // Read a wider recent window before active-time filtering so expired/future
+    // records do not consume the visible feed limit.
+    const fetchLimit = Math.min(100, Math.max(requestedMax * 4, 40));
     const snap = await getDocs(query(
       collection(db, COLLECTION),
       where('status', '==', status),
       where('kind', '==', 'challenge'),
       orderBy('createdAtMs', 'desc'),
-      limit(max)
+      limit(fetchLimit)
     ));
     const now = Date.now();
     const list = snap.docs
       .map(d => ({ id: d.id, ...d.data() }))
       .filter(t => t.activityType === 'challenge' && (includeHidden || !t.hidden))
-      .filter(t => (Number(t.startAtMs) || 0) <= now && (Number(t.endAtMs) || 0) > now);
-    // Feed order is strictly newest first. Featured is an admin flag, not a
-    // reason to move an older challenge above a newer one.
-    list.sort((a, b) =>
-      (Number(b.createdAtMs) || 0) - (Number(a.createdAtMs) || 0)
-    );
+      .filter(t => (Number(t.startAtMs) || 0) <= now && (Number(t.endAtMs) || 0) > now)
+      // Feed order is strictly newest first. Featured is an admin flag, not a
+      // reason to move an older challenge above a newer one.
+      .sort((a, b) =>
+        (Number(b.createdAtMs) || 0) - (Number(a.createdAtMs) || 0)
+      )
+      .slice(0, requestedMax);
     trioCache.set(cacheKey, list, trioCache.TTL.SHORT);
     return list;
   } catch (err) {
