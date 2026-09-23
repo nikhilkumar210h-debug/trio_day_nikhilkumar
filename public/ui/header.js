@@ -76,6 +76,13 @@ export function initHeader() {
     script.dataset.trioCoreLoop = '1';
     document.body.appendChild(script);
   }
+  if (!document.querySelector('script[data-trio-webmcp]')) {
+    const script = document.createElement('script');
+    script.type = 'module';
+    script.src = 'webmcp.js?v=20260923-webmcp1';
+    script.dataset.trioWebmcp = '1';
+    document.body.appendChild(script);
+  }
 
   window.dispatchEvent(new CustomEvent('trio-header-ready'));
 }
