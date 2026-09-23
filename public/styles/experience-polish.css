@@ -769,3 +769,8 @@ body.app-page,body.chat-page{
   .activity-page-shell .activity-social-brief{grid-template-columns:1fr!important}
   .activity-page-shell .activity-brief-block:first-child{grid-column:auto}
 }
+
+.challenge-change-hint{margin-top:7px;font-size:9px;color:var(--color-ink-dim);font-weight:700;letter-spacing:.02em}
+.challenge-main-options button{transition:transform .16s ease,background .16s ease,border-color .16s ease,box-shadow .16s ease}
+.challenge-main-options button:hover:not(:disabled){transform:translateY(-2px);border-color:rgba(118,87,255,.42);box-shadow:0 9px 20px rgba(80,55,160,.08)}
+.challenge-main-options button.is-selected{border-color:rgba(118,87,255,.55)!important;background:linear-gradient(135deg,rgba(118,87,255,.15),rgba(139,92,246,.05))!important;box-shadow:0 0 0 2px rgba(118,87,255,.08),0 10px 24px rgba(80,55,160,.1)}
