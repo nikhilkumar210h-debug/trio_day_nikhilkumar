@@ -75,64 +75,113 @@ function renderCommunityResult(result, c, counts, selectedChoice) {
     '</span></div><div class="result-bars">' + rows + '</div>';
 }
 
-function renderChoiceVoters(container, c, responses, profiles) {
-  if (!container) return;
-  if (!responses.length) {
-    container.hidden = true;
-    container.innerHTML = '';
-    return;
+async function loadProfilesForPeople(people, count = 2) {
+  const visible = people.slice(0, count);
+  const entries = await Promise.all(visible.map(async r => [r.uid, await getCachedUser(r.uid).catch(() => null)]));
+  return new Map(entries);
+}
+
+function avatarMarkup(profile, fallbackName) {
+  const name = profile?.name || fallbackName || 'Trio member';
+  return profile?.photoURL
+    ? '<img src="' + esc(profile.photoURL) + '" alt="" loading="lazy">'
+    : '<span class="challenge-voter-initial">' + esc(name.charAt(0).toUpperCase()) + '</span>';
+}
+
+function ensureVoterModal() {
+  let modal = document.getElementById('challengeVoterModal');
+  if (modal) return modal;
+  modal = document.createElement('div');
+  modal.id = 'challengeVoterModal';
+  modal.className = 'challenge-voter-modal';
+  modal.hidden = true;
+  modal.innerHTML =
+    '<div class="challenge-voter-modal-backdrop" data-voter-close></div>' +
+    '<section class="challenge-voter-modal-card" role="dialog" aria-modal="true" aria-labelledby="challengeVoterModalTitle">' +
+      '<button type="button" class="challenge-voter-modal-close" data-voter-close aria-label="Close">×</button>' +
+      '<div class="challenge-voter-modal-head"><div><span class="challenge-voter-modal-kicker">PEOPLE</span><h3 id="challengeVoterModalTitle">Who chose this?</h3><p id="challengeVoterModalMeta"></p></div></div>' +
+      '<div id="challengeVoterModalList" class="challenge-voter-modal-list"></div>' +
+      '<button type="button" id="challengeVoterLoadMore" class="challenge-voter-load-more" hidden>Load more</button>' +
+    '</section>';
+  document.body.appendChild(modal);
+  modal.querySelectorAll('[data-voter-close]').forEach(x => x.addEventListener('click', () => {
+    modal.hidden = true;
+  }));
+  return modal;
+}
+
+async function openVoterModal(c, group, responses) {
+  const modal = ensureVoterModal();
+  const list = modal.querySelector('#challengeVoterModalList');
+  const more = modal.querySelector('#challengeVoterLoadMore');
+  const title = modal.querySelector('#challengeVoterModalTitle');
+  const meta = modal.querySelector('#challengeVoterModalMeta');
+  const people = responses.filter(r => Number(r.choice) === group.index);
+  let loaded = 0;
+  const batch = 12;
+  const cache = new Map();
+
+  title.textContent = group.label;
+  meta.textContent = people.length + ' ' + (people.length === 1 ? 'person' : 'people') + ' chose this';
+  list.innerHTML = '<div class="challenge-voter-loading">Loading people…</div>';
+  modal.hidden = false;
+
+  async function renderBatch() {
+    const slice = people.slice(loaded, loaded + batch);
+    const profiles = await loadProfilesForPeople(slice, slice.length);
+    slice.forEach(r => cache.set(r.uid, profiles.get(r.uid) || null));
+    const html = slice.map(r => {
+      const u = cache.get(r.uid) || {};
+      const name = u.name || 'Trio member';
+      return '<a class="challenge-voter-modal-row" href="profile.html?uid=' + encodeURIComponent(r.uid || '') + '">' +
+        '<span class="challenge-voter-modal-avatar">' + avatarMarkup(u, name) + '</span>' +
+        '<span class="challenge-voter-modal-name">' + esc(name) + '</span><span class="challenge-voter-modal-arrow">↗</span>' +
+      '</a>';
+    }).join('');
+    if (loaded === 0) list.innerHTML = '';
+    list.insertAdjacentHTML('beforeend', html);
+    loaded += slice.length;
+    more.hidden = loaded >= people.length;
   }
 
+  more.onclick = renderBatch;
+  await renderBatch();
+}
+
+async function renderVoterPeek(result, c, responses) {
   const grouped = c.o.map((label, index) => ({
     label,
     index,
     people: responses.filter(r => Number(r.choice) === index)
-  })).filter(group => group.people.length);
+  }));
 
-  container.hidden = false;
-  container.innerHTML =
-    '<div class="challenge-voters-head"><div><strong>Who chose what</strong><span>See the people behind each answer.</span></div></div>' +
-    '<div class="challenge-voter-groups">' +
-    grouped.map(group => {
-      const visible = group.people.slice(0, 6);
-      const extra = Math.max(0, group.people.length - visible.length);
-      const peopleHtml = visible.map(r => {
-        const u = profiles.get(r.uid) || {};
-        const name = u.name || 'Trio member';
-        const avatarHtml = u.photoURL
-          ? '<img src="' + esc(u.photoURL) + '" alt="" loading="lazy">'
-          : '<span class="challenge-voter-initial">' + esc(name.charAt(0).toUpperCase()) + '</span>';
-        return '<a class="challenge-voter-chip" href="profile.html?uid=' + encodeURIComponent(r.uid || '') + '" title="Open ' + esc(name) + ' profile">' +
-          '<span class="challenge-voter-avatar">' + avatarHtml + '</span><span class="challenge-voter-name">' + esc(name) + '</span></a>';
-      }).join('');
-      const moreHtml = extra
-        ? '<button type="button" class="challenge-voter-more" data-voter-more="' + group.index + '">+ ' + extra + ' more</button>'
-        : '';
-      const allHtml = extra ? group.people.slice(6).map(r => {
-        const u = profiles.get(r.uid) || {};
-        const name = u.name || 'Trio member';
-        const avatarHtml = u.photoURL
-          ? '<img src="' + esc(u.photoURL) + '" alt="" loading="lazy">'
-          : '<span class="challenge-voter-initial">' + esc(name.charAt(0).toUpperCase()) + '</span>';
-        return '<a class="challenge-voter-chip challenge-voter-extra" hidden href="profile.html?uid=' + encodeURIComponent(r.uid || '') + '" title="Open ' + esc(name) + ' profile">' +
-          '<span class="challenge-voter-avatar">' + avatarHtml + '</span><span class="challenge-voter-name">' + esc(name) + '</span></a>';
-      }).join('') : '';
-      return '<section class="challenge-voter-group" data-voter-group="' + group.index + '">' +
-        '<div class="challenge-voter-option"><span class="challenge-voter-letter">' + String.fromCharCode(65 + group.index) + '</span><strong>' + esc(group.label) + '</strong><span>' + group.people.length + '</span></div>' +
-        '<div class="challenge-voter-people">' + peopleHtml + moreHtml + allHtml + '</div>' +
-      '</section>';
-    }).join('') +
-    '</div>';
+  const rows = await Promise.all(grouped.map(async group => {
+    if (!group.people.length) {
+      return '<div class="result-voter-row result-voter-row--empty"><span class="result-bar-label">' + esc(group.label) + '</span><span class="result-voter-count">0</span></div>';
+    }
+    const profiles = await loadProfilesForPeople(group.people, 2);
+    const peeks = group.people.slice(0, 2).map(r => {
+      const u = profiles.get(r.uid) || {};
+      const name = u.name || 'Trio member';
+      return '<button type="button" class="result-voter-avatar-btn" data-voter-option="' + group.index + '" aria-label="See who chose ' + esc(group.label) + '">' +
+        '<span class="result-voter-avatar">' + avatarMarkup(u, name) + '</span></button>';
+    }).join('');
+    const more = group.people.length > 2
+      ? '<button type="button" class="result-voter-more" data-voter-option="' + group.index + '">+' + (group.people.length - 2) + '</button>'
+      : '';
+    return '<div class="result-voter-row"><span class="result-bar-label">' + esc(group.label) + '</span><span class="result-voter-peek">' + peeks + more + '</span><button type="button" class="result-voter-open" data-voter-option="' + group.index + '">' + group.people.length + '</button></div>';
+  }));
 
-  container.querySelectorAll('.challenge-voter-more').forEach(button => {
-    button.addEventListener('click', () => {
-      const group = button.closest('[data-voter-group]');
-      group?.querySelectorAll('.challenge-voter-extra').forEach(x => x.hidden = false);
-      button.remove();
-    });
-  });
+  result.insertAdjacentHTML('beforeend',
+    '<div class="result-voters-head"><strong>Who chose what</strong><span>Tap the small people dots to see names.</span></div>' +
+    '<div class="result-voters">' + rows.join('') + '</div>'
+  );
+
+  result.querySelectorAll('[data-voter-option]').forEach(btn => btn.addEventListener('click', () => {
+    const index = Number(btn.dataset.voterOption);
+    openVoterModal(c, grouped[index], responses);
+  }));
 }
-
 function formatTime(ms) {
   if (!ms) return '';
   return new Date(ms).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
@@ -269,7 +318,6 @@ function addCard(c, autoOpen = false) {
       c.o.map((x,i) => '<button type="button" data-choice="' + i + '"><span class="choice-letter">' + String.fromCharCode(65+i) + '</span><span>' + esc(x) + '</span></button>').join('') +
     '</div>' +
     '<div class="challenge-result" hidden></div>' +
-    '<div class="challenge-voters" hidden></div>' +
     '<div class="challenge-links">' +
       '<button type="button" class="nkm-btn nkm-btn--secondary challenge-discuss-btn">💬 Join the discussion</button>' +
       '<a class="nkm-btn nkm-btn--primary" href="challenge.html?challenge=' + encodeURIComponent(nextChallenge.id) + '">Next Challenge →</a>' +
@@ -282,10 +330,9 @@ function addCard(c, autoOpen = false) {
     '</section>';
 
   const result = card.querySelector('.challenge-result');
-  const voters = card.querySelector('.challenge-voters');
   const discussion = card.querySelector('.challenge-thread');
   const discussBtn = card.querySelector('.challenge-discuss-btn');
-  cards.set(c.id, {card, result, voters, discussion, c});
+  cards.set(c.id, {card, result, discussion, c});
 
   card.querySelectorAll('[data-choice]').forEach(btn => btn.addEventListener('click', async () => {
     if (!currentUser) return;
@@ -315,7 +362,7 @@ function addCard(c, autoOpen = false) {
       const counts = countsFromResponses(responses);
       renderCommunityResult(result, c, counts, choice);
       renderAnswerCounts(card, c, counts);
-      renderChoiceVoters(voters, c, responses, await profilesForResponses(responses));
+      await renderVoterPeek(result, c, responses);
       discussion.hidden = false;
       discussBtn.textContent = '💬 Discussion open';
       inputFocusIfNeeded(discussion);
@@ -349,12 +396,11 @@ function inputFocusIfNeeded(discussion) {
 }
 
 async function hydrateCounts() {
-  for (const [id,{card,c,result,voters}] of cards) {
+  for (const [id,{card,c,result}] of cards) {
     const responses = await getResponses(id);
     const counts = countsFromResponses(responses);
     renderAnswerCounts(card,c,counts);
-    const profiles = await profilesForResponses(responses);
-    renderChoiceVoters(voters, c, responses, profiles);
+    await renderVoterPeek(result, c, responses);
     const mySnap = currentUser ? await getDoc(doc(db,'challengeAnswers',currentUser.uid + '_' + id)).catch(() => null) : null;
     if (mySnap?.exists()) {
       const myChoice = Number(mySnap.data().choice);
