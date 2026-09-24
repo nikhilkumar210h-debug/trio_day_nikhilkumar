@@ -29,12 +29,13 @@
 .challenge-thread-author{color:var(--color-ink);text-decoration:none;font-size:10px;font-weight:850}
 .challenge-thread-author:hover{color:var(--color-primary-text)}
 @media(max-width:640px){.challenge-thread-author{font-size:9px}}
-<style>
+</style><style>
 /* Discussion typography: compact, secondary, and answer-aware. */
-.challenge-thread-choice{display:inline-flex;align-items:center;max-width:100%;margin-top:4px;padding:2px 6px;border-radius:999px;background:var(--color-primary-soft);border:1px solid var(--color-border);color:var(--color-primary-text);font:600 7px/1.2 var(--font-sans);letter-spacing:.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.challenge-thread-actions{display:flex;align-items:center;gap:8px;margin-top:4px}
-.challenge-thread-reply{border:0;background:transparent;color:var(--color-primary-text);padding:0;font:600 8px/1.2 var(--font-sans);cursor:pointer}
-.challenge-thread-reply:hover{text-decoration:underline}
+.challenge-thread-body{min-width:0}
+.challenge-thread-choice{display:block;width:max-content;max-width:min(70%,180px);margin:0 0 2px;padding:1px 4px;border:0;border-radius:4px;background:var(--color-primary-soft);color:var(--color-primary-text);font:600 6px/1.15 var(--font-sans);letter-spacing:.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.challenge-thread-actions{display:flex;align-items:center;gap:7px;margin-top:4px}
+.challenge-thread-reply{border:0;background:transparent;color:#4f7cff;padding:0;font:700 7px/1.1 var(--font-sans);cursor:pointer}
+.challenge-thread-reply:hover{color:#6b8cff;text-decoration:underline}
 .challenge-thread-reply-count{font:500 7px/1.2 var(--font-sans);color:var(--color-ink-dim)}
 .challenge-thread-replies{display:grid;gap:4px;margin-top:5px;padding-left:8px;border-left:1px solid var(--color-border)}
 .challenge-thread-reply-row{font:400 8px/1.35 var(--font-sans);color:var(--color-ink-muted)}
@@ -48,8 +49,8 @@
 .challenge-thread-meta strong,.challenge-thread-author{font-family:var(--font-sans)!important;font-weight:700!important;letter-spacing:-.01em}
 .challenge-thread-message p{font-family:var(--font-sans)!important;font-weight:400;letter-spacing:0}
 @media(max-width:640px){
-  .challenge-thread-choice{font-size:6.5px}
-  .challenge-thread-reply,.challenge-thread-reply-count{font-size:7px}
+  .challenge-thread-choice{font-size:5.8px}
+  .challenge-thread-reply,.challenge-thread-reply-count{font-size:6.5px}
   .challenge-thread-reply-row{font-size:8px}
 }
-</style></style></head><body class="app-page"><header class="topbar"><div class="topbar-inner"><a class="brand" href="all-users.html"><span class="brand-chakra">☸</span><span class="brand-copy"><strong>trio_day</strong><small>CHALLENGES</small></span></a><div id="authStatus" class="auth-status"></div></div></header><main class="challenge-page"><section class="challenge-hero"><span class="kicker">⚡ THE DAILY CHOICE</span><h1>Make a choice. See who thinks differently.</h1><p>Pick an answer, watch the community split, then join the conversation around the same moment.</p><div class="td3-hero-pills"><span>CHOOSE</span><span>COMPARE</span><span>DISCUSS</span></div></section><section id="challengeList" class="challenge-list"></section><p class="challenge-note">Private Chat stays one-to-one. Challenges are the shared space: answer publicly, see the split, and join the same discussion with multiple people.</p></main><nav class="bottom-nav" aria-label="Primary navigation"><div class="nav-row"></div></nav><script type="module" src="auth-guard.js"></script><script type="module" src="auth-ui.js?v=20260921-challenge1"></script><script type="module" src="theme.js"></script><script type="module" src="ui/header.js"></script><script type="module" src="ui/nav.js?v=20260922-nav7"></script><script type="module" src="challenge.js?v=20260921-discussion2"></script></body></html>
+</style></head><body class="app-page"><header class="topbar"><div class="topbar-inner"><a class="brand" href="all-users.html"><span class="brand-chakra">☸</span><span class="brand-copy"><strong>trio_day</strong><small>CHALLENGES</small></span></a><div id="authStatus" class="auth-status"></div></div></header><main class="challenge-page"><section class="challenge-hero"><span class="kicker">⚡ THE DAILY CHOICE</span><h1>Make a choice. See who thinks differently.</h1><p>Pick an answer, watch the community split, then join the conversation around the same moment.</p><div class="td3-hero-pills"><span>CHOOSE</span><span>COMPARE</span><span>DISCUSS</span></div></section><section id="challengeList" class="challenge-list"></section><p class="challenge-note">Private Chat stays one-to-one. Challenges are the shared space: answer publicly, see the split, and join the same discussion with multiple people.</p></main><nav class="bottom-nav" aria-label="Primary navigation"><div class="nav-row"></div></nav><script type="module" src="auth-guard.js"></script><script type="module" src="auth-ui.js?v=20260921-challenge1"></script><script type="module" src="theme.js"></script><script type="module" src="ui/header.js"></script><script type="module" src="ui/nav.js?v=20260922-nav7"></script><script type="module" src="challenge.js?v=20260921-discussion2"></script></body></html>
