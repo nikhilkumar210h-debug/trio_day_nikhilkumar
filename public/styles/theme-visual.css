@@ -101,3 +101,11 @@ input,textarea,select{background:var(--color-bg-elevated)!important;color:var(--
 [data-theme="light"] .room-main-card .room-sub,
 [data-theme="light"] .room-main-card .room-workspace-status,
 [data-theme="light"] .room-main-card .room-chat-head small{color:var(--color-ink-muted)!important}
+
+/* Modern typography pass: keep the interface compact and contemporary. */
+:root{
+  --font-brand: 'Space Grotesk','Inter',system-ui,sans-serif;
+}
+body{font-family:var(--font-sans);font-weight:400;}
+h1,h2,h3,h4,.brand strong{font-family:var(--font-display);font-weight:700;letter-spacing:-.025em;}
+button,.nkm-btn,.nav-btn,input,textarea,select{font-family:var(--font-sans);}
