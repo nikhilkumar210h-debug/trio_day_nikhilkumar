@@ -3,7 +3,7 @@ name: Trio Day Core Loop QA
 on:
   push:
     branches:
-      - feature/trio-day-core-loop-v1
+      - master
   pull_request:
     branches:
       - master
