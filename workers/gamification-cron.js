@@ -20,7 +20,7 @@
 // ─── Constants ────────────────────────────────────────────────────────────────
 const FIREBASE_PUBLIC_KEYS_URL = 'https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com';
 const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
-const PROJECT_ID = 'nkm-ind';
+const PROJECT_ID = 'nkm-ind'; // fallback only; deployment should provide FIREBASE_PROJECT_ID
 
 // ─── base64url helpers ─────────────────────────────────────────────────────────
 function b64urlDecode(str) {
@@ -201,6 +201,12 @@ async function deleteExpiredPosts(env) {
     for (const item of docs) {
       if (!item.document?.name) continue;
       const data = item.document.fields;
+      const isStory = data.isStory?.booleanValue === true;
+      const isVoice = data.isVoice?.booleanValue === true;
+      const type = data.type?.stringValue;
+      // Only ephemeral Story/Voice documents are eligible. Never delete a legacy
+      // post merely because it happens to contain an expiresAtMs field.
+      if (!isStory && !isVoice && type !== 'story' && type !== 'voice') continue;
 
       // Delete from Cloudinary first
       const mediaUrl = data.mediaUrl?.stringValue;
