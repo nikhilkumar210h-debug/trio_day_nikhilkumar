@@ -230,7 +230,7 @@ function creatorMeta(c) {
     '</div>';
 }
 
-async function renderThreadMessage(m, challengeId, profile = null) {
+async function renderThreadMessage(m, challengeId, profile = null, choiceLabel = '', replies = []) {
   const row = document.createElement('article');
   row.className = 'challenge-thread-message';
   const resolved = profile || {};
@@ -239,13 +239,24 @@ async function renderThreadMessage(m, challengeId, profile = null) {
     ? '<img src="' + esc(resolved.photoURL) + '" alt="" loading="lazy">'
     : '<span class="challenge-thread-avatar-initial">' + esc(name.charAt(0).toUpperCase()) + '</span>';
   const mine = currentUser && m.uid === currentUser.uid;
+  const answerChip = choiceLabel
+    ? '<span class="challenge-thread-choice">Picked ' + esc(choiceLabel) + '</span>'
+    : '';
   row.innerHTML =
     '<a class="challenge-thread-avatar" href="profile.html?uid=' + encodeURIComponent(m.uid || '') + '" aria-label="Open ' + esc(name) + ' profile">' + avatar + '</a>' +
     '<div class="challenge-thread-body">' +
       '<div class="challenge-thread-meta"><a class="challenge-thread-author" href="profile.html?uid=' + encodeURIComponent(m.uid || '') + '">' + esc(name) + '</a><span>' + esc(formatTime(m.createdAtMs)) + '</span>' +
       (mine ? '<button type="button" class="thread-message-menu" aria-label="Message options">•••</button>' : '') +
       '</div>' +
+      answerChip +
       '<p>' + esc(m.text || '') + '</p>' +
+      '<div class="challenge-thread-actions"><button type="button" class="challenge-thread-reply" data-reply>Reply</button>' +
+        (replies.length ? '<span class="challenge-thread-reply-count">' + replies.length + ' ' + (replies.length === 1 ? 'reply' : 'replies') + '</span>' : '') +
+      '</div>' +
+      '<div class="challenge-thread-replies" data-replies>' +
+        replies.map(reply => '<div class="challenge-thread-reply-row"><span class="challenge-thread-reply-name">' + esc(reply.name || 'User') + '</span><span class="challenge-thread-reply-text">' + esc(reply.text || '') + '</span></div>').join('') +
+      '</div>' +
+      '<div class="challenge-thread-reply-compose" data-reply-compose hidden><input maxlength="280" placeholder="Reply to ' + esc(name) + '"><button type="button" class="challenge-thread-reply-send">Send</button></div>' +
     '</div>';
   if (mine) {
     const menu = row.querySelector('.thread-message-menu');
@@ -261,8 +272,61 @@ async function renderThreadMessage(m, challengeId, profile = null) {
       }
     });
   }
+  const replyBtn = row.querySelector('[data-reply]');
+  const replyCompose = row.querySelector('[data-reply-compose]');
+  const replyInput = replyCompose.querySelector('input');
+  const replySend = replyCompose.querySelector('button');
+  replyBtn.addEventListener('click', () => {
+    replyCompose.hidden = !replyCompose.hidden;
+    if (!replyCompose.hidden) replyInput.focus();
+  });
+  replySend.addEventListener('click', async () => {
+    if (!currentUser) return;
+    const text = replyInput.value.trim();
+    if (!text) return;
+    replySend.disabled = true;
+    try {
+      const profileSnap = await getDoc(doc(db,'users',currentUser.uid));
+      const profile = profileSnap.exists() ? profileSnap.data() : {};
+      await addDoc(collection(db,'challengeThreads',challengeId,'messages',m.id,'replies'), {
+        uid: currentUser.uid,
+        name: profile.name || currentUser.displayName || 'User',
+        text,
+        createdAt: serverTimestamp(),
+        createdAtMs: Date.now()
+      });
+      replyInput.value = '';
+      replyCompose.hidden = true;
+    } catch (err) {
+      console.error('challenge reply failed', err);
+      alert('Reply could not be posted.');
+    } finally {
+      replySend.disabled = false;
+    }
+  });
+  replyInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      replySend.click();
+    }
+  });
   return row;
 }
+
+async function getThreadReplies(challengeId, messageId) {
+  try {
+    const snap = await getDocs(query(
+      collection(db,'challengeThreads',challengeId,'messages',messageId,'replies'),
+      orderBy('createdAtMs','asc'),
+      limit(20)
+    ));
+    return snap.docs.map(d => ({id:d.id, ...d.data()}));
+  } catch (err) {
+    console.warn('challenge replies unavailable', err);
+    return [];
+  }
+}
+
 function attachDiscussion(c, card, discussion) {
   const feed = discussion.querySelector('.challenge-thread-feed');
   const input = discussion.querySelector('.challenge-thread-input');
@@ -285,13 +349,22 @@ function attachDiscussion(c, card, discussion) {
       empty.hidden = false;
     } else {
       empty.hidden = true;
-      const profiles = new Map(await Promise.all(rows.map(async m => [m.uid, await getCachedUser(m.uid).catch(() => null)])));
-      rows.forEach(m => {
-        const row = renderThreadMessage(m, c.id, profiles.get(m.uid));
-        Promise.resolve(row).then(node => feed.appendChild(node));
-      });
+      const [profiles, answers] = await Promise.all([
+        Promise.all(rows.map(async m => [m.uid, await getCachedUser(m.uid).catch(() => null)])),
+        getDocs(query(collection(db,'challengeAnswers'), where('challengeId','==',c.id)))
+      ]);
+      const profileMap = new Map(profiles);
+      const answerMap = new Map(answers.docs.map(d => {
+        const data = d.data();
+        return [data.uid, Number.isInteger(Number(data.choice)) ? c.o[Number(data.choice)] : ''];
+      }));
+      const nodes = await Promise.all(rows.map(async m => {
+        const replies = await getThreadReplies(c.id, m.id);
+        return renderThreadMessage(m, c.id, profileMap.get(m.uid), answerMap.get(m.uid) || '', replies);
+      }));
+      nodes.forEach(node => feed.appendChild(node));
     }
-    count.textContent = rows.length ? rows.length + ' voices' : 'Be the first voice';
+    count.textContent = rows.length ? rows.length + ' ' + (rows.length === 1 ? 'voice' : 'voices') : 'Be the first voice';
     feed.scrollTop = 0;
   }, err => {
     console.warn('challenge discussion unavailable', err);
@@ -309,10 +382,15 @@ function attachDiscussion(c, card, discussion) {
     try {
       const profileSnap = await getDoc(doc(db,'users',currentUser.uid));
       const profile = profileSnap.exists() ? profileSnap.data() : {};
+      const answerSnap = await getDoc(doc(db,'challengeAnswers',currentUser.uid + '_' + c.id));
+      const answer = answerSnap.exists() ? answerSnap.data() : {};
+      const selectedChoice = Number(answer.choice);
       await addDoc(collection(db,'challengeThreads',c.id,'messages'), {
         uid: currentUser.uid,
         name: profile.name || currentUser.displayName || 'User',
         text,
+        choice: Number.isInteger(selectedChoice) ? selectedChoice : null,
+        choiceLabel: Number.isInteger(selectedChoice) ? (c.o[selectedChoice] || '') : '',
         createdAt: serverTimestamp(),
         createdAtMs: Date.now()
       });
