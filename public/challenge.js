@@ -240,15 +240,15 @@ async function renderThreadMessage(m, challengeId, profile = null, choiceLabel =
     : '<span class="challenge-thread-avatar-initial">' + esc(name.charAt(0).toUpperCase()) + '</span>';
   const mine = currentUser && m.uid === currentUser.uid;
   const answerChip = choiceLabel
-    ? '<span class="challenge-thread-choice">Picked ' + esc(choiceLabel) + '</span>'
+    ? '<span class="challenge-thread-choice">' + esc(choiceLabel) + '</span>'
     : '';
   row.innerHTML =
     '<a class="challenge-thread-avatar" href="profile.html?uid=' + encodeURIComponent(m.uid || '') + '" aria-label="Open ' + esc(name) + ' profile">' + avatar + '</a>' +
     '<div class="challenge-thread-body">' +
+      answerChip +
       '<div class="challenge-thread-meta"><a class="challenge-thread-author" href="profile.html?uid=' + encodeURIComponent(m.uid || '') + '">' + esc(name) + '</a><span>' + esc(formatTime(m.createdAtMs)) + '</span>' +
       (mine ? '<button type="button" class="thread-message-menu" aria-label="Message options">•••</button>' : '') +
       '</div>' +
-      answerChip +
       '<p>' + esc(m.text || '') + '</p>' +
       '<div class="challenge-thread-actions"><button type="button" class="challenge-thread-reply" data-reply>Reply</button>' +
         (replies.length ? '<span class="challenge-thread-reply-count">' + replies.length + ' ' + (replies.length === 1 ? 'reply' : 'replies') + '</span>' : '') +
