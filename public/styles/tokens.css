@@ -112,7 +112,7 @@
      ───────────────────────────────────────────────────────────────── */
   --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-display: 'Space Grotesk', 'Inter', system-ui, sans-serif;
-  --font-brand: 'Baloo 2', 'Inter', system-ui, sans-serif;
+  --font-brand: 'Space Grotesk', 'Inter', system-ui, sans-serif;
 
   --text-xs: 0.7rem;       /* 11.2px */
   --text-sm: 0.8125rem;    /* 13px */
@@ -121,7 +121,7 @@
   --text-xl: 1.25rem;      /* 20px */
   --text-2xl: 1.5rem;      /* 24px */
   --text-3xl: 1.875rem;    /* 30px */
-  --text-4xl: 2.25rem;     /* 36px */
+  --text-4xl: 2rem;          /* 32px */
 
   --leading-tight: 1.15;
   --leading-body: 1.5;
@@ -131,7 +131,7 @@
   --font-medium: 500;
   --font-semibold: 600;
   --font-bold: 700;
-  --font-extrabold: 800;
+  --font-extrabold: 700;
 
   /* ═══════════════════════════════════════════════════════════════════
      BORDER RADIUS
@@ -350,7 +350,7 @@ h1, h2, h3, h4, .brand strong {
   margin: 0;
   line-height: var(--leading-tight);
 }
-h1 { font-size: var(--text-4xl); font-weight: var(--font-extrabold); }
-h2 { font-size: var(--text-3xl); font-weight: var(--font-extrabold); }
+h1 { font-size: var(--text-4xl); font-weight: 700; }
+h2 { font-size: var(--text-3xl); font-weight: 700; }
 h3 { font-size: var(--text-2xl); font-weight: var(--font-bold); }
 h4 { font-size: var(--text-xl); font-weight: var(--font-semibold); }
