@@ -21,7 +21,7 @@ jobs:
           node-version: 22
           cache: npm
       - name: Install
-        run: npm ci
+        run: npm install
       - name: Syntax check changed JavaScript
         run: |
           node --input-type=module --check < public/core-loop.js
