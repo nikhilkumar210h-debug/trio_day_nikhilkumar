@@ -84,6 +84,20 @@ Canonical navigation:
 
 The shared navigation marks the current route with an active state and `aria-current="page"`.
 
+## Design system
+
+- Inter is the primary UI/body font.
+- Space Grotesk is the display/brand font.
+- Heavy Baloo 2 display styling is no longer part of the core design system.
+- Headings use controlled 700 weight and compact sizing instead of oversized/heavy typography.
+- Light and dark themes share the same semantic tokens and spacing system.
+
+## Gamification
+
+Challenge participation is server-authoritative: the client records the user's answer, then the authenticated gamification Worker verifies the answer before awarding XP/streak progress. XP awards are idempotent per user + Challenge, and Firestore rules block direct client writes to protected gamification fields.
+
+Story/voice expiry is also server-authoritative: each ephemeral item receives an `expiresAtMs` value and the hourly cleanup Worker deletes only documents explicitly identified as Story or Voice, including their Cloudinary media when credentials are configured.
+
 ## Validation
 
 Before production release, run the repository release checks and a browser pass covering:
