@@ -249,6 +249,21 @@ service cloud.firestore {
       allow delete: if signedIn() && resource.data.uid == request.auth.uid;
     }
 
+    match /challengeThreads/{challengeId}/messages/{messageId}/replies/{replyId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 50
+        && request.resource.data.text is string
+        && request.resource.data.text.size() > 0
+        && request.resource.data.text.size() <= 280
+        && request.resource.data.createdAtMs is number;
+      allow update: if false;
+      allow delete: if signedIn() && resource.data.uid == request.auth.uid;
+    }
+
     match /groupChat/{messageId} {
       allow read: if signedIn();
       allow create: if signedIn() && request.resource.data.uid == request.auth.uid
