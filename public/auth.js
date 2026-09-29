@@ -23,6 +23,44 @@ const isResetMode = urlMode === 'reset';
 let mode = 'login';
 let loginMethod = 'email';
 
+const LOGIN_RATE_KEY = 'trio-login-rate-v1';
+const LOGIN_RATE_WINDOW_MS = 10 * 60 * 1000;
+const LOGIN_RATE_MAX_FAILURES = 5;
+
+function readLoginFailures() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(LOGIN_RATE_KEY) || '[]');
+    const now = Date.now();
+    const fresh = Array.isArray(raw) ? raw.filter(ts => Number.isFinite(ts) && now - ts < LOGIN_RATE_WINDOW_MS) : [];
+    if (fresh.length !== raw.length) localStorage.setItem(LOGIN_RATE_KEY, JSON.stringify(fresh));
+    return fresh;
+  } catch {
+    return [];
+  }
+}
+
+function getLoginRateLimit() {
+  const failures = readLoginFailures();
+  if (failures.length < LOGIN_RATE_MAX_FAILURES) return { blocked: false, failures };
+  const retryAfterMs = Math.max(0, LOGIN_RATE_WINDOW_MS - (Date.now() - failures[0]));
+  return { blocked: retryAfterMs > 0, failures, retryAfterMs };
+}
+
+function recordLoginFailure() {
+  const failures = readLoginFailures();
+  failures.push(Date.now());
+  localStorage.setItem(LOGIN_RATE_KEY, JSON.stringify(failures.slice(-LOGIN_RATE_MAX_FAILURES)));
+}
+
+function clearLoginFailures() {
+  try { localStorage.removeItem(LOGIN_RATE_KEY); } catch {}
+}
+
+function formatRetry(ms) {
+  const minutes = Math.max(1, Math.ceil(ms / 60000));
+  return minutes === 1 ? 'about 1 minute' : 'about ' + minutes + ' minutes';
+}
+
 function status(text = '', error = false) {
   if (!statusEl) return;
   statusEl.textContent = text;
@@ -106,7 +144,7 @@ function setMode(next) {
   const submit = $('emailSubmitBtn'), toggle = $('modeToggle'), note = $('uidNote');
   const title = $('authTitle'), subtitle = $('authSubtitle'), pwd = $('password');
   const forgot = $('forgotPasswordBtn'), methodBar = $('loginMethodBar');
-  const strength = $('passwordStrength');
+  const strength = $('passwordStrength'), termsField = $('termsField');
 
   loginTab?.classList.toggle('active', mode === 'login');
   signupTab?.classList.toggle('active', mode === 'signup');
@@ -124,6 +162,7 @@ function setMode(next) {
   if (pwd) pwd.autocomplete = mode === 'signup' ? 'new-password' : 'current-password';
   if (forgot) forgot.hidden = !(mode === 'login' && loginMethod === 'email');
   if (strength) strength.hidden = mode !== 'signup';
+  if (termsField) termsField.hidden = mode !== 'signup';
   setLoginMethod(mode === 'signup' ? 'email' : loginMethod);
   status('');
 }
@@ -283,16 +322,25 @@ $('emailForm')?.addEventListener('submit', async event => {
   const trioUid = $('trioUid')?.value.trim().toUpperCase();
   const password = $('password')?.value || '';
   const name = $('fullName')?.value.trim() || '';
+  const termsAccepted = $('termsAccepted')?.checked === true;
 
   if (mode === 'signup') {
     if (!name) return status('Enter your name.', true);
     if (!email || !password) return status('Email and password are required.', true);
     if (password.length < 6) return status('Password must be at least 6 characters.', true);
+    if (!termsAccepted) return status('Please accept the Terms & Conditions and Privacy Policy.', true);
   } else if (loginMethod === 'uid') {
     if (!/^TRIO-[A-Z0-9]{8}$/.test(trioUid)) return status('Enter a valid Trio UID like TRIO-AB12CD34.', true);
     if (!password) return status('Enter your password.', true);
   } else if (!email || !password) {
     return status('Email and password are required.', true);
+  }
+
+  if (mode === 'login') {
+    const limit = getLoginRateLimit();
+    if (limit.blocked) {
+      return status('Too many failed login attempts. Try again in ' + formatRetry(limit.retryAfterMs) + '.', true);
+    }
   }
 
   setBusy(true, mode === 'signup' ? 'Creating…' : 'Signing in…');
@@ -317,15 +365,21 @@ $('emailForm')?.addEventListener('submit', async event => {
     } catch (profileError) {
       console.warn('[Auth] profile sync failed after successful sign-in:', profileError);
     }
+    if (mode === 'login') clearLoginFailures();
     status('Success. Redirecting…');
   } catch (e) {
+    if (mode === 'login' && ['auth/invalid-credential','auth/wrong-password','auth/user-not-found','auth/too-many-requests','functions/unauthenticated','functions/resource-exhausted'].includes(e?.code)) {
+      recordLoginFailure();
+    }
     const m = {
       'auth/email-already-in-use': 'Email already registered.',
       'auth/invalid-email': 'Enter a valid email.',
       'auth/weak-password': 'Password is too weak.',
       'auth/user-not-found': 'No account found for this email.',
       'auth/wrong-password': 'Incorrect password.',
-      'auth/invalid-credential': 'Email or password is incorrect.'
+      'auth/invalid-credential': 'Email or password is incorrect.',
+      'auth/too-many-requests': 'Too many login attempts. Please wait before trying again.',
+      'functions/resource-exhausted': 'Too many Trio UID login attempts. Please wait before trying again.'
     };
     const message = e?.message || '';
     const safe = e?.code === 'functions/unauthenticated' || /invalid trio uid or password/i.test(message)
@@ -368,6 +422,7 @@ if (isResetMode) {
   if (pwd) { pwd.hidden = true; pwd.required = false; }
   if ($('trioUidField')) $('trioUidField').hidden = true;
   if (forgot) forgot.hidden = true;
+  if ($('termsField')) $('termsField').hidden = true;
   if (note) note.classList.remove('visible');
   if (submit) submit.textContent = 'Send reset link';
   if (title) title.textContent = 'Reset password';
