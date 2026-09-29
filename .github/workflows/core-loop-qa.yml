@@ -30,6 +30,8 @@ jobs:
           node --input-type=module --check < public/script.js
           node --input-type=module --check < public/challenge.js
           node --input-type=module --check < public/profile.js
+          node --input-type=module --check < public/auth.js
+          node --check functions/index.js
           node --check server.js
       - name: Verify Playwright test discovery
         run: npm test -- --list
