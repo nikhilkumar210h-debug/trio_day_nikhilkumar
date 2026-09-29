@@ -200,18 +200,37 @@ async function deleteFromCloudinary(mediaUrl, env) {
 // ─── Main cleanup: delete expired posts (stories + voice) ──────────────────────
 
 async function deleteExpiredTempChats(env){
-  const projectId=env.FIREBASE_PROJECT_ID||PROJECT_ID, token=await getAccessToken(env), now=Date.now();
+  const MAX_DELETES_PER_RUN = 200;
+  const projectId=env.FIREBASE_PROJECT_ID||PROJECT_ID;
+  const token=await getAccessToken(env);
+  const now=Date.now();
   const base=firestoreBase(projectId);
-  const q={structuredQuery:{from:[{collectionId:'tempMessages'}],where:{fieldFilter:{field:{fieldPath:'expireAt'},op:'LESS_THAN',value:{timestampValue:new Date(now).toISOString()}}},limit:200}};
+  const q={structuredQuery:{from:[{collectionId:'tempMessages'}],where:{fieldFilter:{field:{fieldPath:'expireAt'},op:'LESS_THAN',value:{timestampValue:new Date(now).toISOString()}}},limit:MAX_DELETES_PER_RUN}};
   const res=await fetch(base.replace('/documents','')+':runQuery',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify(q)});
+  if(!res.ok) throw new Error('Temporary chat cleanup query failed: '+res.status);
   const rows=await res.json();
-  for(const item of rows){if(item.document?.name) await fetch('https://firestore.googleapis.com/v1/'+item.document.name,{method:'DELETE',headers:{Authorization:'Bearer '+token}});}
-  const rooms={};
-  for(const item of rows){const name=item.document?.name||'';const m=name.match(/\/tempChats\/([^/]+)\/tempMessages\//);if(m)rooms[m[1]]=true;}
-  for(const roomId of Object.keys(rooms)){await fetch(base+'/tempChats/'+encodeURIComponent(roomId),{method:'DELETE',headers:{Authorization:'Bearer '+token}});}
-  console.log('Temporary chat cleanup',Object.keys(rooms).length,'rooms');
+  const rooms=[];
+  const seenRooms=new Set();
+  let deletedCount=0;
+  for(const item of rows){
+    if(deletedCount>=MAX_DELETES_PER_RUN) break;
+    const name=item.document?.name||'';
+    if(!name) continue;
+    const deleted=await fetch('https://firestore.googleapis.com/v1/'+name,{method:'DELETE',headers:{Authorization:'Bearer '+token}});
+    if(deleted.ok){
+      deletedCount++;
+      const match=name.match(/\\/tempChats\\/([^/]+)\\/tempMessages\\//);
+      if(match&&!seenRooms.has(match[1])){seenRooms.add(match[1]);rooms.push(match[1]);}
+    }
+  }
+  for(const roomId of rooms){
+    if(deletedCount>=MAX_DELETES_PER_RUN) break;
+    const deleted=await fetch(base+'/tempChats/'+encodeURIComponent(roomId),{method:'DELETE',headers:{Authorization:'Bearer '+token}});
+    if(deleted.ok) deletedCount++;
+  }
+  console.log('Temporary chat cleanup: deleted '+deletedCount+'/'+MAX_DELETES_PER_RUN+' documents this run.');
+  return deletedCount;
 }
-
 async function deleteExpiredPosts(env) {
   const now = Date.now();
   let totalDeleted = 0;
