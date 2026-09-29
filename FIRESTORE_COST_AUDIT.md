@@ -26,7 +26,7 @@ Firestore aggregation queries such as count are billed according to index entrie
 - One challengeAnswers/{uid}_{challengeId} document per user + Challenge; changing an answer updates that document instead of creating another answer.
 - challengeStats/{challengeId} is maintained in a Firestore transaction for immediate UI counters.
 - Existing server-authoritative XP/streak writes remain behind the Cloudflare gamification Worker.
-- Temporary chat creates one room plus message documents; TTL fields are not used as an access-control substitute.
+- Temporary chat creates one room plus message documents; the free-tier deployment cleans them through the existing Cloudflare cron Worker. Firestore TTL is not enabled because TTL deletes currently require billing.
 - Admin moderation changes hidden/status only; it does not delete test data.
 
 ## Known trade-offs
