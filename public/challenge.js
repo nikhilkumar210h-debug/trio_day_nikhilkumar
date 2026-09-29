@@ -1,7 +1,7 @@
 import { auth, db } from './firebase-init.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
 import {
-  collection, doc, getDocs, getDoc, query, where, orderBy, limit,
+  collection, doc, getDocs, getDoc, getCountFromServer, query, where, orderBy, limit,
   setDoc, addDoc, deleteDoc, serverTimestamp, onSnapshot
 } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 import { listCommunityTasks } from './gamification/community-tasks.js?v=20260919-community5';
@@ -20,6 +20,8 @@ const host = document.getElementById('challengeList');
 let currentUser = null;
 const cards = new Map();
 const threadUnsubs = new Map();
+let answeredChallengeIds = null;
+let answeredChallengesPromise = null;
 
 async function getResponses(id) {
   try {
@@ -30,6 +32,40 @@ async function getResponses(id) {
     console.warn('challenge responses unavailable', err);
     return [];
   }
+}
+
+async function getResponseCount(id) {
+  if (!id) return 0;
+  const cacheKey = 'challenge_response_count_' + id;
+  const cached = localStorage.getItem(cacheKey);
+  const cachedValue = cached === null ? null : Number(cached);
+  if (Number.isFinite(cachedValue) && cachedValue >= 0) return cachedValue;
+  try {
+    const snap = await getCountFromServer(query(collection(db, 'challengeAnswers'), where('challengeId', '==', id)));
+    const count = Number(snap.data().count) || 0;
+    localStorage.setItem(cacheKey, String(count));
+    return count;
+  } catch (_) {
+    return 0;
+  }
+}
+
+async function getAnsweredChallengeIds() {
+  if (!currentUser) return new Set();
+  if (answeredChallengeIds) return answeredChallengeIds;
+  if (answeredChallengesPromise) return answeredChallengesPromise;
+  answeredChallengesPromise = getDocs(query(
+    collection(db, 'challengeAnswers'),
+    where('uid', '==', currentUser.uid),
+    limit(100)
+  )).then(snap => {
+    answeredChallengeIds = new Set(snap.docs.map(d => String(d.data()?.challengeId || d.id.split('_').slice(1).join('_'))).filter(Boolean));
+    return answeredChallengeIds;
+  }).catch(() => {
+    answeredChallengeIds = new Set();
+    return answeredChallengeIds;
+  }).finally(() => { answeredChallengesPromise = null; });
+  return answeredChallengesPromise;
 }
 
 function countsFromResponses(responses) {
@@ -453,6 +489,8 @@ function addCard(c) {
         challengeId:c.id, uid:currentUser.uid, choice,
         createdAt:serverTimestamp(), createdAtMs:Date.now()
       }, {merge:true});
+      if (answeredChallengeIds) answeredChallengeIds.add(c.id);
+      localStorage.removeItem('challenge_response_count_' + c.id);
       localStorage.setItem('trio_last_challenge', JSON.stringify({id:c.id,choice,at:Date.now()}));
       try {
         const gamificationUser = auth.currentUser;
@@ -481,12 +519,28 @@ function addCard(c) {
     }
   }));
 
-  card.querySelector('.challenge-next-btn')?.addEventListener('click', e => {
+  card.querySelector('.challenge-next-btn')?.addEventListener('click', async e => {
     e.preventDefault();
+    if (!currentUser) {
+      location.href = 'login.html?redirect=' + encodeURIComponent('challenge.html');
+      return;
+    }
     const ordered = [...cards.values()];
+    if (!ordered.length) return;
+    const answered = await getAnsweredChallengeIds();
     const currentPos = ordered.findIndex(x => x.card === card);
-    const next = ordered[(currentPos + 1) % ordered.length];
-    if (!next || next.card === card) return;
+    const afterCurrent = ordered.slice(currentPos + 1);
+    const beforeCurrent = ordered.slice(0, Math.max(0, currentPos));
+    const next = [...afterCurrent, ...beforeCurrent].find(x => !answered.has(x.c.id));
+    if (!next) {
+      const note = document.createElement('div');
+      note.className = 'challenge-all-done';
+      note.setAttribute('role', 'status');
+      note.textContent = 'Aaj ke sab challenges ho gaye ✓';
+      const existing = card.querySelector('.challenge-all-done');
+      if (!existing) card.querySelector('.challenge-links')?.appendChild(note);
+      return;
+    }
     card.classList.remove('challenge-switching-in');
     card.classList.add('challenge-switching-out');
     next.card.classList.remove('challenge-switching-out');
