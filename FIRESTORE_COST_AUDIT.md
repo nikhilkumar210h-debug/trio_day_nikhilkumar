@@ -21,6 +21,12 @@ Firebase's current Firestore Standard no-cost quota is 50,000 document reads/day
 
 Firestore aggregation queries such as count are billed according to index entries read and return only the aggregate result; this avoids transferring every answer document just to display a total.
 
+## Authentication protection
+
+- Trio UID login uses a server-side Firestore-backed rate-limit record: 5 attempts per 10-minute window per normalized Trio UID, reset after a successful credential check.
+- The browser also keeps a short-lived failure counter so the login UI stops repeated retries before another network request is sent.
+- Email/password authentication continues to rely on Firebase Authentication's built-in abuse protections and quotas.
+
 ## Main write paths
 
 - One challengeAnswers/{uid}_{challengeId} document per user + Challenge; changing an answer updates that document instead of creating another answer.
