@@ -148,4 +148,7 @@ The current release branch implements the planned Challenge-first loop in one pa
 - The transactional challengeStats document is an optimization for immediate UI updates; if it is unavailable, the client falls back to the existing answer write and read-time aggregation path.
 - Temporary-chat cleanup is capped at 200 document deletes per cron run to keep cleanup bounded.
 - Cloudflare Preview Builds are enabled for non-production branches; the Preview command is `npx wrangler preview`.
+- Login hardening: Firebase Auth's built-in abuse protections remain enabled, and Trio UID login now has a server-side 5-attempt / 10-minute per-UID limiter plus a client-side failure cooldown.
+- Signup requires explicit acceptance of the Terms & Conditions and Privacy Policy.
+- Privacy Policy, Terms & Conditions, and Help Center were refreshed for the current Challenge/Story/Chat product and linked as public pages.
 - Full cost notes are in FIRESTORE_COST_AUDIT.md.
