@@ -301,6 +301,50 @@ service cloud.firestore {
       allow read: if signedIn();
     }
 
+
+    match /challengeStats/{challengeId} {
+      allow read: if signedIn();
+      allow create, update: if signedIn()
+        && request.resource.data.total is int
+        && request.resource.data.total >= 0
+        && request.resource.data.total <= 1000000
+        && request.resource.data.choice0 is int
+        && request.resource.data.choice1 is int
+        && request.resource.data.choice2 is int
+        && request.resource.data.choice3 is int
+        && request.resource.data.choice4 is int
+        && request.resource.data.choice0 >= 0 && request.resource.data.choice1 >= 0
+        && request.resource.data.choice2 >= 0 && request.resource.data.choice3 >= 0
+        && request.resource.data.choice4 >= 0
+        && request.resource.data.total == request.resource.data.choice0 + request.resource.data.choice1 + request.resource.data.choice2 + request.resource.data.choice3 + request.resource.data.choice4;
+      allow delete: if false;
+    }
+
+    match /tempChats/{roomId} {
+      allow read: if signedIn() && request.auth.uid in resource.data.participants && resource.data.expireAt > request.time;
+      allow create: if signedIn()
+        && request.auth.uid in request.resource.data.participants
+        && request.resource.data.participants.size() == 2
+        && request.resource.data.challengeId is string
+        && request.resource.data.expireAt > request.time;
+      allow update: if false;
+      allow delete: if false;
+      match /tempMessages/{messageId} {
+        allow read: if signedIn()
+          && get(/databases/$(database)/documents/tempChats/$(roomId)).data.participants.hasAny([request.auth.uid])
+          && get(/databases/$(database)/documents/tempChats/$(roomId)).data.expireAt > request.time;
+        allow create: if signedIn()
+          && get(/databases/$(database)/documents/tempChats/$(roomId)).data.participants.hasAny([request.auth.uid])
+          && get(/databases/$(database)/documents/tempChats/$(roomId)).data.expireAt > request.time
+          && request.resource.data.uid == request.auth.uid
+          && request.resource.data.text is string
+          && request.resource.data.text.size() > 0
+          && request.resource.data.text.size() <= 280
+          && request.resource.data.expireAt > request.time;
+        allow update, delete: if false;
+      }
+    }
+
     // ── Gamification ──────────────────────────────────────────────
     match /config/{docId} {
       allow read: if signedIn();
