@@ -37,14 +37,9 @@ async function getResponses(id) {
 async function getResponseCount(id) {
   if (!id) return 0;
   const cacheKey = 'challenge_response_count_' + id;
-  const cached = localStorage.getItem(cacheKey);
-  const cachedValue = cached === null ? null : Number(cached);
-  if (Number.isFinite(cachedValue) && cachedValue >= 0) return cachedValue;
   try {
     const snap = await getCountFromServer(query(collection(db, 'challengeAnswers'), where('challengeId', '==', id)));
-    const count = Number(snap.data().count) || 0;
-    localStorage.setItem(cacheKey, String(count));
-    return count;
+    return Number(snap.data().count) || 0;
   } catch (_) {
     return 0;
   }
@@ -113,9 +108,10 @@ function renderCommunityResult(result, c, counts, selectedChoice) {
 
 async function renderResultPreview(preview, c, responses) {
   const latest = responses.slice(0, 2);
+  const responseCount = await getResponseCount(c.id);
   const avatars = await loadProfilesForPeople(latest, latest.length);
   preview.innerHTML =
-    '<span class="challenge-result-preview-label">' + responses.length + ' ' + (responses.length === 1 ? 'response' : 'responses') + '</span>' +
+    '<span class="challenge-result-preview-label">' + responseCount + ' ' + (responseCount === 1 ? 'response' : 'responses') + '</span>' +
     '<span class="challenge-result-preview-avatars">' +
       latest.map(r => {
         const u = avatars.get(r.uid) || {};
@@ -490,7 +486,6 @@ function addCard(c) {
         createdAt:serverTimestamp(), createdAtMs:Date.now()
       }, {merge:true});
       if (answeredChallengeIds) answeredChallengeIds.add(c.id);
-      localStorage.removeItem('challenge_response_count_' + c.id);
       localStorage.setItem('trio_last_challenge', JSON.stringify({id:c.id,choice,at:Date.now()}));
       try {
         const gamificationUser = auth.currentUser;
