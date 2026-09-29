@@ -104,7 +104,7 @@ Challenge participation is server-authoritative: the client records the user's a
 
 Challenge response totals use a write-time challengeStats document maintained in a Firestore transaction, while the answer collection remains the source of truth for audit/recovery.
 
-Temporary chat rooms and their messages carry Firestore expireAt timestamps and are configured for TTL cleanup.
+Temporary chat rooms and their messages carry Firestore expireAt timestamps. On the zero-budget deployment, the existing Cloudflare cron Worker cleans expired temporary-chat documents; Firestore TTL is intentionally not enabled because Firebase currently requires billing for TTL deletes.
 
 Story/voice expiry is also server-authoritative: each ephemeral item receives an `expiresAtMs` value and the hourly cleanup Worker deletes only documents explicitly identified as Story or Voice, including their Cloudinary media when credentials are configured.
 
