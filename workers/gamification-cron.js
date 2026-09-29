@@ -17,6 +17,52 @@
  *   crons = ["0 * * * *"]
  */
 
+
+const DAILY_QUESTIONS = [
+ 'If you could change one thing about your school or college, what would it be?',
+ 'What matters more for a first job: skills or marks?',
+ 'Which study habit actually helps you remember things?',
+ 'Would you rather learn one skill deeply or five skills lightly?',
+ 'What should students learn before choosing a career?',
+ 'Which matters more in a team: speed or communication?',
+ 'What makes a good teacher unforgettable?',
+ 'Would you choose a stable job or a risky startup idea?',
+ 'What is one exam rule you would redesign?',
+ 'Which is harder: starting a project or finishing it?',
+ 'What makes an app worth opening every day?',
+ 'Would you rather build for 100 loyal users or 10,000 casual users?',
+ 'What should every student know about money?',
+ 'Which is more useful: asking good questions or giving quick answers?',
+ 'What makes online communities feel welcoming?',
+ 'Would you rather work alone or with a great team?',
+ 'Which college factor matters most to you: course, location, cost or people?',
+ 'What is the best way to recover after a bad study day?',
+ 'Would you rather have more free time or more money?',
+ 'What makes a challenge fun instead of stressful?',
+ 'Which technology will change student life the most?',
+ 'What is one skill you wish schools taught earlier?',
+ 'Would you rather travel often or build something long-term?',
+ 'What makes someone a good friend in a busy life?',
+ 'Which is more satisfying: learning something or making something?',
+ 'What should a beginner check before joining a new online community?',
+ 'Would you rather solve a hard problem or explain an easy one brilliantly?',
+ 'What is one small habit that improves your day?',
+ 'Which matters more when learning: consistency or intensity?',
+ 'What question should Trio Day ask students tomorrow?'
+];
+function localDateKeyUtc(ms=Date.now()){return new Date(ms).toISOString().slice(0,10);}
+function dailyQuestionFor(ms=Date.now()){const key=localDateKeyUtc(ms);let hash=0;for(const ch of key)hash=(hash*31+ch.charCodeAt(0))>>>0;return {date:key,index:hash%DAILY_QUESTIONS.length,question:DAILY_QUESTIONS[hash%DAILY_QUESTIONS.length],updatedAtMs:ms};}
+async function fsPatch(projectId, accessToken, path, data) {
+  const url = firestoreBase(projectId) + '/' + path;
+  const res = await fetch(url, {method:'PATCH',headers:{Authorization:'Bearer '+accessToken,'Content-Type':'application/json'},body:JSON.stringify({fields:toFirestoreFields(data)})});
+  if (!res.ok) throw new Error('Firestore PATCH '+path+' failed: '+res.status);
+  return true;
+}
+function firestoreBase(projectId){return 'https://firestore.googleapis.com/v1/projects/'+projectId+'/databases/(default)/documents';}
+function toFirestoreValue(v){if(v===null||v===undefined)return {nullValue:null};if(typeof v==='boolean')return {booleanValue:v};if(typeof v==='number')return {integerValue:String(Math.round(v))};if(typeof v==='string')return {stringValue:v};if(Array.isArray(v))return {arrayValue:{values:v.map(toFirestoreValue)}};if(typeof v==='object')return {mapValue:{fields:toFirestoreFields(v)}};return {stringValue:String(v)};}
+function toFirestoreFields(obj){const fields={};for(const[k,v]of Object.entries(obj))fields[k]=toFirestoreValue(v);return fields;}
+async function publishDailyQuestion(env){const projectId=env.FIREBASE_PROJECT_ID||PROJECT_ID;const token=await getAccessToken(env);const daily=dailyQuestionFor();await fsPatch(projectId,token,'config/dailyQuestion',{...daily,publishedAtMs:Date.now()});console.log('Daily question published',daily.date,daily.index);}
+
 // ─── Constants ────────────────────────────────────────────────────────────────
 const FIREBASE_PUBLIC_KEYS_URL = 'https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com';
 const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
@@ -245,6 +291,10 @@ export default {
 
   async scheduled(event, env, ctx) {
     console.log('gamification-cron tick', event.cron, Date.now());
-    ctx.waitUntil(deleteExpiredPosts(env));
+    if (event.cron === '15 0 * * *') {
+      ctx.waitUntil(publishDailyQuestion(env));
+    } else {
+      ctx.waitUntil(deleteExpiredPosts(env));
+    }
   }
 };
