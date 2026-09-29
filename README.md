@@ -138,11 +138,7 @@ The current release branch implements the planned Challenge-first loop in one pa
 7. Discover — student-focused category shortcuts while retaining the existing Challenge/Connect/Create lanes.
 8. Today + friend streak — daily question and friend streak surface without introducing a second social graph.
 9. Firestore cost pass — bounded queries, short client caches, transaction counters, and a documented read/write budget.
-10. Final QA foundation — release checks, security-rule updates, TTL index definitions, and a consolidated audit document.
-
-### Required deployment step for TTL
-
-firestore.indexes.json contains TTL field configuration for tempChats.expireAt and tempMessages.expireAt. Firestore TTL policies must be deployed/activated in the Firebase project; TTL deletion is asynchronous and can take time after expiry. The code never depends on immediate deletion for access control: security rules also reject expired rooms/messages.
+10. Final QA foundation — release checks, security-rule updates, cron-based temporary-chat cleanup, and a consolidated audit document.
 
 ### Release / cost notes
 
@@ -150,4 +146,5 @@ firestore.indexes.json contains TTL field configuration for tempChats.expireAt a
 - Challenge answer writes remain one document per user + Challenge.
 - Home response totals use count aggregation; Firebase documents that aggregation queries return only the summary and are billed from index entries read.
 - The transactional challengeStats document is an optimization for immediate UI updates; if it is unavailable, the client falls back to the existing answer write and read-time aggregation path.
+- Temporary-chat cleanup is capped at 200 document deletes per cron run to keep cleanup bounded.
 - Full cost notes are in FIRESTORE_COST_AUDIT.md.
