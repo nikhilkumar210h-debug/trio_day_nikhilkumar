@@ -7,7 +7,8 @@ const PUBLIC_PAGES = new Set([
   'sitemap.html',
   'offline.html',
   'privacy.html',
-  'privacy-policy.html'
+  'privacy-policy.html',
+  'terms.html'
 ]);
 
 onAuthStateChanged(auth, (user) => {
