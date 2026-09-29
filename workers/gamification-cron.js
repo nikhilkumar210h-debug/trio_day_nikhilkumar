@@ -198,6 +198,20 @@ async function deleteFromCloudinary(mediaUrl, env) {
 }
 
 // ─── Main cleanup: delete expired posts (stories + voice) ──────────────────────
+
+async function deleteExpiredTempChats(env){
+  const projectId=env.FIREBASE_PROJECT_ID||PROJECT_ID, token=await getAccessToken(env), now=Date.now();
+  const base=firestoreBase(projectId);
+  const q={structuredQuery:{from:[{collectionId:'tempMessages'}],where:{fieldFilter:{field:{fieldPath:'expireAt'},op:'LESS_THAN',value:{timestampValue:new Date(now).toISOString()}}},limit:200}};
+  const res=await fetch(base.replace('/documents','')+':runQuery',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify(q)});
+  const rows=await res.json();
+  for(const item of rows){if(item.document?.name) await fetch('https://firestore.googleapis.com/v1/'+item.document.name,{method:'DELETE',headers:{Authorization:'Bearer '+token}});}
+  const rooms={};
+  for(const item of rows){const name=item.document?.name||'';const m=name.match(/\/tempChats\/([^/]+)\/tempMessages\//);if(m)rooms[m[1]]=true;}
+  for(const roomId of Object.keys(rooms)){await fetch(base+'/tempChats/'+encodeURIComponent(roomId),{method:'DELETE',headers:{Authorization:'Bearer '+token}});}
+  console.log('Temporary chat cleanup',Object.keys(rooms).length,'rooms');
+}
+
 async function deleteExpiredPosts(env) {
   const now = Date.now();
   let totalDeleted = 0;
@@ -294,7 +308,7 @@ export default {
     if (event.cron === '15 0 * * *') {
       ctx.waitUntil(publishDailyQuestion(env));
     } else {
-      ctx.waitUntil(deleteExpiredPosts(env));
+      ctx.waitUntil(Promise.all([deleteExpiredPosts(env), deleteExpiredTempChats(env)]));
     }
   }
 };
