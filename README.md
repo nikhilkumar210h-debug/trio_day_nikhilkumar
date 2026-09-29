@@ -147,4 +147,5 @@ The current release branch implements the planned Challenge-first loop in one pa
 - Home response totals use count aggregation; Firebase documents that aggregation queries return only the summary and are billed from index entries read.
 - The transactional challengeStats document is an optimization for immediate UI updates; if it is unavailable, the client falls back to the existing answer write and read-time aggregation path.
 - Temporary-chat cleanup is capped at 200 document deletes per cron run to keep cleanup bounded.
+- Cloudflare Preview Builds are enabled for non-production branches; the Preview command is `npx wrangler preview`.
 - Full cost notes are in FIRESTORE_COST_AUDIT.md.
