@@ -2,7 +2,7 @@ import { auth, db } from './firebase-init.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
 import {
   collection, doc, getDocs, getDoc, getCountFromServer, query, where, orderBy, limit,
-  setDoc, addDoc, deleteDoc, serverTimestamp, onSnapshot
+  setDoc, addDoc, deleteDoc, serverTimestamp, onSnapshot, runTransaction
 } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 import { listCommunityTasks } from './gamification/community-tasks.js?v=20260919-community5';
 import { workerPost } from './gamification/worker-config.js';
@@ -19,6 +19,8 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt
 const host = document.getElementById('challengeList');
 let currentUser = null;
 const cards = new Map();
+const CHALLENGE_CATEGORIES = ['All','Career','Study','College','Tech','Life','Fun','Community'];
+const shareChallengeUrl = c => new URL('challenge.html?id=' + encodeURIComponent(c.id), location.href).href;
 const threadUnsubs = new Map();
 let answeredChallengeIds = null;
 let answeredChallengesPromise = null;
@@ -89,7 +91,7 @@ function renderCommunityResult(result, c, counts, selectedChoice) {
   const rows = c.o.map((label, index) => {
     const count = counts[index] || 0;
     const pct = Math.round((count / safeTotal) * 100);
-    const value = enoughForPercent ? pct + '%' : count + (count === 1 ? ' person' : ' people');
+    const value = pct + '% · ' + count + (count === 1 ? ' person' : ' people');
     return '<div class="result-bar-row" data-result-option="' + index + '">' +
       '<span class="result-bar-label">' + esc(label) + '</span>' +
       '<span class="result-track"><span class="result-fill" style="width:' + Math.max(2, pct) + '%"></span></span>' +
@@ -105,6 +107,63 @@ function renderCommunityResult(result, c, counts, selectedChoice) {
     '</span></div><div class="result-bars">' + rows + '</div>';
   result.hidden = true;
 }
+
+async function updateChallengeCounter(challengeId, uid, choice) {
+  const answerRef = doc(db, 'challengeAnswers', uid + '_' + challengeId);
+  const statsRef = doc(db, 'challengeStats', challengeId);
+  try {
+    await runTransaction(db, async tx => {
+      const [answerSnap, statsSnap] = await Promise.all([tx.get(answerRef), tx.get(statsRef)]);
+      const previous = answerSnap.exists() ? Number(answerSnap.data()?.choice) : null;
+      const current = statsSnap.exists() ? statsSnap.data() : {};
+      const counts = Array.from({length: 5}, (_, i) => Math.max(0, Number(current['choice' + i]) || 0));
+      let total = Math.max(0, Number(current.total) || 0);
+      if (previous !== choice) {
+        if (Number.isInteger(previous) && counts[previous] > 0) counts[previous]--;
+        if (!Number.isInteger(previous)) total++;
+        counts[choice]++;
+      }
+      tx.set(statsRef, {
+        total,
+        choice0: counts[0], choice1: counts[1], choice2: counts[2], choice3: counts[3], choice4: counts[4],
+        updatedAt: serverTimestamp(), updatedAtMs: Date.now()
+      }, {merge:true});
+      tx.set(answerRef, {challengeId, uid, choice, createdAt: serverTimestamp(), createdAtMs: Date.now()}, {merge:true});
+    });
+    return true;
+  } catch (err) {
+    console.warn('[Challenge] counter transaction unavailable; falling back to answer write', err);
+    await setDoc(answerRef, {challengeId, uid, choice, createdAt: serverTimestamp(), createdAtMs: Date.now()}, {merge:true});
+    return false;
+  }
+}
+
+async function shareChallenge(c) {
+  const url = shareChallengeUrl(c);
+  try {
+    const canvas = document.createElement('canvas');
+    canvas.width = 1200; canvas.height = 630;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#0b0820'; ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle = '#8b5cf6'; ctx.fillRect(70,70,8,490);
+    ctx.fillStyle = '#f8fafc'; ctx.font = '700 30px Inter, sans-serif'; ctx.fillText('TRIO DAY · CHALLENGE', 115, 110);
+    ctx.font = '700 54px Inter, sans-serif';
+    const words = String(c.q || '').split(/\\s+/); let line='', y=210;
+    for (const word of words) { const test=line ? line+' '+word : word; if(ctx.measureText(test).width>970){ctx.fillText(line,115,y);y+=70;line=word;}else line=test; }
+    if(line) ctx.fillText(line,115,y);
+    ctx.fillStyle = '#a5b4fc'; ctx.font = '500 28px Inter, sans-serif';
+    (c.o || []).forEach((o,i)=>ctx.fillText(String.fromCharCode(65+i)+'. '+o,115,450+i*48));
+    ctx.fillStyle = '#94a3b8'; ctx.font = '500 22px Inter, sans-serif'; ctx.fillText('Pick a side. See who thinks differently.',115,575);
+    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+    if (navigator.share && blob && navigator.canShare) {
+      const file = new File([blob], 'trio-day-challenge.png', {type:'image/png'});
+      if (navigator.canShare({files:[file]})) { await navigator.share({title:'Trio Day Challenge',text:c.q,url,files:[file]}); return; }
+    }
+    if (navigator.share) { await navigator.share({title:'Trio Day Challenge',text:c.q,url}); return; }
+    await navigator.clipboard.writeText(url); alert('Challenge link copied ✓');
+  } catch (err) { if (err?.name !== 'AbortError') { try { await navigator.clipboard.writeText(url); alert('Challenge link copied ✓'); } catch {} } }
+}
+
 
 async function renderResultPreview(preview, c, responses) {
   const latest = responses.slice(0, 2);
@@ -462,6 +521,8 @@ function addCard(c) {
     '<div class="challenge-result" hidden></div>' +
     '<div class="challenge-links">' +
       '<button type="button" class="nkm-btn nkm-btn--secondary challenge-discuss-btn">💬 Join the discussion</button>' +
+      '<button type="button" class="nkm-btn nkm-btn--secondary challenge-share-btn">↗ Share</button>' +
+      '<button type="button" class="nkm-btn nkm-btn--secondary challenge-opposite-btn">10-min opposite chat</button>' +
       '<a class="nkm-btn nkm-btn--primary challenge-next-btn" href="#">Next Challenge →</a>' +
     '</div>' +
     '<section class="challenge-thread" hidden aria-label="Public challenge discussion">' +
@@ -475,16 +536,15 @@ function addCard(c) {
   const result = card.querySelector('.challenge-result');
   const discussion = card.querySelector('.challenge-thread');
   const discussBtn = card.querySelector('.challenge-discuss-btn');
+  const shareBtn = card.querySelector('.challenge-share-btn');
+  const oppositeBtn = card.querySelector('.challenge-opposite-btn');
   cards.set(c.id, {card, resultPreview, result, discussion, c});
 
   card.querySelectorAll('[data-choice]').forEach(btn => btn.addEventListener('click', async () => {
     if (!currentUser) return;
     const choice = Number(btn.dataset.choice);
     try {
-      await setDoc(doc(db,'challengeAnswers',currentUser.uid + '_' + c.id), {
-        challengeId:c.id, uid:currentUser.uid, choice,
-        createdAt:serverTimestamp(), createdAtMs:Date.now()
-      }, {merge:true});
+      await updateChallengeCounter(c.id, currentUser.uid, choice);
       if (answeredChallengeIds) answeredChallengeIds.add(c.id);
       localStorage.setItem('trio_last_challenge', JSON.stringify({id:c.id,choice,at:Date.now()}));
       try {
@@ -563,6 +623,19 @@ function addCard(c) {
     }
   });
 
+  shareBtn.addEventListener('click', () => shareChallenge(c));
+  oppositeBtn.addEventListener('click', async () => {
+    if (!currentUser) return;
+    const mine = await getDoc(doc(db,'challengeAnswers',currentUser.uid + '_' + c.id)).catch(() => null);
+    if (!mine?.exists()) { alert('Pick an answer first.'); return; }
+    const myChoice = Number(mine.data().choice);
+    const snap = await getDocs(query(collection(db,'challengeAnswers'), where('challengeId','==',c.id), limit(40))).catch(() => null);
+    const other = snap?.docs.find(d => d.data()?.uid !== currentUser.uid && Number(d.data()?.choice) !== myChoice);
+    if (!other) { alert('No one on the opposite side yet. Check back when someone picks differently.'); return; }
+    const params = new URLSearchParams({challenge:c.id, other:other.data().uid});
+    location.href = 'temp-chat.html?' + params.toString();
+  });
+
   discussBtn.addEventListener('click', () => {
     discussion.hidden = !discussion.hidden;
     discussBtn.textContent = discussion.hidden ? '💬 Join the discussion' : '💬 Discussion open';
@@ -615,6 +688,19 @@ async function hydrateVisibleCards() {
   entries.forEach(({card}) => observer.observe(card));
 }
 
+
+function renderCategoryFilters(tasks, builtIns) {
+  const existing = document.getElementById('challengeCategoryFilters'); if (existing) existing.remove();
+  const wrap = document.createElement('div'); wrap.id='challengeCategoryFilters'; wrap.className='challenge-category-filters';
+  wrap.innerHTML = CHALLENGE_CATEGORIES.map((x,i)=>`<button type="button" class="challenge-category-filter${i===0?' active':''}" data-category="${esc(x)}">${esc(x)}</button>`).join('');
+  host?.parentNode?.insertBefore(wrap, host);
+  wrap.querySelectorAll('[data-category]').forEach(btn => btn.addEventListener('click', () => {
+    wrap.querySelectorAll('.challenge-category-filter').forEach(b=>b.classList.remove('active')); btn.classList.add('active');
+    const category=btn.dataset.category;
+    cards.forEach(({card,c}) => { const visible=category==='All' || String(c.category||'Community')===category; card.hidden=!visible; });
+  }));
+}
+
 async function loadCommunityChallenges() {
   if (!host) return;
   try {
@@ -625,11 +711,12 @@ async function loadCommunityChallenges() {
         id:t.id, tag:'COMMUNITY', q:t.interaction.question, o:t.interaction.options,
         creatorUid:t.creatorUid || '', creatorName:t.creatorName || 'Admin',
         creatorRole:t.creatorRole || (t.creatorUid ? 'Member' : 'Admin'),
-        format:t.interaction.format || 'quick', twist:t.interaction.twist || '',
+        category:t.category || 'Community', format:t.interaction.format || 'quick', twist:t.interaction.twist || '',
         createdAtMs:Number(t.createdAtMs || t.createdAt?.toMillis?.() || 0)
       }));
 
-    const builtIns = CHALLENGES.map(c => ({...c, creatorName:'Admin', creatorRole:'Admin', creatorUid:''}));
+    const builtIns = CHALLENGES.map(c => ({...c, category:c.tag === 'MAKE' ? 'Tech' : c.tag === 'LIFE' ? 'Life' : 'Fun', creatorName:'Admin', creatorRole:'Admin', creatorUid:''}));
+    renderCategoryFilters(tasks, builtIns);
     const all = [...builtIns, ...custom].sort((a,b) =>
       (Number(b.createdAtMs)||0) - (Number(a.createdAtMs)||0)
     );
