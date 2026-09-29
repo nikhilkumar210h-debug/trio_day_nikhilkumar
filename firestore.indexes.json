@@ -213,18 +213,6 @@
           "queryScope": "COLLECTION_GROUP"
         }
       ]
-    },
-    {
-      "collectionGroup": "tempChats",
-      "fieldPath": "expireAt",
-      "ttl": true,
-      "indexes": []
-    },
-    {
-      "collectionGroup": "tempMessages",
-      "fieldPath": "expireAt",
-      "ttl": true,
-      "indexes": []
     }
   ]
 }
