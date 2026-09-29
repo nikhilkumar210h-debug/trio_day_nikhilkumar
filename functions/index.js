@@ -1,5 +1,6 @@
-const { getFirestore } = require('firebase-admin/firestore');
+const { getFirestore, Timestamp } = require('firebase-admin/firestore');
 const admin = require('firebase-admin');
+const crypto = require('crypto');
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 
 if (!admin.apps.length) {
@@ -13,6 +14,49 @@ const db = getFirestore();
 // the account email associated with a Trio UID to the browser.
 const FIREBASE_WEB_API_KEY = 'AIzaSyDyuycRTSAaGSEiCPEXXf36sxhyDVPQLTA';
 
+const LOGIN_RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
+const LOGIN_RATE_LIMIT_MAX = 5;
+
+function rateLimitDocId(trioUid) {
+  return crypto.createHash('sha256').update(trioUid).digest('hex').slice(0, 32);
+}
+
+async function checkTrioLoginRateLimit(trioUid) {
+  const ref = db.collection('authRateLimits').doc(rateLimitDocId(trioUid));
+  const now = Date.now();
+  let blockedUntil = 0;
+
+  await db.runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    const data = snap.exists ? snap.data() : {};
+    const windowStartedAt = Number(data.windowStartedAtMs || now);
+    const withinWindow = now - windowStartedAt < LOGIN_RATE_LIMIT_WINDOW_MS;
+    const attempts = withinWindow ? Number(data.attempts || 0) : 0;
+    const nextWindowStart = withinWindow ? windowStartedAt : now;
+
+    if (attempts >= LOGIN_RATE_LIMIT_MAX) {
+      blockedUntil = nextWindowStart + LOGIN_RATE_LIMIT_WINDOW_MS;
+      return;
+    }
+
+    tx.set(ref, {
+      attempts: attempts + 1,
+      windowStartedAtMs: nextWindowStart,
+      updatedAt: Timestamp.fromMillis(now)
+    }, { merge: true });
+  });
+
+  if (blockedUntil > now) {
+    const retryAfterSeconds = Math.max(1, Math.ceil((blockedUntil - now) / 1000));
+    throw new HttpsError('resource-exhausted', 'Too many Trio UID login attempts. Try again later.', { retryAfterSeconds });
+  }
+}
+
+async function clearTrioLoginRateLimit(trioUid) {
+  const ref = db.collection('authRateLimits').doc(rateLimitDocId(trioUid));
+  await ref.set({ attempts: 0, windowStartedAtMs: Date.now(), updatedAt: Timestamp.now() }, { merge: true });
+}
+
 function normaliseTrioUid(value) {
   return String(value || '').trim().toUpperCase();
 }
@@ -24,6 +68,8 @@ exports.signInWithTrioUid = onCall(async (request) => {
   if (!/^TRIO-[A-Z0-9]{8}$/.test(trioUid) || password.length < 1) {
     throw new HttpsError('unauthenticated', 'Invalid Trio UID or password.');
   }
+
+  await checkTrioLoginRateLimit(trioUid);
 
   try {
     const snap = await db.collection('users')
@@ -58,6 +104,8 @@ exports.signInWithTrioUid = onCall(async (request) => {
     if (!response.ok) {
       throw new HttpsError('unauthenticated', 'Invalid Trio UID or password.');
     }
+
+    await clearTrioLoginRateLimit(trioUid);
 
     const customToken = await admin.auth().createCustomToken(uid, {
       trioLogin: true,

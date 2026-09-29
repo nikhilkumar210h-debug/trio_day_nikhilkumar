@@ -487,7 +487,7 @@ async function loadProfile(uid) {
     if ($('pgNextLevel')) $('pgNextLevel').textContent = 'Next: Level ' + (level + 1);
     if ($('pgBadges')) $('pgBadges').innerHTML = renderBadgesHtml(current.badges || []);
     const rank = await getMyGlobalRank(me.uid);
-    if ($('pgRank')) $('pgRank').textContent = rank ? ('#' + rank) : '—';
+    if ($('pgRank')) $('pgRank').textContent = rank ? ('#' + rank) : (xp > 0 ? 'Outside top 50' : 'Not ranked yet');
     await loadRecentActivities(uid);
   }
 
@@ -500,9 +500,9 @@ async function loadProfile(uid) {
   const rows = [];
   const seen = new Set();
   const builtInChallenges = new Map([
-    ['trip', { title: 'Free trip', icon: '🌍' }],
-    ['hour', { title: 'One free hour', icon: '⏱️' }],
-    ['weekend', { title: 'Make something this weekend', icon: '🛠️' }],
+    ['trip', { title: 'Free trip', icon: '🌍', xp: 25 }],
+    ['hour', { title: 'One free hour', icon: '⏱️', xp: 25 }],
+    ['weekend', { title: 'Make something this weekend', icon: '🛠️', xp: 25 }],
     ['food', { title: 'Pick one forever', icon: '🍽️' }]
   ]);
 
@@ -526,7 +526,7 @@ async function loadProfile(uid) {
           type: 'challenge',
           icon: builtIn?.icon || '⚡',
           category: 'Challenge',
-          xp: 0,
+          xp: Number(builtIn?.xp) || 25,
           atMs: Number(v.createdAtMs) || 0,
           source: 'challenge'
         });

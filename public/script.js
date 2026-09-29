@@ -8,7 +8,7 @@ import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.13.0/f
 import {
   collection, addDoc, onSnapshot, serverTimestamp,
   doc, getDoc, setDoc, deleteDoc, query, orderBy,
-  getDocs, limit, where
+  getDocs, getCountFromServer, limit, where
 } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 import { makeUserId, escapeHtml, initials, formatTime, getFilterCSS } from './utils.js';
 import { listCommunityTasks, getMyJoinedTaskIds } from './gamification/community-tasks.js?v=20260921-fix2';
@@ -16,6 +16,24 @@ import { listCommunityTasks, getMyJoinedTaskIds } from './gamification/community
 const $ = id => document.getElementById(id);
 let currentUser = null;
 let storyPrivacy = 'public';
+
+async function getChallengeResponseCount(challengeId) {
+  if (!challengeId) return 0;
+  const key = 'home_challenge_response_count_' + challengeId;
+  const cached = trioCache.get(key);
+  if (cached !== null) return Number(cached) || 0;
+  try {
+    const snap = await getCountFromServer(query(
+      collection(db, 'challengeAnswers'),
+      where('challengeId', '==', challengeId)
+    ));
+    const count = Number(snap.data().count) || 0;
+    trioCache.set(key, count, trioCache.TTL.SHORT);
+    return count;
+  } catch (_) {
+    return 0;
+  }
+}
 
 const FOCUS_MODES = {
   surprise: { label: 'Surprise' },
@@ -581,7 +599,11 @@ async function renderActiveChallenges(uid) {
     sectionEl.hidden = false;
     if (emptyEl) emptyEl.hidden = true;
 
-    listEl.innerHTML = joinedChallenges.map(c => buildChallengeCard(c)).join('');
+    const cards = await Promise.all(joinedChallenges.map(async c => {
+      const responseCount = await getChallengeResponseCount(c.id);
+      return buildChallengeCard(c, responseCount);
+    }));
+    listEl.innerHTML = cards.join('');
   } catch (err) {
     console.error('renderActiveChallenges failed', err);
     listEl.innerHTML = '<div style="padding:16px; text-align:center; color:var(--color-ink-muted);">Could not load challenges</div>';
@@ -590,11 +612,11 @@ async function renderActiveChallenges(uid) {
   }
 }
 
-function buildChallengeCard(c) {
+function buildChallengeCard(c, responseCount = 0) {
   const progress = Math.min(100, Math.round(((c.completions || 0) / Math.max(1, c.target || 1)) * 100));
   const icon = escapeHtml(c.icon || '🎯');
   const xp = c.xpReward || 0;
-  const members = c.joins || 0;
+  const members = Number(responseCount) || 0;
   return `
     <article class="challenge-card" data-task-id="${c.id}">
       <div class="challenge-icon">${icon}</div>
@@ -602,7 +624,7 @@ function buildChallengeCard(c) {
         <div class="challenge-title">${escapeHtml(c.title || 'Challenge')}</div>
         <div class="challenge-meta">
           ${xp ? `<span class="xp">+${xp} XP</span>` : ''}
-          <span class="members">👥 ${members}</span>
+          <span class="members">👥 ${members} responses</span>
         </div>
         <div class="challenge-progress"><div class="challenge-progress-bar" style="width:${progress}%"></div></div>
       </div>

@@ -4,7 +4,7 @@ import { getDoc, doc } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase
 import { ensureBadgeCatalog } from './gamification/badges.js';
 import {
   listCommunityTasks, expireOldTasks, archiveTask,
-  setChallengeFeatured, setChallengeHidden, removeChallenge
+  setChallengeFeatured, setChallengeHidden
 } from './gamification/community-tasks.js';
 import { trioCache } from './trio-cache.js';
 import { escapeHtml as esc } from './utils.js';
@@ -59,31 +59,7 @@ async function loadList() {
       await loadList();
     };
   });
-  $('adminTasks').querySelectorAll('.remove-btn').forEach(btn => {
-    btn.onclick = async () => {
-      if (!confirm('Permanently remove this challenge?')) return;
-      await removeChallenge(btn.dataset.id);
-      await loadList();
-    };
-  });
-  $('adminTasks').querySelectorAll('.delete-btn').forEach(btn => {
-    btn.onclick = async () => {
-      if (!confirm(`Are you sure you want to delete this challenge?\n\n"${btn.dataset.title}"\n\nThis cannot be undone.`)) return;
-      btn.disabled = true;
-      btn.textContent = 'Deleting…';
-      try {
-        await removeChallenge(btn.dataset.id);
-        showToast('Challenge deleted ✅');
-        await loadList();
-      } catch (err) {
-        console.error(err);
-        showToast(err.message || 'Delete failed', 'error');
-        btn.disabled = false;
-        btn.textContent = 'Delete';
-      }
-    };
-  });
-}
+
 
 onAuthStateChanged(auth, async user => {
   if (!user) return;

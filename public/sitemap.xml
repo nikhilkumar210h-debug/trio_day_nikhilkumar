@@ -9,4 +9,7 @@
   <url><loc>https://trio-day.trioday-nikhil.workers.dev/profile.html</loc><changefreq>daily</changefreq><priority>0.80</priority></url>
   <url><loc>https://trio-day.trioday-nikhil.workers.dev/leaderboard.html</loc><changefreq>daily</changefreq><priority>0.70</priority></url>
   <url><loc>https://trio-day.trioday-nikhil.workers.dev/login.html</loc><changefreq>daily</changefreq><priority>0.40</priority></url>
+  <url><loc>https://trio-day.trioday-nikhil.workers.dev/privacy.html</loc><changefreq>monthly</changefreq><priority>0.30</priority></url>
+  <url><loc>https://trio-day.trioday-nikhil.workers.dev/terms.html</loc><changefreq>monthly</changefreq><priority>0.30</priority></url>
+  <url><loc>https://trio-day.trioday-nikhil.workers.dev/help.html</loc><changefreq>monthly</changefreq><priority>0.30</priority></url>
 </urlset>
