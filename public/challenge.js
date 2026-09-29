@@ -759,4 +759,8 @@ onAuthStateChanged(auth, u => {
 
 const params = new URLSearchParams(location.search);
 const requestedId = params.get('challenge') || params.get('id');
-loadCommunityChallenges();
+const requestedCategory = params.get('category') || 'All';
+loadCommunityChallenges().then(() => {
+  const btn=document.querySelector('.challenge-category-filter[data-category="'+requestedCategory+'"]');
+  if(btn) btn.click();
+});
