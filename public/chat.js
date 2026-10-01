@@ -13,6 +13,9 @@ let users = [];
 const conversations = new Map();
 const params = new URLSearchParams(location.search);
 const challengeId = params.get('challenge');
+const pendingChallengeShare = (() => {
+  try { return JSON.parse(sessionStorage.getItem('trio_pending_challenge_share') || 'null'); } catch { return null; }
+})();
 const challengeContext = {
   trip:'You get one free trip tomorrow. Where are you going?',
   hour:'You have one free hour tonight. What sounds better?',
@@ -54,14 +57,46 @@ function renderInbox(filter = '') {
   }
   rows.forEach(peer => {
     const latest = conversations.get(peer.uid)?.latest, unread = conversations.get(peer.uid)?.unread;
-    const row = document.createElement('a'); row.className = 'nkm-chat-row'; row.href = `private-chat.html?uid=${encodeURIComponent(peer.uid)}`;
-    row.innerHTML = `<span class="nkm-chat-avatar">${avatarHtml(peer)}</span>
+    const row = document.createElement('div'); row.className = 'nkm-chat-row';
+    const open = document.createElement('a'); open.href = `private-chat.html?uid=${encodeURIComponent(peer.uid)}`; open.className='nkm-chat-row-main';
+    open.innerHTML = `<span class="nkm-chat-avatar">${avatarHtml(peer)}</span>
       <span class="nkm-chat-meta">
         <span class="nkm-chat-name">${esc(nameOf(peer))}</span>
         <span class="nkm-chat-preview">${esc(previewText(latest) || 'Start conversation')}</span>
-        </span>
-      <span class="nkm-chat-time">${esc(timeOf(latest?.createdAtMs))}</span>
-      ${unread ? '<span class="nkm-chat-unread" title="New"></span>' : ''}`;
+      </span>
+      <span class="nkm-chat-time">${esc(timeOf(latest?.createdAtMs))}</span>`;
+    row.appendChild(open);
+    if (unread) row.insertAdjacentHTML('beforeend','<span class="nkm-chat-unread" title="New"></span>');
+    if (pendingChallengeShare) {
+      const shareBtn = document.createElement('button');
+      shareBtn.type='button'; shareBtn.className='nkm-btn nkm-btn--sm nkm-btn--primary challenge-inbox-share';
+      shareBtn.textContent='Share';
+      shareBtn.title='Share this Challenge in this Chat';
+      shareBtn.addEventListener('click', async e => {
+        e.preventDefault(); e.stopPropagation(); shareBtn.disabled=true;
+        try {
+          const now=Date.now();
+          const senderName = currentUser.displayName || currentUser.email?.split('@')[0] || 'User';
+          await addDoc(collection(db,'privateChats',chatId(currentUser.uid,peer.uid),'messages'), {
+            uid:currentUser.uid, name:senderName,
+            text:'⚡ Shared a Challenge: '+String(pendingChallengeShare.q||'').slice(0,180),
+            sharedChallengeId:pendingChallengeShare.id,
+            sharedChallengeQuestion:pendingChallengeShare.q,
+            sharedChallengeOptions:Array.isArray(pendingChallengeShare.o)?pendingChallengeShare.o.slice(0,5):[],
+            sharedChallengeUrl:pendingChallengeShare.url,
+            createdAt:now, createdAtMs:now
+          });
+          await notifyUser(peer.uid,{type:'message',actorUid:currentUser.uid,actorName:senderName,text:'⚡ Shared a Challenge: '+String(pendingChallengeShare.q||'').slice(0,180)}).catch(()=>{});
+          sessionStorage.removeItem('trio_pending_challenge_share');
+          shareBtn.textContent='Shared ✓';
+          setTimeout(()=>renderInbox($('userSearch')?.value||''),500);
+        } catch(err) {
+          console.error('Challenge share failed',err);
+          shareBtn.disabled=false; shareBtn.textContent='Share';
+        }
+      });
+      row.appendChild(shareBtn);
+    }
     list.appendChild(row);
   });
 }
