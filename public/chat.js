@@ -4,8 +4,9 @@ import { SoundManager } from './sound-manager.js';
 import { escapeHtml as esc, avatarHtml, nameOf, timeOf, chatId } from './utils.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
 import {
-  collection, getDocs, query, orderBy, limit
+  collection, getDocs, query, orderBy, limit, addDoc
 } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
+import { notifyUser } from './services/notificationHelpers.js';
 
 const $ = id => document.getElementById(id);
 let currentUser = null;
