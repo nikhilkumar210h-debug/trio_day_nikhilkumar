@@ -9,10 +9,22 @@ import { workerPost } from './gamification/worker-config.js';
 import { getCachedUser } from './services/userCache.js';
 
 const CHALLENGES = [
-  {id:'trip', tag:'CHOICE', q:'You get one free trip tomorrow. Where are you going?', o:['Japan 🇯🇵','Switzerland 🇨🇭','Somewhere unexpected 🌍'], createdAtMs:1790121600000},
-  {id:'hour', tag:'MOOD', q:'You have one free hour tonight. What sounds better?', o:['Talk to someone 💬','Play something 🎮','Learn something 🧠'], createdAtMs:1790035200000},
-  {id:'weekend', tag:'MAKE', q:'You have one weekend to make something. What do you pick?', o:['An app 💻','A game 🎮','Something useful 🛠️'], createdAtMs:1789948800000},
-  {id:'food', tag:'LIFE', q:'Pick one forever.', o:['Street food 🌮','Home food 🍲','Restaurant food 🍽️'], createdAtMs:1789862400000}
+  {id:'trip', category:'Life', tag:'CHOICE', q:'You get one free trip tomorrow. Where are you going?', o:['Japan 🇯🇵','Switzerland 🇨🇭','Somewhere unexpected 🌍'], createdAtMs:1790121600000},
+  {id:'hour', category:'Fun', tag:'MOOD', q:'You have one free hour tonight. What sounds better?', o:['Talk to someone 💬','Play something 🎮','Learn something 🧠'], createdAtMs:1790035200000},
+  {id:'weekend', category:'Tech', tag:'MAKE', q:'You have one weekend to make something. What do you pick?', o:['An app 💻','A game 🎮','Something useful 🛠️'], createdAtMs:1789948800000},
+  {id:'food', category:'Life', tag:'LIFE', q:'Pick one forever.', o:['Street food 🌮','Home food 🍲','Restaurant food 🍽️'], createdAtMs:1789862400000},
+  {id:'study-reset', category:'Study', tag:'STUDY', q:'You have 30 minutes before an important test. What do you do?', o:['Review notes 📚','Solve questions ✍️','Take a short reset 🧠'], createdAtMs:1789776000000},
+  {id:'career-path', category:'Career', tag:'CAREER', q:'You can try one career skill for a month. Which one?', o:['Build projects 💻','Communicate better 🎤','Analyze data 📊'], createdAtMs:1789689600000},
+  {id:'college-day', category:'College', tag:'CAMPUS', q:'Your ideal free hour on campus looks like what?', o:['Club activity 🎯','Friends & chai ☕','Quiet study 📖'], createdAtMs:1789603200000},
+  {id:'debug', category:'Tech', tag:'TECH', q:'Your code works but you do not know why. What is your next move?', o:['Read the docs 📘','Add small tests 🧪','Inspect it step by step 🔎'], createdAtMs:1789516800000},
+  {id:'weekend-plan', category:'Life', tag:'LIFE', q:'A completely free Sunday appears. What wins?', o:['Go outside 🌤️','Build something 🛠️','Stay in and recharge 🎧'], createdAtMs:1789430400000},
+  {id:'movie-night', category:'Fun', tag:'FUN', q:'Pick the movie-night rule.', o:['One person chooses 🎬','Everyone votes 🗳️','Random pick 🎲'], createdAtMs:1789344000000},
+  {id:'helping-hand', category:'Community', tag:'COMMUNITY', q:'Someone in your group is stuck. What help matters first?', o:['Explain the idea 💡','Do it together 🤝','Point them to a resource 🔗'], createdAtMs:1789257600000},
+  {id:'first-step', category:'Career', tag:'CAREER', q:'You want to start a big goal today. What is the first move?', o:['Make a tiny plan 📝','Start immediately ⚡','Find someone to learn from 👥'], createdAtMs:1789171200000},
+  {id:'focus-mode', category:'Study', tag:'STUDY', q:'What helps you protect a focused study session?', o:['Phone away 📵','Timed blocks ⏱️','Study with someone 👥'], createdAtMs:1789084800000},
+  {id:'build-vs-watch', category:'Tech', tag:'TECH', q:'You have one evening for tech. What sounds better?', o:['Build a mini tool 🔧','Learn a new concept 🧠','Explore a cool project 🔍'], createdAtMs:1788998400000},
+  {id:'small-kindness', category:'Community', tag:'COMMUNITY', q:'What small action makes a group feel better?', o:['Welcome someone 👋','Share credit 🙌','Help without being asked ❤️'], createdAtMs:1788912000000},
+  {id:'choose-fast', category:'Fun', tag:'QUICK PICK', q:'Your friends give you three spontaneous plans. What do you choose?', o:['Food hunt 🍜','Game night 🎮','Random walk 🚶'], createdAtMs:1788825600000}
 ];
 
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -140,28 +152,31 @@ async function updateChallengeCounter(challengeId, uid, choice) {
 
 async function shareChallenge(c) {
   const url = shareChallengeUrl(c);
+  const shareInternal = () => {
+    try {
+      sessionStorage.setItem('trio_pending_challenge_share', JSON.stringify({
+        id: c.id, q: c.q, o: c.o, url
+      }));
+    } catch {}
+    location.href = 'chat.html?shareChallenge=1';
+  };
+
+  const choice = window.prompt('Share this Challenge:\n1 = Share in Trio Day Chat\n2 = Share link / system share', '1');
+  if (choice === '1') return shareInternal();
+  if (choice !== '2') return;
+
   try {
-    const canvas = document.createElement('canvas');
-    canvas.width = 1200; canvas.height = 630;
-    const ctx = canvas.getContext('2d');
-    ctx.fillStyle = '#0b0820'; ctx.fillRect(0,0,canvas.width,canvas.height);
-    ctx.fillStyle = '#8b5cf6'; ctx.fillRect(70,70,8,490);
-    ctx.fillStyle = '#f8fafc'; ctx.font = '700 30px Inter, sans-serif'; ctx.fillText('TRIO DAY · CHALLENGE', 115, 110);
-    ctx.font = '700 54px Inter, sans-serif';
-    const words = String(c.q || '').split(/\\s+/); let line='', y=210;
-    for (const word of words) { const test=line ? line+' '+word : word; if(ctx.measureText(test).width>970){ctx.fillText(line,115,y);y+=70;line=word;}else line=test; }
-    if(line) ctx.fillText(line,115,y);
-    ctx.fillStyle = '#a5b4fc'; ctx.font = '500 28px Inter, sans-serif';
-    (c.o || []).forEach((o,i)=>ctx.fillText(String.fromCharCode(65+i)+'. '+o,115,450+i*48));
-    ctx.fillStyle = '#94a3b8'; ctx.font = '500 22px Inter, sans-serif'; ctx.fillText('Pick a side. See who thinks differently.',115,575);
-    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
-    if (navigator.share && blob && navigator.canShare) {
-      const file = new File([blob], 'trio-day-challenge.png', {type:'image/png'});
-      if (navigator.canShare({files:[file]})) { await navigator.share({title:'Trio Day Challenge',text:c.q,url,files:[file]}); return; }
+    if (navigator.share) {
+      await navigator.share({title:'Trio Day Challenge', text:c.q, url});
+      return;
     }
-    if (navigator.share) { await navigator.share({title:'Trio Day Challenge',text:c.q,url}); return; }
-    await navigator.clipboard.writeText(url); alert('Challenge link copied ✓');
-  } catch (err) { if (err?.name !== 'AbortError') { try { await navigator.clipboard.writeText(url); alert('Challenge link copied ✓'); } catch {} } }
+    await navigator.clipboard.writeText(url);
+    alert('Challenge link copied ✓');
+  } catch (err) {
+    if (err?.name !== 'AbortError') {
+      try { await navigator.clipboard.writeText(url); alert('Challenge link copied ✓'); } catch {}
+    }
+  }
 }
 
 
