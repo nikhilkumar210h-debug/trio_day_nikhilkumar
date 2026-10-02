@@ -1,6 +1,9 @@
 {
   "name": "trio_day_main",
   "version": "1.0.0",
+  "allowScripts": {
+  "shadcn": true
+  },
   "description": "Trio Day web app",
   "main": "server.js",
   "scripts": {
@@ -22,6 +25,7 @@
   },
   "homepage": "https://github.com/nikhilkumar210h-debug/trio_day_nikhilkumar#readme",
   "devDependencies": {
-    "@playwright/test": "^1.63.0"
+    "@playwright/test": "^1.63.0",
+    "shadcn": "^4.21.1"
   }
 }
