@@ -1,317 +1,631 @@
-# Trio Day — Product & UX Master Plan
+# Trio Day — 8-Stage Product Master Plan
 
-Last updated: 2026-10-03
+> **Source of truth:** This file is the canonical product roadmap and change-control plan for Trio Day.
+>
+> **Core principle:** AI agents implement only the explicitly authorized stage/task. They do not independently pivot the product, delete existing systems, or deploy to production.
+>
+> **Product north star:** “One small meaningful thing I do every day with a few people.”
 
-> **Source of truth:** This file records the current product direction, UX principles, deployment context, and decision sequence. Do not replace this plan with an unapproved full-pivot or delete-first plan.
+---
 
-## 0. Current status
+# STAGE 1 — Stabilize the existing app
 
-### Verified baseline
-- [x] Public app is deployed at the designated Cloudflare URL: https://trio-day.trioday-nikhil.workers.dev/
-- [x] GitHub repository reviewed on `master`.
-- [x] Browser QA completed with one isolated test account.
-- [x] Browser QA covered 14 routes and 28 desktop/mobile captures.
-- [x] Challenge pick → result → comment → reply flow worked with isolated test data.
-- [x] Daily Question has no direct answer control.
-- [x] Discover/Search has no usable people/follow path for a cold account.
-- [x] Mobile bottom-nav “Challenge” label can truncate to `CHALLE…`.
-- [x] Notifications page lacks a semantic heading for its visible title.
-- [x] Reported Firebase Auth observer error was reproduced in the Browser Use run; root cause is still to be confirmed before code changes.
-- [x] Text-only Story publish permission failure was reproduced in the Browser Use run.
-- [x] Opposite-chat flow did not reach a usable room in the Browser Use run.
-- [x] A fresh test account showed zero XP/streak after a completed Challenge; this must be reconciled with existing-account observations before assuming the gamification system is globally broken.
+### Goal
 
-### Important uncertainty
-The browser audit observed some production behavior that was not previously reproduced by the owner's own console/session. Treat every disputed item as **verified by the recorded browser run, but still requiring code/log-level root-cause confirmation** before changing implementation.
+Pehle ye prove karna hai ki jo currently important loop hai woh reliable hai.
 
-## 1. Deployment architecture — do not change without approval
+Order:
 
-### Current production
-- **Frontend / production:** Cloudflare Workers
-  - Canonical URL: https://trio-day.trioday-nikhil.workers.dev/
-- **Backend/API:** Render-hosted Flask backend.
-- **Auth + database:** Firebase Authentication + Firestore.
-- **Media:** Cloudinary where configured.
-- **Notifications:** OneSignal / existing notification Worker where configured.
+**Auth**
+ → **Today**
+ → **Daily Question**
+ → **Challenge**
+ → **XP/Streak**
+ → **Discover**
+ → **Navigation/mobile**
 
-### Legacy
-- `https://nkm-ind.web.app/` is a **legacy Firebase Hosting URL**, not the designated current production host.
+Browser QA already humein kuch issues de chuka hai, lekin OpenCode ko **localhost + actual production** par reproduce karke root cause establish karna hai.
 
-### Hard rule
-Do not migrate hosting, remove Render, replace Cloudflare with Firebase Hosting, or change canonical domains merely because old Firebase Hosting files/configuration still exist.
+### Is stage mein kya hoga
 
-Do not delete any existing file, feature, collection, Worker, backend component, deployment configuration, or production data without explicit approval for that specific deletion.
+**1. Firebase auth error**
 
-Do not assume a file is dead code. Propose removal first.
+`onAuthStateChanged` problem ko reproduce → exact import/version issue find → minimal fix.
 
-## 2. Current product problem
+**2. XP/Streak**
 
-The central problem is not simply “the UI looks bad.”
+Ye specially carefully test hoga:
 
-The current product has:
-1. A real Challenge interaction loop.
-2. A weak cold-start/social-density problem.
-3. Broken or incomplete handoffs from interaction to reward/social continuation.
-4. A fragmented visual implementation: a shared token system exists, but pages also contain substantial page-specific CSS and inline styling.
-5. Too many surfaces competing for attention on Today.
-6. Missing or weak states for empty/loading/error/reward feedback.
+Fresh account:
 
-### Product principle
-Trio Day should eventually feel like:
+`0 XP → answer challenge → reward → reload`
 
-> **“One small meaningful thing I do every day with a few people.”**
+Existing test account:
 
-rather than:
+`existing XP → answer → reload`
 
-> “A social app with many features.”
+Aur localhost CORS bhi.
 
-## 3. Product direction
+Tumhara **550 XP observation preserve** rehna chahiye. Fresh account zero hona automatically “XP system totally broken” nahi maana jayega.
+
+**3. Daily Question**
+
+Abhi:
+
+> Question dikhta hai → answer action missing.
+
+Isko later hum simple:
+
+> Question → answer → feedback → continue
+
+banayenge.
+
+**4. Discover**
+
+Cold account ko dead end nahi banana.
+
+**5. Navigation**
+
+`CHALLE…`, headings, responsive issues.
+
+### Exit condition
+
+Jab tak:
+
+- important console errors clear nahi
+- critical flow reliable nahi
+- mobile usable nahi
+
+tab tak **Study Rooms build nahi karna**.
+
+---
+
+# STAGE 2 — Product simplification
+
+Ye **Stage 1 ke baad**, aur tumhari approval ke baad.
+
+Current philosophy:
 
 ### Keep
-- Challenges.
-- Daily Question.
-- Solo progress.
-- XP/streak once reliable.
-- Profile/You, simplified.
-- Share cards / WhatsApp-friendly sharing.
-- Supporting private Chat when a real relationship/conversation exists.
 
-### Cut/defer for later
-- Stories as a primary product surface.
-- 10-minute Opposite Chat.
-- Large/emphasized leaderboards for a low-user product.
-- Generic social-feed behavior.
-- Mandatory photo proof.
+**Challenges**
 
-### Do not delete yet
-Challenges remain part of the product while the Study Rooms experiment is validated.
+Core interaction.
 
-Stories and Opposite Chat removal happens only in a separately approved stage after preserving/archiving production data and checking references.
+### Keep
 
-## 4. UX direction
+**Daily Question**
 
-### Today
-Today should become a **daily decision screen**, not a dashboard.
+Entry hook.
 
-Preferred hierarchy:
-1. Daily Question.
-2. One strong Challenge.
-3. Personal progress/reward.
-4. Clear Study Room CTA.
+### Keep
 
-Avoid stacking many equal-weight sections and CTAs.
+**You/Profile**
 
-### Daily Question
-Current problem: the question says “Answer it in your own way” but has no direct answer control.
+Progress identity.
 
-Future intent:
-- Show the question.
-- Give a direct, low-friction answer action.
-- Then provide a bridge into the daily study plan / room.
+### Keep
 
-Preferred CTA direction:
-**“Now plan today’s study with friends”**
+**Chat**
 
-### Discover
-Do not rely on an empty people directory.
+But supporting feature.
 
-Future intent:
-- Discover meaningful things to join first.
-- Activity, challenges, rooms, and real signals first.
-- People appear as context to real activity.
+### Defer/remove from active product
 
-### Challenges
-Keep the interaction simple:
-**Question → choose → result → discuss → next**
+**Stories**
 
-Do not overload the card with too many simultaneous primary actions.
+**10-min Opposite Chat**
 
-### Create Challenge
-Reduce configuration burden.
+**Heavy leaderboard emphasis**
 
-Preferred flow:
-**Question → format → choices → publish**
+Reason ye nahi ki features “bad” hain. Reason hai ki abhi user ko too many disconnected surfaces mil rahe hain aur low-user state mein ye value create nahi kar rahe.
 
-Advanced/optional fields should remain secondary.
+### Important
 
-### Chat
-Chat should support an existing relationship or action, not be the primary cold-start mechanism.
+Yahan bhi **pehle archive/reference check, phir deletion**.
 
-### You / Profile
-Prioritize:
-- Progress.
-- Streak.
-- Rooms.
-- Recent Challenge activity.
-- Connections.
+OpenCode ko kabhi:
 
-Avoid making every metric equally prominent.
+> “delete all old stuff”
 
-## 5. Visual design system direction
+nahi bolna.
 
-The repository already has shared design tokens, but page-specific styles must stop drifting.
+Usko:
 
-### Rules
-- Inter for UI/body.
-- Space Grotesk for display/brand.
-- Two primary font weights should cover most UI.
-- Small controls: ~8–10px radius.
-- Cards: ~14–18px radius.
-- Large hero surfaces: ~20–24px radius.
-- Use only Primary / Secondary / Ghost button hierarchy.
-- Keep a small number of card types: Content / Action / Progress.
-- Use the existing 4px spacing scale.
-- Motion should be subtle, mostly ~120–200ms.
-- No animation or 3D effect unless it improves hierarchy or feedback.
-- No per-page reinvention of buttons, cards, headers, or navigation.
+> “prepare removal plan, list dependencies, wait”
 
-### AI-agent rule
-Never give an AI agent a vague instruction such as:
-“Make every page modern/premium/cool.”
+bolna hai.
 
-Instead, agents must:
-1. Inspect the shared design system first.
-2. Reuse existing tokens/components.
-3. Work page-by-page.
-4. Preserve the interaction hierarchy.
-5. Test desktop + 390px mobile.
-6. Verify loading, empty, success, error, and disabled states.
-7. Report visual changes separately from functional changes.
+---
 
-## 6. Engagement model
+# STAGE 3 — UI/UX redesign
 
-The long-term return loop should move toward:
+**Ye bahut important hai aur abhi tak properly hua hi nahi hai.**
 
-**Trigger**
-→ Today’s question / reminder / room activity
+Main nahi chahta ki OpenCode ko:
 
-**Action**
-→ Answer question or complete a short study goal
+> “Make UI premium.”
 
-**Reward**
-→ Visible completion + XP/streak + room progress
+bol diya jaye.
 
-**Investment**
-→ Plan tomorrow’s goal / keep room alive
+Usse wahi patchwork hoga.
 
-**Return**
-→ Come back because today’s room and progress continue
+### Pehle ek Design System Lock hoga
 
-### Cold-start rule
-A user must get value alone.
+Ek common system:
 
-Study Rooms are **solo-first**:
-- A user can complete a goal without friends.
-- Friends increase accountability/value.
-- The product must not become unusable because no friend is active.
+**Typography**
 
-## 7. Study Streak Rooms experiment
+Inter + Space Grotesk.
 
-Do not full-pivot yet.
+**Buttons**
 
-Build Rooms as a **new feature behind a feature flag** after core bugs are stabilized.
+Primary
+ Secondary
+ Ghost
 
-### Initial model
-- 3–6 people per room.
-- One daily goal per person.
-- Solo completion always works.
-- Shared room streak/progress is secondary.
-- The provisional shared-streak experiment can use the proposed 60% completion rule, but treat the threshold as an experiment, not a proven optimum.
-- Photo proof is optional, never mandatory.
-- Avoid unnecessary media/storage usage.
-- Daily Question should naturally lead into planning the day.
+Bas.
 
-## 8. Stage sequence
+**Cards**
 
-### Stage 1 — Stabilize
-Reproduce and fix only verified bugs:
-- Firebase Auth observer/runtime error.
-- Story permission/UI mismatch.
-- Opposite-chat behavior.
-- XP/streak update and localhost CORS.
-- Daily Question direct answer control.
-- Discover/Search people path or honest empty-state behavior.
-- Mobile navigation truncation.
-- Notifications heading/accessibility.
+Content
+ Action
+ Progress
 
-**Exit condition:** test matrix passes on localhost and relevant production path.
+Bas.
 
-### Stage 2 — Simplify
-Only after approval:
-- Remove/defer Stories from the main product surface.
-- Remove/defer Opposite Chat.
-- Preserve/archive production data.
-- Remove code/rules only after dependency review.
-- Update `DELETED.md` with approved removals.
+**Spacing**
 
-### Stage 3 — Study Rooms
-- Add Rooms tab next to Challenges.
-- Feature flag.
-- Solo-first.
-- 3–6 members.
-- Daily goal.
-- Shared progress.
-- Daily Question → Room CTA.
+4px scale.
 
-### Stage 4 — Growth loop
-- Weekly progress recap.
-- WhatsApp-friendly share card.
-- Invite into a room.
-- Keep the share action user-initiated; never spam contacts.
+**Radius**
 
-### Stage 5 — Stop and measure
-Run a 7-day pilot with roughly 20–30 real users before expanding.
+small controls / normal cards / hero ke fixed values.
 
-Record counts for:
-- Signups.
-- First goal completed within 24h.
-- D1 retention.
-- D7 retention.
-- Rooms with 3+ active members.
-- Invite conversion.
-- XP/streak update success rate.
+**Motion**
 
-Use actual observed data to decide whether Rooms should become the main product.
+subtle.
 
-## 9. Decision rules
+**Themes**
 
-Do not judge the product by:
-- Number of screens.
-- Number of features.
-- Number of animations.
-- Number of AI-generated CSS changes.
+Light + Dark same design language.
 
-Judge it by:
-- Can a new user understand what to do?
-- Can they complete one meaningful action alone?
-- Does the product clearly show the reward?
-- Is there a reason to return tomorrow?
-- Do users actually return without manual reminding?
-- Does the social layer improve the core action instead of being a dependency?
+**Mobile**
 
-## 10. Documentation / change control
+390px ko first-class viewport.
 
-Before any future code change:
-- Read this plan and README.
-- State the stage being implemented.
-- List exact files to change.
-- Do not delete or rewrite unrelated architecture.
-- Do not deploy or merge to production without approval unless explicitly authorized.
-- Update this plan after a stage is actually verified.
+---
 
-### Completion markers
-- [x] Product direction documented.
-- [x] Deployment context documented.
-- [x] “No silent deletion” rule documented.
-- [x] Full browser audit baseline documented.
-- [ ] Stage 1 bug fixes completed.
-- [ ] Visual design-system cleanup completed.
-- [ ] Study Rooms feature-flag experiment completed.
-- [ ] 7-day pilot completed.
-- [ ] Data-based product decision made.
+## Uske baad page order
 
-## 11. Current instruction to coding agents
+### 1. Today
 
-**For now: do not change app code unless the user explicitly starts a Stage 1 implementation task.**
+Ye sabse important screen hai.
 
-This plan is the current source of truth. When an older prompt conflicts with this file, use this plan and report the conflict instead of silently choosing the older instruction.
+Desired hierarchy:
+
+**Aaj ka sawal**
+
+↓
+
+**Aaj ka Challenge**
+
+↓
+
+**Tumhari progress**
+
+↓
+
+**Study Room**
+
+Today ko giant dashboard nahi banana.
+
+---
+
+### 2. Challenge
+
+Desired flow:
+
+**Question**
+
+↓
+
+**Choose**
+
+↓
+
+**Result**
+
+↓
+
+**Discuss**
+
+↓
+
+**Next**
+
+Current card mein bahut actions ek saath aa jaate hain. Isko simplify karenge.
+
+---
+
+### 3. You
+
+Show:
+
+**XP**
+ **Streak**
+ **Recent activity**
+ **Room progress**
+
+Not 15 competing metrics.
+
+---
+
+### 4. Discover
+
+People directory ki jagah:
+
+**Things worth joining**
+
+Examples:
+
+> Today's Challenge
+> Active Study Room
+> People answering same topic
+
+Yaani activity first.
+
+---
+
+### 5. Create
+
+Current large builder ko simplify:
+
+**Question → Format → Choices → Publish**
+
+Optional stuff secondary.
+
+---
+
+### 6. Chat
+
+Existing relationship/conversation ke context mein useful.
+
+Zero users mein blank page ko main product loop nahi banayenge.
+
+---
+
+# STAGE 4 — Study Streak Rooms
+
+Ab actual pivot experiment.
+
+**Challenges delete nahi honge.**
+
+New tab:
+
+**Rooms**
+
+Feature flag ke peeche.
+
+### Room
+
+3–6 people.
+
+Har person:
+
+> Today's Goal: Maths — 30 min
+
+Complete:
+
+✅
+
+Room:
+
+`3/5 completed`
+
+Shared streak:
+
+🔥 12 days
+
+Lekin user alone bhi:
+
+> goal set → timer → complete
+
+kar sake.
+
+Ye **solo-first** rule bahut important hai.
+
+---
+
+# STAGE 5 — Daily loop
+
+Yahan actual product identity banegi.
+
+Morning:
+
+**“Aaj kya karoge?”**
+
+User chooses goal.
+
+↓
+
+Study.
+
+↓
+
+Complete.
+
+↓
+
+**+XP**
+
+**🔥 streak**
+
+**Room progress**
+
+↓
+
+Optional:
+
+**Share weekly recap**
+
+↓
+
+Next day.
+
+Matlab:
+
+**Trigger → Action → Reward → Investment → Return**
+
+---
+
+# STAGE 6 — WhatsApp growth
+
+Tumhara audience India mein hai aur zero ad budget hai.
+
+Isliye growth mechanism:
+
+**Product result → share**
+
+not:
+
+**“Invite all contacts.”**
+
+Example weekly card:
+
+> **My Study Week**
+>
+> 5/7 days completed
+> 3.5 hours focused
+> Room streak: 14 days
+
+User manually WhatsApp par share kare.
+
+Friend joins.
+
+Friend creates/joins room.
+
+Loop repeat.
+
+---
+
+# STAGE 7 — Real-user pilot
+
+Yahan AI guessing band.
+
+20–30 genuine users.
+
+7 days.
+
+Har user ke liye:
+
+`signup`
+
+→ `first goal`
+
+→ `D1`
+
+→ `D7`
+
+→ `room activation`
+
+→ `invite`
+
+→ `XP/streak success`
+
+record hoga.
+
+### Sabse important metric
+
+**Kitne users bina tumhare manually remind kiye next day wapas aaye?**
+
+Feature count irrelevant.
+
+---
+
+# STAGE 8 — Product decision
+
+7-day data ke baad teen possibilities hain.
+
+### Case A
+
+Rooms mein users repeatedly return karte hain.
+
+→ Rooms ko main product banaya ja sakta hai.
+
+### Case B
+
+Challenges work better, Rooms weak.
+
+→ Challenge-first continue.
+
+### Case C
+
+Dono weak.
+
+→ Problem product concept ke deeper level par hai; phir onboarding/audience/value proposition rethink.
+
+Hum pehle se winner decide nahi karenge.
+
+---
+
+# Ab kaun kya karega?
+
+| Kaam | Main | OpenCode | Browser Use |
+| --- | --- | --- | --- |
+| Product strategy | ✅ | | |
+| UX architecture | ✅ | | |
+| Design rules | ✅ | | |
+| Code implementation | | ✅ | |
+| Refactoring | | ✅ | |
+| Local tests | | ✅ | |
+| Production browser QA | | | ✅ |
+| Mobile visual verification | | | ✅ |
+| Final product decision | ✅ + data | | evidence |
+| Delete anything | approval required | ❌ by default | inspect only |
+| Production deploy | approval required | ❌ by default | verify |
+
+Yaani **main brain/architect**, OpenCode **builder**, Browser Use **real-user tester**.
+
+---
+
+# AI agents ko future mein kaise use karna hai
+
+Ek giant prompt:
+
+> “Audit, redesign, pivot, fix, deploy everything.”
+
+**Kabhi nahi.**
+
+Instead:
+
+### Task 1
+
+Audit.
+
+### Task 2
+
+Fix Stage 1.
+
+### Task 3
+
+Browser verify.
+
+### Task 4
+
+Design system.
+
+### Task 5
+
+Today redesign.
+
+### Task 6
+
+Challenge redesign.
+
+### Task 7
+
+Rooms.
+
+### Task 8
+
+Pilot.
+
+Har task ke baad:
+
+**diff → browser → approve**
+
+---
+
+# Sabse important rule
+
+### `PLAN.md` = source of truth
+
+Har future OpenCode session ke start mein:
+
+> Read `PLAN.md` and `README.md` first.
+
+Phir:
+
+> “Which stage are you implementing?”
+
+Aur agent ko exact stage ke bahar **kuch nahi karna**.
+
+Isse woh kal ko ye nahi bolega:
+
+> “I found 58 unused files, so I deleted them.”
+
+😄
+
+---
+
+# Current execution rule
+
+**Aaj sirf Stage 1.**
+
+Stage 1 ke exit condition pass hone se pehle:
+
+- Study Rooms build nahi karna.
+- Product pivot implement nahi karna.
+- Stage 2 deletions/simplifications nahi karna.
+- Stage 3 visual redesign start nahi karna.
+
+Har Stage 1 change ke baad:
+
+**diff → tests → production/browser evidence → approve**
+
+---
+
+# Production / architecture guardrails
+
+Current deployment architecture ko bina explicit approval change nahi karna:
+
+- **Frontend / canonical production:** Cloudflare Workers
+- **Backend/API:** Render-hosted Flask backend
+- **Auth + database:** Firebase Authentication + Firestore
+- **Media:** Cloudinary where configured
+- **Notifications:** Existing OneSignal/notification Worker where configured
+
+Canonical production URL:
+
+`https://trio-day.trioday-nikhil.workers.dev/`
+
+Legacy Firebase Hosting URL `https://nkm-ind.web.app/` current production nahi hai.
+
+### No silent deletion rule
+
+Koi existing feature, file, Firestore collection/data, Worker, backend component, deployment configuration, Firebase rule, ya production configuration bina **specific approval** ke delete, disable, rename, replace, ya migrate nahi karna.
+
+Pehle:
+
+**inspect → dependency/reference check → removal plan → approval → removal**
+
+---
+
+# README alignment
+
+`README.md` ko architecture aur current implementation reference ke liye maintain kiya jayega.
+
+Koi roadmap conflict aaye to:
+
+**PLAN.md product/stage decision control karta hai.**
+
+README ko implementation/deployment documentation ke roop mein aligned rakha jayega.
+
+---
+
+# Current Stage Status
+
+**Stage 1 — In progress**
+
+Verified/passing work so far includes the major Auth observer issue, XP/streak reward flow, Daily Question persistence/auth refresh, text-only Story permission flow, 390px navigation, Notifications heading, and Opposite Chat initial room access/creation.
+
+Remaining Stage 1 verification must still cover the full Discover/cold-start path and the final localhost + production exit matrix before Stage 1 is marked complete.
+
+**Stage 2 — Locked until Stage 1 exit + explicit approval.**
+
+**Stage 3 — Locked until Stage 2 decision/approval.**
+
+**Stage 4 — Locked until Stage 3 design/build decision.**
+
+**Stage 5–8 — Locked until real-user evidence makes them appropriate.**
