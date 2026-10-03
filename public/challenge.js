@@ -4,9 +4,10 @@ import {
   collection, doc, getDocs, getDoc, getCountFromServer, query, where, orderBy, limit,
   setDoc, addDoc, deleteDoc, serverTimestamp, onSnapshot, runTransaction
 } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
-import { listCommunityTasks } from './gamification/community-tasks.js?v=20260919-community5';
+import { listCommunityTasks } from './gamification/community-tasks.js?v=20260921-fix2';
 import { workerPost } from './gamification/worker-config.js';
 import { getCachedUser } from './services/userCache.js';
+import { showToast } from './ui/toast.js';
 
 const CHALLENGES = [
   {id:'trip', category:'Life', tag:'CHOICE', q:'You get one free trip tomorrow. Where are you going?', o:['Japan 🇯🇵','Switzerland 🇨🇭','Somewhere unexpected 🌍'], createdAtMs:1790121600000},
@@ -562,26 +563,25 @@ function addCard(c) {
       await updateChallengeCounter(c.id, currentUser.uid, choice);
       if (answeredChallengeIds) answeredChallengeIds.add(c.id);
       localStorage.setItem('trio_last_challenge', JSON.stringify({id:c.id,choice,at:Date.now()}));
-      try {
-        const gamificationUser = auth.currentUser;
-        if (gamificationUser) {
-          await workerPost('/gamification/award-xp', { meta: { challengeId: c.id } }, gamificationUser);
-          await workerPost('/gamification/bump-streak', { challengeId: c.id }, gamificationUser);
-          window.dispatchEvent(new CustomEvent('trio-xp-changed', { detail: { uid: gamificationUser.uid } }));
-        }
-      } catch (gamErr) {
-        console.warn('[Challenge] gamification sync failed:', gamErr);
-      }
 
       card.querySelectorAll('[data-choice]').forEach(x => {
         x.disabled = false;
         x.classList.toggle('is-selected', Number(x.dataset.choice) === choice);
       });
+
       const responses = await getResponses(c.id);
       const counts = countsFromResponses(responses);
       renderCommunityResult(result, c, counts, choice);
       renderAnswerCounts(card, c, counts);
       await renderResultPreview(resultPreview, c, responses);
+
+      result.hidden = false;
+      resultPreview.setAttribute('aria-expanded', 'true');
+      resultPreview.classList.add('is-open');
+
+      await awardXpWithRetry(c.id, currentUser);
+      await bumpStreakWithRetry(c.id, currentUser);
+
     } catch (err) {
       console.error(err);
       result.hidden = false;
@@ -769,7 +769,6 @@ async function loadCommunityChallenges() {
     }
   } catch (err) {
     console.warn('community challenges unavailable', err);
-    // Keep the built-in set usable if community retrieval fails.
     CHALLENGES
       .slice()
       .sort((a,b) => (Number(b.createdAtMs)||0) - (Number(a.createdAtMs)||0))
@@ -778,6 +777,50 @@ async function loadCommunityChallenges() {
   }
 }
 
+async function awardXpWithRetry(challengeId, user) {
+  if (!user) return;
+  const maxRetries = 2;
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      await workerPost('/gamification/award-xp', { meta: { challengeId } }, user);
+      window.dispatchEvent(new CustomEvent('trio-xp-changed', { detail: { uid: user.uid } }));
+      const data = await workerPost('/gamification/award-xp', { meta: { challengeId } }, user);
+      if (data?.leveledUp) {
+        showToast(`Level up! You're now Level ${data.level} 🎉`, 'success');
+      } else if (data?.badgesEarned?.length) {
+        showToast(`Badge unlocked: ${data.badgesEarned[0].name} 🏆`, 'success');
+      } else {
+        showToast('+25 XP earned ✨', 'success');
+      }
+      return;
+    } catch (err) {
+      console.warn(`[Challenge] XP award attempt ${attempt + 1} failed:`, err);
+      if (attempt === maxRetries - 1) {
+        showToast('XP award failed — will retry in background', 'warn');
+        setTimeout(() => awardXpWithRetry(challengeId, user), 5000);
+      }
+    }
+  }
+}
+
+async function bumpStreakWithRetry(challengeId, user) {
+  if (!user) return;
+  const maxRetries = 2;
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      const data = await workerPost('/gamification/bump-streak', { challengeId }, user);
+      if (data?.streakCurrent && !data.alreadyCounted) {
+        showToast(`🔥 ${data.streakCurrent}-day streak!`, 'success');
+      }
+      return;
+    } catch (err) {
+      console.warn(`[Challenge] streak bump attempt ${attempt + 1} failed:`, err);
+      if (attempt === maxRetries - 1) {
+        setTimeout(() => bumpStreakWithRetry(challengeId, user), 5000);
+      }
+    }
+  }
+}
 
 onAuthStateChanged(auth, u => {
   currentUser = u;

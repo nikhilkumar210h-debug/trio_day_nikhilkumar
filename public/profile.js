@@ -9,7 +9,7 @@ import { SoundManager } from './sound-manager.js';
 import { createSheet } from './ui/sheet.js';
 import { getCachedUser } from './services/userCache.js';
 import { getMyGlobalRank } from './gamification/leaderboards.js';
-import { getCommunityTask } from './gamification/community-tasks.js?v=20260921-profile';
+import { getCommunityTask } from './gamification/community-tasks.js?v=20260921-fix2';
 import { signOut, updateProfile } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
 import {
   doc, getDoc, collection, collectionGroup, getDocs, query, where, orderBy,
