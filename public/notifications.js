@@ -1,6 +1,6 @@
 import { auth, db } from './firebase-init.js';
 import { escapeHtml as esc } from './utils.js';
-import { notificationText } from './services/notificationHelpers.js';
+import { notificationText, pushUrl } from './services/notificationHelpers.js';
 import { trioCache } from './trio-cache.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
 import {
@@ -21,6 +21,15 @@ function isSafeUrl(url) {
   }
 }
 
+function formatDateGroup(ms) {
+  const date = new Date(ms);
+  const today = new Date();
+  const yesterday = new Date(today); yesterday.setDate(yesterday.getDate() - 1);
+  if (date.toDateString() === today.toDateString()) return 'Today';
+  if (date.toDateString() === yesterday.toDateString()) return 'Yesterday';
+  return date.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' });
+}
+
 const $ = id => document.getElementById(id);
 let me = null;
 let allNotifications = [];
@@ -28,31 +37,50 @@ let allNotifications = [];
 function renderNotificationRows(container, alerts) {
   container.innerHTML = '';
   if (!alerts.length) { container.innerHTML = '<div class="notifications-empty-row">No notifications</div>'; return; }
+
+  const grouped = {};
   alerts.forEach(alert => {
-    const row = document.createElement('div');
-    row.className = `notification-row${alert.read ? '' : ' unread'}`;
-    row.dataset.notificationId = alert.id;
-    row.style.cssText = 'display:flex;align-items:flex-start;gap:12px;padding:12px;border-radius:12px;background:rgba(255,255,255,.02);border:1px solid transparent;transition:background .15s,border-color .15s';
-    if (!alert.read) { row.style.background = 'rgba(139,92,246,.09)'; row.style.borderColor = 'rgba(139,92,246,.18)'; }
-    const avatarHtml = alert.actorPhotoURL
-      ? `<img src="${esc(alert.actorPhotoURL)}" alt="" style="width:40px;height:40px;border-radius:50%;object-fit:cover">`
-      : `<div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#8B5CF6,#6366F1);display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff">${esc((alert.actorName || 'U').charAt(0))}</div>`;
-    row.innerHTML = `
-      <div style="flex-shrink:0">${avatarHtml}</div>
-      <div style="flex:1;min-width:0">
-        <div style="font-weight:600;font-size:14px;color:var(--ink)">${esc(notificationText(alert))}</div>
-        <div style="font-size:12px;color:var(--ink-muted);margin-top:4px">${new Date(alert.createdAtMs || Date.now()).toLocaleString()}</div>
-      </div>
-      ${!alert.read ? '<div style="width:8px;height:8px;border-radius:50%;background:#8B5CF6;flex-shrink:0;margin-top:4px"></div>' : ''}
-    `;
-    row.addEventListener('click', async () => {
-      if (!alert.read) {
-        try { await updateDoc(doc(db, 'users', me.uid, 'notifications', alert.id), { read: true }); } catch (e) { console.error(e); }
-      }
-      if (alert.urlPath && isSafeUrl(alert.urlPath)) location.href = alert.urlPath;
-      else if (alert.postId) location.href = 'index.html';
+    const dayKey = formatDateGroup(alert.createdAtMs || Date.now());
+    if (!grouped[dayKey]) grouped[dayKey] = [];
+    grouped[dayKey].push(alert);
+  });
+
+  Object.keys(grouped).forEach(dayKey => {
+    const dayHeader = document.createElement('h2');
+    dayHeader.className = 'notification-day-header';
+    dayHeader.style.cssText = 'font-size:12px;font-weight:700;color:var(--color-ink-dim);text-transform:uppercase;letter-spacing:.08em;margin:24px 0 8px;padding-left:4px';
+    dayHeader.textContent = dayKey;
+    container.appendChild(dayHeader);
+
+    grouped[dayKey].forEach(alert => {
+      const row = document.createElement('div');
+      row.className = `notification-row${alert.read ? '' : ' unread'}`;
+      row.dataset.notificationId = alert.id;
+      row.style.cssText = 'display:flex;align-items:flex-start;gap:12px;padding:12px;border-radius:12px;background:rgba(255,255,255,.02);border:1px solid transparent;transition:background .15s,border-color .15s';
+      if (!alert.read) { row.style.background = 'rgba(139,92,246,.09)'; row.style.borderColor = 'rgba(139,92,246,.18)'; }
+      const avatarHtml = alert.actorPhotoURL
+        ? `<img src="${esc(alert.actorPhotoURL)}" alt="" style="width:40px;height:40px;border-radius:50%;object-fit:cover">`
+        : `<div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#8B5CF6,#6366F1);display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff">${esc((alert.actorName || 'U').charAt(0))}</div>`;
+      
+      const deepLink = alert.urlPath || pushUrl({ type: alert.type, actorUid: alert.actorUid, postId: alert.postId });
+      const hasValidLink = deepLink && isSafeUrl(deepLink);
+      
+      row.innerHTML = `
+        <div style="flex-shrink:0">${avatarHtml}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:14px;color:var(--ink)">${esc(notificationText(alert))}</div>
+          <div style="font-size:12px;color:var(--ink-muted);margin-top:4px">${new Date(alert.createdAtMs || Date.now()).toLocaleString()}</div>
+        </div>
+        ${!alert.read ? '<div style="width:8px;height:8px;border-radius:50%;background:#8B5CF6;flex-shrink:0;margin-top:4px"></div>' : ''}
+      `;
+      row.addEventListener('click', async () => {
+        if (!alert.read) {
+          try { await updateDoc(doc(db, 'users', me.uid, 'notifications', alert.id), { read: true }); } catch (e) { console.error(e); }
+        }
+        if (hasValidLink) location.href = deepLink;
+      });
+      container.appendChild(row);
     });
-    container.appendChild(row);
   });
 }
 
@@ -61,6 +89,19 @@ function filterAndRender() {
   let filtered = allNotifications;
   if (activeTab === 'unread') filtered = allNotifications.filter(a => !a.read);
   else if (activeTab === 'mentions') filtered = allNotifications.filter(a => a.type === 'mention');
+  
+  // Cap "challenge_reminder" spam to 1 per day
+  const remindersSeen = new Set();
+  filtered = filtered.filter(a => {
+    if (a.type === 'challenge_reminder') {
+      const day = formatDateGroup(a.createdAtMs || Date.now());
+      if (remindersSeen.has(day)) return false;
+      remindersSeen.add(day);
+      return true;
+    }
+    return true;
+  });
+
   const list = $('notificationsList');
   const empty = $('notificationsEmpty');
   if (!filtered.length) { list.innerHTML = ''; empty.hidden = false; }
@@ -76,7 +117,7 @@ async function markAllRead() {
     unread.forEach(a => batch.update(doc(db, 'users', me.uid, 'notifications', a.id), { read: true }));
     await batch.commit();
     const { showToast } = await import('./ui/toast.js');
-    showToast('Sab notifications read mark kar diye');
+    showToast('All notifications marked as read', 'success');
   } catch (err) {
     console.error(err);
     const { showToast } = await import('./ui/toast.js');
