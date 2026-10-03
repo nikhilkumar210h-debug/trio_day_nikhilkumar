@@ -4,7 +4,7 @@
 # Secrets:
 #   FIREBASE_PROJECT_ID
 #   FIREBASE_SA_CLIENT_EMAIL
-#   FIREBASE_SA_PRIVATE_KEY
+#   (FIREBASE_SA_PRIVATE_KEY moved to KV namespace FIREBASE_KEYS)
 #
 # The API Worker is the source for authenticated gamification writes.
 
@@ -12,6 +12,10 @@ name = "trio-gamification"
 main = "gamification.js"
 compatibility_date = "2026-09-18"
 workers_dev = true
+
+[[kv_namespaces]]
+binding = "FIREBASE_KEYS"
+id = "c1786d0376844eb59ba03cadf4939496"
 
 [observability]
 enabled = true

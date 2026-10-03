@@ -63,7 +63,7 @@ service cloud.firestore {
           && request.resource.data.expiresAtMs is number
           && request.resource.data.expiresAtMs >= request.time.toMillis() + 23 * 60 * 60 * 1000
           && request.resource.data.expiresAtMs <= request.time.toMillis() + 25 * 60 * 60 * 1000
-          && (!('mediaUrl' in request.resource.data) || request.resource.data.mediaUrl is string)
+          && (!('mediaUrl' in request.resource.data) || request.resource.data.mediaUrl is string || request.resource.data.mediaUrl == null)
           && (!('editorMeta' in request.resource.data) || (request.resource.data.editorMeta is map && request.resource.data.editorMeta.size() <= 6))
           && (
             request.resource.data.privacy == 'public'
@@ -343,6 +343,28 @@ service cloud.firestore {
           && request.resource.data.expireAt > request.time;
         allow update, delete: if false;
       }
+    }
+
+    // Daily Question answers — user-scoped, merge-safe writes
+    match /dailyAnswers/{answerId} {
+      allow read: if signedIn() && request.auth.uid == answerId.split('_')[0];
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.questionKey is string
+        && request.resource.data.answer is string
+        && request.resource.data.answer.size() > 0
+        && request.resource.data.answer.size() <= 280
+        && request.resource.data.createdAtMs is number;
+      allow update: if signedIn()
+        && resource.data.uid == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['answer','createdAt','createdAtMs'])
+        && request.resource.data.questionKey == resource.data.questionKey
+        && request.resource.data.uid == resource.data.uid
+        && request.resource.data.answer is string
+        && request.resource.data.answer.size() > 0
+        && request.resource.data.answer.size() <= 280
+        && request.resource.data.createdAtMs is number;
+      allow delete: if signedIn() && resource.data.uid == request.auth.uid;
     }
 
     // ── Gamification ──────────────────────────────────────────────

@@ -36,14 +36,15 @@
     </header>
     <main class="notifications-main">
         <section class="notifications-card">
-            <div class="notifications-header">
+            <header class="notifications-header">
+                <h1 class="notifications-title">Notifications</h1>
                 <div class="notifications-tabs" role="tablist" aria-label="Notification filters">
                     <button role="tab" class="notification-tab active" data-tab="all" aria-selected="true">All</button>
                     <button role="tab" class="notification-tab" data-tab="unread" aria-selected="false">Unread</button>
                     <button role="tab" class="notification-tab" data-tab="mentions" aria-selected="false">Mentions</button>
                 </div>
                 <button id="markAllReadBtn" class="btn secondary" type="button" style="font-size:12px; padding:6px 12px;">Mark all read</button>
-            </div>
+            </header>
             <div id="notificationsList" class="notifications-list"></div>
             <div id="notificationsEmpty" class="notifications-empty" hidden>Koi notification nahi abhi</div>
         </section>

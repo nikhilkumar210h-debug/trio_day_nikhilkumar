@@ -52,6 +52,16 @@
   max-width: 100%;
   line-height: 1.1;
 }
+@media (max-width: 390px) {
+  .bottom-nav .nav-btn {
+    font-size: 8px;
+    padding: 5px 1px 3px;
+  }
+  .bottom-nav .nav-label {
+    font-size: 8px;
+    letter-spacing: .01em;
+  }
+}
 .nav-btn.active {
   color: #EDE9FE;
   background: linear-gradient(135deg, rgba(139,92,246,.42), rgba(99,102,241,.30));

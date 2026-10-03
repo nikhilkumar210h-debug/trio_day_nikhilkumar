@@ -9,14 +9,14 @@
  * The Worker verifies the token, derives uid, and writes via service account.
  *
  * Wrangler secrets required:
- *   FIREBASE_PROJECT_ID        e.g. nkm-ind
  *   FIREBASE_SA_CLIENT_EMAIL   service account email
- *   FIREBASE_SA_PRIVATE_KEY    RSA private key PEM (-----BEGIN PRIVATE KEY-----)
+ *   (FIREBASE_PROJECT_ID hardcoded to "nkm-ind")
+ *   FIREBASE_SA_PRIVATE_KEY    RSA private key PEM stored in KV namespace FIREBASE_KEYS
  *
  * Setup:
- *   npx wrangler secret put FIREBASE_PROJECT_ID
  *   npx wrangler secret put FIREBASE_SA_CLIENT_EMAIL
- *   npx wrangler secret put FIREBASE_SA_PRIVATE_KEY
+ *   npx wrangler kv key put --binding FIREBASE_KEYS --path <pem-file> FIREBASE_SA_PRIVATE_KEY
+ *   npx wrangler deploy --config workers/wrangler.gamification.toml
  */
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -55,8 +55,43 @@ const SYSTEM_BADGES = [
   { id:'badge_xp_1000', name:'Legend', icon:'👑', desc:'Reach 1000 Challenge XP' }
 ];
 
-// ─── CORS (shared — see workers/shared/cors.js for single source)
-import { corsHeaders, json, isAllowedOrigin } from "./shared/cors.js";
+// ─── CORS (inline to avoid module resolution issues) ─────────────────────────────
+const ALLOWED_ORIGINS = [
+  "https://trio-day.trioday-nikhil.workers.dev",
+];
+
+// Local dev origins — the browser's Origin header includes the port
+// (e.g. http://127.0.0.1:3000), so we match on scheme + host and allow any port.
+const LOCAL_HOSTS = ["localhost", "127.0.0.1", "[::1]"];
+
+function isAllowedOrigin(origin) {
+  if (!origin) return false;
+  if (ALLOWED_ORIGINS.includes(origin)) return true;
+  try {
+    const u = new URL(origin);
+    return u.protocol === "http:" && LOCAL_HOSTS.includes(u.hostname);
+  } catch (_) {
+    return false;
+  }
+}
+
+function corsHeaders(origin) {
+  const allow = isAllowedOrigin(origin) ? origin : "";
+  return {
+    "Access-Control-Allow-Origin": allow,
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    "Access-Control-Max-Age": "86400",
+    Vary: "Origin"
+  };
+}
+
+function json(data, status, origin) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { "Content-Type": "application/json; charset=utf-8", ...corsHeaders(origin || "") }
+  });
+}
 
 // ─── Period key helpers (matches gamification/constants.js) ───────────────────
 
@@ -108,10 +143,14 @@ function b64urlEncode(str) {
 }
 
 async function createServiceAccountJwt(clientEmail, privateKeyPem) {
+  // Normalize clientEmail: trim whitespace, ensure it's a clean string
+  const normalizedEmail = String(clientEmail).trim();
+  console.log('[createServiceAccountJwt] clientEmail length:', normalizedEmail.length, 'char codes:', [...normalizedEmail].map(c => c.charCodeAt(0)));
+
   const now = Math.floor(Date.now() / 1000);
   const header = { alg: "RS256", typ: "JWT" };
   const claimSet = {
-    iss: clientEmail,
+    iss: normalizedEmail,
     scope: "https://www.googleapis.com/auth/datastore",
     aud: GOOGLE_TOKEN_URL,
     exp: now + 3600,
@@ -119,7 +158,9 @@ async function createServiceAccountJwt(clientEmail, privateKeyPem) {
   };
 
   function encode(obj) {
-    return btoa(JSON.stringify(obj))
+    const jsonStr = JSON.stringify(obj);
+    console.log('[createServiceAccountJwt] encode input:', jsonStr);
+    return btoa(jsonStr)
       .replace(/\+/g, "-")
       .replace(/\//g, "_")
       .replace(/=/g, "");
@@ -166,9 +207,12 @@ async function getAccessToken(env) {
     return _cachedAccessToken;
   }
 
+  const privateKey = await env.FIREBASE_KEYS.get("FIREBASE_SA_PRIVATE_KEY");
+  if (!privateKey) throw new Error("FIREBASE_SA_PRIVATE_KEY not found in KV");
+
   const jwt = await createServiceAccountJwt(
     env.FIREBASE_SA_CLIENT_EMAIL,
-    env.FIREBASE_SA_PRIVATE_KEY,
+    privateKey,
   );
 
   const res = await fetch(GOOGLE_TOKEN_URL, {
@@ -453,7 +497,7 @@ async function upsertLeaderboard(projectId, accessToken, boardId, entry, valueKe
 async function handleAwardXp(uid, body, env) {
   const challengeId=String(body?.meta?.challengeId||'').trim();
   if(!challengeId) throw new Error('challengeId required');
-  const projectId=env.FIREBASE_PROJECT_ID, token=await getAccessToken(env);
+  const projectId='nkm-ind', token=await getAccessToken(env);
   const answer=await fsGet(projectId,token,'challengeAnswers/'+uid+'_'+challengeId);
   if(!answer || answer.uid!==uid || answer.challengeId!==challengeId || !Number.isInteger(Number(answer.choice))) throw new Error('Challenge answer not found');
   const task=await fsGet(projectId,token,'communityTasks/'+challengeId);
@@ -491,7 +535,7 @@ async function handleBumpStreak(uid, body, env) {
   const challengeId = String(body?.challengeId || '').trim();
   if (!challengeId) throw new Error('challengeId required');
 
-  const projectId=env.FIREBASE_PROJECT_ID, token=await getAccessToken(env);
+  const projectId='nkm-ind', token=await getAccessToken(env);
   const answer=await fsGet(projectId,token,'challengeAnswers/'+uid+'_'+challengeId);
   if(!answer || answer.uid!==uid || answer.challengeId!==challengeId || !Number.isInteger(Number(answer.choice))) throw new Error('Challenge answer not found');
   const task=await fsGet(projectId,token,'communityTasks/'+challengeId);
@@ -536,9 +580,18 @@ export default {
       return json({ error: 'Origin not allowed' }, 403, origin);
     }
 
-    // Verify required secrets are present
-    if (!env.FIREBASE_PROJECT_ID || !env.FIREBASE_SA_CLIENT_EMAIL || !env.FIREBASE_SA_PRIVATE_KEY) {
+    // Verify required secrets are present (FIREBASE_SA_PRIVATE_KEY is in KV, PROJECT_ID hardcoded)
+    if (!env.FIREBASE_SA_CLIENT_EMAIL) {
       return json({ error: 'Server configuration incomplete' }, 500, origin);
+    }
+    // Check KV for private key
+    try {
+      const keyExists = await env.FIREBASE_KEYS.get("FIREBASE_SA_PRIVATE_KEY");
+      if (!keyExists) {
+        return json({ error: 'Server configuration incomplete: FIREBASE_SA_PRIVATE_KEY missing in KV' }, 500, origin);
+      }
+    } catch (_) {
+      return json({ error: 'Server configuration incomplete: KV access failed' }, 500, origin);
     }
 
     // Verify Firebase ID token
@@ -550,7 +603,7 @@ export default {
 
     let tokenPayload;
     try {
-      tokenPayload = await verifyFirebaseIdToken(idToken, env.FIREBASE_PROJECT_ID, caches.default);
+      tokenPayload = await verifyFirebaseIdToken(idToken, 'nkm-ind', caches.default);
     } catch (err) {
       return json({ error: 'Unauthorized', detail: err.message }, 401, origin);
     }
