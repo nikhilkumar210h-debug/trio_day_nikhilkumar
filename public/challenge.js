@@ -575,7 +575,7 @@ function addCard(c) {
       '<button type="button" class="nkm-btn nkm-btn--secondary challenge-discuss-btn">💬 Join the discussion</button>' +
       '<button type="button" class="nkm-btn nkm-btn--secondary challenge-share-btn">↗ Share</button>' +
       '<button type="button" class="nkm-btn nkm-btn--secondary challenge-opposite-btn">10-min opposite chat</button>' +
-      '<a class="nkm-btn nkm-btn--primary challenge-next-btn" href="challenge.html" data-challenge-id="' + c.id + '">Next Challenge →</a>' +
+      '<button type="button" class="nkm-btn nkm-btn--primary challenge-next-btn" data-challenge-id="' + c.id + '">Next Challenge →</button>' +
     '</div>';
 
   const resultPreview = card.querySelector('.challenge-result-preview');
@@ -620,7 +620,6 @@ function addCard(c) {
   }));
 
   card.querySelector('.challenge-next-btn')?.addEventListener('click', async e => {
-    e.preventDefault();
     if (!currentUser) {
       location.href = 'login.html?redirect=' + encodeURIComponent('challenge.html');
       return;
@@ -648,6 +647,7 @@ function addCard(c) {
     setTimeout(() => {
       card.classList.remove('challenge-switching-out');
       next.card.scrollIntoView({behavior:'smooth', block:'center'});
+      history.replaceState(null, '', `challenge.html?challenge=${encodeURIComponent(next.c.id)}`);
       setTimeout(() => next.card.classList.remove('challenge-switching-in'), 520);
     }, 260);
   });
