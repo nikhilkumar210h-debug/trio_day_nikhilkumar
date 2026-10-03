@@ -19,6 +19,8 @@
   <link rel="sitemap" href="sitemap.xml">
   <link rel="icon" href="icons/trio-day-logo.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icons/trio-day-logo.svg">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#2D1B69">
   <title>Trio Day — Challenge Community</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -122,4 +124,13 @@
   <script type="module" src="daily-question.js?v=20260929"></script><script type="module" src="friend-streak.js?v=20260929"></script>
   <script type="module" src="engagement-loop.js?v=20261003"></script>
   <script>document.querySelectorAll('.sticker-btn').forEach(btn=>{const emoji=btn.dataset.sticker;if(emoji)btn.setAttribute('aria-label','Add sticker: '+emoji);});document.querySelectorAll('.filter-btn').forEach(btn=>{const filter=btn.dataset.filter;if(filter)btn.setAttribute('aria-label','Filter: '+filter.charAt(0).toUpperCase()+filter.slice(1));});document.querySelectorAll('.text-color-btn').forEach(btn=>{const color=btn.dataset.color;if(color)btn.setAttribute('aria-label','Text color: '+color);});</script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').then(reg => {
+      console.log('[SW] Registered:', reg.scope);
+    }).catch(err => console.log('[SW] Registration failed:', err));
+  });
+}
+</script>
 </body></html>

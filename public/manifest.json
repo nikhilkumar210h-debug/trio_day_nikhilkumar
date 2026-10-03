@@ -1,0 +1,41 @@
+{
+  "name": "Trio Day",
+  "short_name": "Trio Day",
+  "description": "A text-first gamified challenge community. Pick a side, see the split, discuss.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#08051A",
+  "theme_color": "#2D1B69",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["social", "lifestyle", "education"],
+  "shortcuts": [
+    {
+      "name": "Today's Challenge",
+      "short_name": "Challenge",
+      "description": "View today's challenge",
+      "url": "/index.html",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Create Challenge",
+      "short_name": "Create",
+      "description": "Ask the community a question",
+      "url": "/challenge-create.html",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

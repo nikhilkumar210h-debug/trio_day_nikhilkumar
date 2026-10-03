@@ -17,6 +17,8 @@
   <link rel="canonical" href="https://nkm-ind.web.app/c/">
   <link rel="icon" href="icons/trio-day-logo.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icons/trio-day-logo.svg">
+  <link rel="manifest" href="../manifest.json">
+  <meta name="theme-color" content="#0a0f1a">
   <title>Challenge · Trio Day</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -72,4 +74,11 @@
   <script type="module" src="ui/header.js"></script>
   <script type="module" src="ui/nav.js?v=20260922-nav7"></script>
   <script type="module" src="challenge-detail.js?v=20261003"></script>
+  <script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('../sw.js').then(reg => {
+      console.log('[SW] Registered:', reg.scope);
+    }).catch(err => console.log('[SW] Registration failed:', err));
+  }
+  </script>
 </body></html>
