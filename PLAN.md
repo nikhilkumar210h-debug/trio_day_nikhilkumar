@@ -620,7 +620,7 @@ README ko implementation/deployment documentation ke roop mein aligned rakha jay
 
 Verified/passing work so far includes the major Auth observer issue, XP/streak reward flow, Daily Question persistence/auth refresh, text-only Story permission flow, 390px navigation, Notifications heading, and Opposite Chat initial room access/creation.
 
-Remaining Stage 1 verification must still cover the full Discover/cold-start path and the final localhost + production exit matrix before Stage 1 is marked complete.
+Production Discover/cold-start verification now passes: Challenges/Connect/Create are understandable, read-only people search shows an explicit empty state, and 390px Discover has no horizontal overflow. The remaining Stage 1 gate is the final localhost/OpenCode verification plus consolidation of the production exit matrix before Stage 1 is marked complete.
 
 **Stage 2 — Locked until Stage 1 exit + explicit approval.**
 
