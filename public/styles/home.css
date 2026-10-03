@@ -783,3 +783,101 @@
 @keyframes tdShimmer{to{background-position:-200% 0}}@keyframes tdCardIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 @media(max-width:480px){.td-v2-live-options{grid-template-columns:1fr}.td-v2-live-options span{min-height:42px}}
 @media(prefers-reduced-motion:reduce){.td-v2-feed-skeleton,.td-v2-live-card{animation:none}}
+
+/* ══════════════════════════════════════════════════════════════════════════════════
+   CLS Fixes — Reserve space for dynamic content
+   ═════════════════════════════════════════════════════════════════════════════════ */
+
+.today-greeting {
+  min-height: 80px;
+}
+
+.nkm-stories-strip {
+  min-height: 84px;
+}
+
+.today-visual {
+  min-height: 60px;
+}
+
+#todayFocus {
+  min-height: 140px;
+}
+
+.daily-question-card {
+  min-height: 100px;
+}
+
+#todayLive {
+  min-height: 200px;
+}
+
+/* ═════════════════════════════════════════════════════════════════════════════════
+   Touch Targets — Minimum 44x44px
+   ════════════════════════════════════════════════════════════════════════════════ */
+
+.today-challenge-link,
+.td-v2-live-card > a,
+.nkm-btn,
+.nav-btn,
+.icon-btn,
+.challenge-main-options button,
+.challenge-discuss-btn,
+.challenge-share-btn,
+.challenge-opposite-btn,
+.challenge-next-btn,
+.story-privacy-btn,
+.filter-btn,
+.text-color-btn,
+.sticker-btn {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Ensure focus states visible */
+.today-challenge-link:focus-visible,
+.td-v2-live-card > a:focus-visible,
+.nkm-btn:focus-visible,
+.nav-btn:focus-visible,
+.icon-btn:focus-visible,
+.challenge-main-options button:focus-visible,
+.challenge-discuss-btn:focus-visible,
+.challenge-share-btn:focus-visible,
+.challenge-opposite-btn:focus-visible,
+.challenge-next-btn:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* ═════════════════════════════════════════════════════════════════════════════════
+   Challenge Grid — Equal height cards
+   ════════════════════════════════════════════════════════════════════════════════ */
+
+.challenge-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--space-3);
+  align-items: stretch;
+}
+
+.challenge-main-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 280px;
+}
+
+.challenge-main-options {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-2);
+  margin-top: auto;
+}
+
+.challenge-main-options button {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 60px;
+}
