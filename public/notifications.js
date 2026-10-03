@@ -8,7 +8,7 @@ import {
   updateDoc, doc, writeBatch
 } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 
-const ALLOWED_URL_ORIGIN = 'https://trio-day.trioday-nikhil.workers.dev';
+const ALLOWED_URL_ORIGIN = 'https://nkm-ind.web.app';
 
 function isSafeUrl(url) {
   if (!url) return false;
