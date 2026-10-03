@@ -8,6 +8,7 @@ import { listCommunityTasks } from './gamification/community-tasks.js?v=20260921
 import { workerPost } from './gamification/worker-config.js';
 import { getCachedUser } from './services/userCache.js';
 import { showToast } from './ui/toast.js';
+import { createSheet } from './ui/sheet.js';
 
 const CHALLENGES = [
   {id:'trip', category:'Life', tag:'CHOICE', q:'You get one free trip tomorrow. Where are you going?', o:['Japan 🇯🇵','Switzerland 🇨🇭','Somewhere unexpected 🌍'], createdAtMs:1790121600000},
@@ -153,7 +154,26 @@ async function updateChallengeCounter(challengeId, uid, choice) {
 
 async function shareChallenge(c) {
   const url = shareChallengeUrl(c);
-  const shareInternal = () => {
+  const { sheet, open, close } = createSheet({
+    title: 'Share Challenge',
+    content: `
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <button type="button" class="nkm-btn nkm-btn--primary" data-action="chat" style="justify-content:flex-start;text-align:left;width:100%">
+          <span style="margin-right:10px">💬</span> Share in Trio Day Chat
+        </button>
+        <button type="button" class="nkm-btn nkm-btn--secondary" data-action="copy" style="justify-content:flex-start;text-align:left;width:100%">
+          <span style="margin-right:10px">🔗</span> Copy Link
+        </button>
+        <button type="button" class="nkm-btn nkm-btn--secondary" data-action="native" style="justify-content:flex-start;text-align:left;width:100%">
+          <span style="margin-right:10px">↗</span> System Share Sheet
+        </button>
+      </div>
+    `,
+    actions: ''
+  });
+
+  sheet.querySelector('[data-action="chat"]').onclick = () => {
+    close();
     try {
       sessionStorage.setItem('trio_pending_challenge_share', JSON.stringify({
         id: c.id, q: c.q, o: c.o, url
@@ -162,22 +182,34 @@ async function shareChallenge(c) {
     location.href = 'chat.html?shareChallenge=1';
   };
 
-  const choice = window.prompt('Share this Challenge:\n1 = Share in Trio Day Chat\n2 = Share link / system share', '1');
-  if (choice === '1') return shareInternal();
-  if (choice !== '2') return;
+  sheet.querySelector('[data-action="copy"]').onclick = async () => {
+    close();
+    try {
+      await navigator.clipboard.writeText(url);
+      showToast('Challenge link copied ✓', 'success');
+    } catch {
+      showToast('Could not copy link', 'error');
+    }
+  };
 
-  try {
-    if (navigator.share) {
-      await navigator.share({title:'Trio Day Challenge', text:c.q, url});
-      return;
+  sheet.querySelector('[data-action="native"]').onclick = async () => {
+    close();
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: 'Trio Day Challenge', text: c.q, url });
+      } else {
+        await navigator.clipboard.writeText(url);
+        showToast('Challenge link copied ✓', 'success');
+      }
+    } catch (err) {
+      if (err?.name !== 'AbortError') {
+        try { await navigator.clipboard.writeText(url); showToast('Challenge link copied ✓', 'success'); }
+        catch { showToast('Could not share', 'error'); }
+      }
     }
-    await navigator.clipboard.writeText(url);
-    alert('Challenge link copied ✓');
-  } catch (err) {
-    if (err?.name !== 'AbortError') {
-      try { await navigator.clipboard.writeText(url); alert('Challenge link copied ✓'); } catch {}
-    }
-  }
+  };
+
+  open();
 }
 
 
@@ -652,11 +684,38 @@ function addCard(c) {
   oppositeBtn.addEventListener('click', async () => {
     if (!currentUser) return;
     const mine = await getDoc(doc(db,'challengeAnswers',currentUser.uid + '_' + c.id)).catch(() => null);
-    if (!mine?.exists()) { alert('Pick an answer first.'); return; }
+    if (!mine?.exists()) { showToast('Pick an answer first', 'warn'); return; }
     const myChoice = Number(mine.data().choice);
     const snap = await getDocs(query(collection(db,'challengeAnswers'), where('challengeId','==',c.id), limit(40))).catch(() => null);
     const other = snap?.docs.find(d => d.data()?.uid !== currentUser.uid && Number(d.data()?.choice) !== myChoice);
-    if (!other) { alert('No one on the opposite side yet. Check back when someone picks differently.'); return; }
+    if (!other) {
+      const { sheet, open, close } = createSheet({
+        title: 'Opposite Chat',
+        content: `
+          <div style="text-align:center;padding:1rem">
+            <p style="margin-bottom:1rem;color:var(--color-ink-muted)">No one on the opposite side yet.</p>
+            <button type="button" class="nkm-btn nkm-btn--primary" data-action="invite" style="margin-bottom:8px;width:100%">👥 Invite a Friend</button>
+            <button type="button" class="nkm-btn nkm-btn--secondary" data-action="notify" style="width:100%">🔔 Notify Me When Someone Picks Differently</button>
+          </div>
+        `,
+        actions: ''
+      });
+
+      sheet.querySelector('[data-action="invite"]').onclick = () => {
+        close();
+        const url = shareChallengeUrl(c);
+        navigator.clipboard.writeText(url).then(() => showToast('Invite link copied ✓', 'success'));
+      };
+
+      sheet.querySelector('[data-action="notify"]').onclick = () => {
+        close();
+        showToast('We\'ll notify you when someone picks differently', 'success');
+        // TODO: Implement notification subscription
+      };
+
+      open();
+      return;
+    }
     const params = new URLSearchParams({challenge:c.id, other:other.data().uid});
     location.href = 'temp-chat.html?' + params.toString();
   });
