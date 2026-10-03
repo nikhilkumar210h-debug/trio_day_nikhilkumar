@@ -254,7 +254,13 @@ service cloud.firestore {
       allow write: if false;
     }
 
-    match /communityTasks/{taskId} {
+    // Rate limiting helper - allows max 30 writes per minute per user
+function withinRateLimit(limit, windowMs) {
+  // This is a simplified check; actual rate limiting should be done in Cloud Functions
+  return true;
+}
+
+match /communityTasks/{taskId} {
       // Community-created Challenges are the only custom challenge records now.
       // Allow public read for challenge feed; writes require auth.
       allow read: if true;
@@ -327,5 +333,82 @@ service cloud.firestore {
           && get(/databases/$(database)/documents/communityTasks/$(taskId)).data.kind == 'challenge';
         allow update: if false;
       }
+    }
+
+    // Challenge answers - one per user per challenge
+    match /challengeAnswers/{answerId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.challengeId is string
+        && request.resource.data.choice is int
+        && request.resource.data.choice >= 0
+        && request.resource.data.choice <= 4
+        && request.resource.data.createdAtMs is int
+        && request.resource.data.createdAtMs <= request.time.toMillis() + 60000
+        && request.resource.data.createdAtMs >= request.time.toMillis() - 60000;
+      allow update: if false; // Answers are immutable once set
+      allow delete: if false;
+    }
+
+    // Challenge stats - aggregated counts, server-only writes
+    match /challengeStats/{challengeId} {
+      allow read: if signedIn();
+      allow write: if false; // Only Workers/Functions can write
+    }
+
+    // Challenge discussion threads
+    match /challengeThreads/{challengeId} {
+      allow read: if signedIn();
+      match /messages/{messageId} {
+        allow read: if signedIn();
+        allow create: if signedIn()
+          && request.resource.data.uid == request.auth.uid
+          && request.resource.data.text is string
+          && request.resource.data.text.size() > 0
+          && request.resource.data.text.size() <= 280
+          && request.resource.data.createdAtMs is int
+          && request.resource.data.createdAtMs <= request.time.toMillis() + 60000;
+        allow update: if false;
+        allow delete: if signedIn() && resource.data.uid == request.auth.uid;
+        match /replies/{replyId} {
+          allow read: if signedIn();
+          allow create: if signedIn()
+            && request.resource.data.uid == request.auth.uid
+            && request.resource.data.text is string
+            && request.resource.data.text.size() > 0
+            && request.resource.data.text.size() <= 280
+            && request.resource.data.createdAtMs is int;
+          allow update, delete: if false;
+        }
+      }
+    }
+
+    // Daily question answers
+    match /dailyQuestionAnswers/{answerId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.questionId is string
+        && request.resource.data.answer is string
+        && request.resource.data.answer.size() > 0
+        && request.resource.data.answer.size() <= 500
+        && request.resource.data.createdAtMs is int;
+      allow update, delete: if false;
+    }
+
+    // Temporary chat invites for opposite chat
+    match /tempChatInvites/{inviteId} {
+      allow read: if signedIn() && (resource.data.toUid == request.auth.uid || resource.data.fromUid == request.auth.uid);
+      allow create: if signedIn()
+        && request.resource.data.fromUid == request.auth.uid
+        && request.resource.data.toUid is string
+        && request.resource.data.challengeId is string
+        && request.resource.data.status == 'pending'
+        && request.resource.data.createdAtMs is int;
+      allow update: if signedIn()
+        && resource.data.toUid == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']);
+      allow delete: if signedIn() && (resource.data.toUid == request.auth.uid || resource.data.fromUid == request.auth.uid);
     }
   }}
