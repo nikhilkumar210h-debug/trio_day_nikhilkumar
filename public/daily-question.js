@@ -5,9 +5,9 @@ const FALLBACK=[
 function key(){return new Date().toISOString().slice(0,10)}
 function fallback(){const k=key();let h=0;for(const ch of k)h=(h*31+ch.charCodeAt(0))>>>0;return {date:k,question:FALLBACK[h%FALLBACK.length]};}
 async function loadDailyQuestion(){const host=document.getElementById('dailyQuestionCard');if(!host)return;const k=key();try{const cached=JSON.parse(localStorage.getItem('trio_daily_question')||'null');if(cached?.date===k) return render(cached);}catch{}let data=fallback();try{const snap=await getDoc(doc(db,'config','dailyQuestion'));if(snap.exists()&&snap.data().date===k&&snap.data().question)data={date:k,question:snap.data().question};}catch{}try{localStorage.setItem('trio_daily_question',JSON.stringify(data));}catch{}render(data);}
-function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&','<':'<','>':'>','"':'"',"'":'''}[c]));}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 async function saveDailyAnswer(questionKey, answer, user){
-  if(!user) return;
+  if(!user) return false;
   try{
     await setDoc(doc(db,'dailyAnswers',user.uid+'_'+questionKey),{
       uid:user.uid,
@@ -16,7 +16,11 @@ async function saveDailyAnswer(questionKey, answer, user){
       createdAt:serverTimestamp(),
       createdAtMs:Date.now()
     },{merge:true});
-  }catch(e){console.warn('[DailyQuestion] save answer failed',e);}
+    return true;
+  }catch(e){
+    console.warn('[DailyQuestion] save answer failed',e);
+    return false;
+  }
 }
 function render(data){
   const host=document.getElementById('dailyQuestionCard');
@@ -38,8 +42,8 @@ function render(data){
     const ans=input.value.trim();
     if(!ans) return;
     saveBtn.disabled=true;saveBtn.textContent='Saving…';
-    await saveDailyAnswer(data.date,ans,user);
-    saveBtn.textContent='Saved ✓';
+    const saved = await saveDailyAnswer(data.date,ans,user);
+    saveBtn.textContent=saved ? 'Saved ✓' : 'Save failed';
     setTimeout(()=>{saveBtn.textContent='Save Answer';saveBtn.disabled=false;},1500);
   });
 }
