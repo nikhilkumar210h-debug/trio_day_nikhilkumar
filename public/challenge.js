@@ -544,21 +544,15 @@ function addCard(c) {
       '<button type="button" class="nkm-btn nkm-btn--secondary challenge-share-btn">↗ Share</button>' +
       '<button type="button" class="nkm-btn nkm-btn--secondary challenge-opposite-btn">10-min opposite chat</button>' +
       '<a class="nkm-btn nkm-btn--primary challenge-next-btn" href="challenge.html" data-challenge-id="' + c.id + '">Next Challenge →</a>' +
-    '</div>' +
-    '<section class="challenge-thread" hidden aria-label="Public challenge discussion">' +
-      '<div class="challenge-thread-head"><div><strong>Open discussion</strong><span>Everyone answering this challenge can join.</span></div><span class="challenge-thread-count">Be the first voice</span></div>' +
-      '<div class="challenge-thread-feed"></div>' +
-      '<div class="challenge-thread-empty">No one has said their piece yet. Start the debate.</div>' +
-      '<div class="challenge-thread-compose"><input class="challenge-thread-input" maxlength="280" placeholder="Why did you pick that?"><button type="button" class="nkm-btn nkm-btn--primary challenge-thread-send">Send</button></div>' +
-    '</section>';
+    '</div>';
 
   const resultPreview = card.querySelector('.challenge-result-preview');
   const result = card.querySelector('.challenge-result');
-  const discussion = card.querySelector('.challenge-thread');
   const discussBtn = card.querySelector('.challenge-discuss-btn');
   const shareBtn = card.querySelector('.challenge-share-btn');
   const oppositeBtn = card.querySelector('.challenge-opposite-btn');
-  cards.set(c.id, {card, resultPreview, result, discussion, c});
+  let discussion = null;
+  cards.set(c.id, {card, resultPreview, result, discussion, c, discussBtn});
 
   card.querySelectorAll('[data-choice]').forEach(btn => btn.addEventListener('click', async () => {
     if (!currentUser) return;
@@ -668,6 +662,19 @@ function addCard(c) {
   });
 
   discussBtn.addEventListener('click', () => {
+    if (!discussion) {
+      discussion = document.createElement('section');
+      discussion.className = 'challenge-thread';
+      discussion.hidden = true;
+      discussion.setAttribute('aria-label', 'Public challenge discussion');
+      discussion.innerHTML =
+        '<div class="challenge-thread-head"><div><strong>Open discussion</strong><span>Everyone answering this challenge can join.</span></div><span class="challenge-thread-count">Be the first voice</span></div>' +
+        '<div class="challenge-thread-feed"></div>' +
+        '<div class="challenge-thread-empty">No one has said their piece yet. Start the debate.</div>' +
+        '<div class="challenge-thread-compose"><input class="challenge-thread-input" maxlength="280" placeholder="Why did you pick that?"><button type="button" class="nkm-btn nkm-btn--primary challenge-thread-send">Send</button></div>';
+      card.appendChild(discussion);
+      cards.get(c.id).discussion = discussion;
+    }
     discussion.hidden = !discussion.hidden;
     discussBtn.textContent = discussion.hidden ? '💬 Join the discussion' : '💬 Discussion open';
     if (!discussion.hidden) {
