@@ -274,7 +274,7 @@ async function openProfileMenu(userData) {
           <span>✏️</span> Edit Profile
         </button>
         <button type="button" class="profile-menu-item" data-action="password">
-          <span>🔐</span> Account Security
+          <span>🔐</span> Reset Password
         </button>
         <button type="button" class="profile-menu-item" data-action="theme">
           <span>🎨</span> Theme
@@ -317,18 +317,21 @@ async function openProfileMenu(userData) {
       if (action === 'edit') {
         await openEdit(userData);
       } else if (action === 'password') {
-        // Inline forgot password flow
+        // Confirm before sending reset email
+        const confirmed = confirm('Send a password reset email to your registered email address?');
+        if (!confirmed) return;
+        
         try {
           const { sendPasswordResetEmail } = await import('https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js');
           const userEmail = me?.email || userData.email;
           if (!userEmail) {
             const { showToast } = await import('./ui/toast.js');
-            showToast('Google account me password change Google se karo', 'error');
+            showToast('Google accounts manage passwords via Google', 'error');
             return;
           }
           await sendPasswordResetEmail(auth, userEmail);
           const { showToast } = await import('./ui/toast.js');
-          showToast('Reset link bhej diya! Email check karo ✉️');
+          showToast('Reset link sent! Check your email.', 'success');
         } catch (err) {
           console.error(err);
           const { showToast } = await import('./ui/toast.js');
