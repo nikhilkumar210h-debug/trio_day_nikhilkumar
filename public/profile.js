@@ -396,12 +396,12 @@ async function copyPublicUid(value, button) {
 
 // ── Main profile loader ──────────────────────────────────────────────────────
 async function loadProfile(uid) {
-  // 1. User document — cache first
+  // 1. User document — always refresh own profile so server-authoritative XP/streak is current
+  const isOwnProfile = me && me.uid === uid;
+  if (isOwnProfile) trioCache.invalidate(`user_${uid}`);
   const userData = await getCachedUser(uid);
   if (!userData) { if ($('profileName')) $('profileName').textContent = 'User not found'; return; }
   current = { ...userData, uid: userData.uid || uid };
-
-  const isOwnProfile = me && me.uid === uid;
   // Older accounts may not have the public Trio UID yet. Generate it once,
   // then persist that exact value; later logins always reuse the stored value.
   let publicUid = current.userId || makeUserId(current.uid);
