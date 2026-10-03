@@ -9,6 +9,7 @@ import { workerPost } from './gamification/worker-config.js';
 import { getCachedUser } from './services/userCache.js';
 import { showToast } from './ui/toast.js';
 import { createSheet } from './ui/sheet.js';
+import { showInviteFriendSheet, showOppositeChatSheet, recordAnswerAndTriggerRewards } from './engagement-loop.js?v=20261003';
 
 const CHALLENGES = [
   {id:'trip', category:'Life', tag:'CHOICE', q:'You get one free trip tomorrow. Where are you going?', o:['Japan 🇯🇵','Switzerland 🇨🇭','Somewhere unexpected 🌍'], createdAtMs:1790121600000},
@@ -612,6 +613,10 @@ function addCard(c) {
       await awardXpWithRetry(c.id, currentUser);
       await bumpStreakWithRetry(c.id, currentUser);
 
+      if (currentUser) {
+        await recordAnswerAndTriggerRewards(c.id, choice, currentUser);
+      }
+
     } catch (err) {
       console.error(err);
       result.hidden = false;
@@ -668,7 +673,7 @@ function addCard(c) {
     }
   });
 
-  shareBtn.addEventListener('click', () => shareChallenge(c));
+  shareBtn.addEventListener('click', () => showInviteFriendSheet(c.id));
   const nextBtn = card.querySelector('.challenge-next-btn');
   if (nextBtn) {
     nextBtn.addEventListener('click', (e) => {
@@ -689,35 +694,10 @@ function addCard(c) {
     const snap = await getDocs(query(collection(db,'challengeAnswers'), where('challengeId','==',c.id), limit(40))).catch(() => null);
     const other = snap?.docs.find(d => d.data()?.uid !== currentUser.uid && Number(d.data()?.choice) !== myChoice);
     if (!other) {
-      const { sheet, open, close } = createSheet({
-        title: 'Opposite Chat',
-        content: `
-          <div style="text-align:center;padding:1rem">
-            <p style="margin-bottom:1rem;color:var(--color-ink-muted)">No one on the opposite side yet.</p>
-            <button type="button" class="nkm-btn nkm-btn--primary" data-action="invite" style="margin-bottom:8px;width:100%">👥 Invite a Friend</button>
-            <button type="button" class="nkm-btn nkm-btn--secondary" data-action="notify" style="width:100%">🔔 Notify Me When Someone Picks Differently</button>
-          </div>
-        `,
-        actions: ''
-      });
-
-      sheet.querySelector('[data-action="invite"]').onclick = () => {
-        close();
-        const url = shareChallengeUrl(c);
-        navigator.clipboard.writeText(url).then(() => showToast('Invite link copied ✓', 'success'));
-      };
-
-      sheet.querySelector('[data-action="notify"]').onclick = () => {
-        close();
-        showToast('We\'ll notify you when someone picks differently', 'success');
-        // TODO: Implement notification subscription
-      };
-
-      open();
+      showInviteFriendSheet(c.id);
       return;
     }
-    const params = new URLSearchParams({challenge:c.id, other:other.data().uid});
-    location.href = 'temp-chat.html?' + params.toString();
+    showOppositeChatSheet(c.id, other.data().uid);
   });
 
   discussBtn.addEventListener('click', () => {

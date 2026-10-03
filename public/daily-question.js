@@ -54,11 +54,15 @@ function render(data) {
     <p>One fixed question for everyone today. Answer it in your own way.</p>
     ${answerHtml}
     <div id="dqOthers" class="dq-others" style="margin-top:16px"></div>
-    <a class="nkm-btn nkm-btn--secondary" href="challenge-create.html" style="margin-top:12px">Turn this into a Challenge →</a>
+    <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+      <a class="nkm-btn nkm-btn--secondary" href="challenge-create.html">Turn this into a Challenge →</a>
+      <button type="button" class="nkm-btn nkm-btn--secondary" id="dqRemind" style="white-space:nowrap">🔔 Remind Me Tomorrow</button>
+    </div>
   `;
 
   const submitBtn = host.querySelector('#dqSubmit');
   const skipBtn = host.querySelector('#dqSkip');
+  const remindBtn = host.querySelector('#dqRemind');
   const textarea = host.querySelector('#dqAnswer');
   const othersDiv = host.querySelector('#dqOthers');
 
@@ -95,6 +99,12 @@ function render(data) {
       localStorage.setItem(answeredKey, '[skipped]');
       render(data);
       loadOthersAnswers(data.date, othersDiv);
+    };
+  }
+  if (remindBtn) {
+    remindBtn.onclick = () => {
+      localStorage.setItem('tomorrow_reminder', 'true');
+      showToast('We\'ll remind you tomorrow morning', 'success');
     };
   }
 
