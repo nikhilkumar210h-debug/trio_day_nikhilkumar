@@ -166,12 +166,16 @@ service cloud.firestore {
       allow delete: if owner(userId);
     }
 
-    match /users/{userId} {
+match /users/{userId} {
       allow read: if signedIn();
-      allow create: if owner(userId);
+      allow create: if owner(userId)
+        && !request.resource.data.keys().hasAny([
+          'xp', 'level', 'streakCurrent', 'streakBest', 'streakLastDate',
+          'weeklyXp', 'monthlyXp', 'badges'
+        ]);
       allow update: if owner(userId)
-      && noGamificationWrite()
-      && (!request.resource.data.diff(resource.data).affectedKeys().hasAll(['userId']) || canChangeUserId());
+        && noGamificationWrite()
+        && (!request.resource.data.diff(resource.data).affectedKeys().hasAll(['userId']) || canChangeUserId());
       allow delete: if false;
       match /followers/{followerId} {
         allow read: if signedIn();
@@ -321,7 +325,9 @@ service cloud.firestore {
     }
 
     match /tempChats/{roomId} {
-      allow read: if signedIn() && request.auth.uid in resource.data.participants && resource.data.expireAt > request.time;
+      allow read: if signedIn()
+        && (!exists(/databases/$(database)/documents/tempChats/$(roomId))
+          || (request.auth.uid in resource.data.participants && resource.data.expireAt > request.time));
       allow create: if signedIn()
         && request.auth.uid in request.resource.data.participants
         && request.resource.data.participants.size() == 2

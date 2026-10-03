@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="en">
 
 <head>
@@ -9,8 +9,8 @@
     <title>Search — Trio Day</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
-    <noscript><link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet"></noscript>
     <style>:root{--primary:#8B5CF6;--bg:#08051A;--surface:#17113A;--ink:#f1f5f9;--border:rgba(196,181,253,.14)}*{box-sizing:border-box}html{background:var(--color-bg)}body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif}.tricolor-strip{height:3px;display:flex;position:fixed;inset:0 0 auto;z-index:200}.tricolor-strip span{flex:1}.tricolor-strip span:nth-child(1){background:linear-gradient(90deg,#ff9933,#ff7700)}.tricolor-strip span:nth-child(2){background:#fff}.tricolor-strip span:nth-child(3){background:linear-gradient(90deg,#128807,#0a6305)}.topbar{position:sticky;top:3px;z-index:100;background:var(--color-bg-elevated);border-bottom:1px solid var(--border)}.search-main{width:min(680px,100%);margin:auto;padding:20px 16px}.search-card{background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:24px}.bottom-nav{position:fixed;left:0;right:0;bottom:0;background:var(--color-bg-elevated);backdrop-filter:blur(18px);border-top:1px solid rgba(196,181,253,.14);z-index:55;padding-bottom:env(safe-area-inset-bottom)}.nav-row{width:min(520px,100%);margin:auto;display:grid;grid-template-columns:1fr 1fr 72px 1fr 1fr;gap:2px;padding:6px 6px 4px;align-items:end}.nav-btn{padding:6px 2px 4px;border-radius:12px;color:var(--color-ink-dim);font-size:10px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;gap:2px;min-height:44px;display:flex;flex-direction:column;align-items:center;justify-content:center}.nav-btn.active{color:var(--color-primary-text);background:rgba(139,92,246,.12)}.nav-btn--create{background:linear-gradient(135deg,#6366F1 0%,#4F46E5 100%);color:#fff;border:1px solid rgba(255,255,255,.08);border-radius:16px;height:48px;margin-bottom:4px;box-shadow:0 4px 12px rgba(99,102,241,.28);gap:0}.nav-btn--create .nav-icon svg{stroke:#fff}</style>
     <link rel="preload" href="styles/tokens.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <noscript><link rel="stylesheet" href="styles/tokens.css"></noscript>
@@ -39,7 +39,7 @@
                 <input id="searchInput" type="search" class="search-input" placeholder="Search people or Trio UID…" autocomplete="off" autofocus>
             </div>
             <div id="searchResults" class="search-results"></div>
-            <div id="searchEmpty" class="search-empty" style="text-align:center;padding:32px;color:var(--color-ink-dim);font-size:14px;display:none">Kuch dhundo...</div>
+            <div id="searchEmpty" class="search-empty" style="text-align:center;padding:32px;color:var(--color-ink-dim);font-size:14px;display:none">No results found. Try a different search.</div>
             <div id="trendingPosts" class="trending-posts" style="margin-top:24px;display:none">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
                     <h3 style="font-family:var(--font-display);font-size:1.1rem;font-weight:700;margin:0">Trending Posts</h3>

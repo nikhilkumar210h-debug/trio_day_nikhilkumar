@@ -8,6 +8,19 @@ import {
   updateDoc, doc, writeBatch
 } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 
+const ALLOWED_URL_ORIGIN = 'https://trio-day.trioday-nikhil.workers.dev';
+
+function isSafeUrl(url) {
+  if (!url) return false;
+  if (url.startsWith('/')) return true;
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === 'https:' && parsed.hostname === new URL(ALLOWED_URL_ORIGIN).hostname;
+  } catch {
+    return false;
+  }
+}
+
 const $ = id => document.getElementById(id);
 let me = null;
 let allNotifications = [];
@@ -36,7 +49,8 @@ function renderNotificationRows(container, alerts) {
       if (!alert.read) {
         try { await updateDoc(doc(db, 'users', me.uid, 'notifications', alert.id), { read: true }); } catch (e) { console.error(e); }
       }
-      if (alert.urlPath) location.href = alert.urlPath; else if (alert.postId) location.href = 'index.html';
+      if (alert.urlPath && isSafeUrl(alert.urlPath)) location.href = alert.urlPath;
+      else if (alert.postId) location.href = 'index.html';
     });
     container.appendChild(row);
   });

@@ -538,7 +538,7 @@ function addCard(c) {
       '<button type="button" class="nkm-btn nkm-btn--secondary challenge-discuss-btn">💬 Join the discussion</button>' +
       '<button type="button" class="nkm-btn nkm-btn--secondary challenge-share-btn">↗ Share</button>' +
       '<button type="button" class="nkm-btn nkm-btn--secondary challenge-opposite-btn">10-min opposite chat</button>' +
-      '<a class="nkm-btn nkm-btn--primary challenge-next-btn" href="#">Next Challenge →</a>' +
+      '<a class="nkm-btn nkm-btn--primary challenge-next-btn" href="challenge.html" data-challenge-id="' + c.id + '">Next Challenge →</a>' +
     '</div>' +
     '<section class="challenge-thread" hidden aria-label="Public challenge discussion">' +
       '<div class="challenge-thread-head"><div><strong>Open discussion</strong><span>Everyone answering this challenge can join.</span></div><span class="challenge-thread-count">Be the first voice</span></div>' +
@@ -639,6 +639,18 @@ function addCard(c) {
   });
 
   shareBtn.addEventListener('click', () => shareChallenge(c));
+  const nextBtn = card.querySelector('.challenge-next-btn');
+  if (nextBtn) {
+    nextBtn.addEventListener('click', (e) => {
+      const currentId = nextBtn.dataset.challengeId;
+      const cards = Array.from(document.querySelectorAll('.challenge-card[data-task-id]'));
+      const currentIndex = cards.findIndex(card => card.dataset.taskId === currentId);
+      if (currentIndex >= 0 && currentIndex < cards.length - 1) {
+        e.preventDefault();
+        cards[currentIndex + 1].scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    });
+  }
   oppositeBtn.addEventListener('click', async () => {
     if (!currentUser) return;
     const mine = await getDoc(doc(db,'challengeAnswers',currentUser.uid + '_' + c.id)).catch(() => null);

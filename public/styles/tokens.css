@@ -53,10 +53,16 @@
   --color-accent-soft: rgba(16, 185, 129, 0.12);
   --color-accent-ink: #ffffff;
 
-  --color-warm: #f59e0b;
-  --color-warm-strong: #d97706;
-  --color-warm-soft: rgba(245, 158, 11, 0.12);
-  --color-warm-ink: #0f172a;
+  /* Success / Warning tokens (missing — used in home.css) */
+  --color-success: var(--color-accent);
+  --color-success-strong: var(--color-accent-strong);
+  --color-success-soft: var(--color-accent-soft);
+  --color-success-ink: var(--color-accent-ink);
+
+  --color-warning: var(--color-warm);
+  --color-warning-strong: var(--color-warm-strong);
+  --color-warning-soft: var(--color-warm-soft);
+  --color-warning-ink: var(--color-warm-ink);
 
   --color-danger: #ef4444;
   --color-danger-strong: #dc2626;
@@ -185,6 +191,10 @@
   --duration-fast: 120ms;
   --duration-base: 200ms;
   --duration-slow: 300ms;
+  /* Aliases for legacy usage (home.css uses these) */
+  --transition-fast: var(--duration-fast);
+  --transition-normal: var(--duration-base);
+  --transition-slow: var(--duration-slow);
 
   /* ═══════════════════════════════════════════════════════════════════
      Z-INDEX SCALE
@@ -266,17 +276,16 @@
 
   /* Text / Ink — darker for WCAG AA contrast on light backgrounds */
   --color-ink-light: #0f172a;
-  --color-ink-muted-light: #334155;   /* Was #475569 — darker for readability */
-  --color-ink-dim-light: #64748b;      /* Was #94a3b8 — much darker for "dim" text */
-  --color-ink-on-primary-light: #ffffff;
+  --color-ink-muted-light: #334155;
+  --color-ink-dim-light: #475569; /* darker for 7px text readability */
 
-  /* Accent text — darker indigo for light surfaces */
-  --color-primary-text: #6366F1;
+  /* Accent text — darker indigo for WCAG AA on light surfaces */
+  --color-primary-text: #4F46E5; /* #4F46E5 on #F8F7FF = 4.5:1 */
 
-  /* Borders — stronger opacity for light mode visibility */
-  --color-border-light: rgba(99, 102, 241, 0.14);
-  --color-border-strong-light: rgba(99, 102, 241, 0.22);
-  --color-border-focus-light: #6366F1;
+  /* Borders — stronger opacity for WCAG 1.4.11 (3:1 non-text contrast) */
+  --color-border-light: rgba(99, 102, 241, 0.30); /* ~3:1 on white */
+  --color-border-strong-light: rgba(99, 102, 241, 0.45);
+  --color-border-focus-light: #4F46E5;
 
   /* Shadows — slightly stronger for light theme depth */
   --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.08);

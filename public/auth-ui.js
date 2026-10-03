@@ -9,6 +9,20 @@ import {
 } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 import { enableOneSignalPush } from './onesignal.js?v=24';
 
+const ALLOWED_URL_ORIGIN = 'https://trio-day.trioday-nikhil.workers.dev';
+
+function isSafeUrl(url) {
+  if (!url) return false;
+  // Allow relative paths
+  if (url.startsWith('/')) return true;
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === 'https:' && parsed.hostname === new URL(ALLOWED_URL_ORIGIN).hostname;
+  } catch {
+    return false;
+  }
+}
+
 const el = document.getElementById('authStatus');
 let notificationUnsubs = [];
 
@@ -37,10 +51,12 @@ function renderNotificationRows(container, alerts, user) {
     container.appendChild(empty); return;
   }
   alerts.forEach(alert => {
-    const row = document.createElement(alert.urlPath || alert.postId ? 'a' : 'button');
+    const hasLink = alert.urlPath || alert.postId;
+    const isSafe = hasLink && (alert.urlPath ? isSafeUrl(alert.urlPath) : true);
+    const row = document.createElement(hasLink && isSafe ? 'a' : 'button');
     row.className = `notification-item${alert.read ? '' : ' unread'}`;
     row.dataset.notificationId = alert.id;
-    if (alert.urlPath) row.href = alert.urlPath;
+    if (alert.urlPath && isSafe) row.href = alert.urlPath;
     else if (alert.postId) row.href = 'index.html';
     else row.type = 'button';
     const title = document.createElement('strong'); title.textContent = notificationText(alert);

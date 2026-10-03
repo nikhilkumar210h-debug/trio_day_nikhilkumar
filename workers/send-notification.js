@@ -441,8 +441,26 @@ function pushCopy({ type, actorName, text, title }) {
   return map[type] || { title: title || "Trio Day", body: text || `${who} sent you an update` };
 }
 
+const ALLOWED_APP_BASE = "https://trio-day.trioday-nikhil.workers.dev";
+
+function validateUrlPath(urlPath) {
+  if (!urlPath) return null;
+  const path = String(urlPath).trim();
+  if (path.startsWith('/')) return path;
+  try {
+    const parsed = new URL(path);
+    if (parsed.protocol === 'https:' && parsed.hostname === new URL(ALLOWED_APP_BASE).hostname) {
+      return parsed.pathname + parsed.search + parsed.hash;
+    }
+  } catch {
+    // not a valid URL
+  }
+  return null;
+}
+
 function pushUrl({ type, actorUid, postId, urlPath }) {
-  if (urlPath) return `${APP_BASE}/${String(urlPath).replace(/^\//, "")}`;
+  const validated = validateUrlPath(urlPath);
+  if (validated) return `${APP_BASE}/${validated.replace(/^\//, "")}`;
   if (type === "message") return `${APP_BASE}/chat.html?uid=${encodeURIComponent(actorUid || "")}`;
   if (type === "connect") return actorUid
     ? `${APP_BASE}/profile.html?uid=${encodeURIComponent(actorUid)}`
@@ -525,7 +543,18 @@ async function handleCreateNotification(request, env) {
   }
   const notificationData = {};
   for (const key of ['postId','text','title','urlPath']) {
-    if (body?.[key] !== undefined) notificationData[key] = String(body[key]).slice(0, key === 'text' ? 500 : 240);
+    if (body?.[key] !== undefined) {
+      const val = String(body[key]).slice(0, key === 'text' ? 500 : 240);
+      if (key === 'urlPath') {
+        const validated = validateUrlPath(val);
+        if (!validated) {
+          return json({ error: "Invalid urlPath" }, 400, origin);
+        }
+        notificationData[key] = validated;
+      } else {
+        notificationData[key] = val;
+      }
+    }
   }
 
   if (
