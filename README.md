@@ -4,6 +4,61 @@
 
 Trio Day is an action-first social web app built around Stories, interactive Challenges, private conversations, people discovery, and Challenge-based progress.
 
+## Current product direction
+
+The current strategic direction is **not a full pivot yet**.
+
+> **One small meaningful thing I do every day with a few people.**
+
+Challenges remain the current interaction engine while the product is stabilized. Study Streak Rooms will later be tested as a feature-flagged experiment, with solo-first value and a small-group accountability loop.
+
+The current product/UX roadmap and decision sequence are maintained in **[PLAN.md](PLAN.md)**.
+
+### Product priorities
+
+**Keep and strengthen**
+- Daily Question.
+- Challenges: question → choose → result → discuss.
+- Solo progress, XP and streak once reliable.
+- Simplified You/Profile.
+- Supporting private Chat when a real relationship or action exists.
+- User-initiated share cards suitable for WhatsApp.
+
+**Defer / simplify**
+- Stories as a primary product surface.
+- 10-minute Opposite Chat.
+- Large leaderboard emphasis while the user base is small.
+- Generic social-feed behavior.
+- Mandatory photo proof.
+
+The app should not depend on having an existing social graph just to provide first-session value.
+
+## Deployment
+
+### Current production
+
+- **Frontend / canonical production:** Cloudflare Workers  
+  https://trio-day.trioday-nikhil.workers.dev/
+- **Backend/API:** Render-hosted Flask backend.
+- **Authentication + database:** Firebase Authentication + Cloud Firestore.
+- **Media:** Cloudinary where configured.
+- **Notifications:** Existing OneSignal/notification Worker where configured.
+
+### Legacy hosting
+
+`https://nkm-ind.web.app/` is a **legacy Firebase Hosting URL** and must not be treated as the designated production host.
+
+Do not migrate hosting or remove old hosting configuration simply because Firebase Hosting files remain in the repository.
+
+## Change-control rule
+
+No existing feature, file, backend component, Worker, deployment configuration, Firestore collection/data, Firebase rule, or production configuration may be deleted, disabled, renamed, or replaced without explicit approval for that specific change.
+
+Do not treat an apparently unused file as permission to delete it.
+
+Before significant code work, read [PLAN.md](PLAN.md), identify the stage being implemented, and report the exact scope of changes.
+
+
 ## Current product
 
 ### Today
