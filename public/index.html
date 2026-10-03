@@ -137,9 +137,9 @@
         <!-- Story Editor (shown after media captured) -->
         <div id="storyEditor" class="story-editor" hidden>
           <div class="editor-toolbar">
-            <button type="button" class="editor-tool-btn active" data-tool="filters" title="Filters">✨</button>
-            <button type="button" class="editor-tool-btn" data-tool="text" title="Add Text">T</button>
-            <button type="button" class="editor-tool-btn" data-tool="stickers" title="Stickers">😀</button>
+            <button type="button" class="editor-tool-btn active" data-tool="filters" aria-label="Filters">✨</button>
+            <button type="button" class="editor-tool-btn" data-tool="text" aria-label="Add Text">T</button>
+            <button type="button" class="editor-tool-btn" data-tool="stickers" aria-label="Stickers">😀</button>
           </div>
           <div class="editor-canvas-wrapper">
             <canvas id="storyEditorCanvas"></canvas>
@@ -184,7 +184,7 @@
               <label>Size <span id="textSizeValue">24px</span></label>
               <input type="range" id="textSize" min="12" max="48" value="24" aria-label="Text size">
             </div>
-            <button type="button" id="addTextBtn" class="btn primary" style="margin-top:8px">Add Text to Story</button>
+            <button type="button" id="addTextBtn" class="btn primary" style="margin-top:8px" aria-label="Add text to story">Add Text to Story</button>
           </div>
           <div class="editor-panel" id="stickersPanel" hidden>
             <div class="sticker-grid" role="listbox" aria-label="Stickers">
@@ -235,13 +235,13 @@
         
         <div class="story-privacy" style="margin-top: 12px;">
           <span class="label-text" style="display:block;margin-bottom:6px">Privacy</span>
-          <button type="button" class="story-privacy-btn active" data-privacy="public">Public</button>
-          <button type="button" class="story-privacy-btn" data-privacy="friends">Friends Only</button>
+          <button type="button" class="story-privacy-btn active" data-privacy="public" aria-label="Public story">Public</button>
+          <button type="button" class="story-privacy-btn" data-privacy="friends" aria-label="Friends only story">Friends Only</button>
         </div>
         
         <p id="storyFormStatus" class="status" aria-live="polite"></p>
-        <div class="modal-actions"><button type="button" id="storyCancelBtn" class="btn secondary">Cancel</button><button
-            type="submit" id="storySubmitBtn" class="btn primary">Share Story</button></div>
+        <div class="modal-actions"><button type="button" id="storyCancelBtn" class="btn secondary" aria-label="Cancel story">Cancel</button><button
+            type="submit" id="storySubmitBtn" class="btn primary" aria-label="Share story">Share Story</button></div>
       </form>
     </div>
   </div>
@@ -255,6 +255,21 @@
 
   <script type="module" src="ui/nav.js?v=20260922-nav7"></script>
   <script type="module" src="ui/sheet.js"></script>
-  <script type="module" src="daily-question.js?v=20260929"></script><script type="module" src="friend-streak.js?v=20260929"></script></body>
+  <script type="module" src="daily-question.js?v=20260929"></script><script type="module" src="friend-streak.js?v=20260929"></script>
+<script>
+document.querySelectorAll('.sticker-btn').forEach(btn => {
+  const emoji = btn.dataset.sticker;
+  if (emoji) btn.setAttribute('aria-label', 'Add sticker: ' + emoji);
+});
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  const filter = btn.dataset.filter;
+  if (filter) btn.setAttribute('aria-label', 'Filter: ' + filter.charAt(0).toUpperCase() + filter.slice(1));
+});
+document.querySelectorAll('.text-color-btn').forEach(btn => {
+  const color = btn.dataset.color;
+  if (color) btn.setAttribute('aria-label', 'Text color: ' + color);
+});
+</script>
+</body>
 
 </html>
