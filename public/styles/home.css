@@ -573,8 +573,7 @@
    ════════════════════════════════════════════════════════════════════════════════ */
 
 @media (min-width: 840px) {
-  .today-page .header-plus,
-  .today-page .notification-wrap {
+  .today-page .header-plus {
     display: none;
   }
 }
