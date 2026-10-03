@@ -256,7 +256,8 @@ service cloud.firestore {
 
     match /communityTasks/{taskId} {
       // Community-created Challenges are the only custom challenge records now.
-      allow read: if signedIn();
+      // Allow public read for challenge feed; writes require auth.
+      allow read: if true;
 
       function validChallengeInteraction() {
         return request.resource.data.interaction is map
