@@ -805,7 +805,7 @@ storyMedia?.addEventListener('change', () => {
   if (!f) { selectedFile = null; storyPreview.hidden = true; storyOverlay?.classList.remove('is-fullscreen'); const ed=$('storyEditor'); if(ed) ed.hidden=true; return; }
   if (!f.type.startsWith('image/') && !f.type.startsWith('video/')) { setStoryStatus('Please select an image or video.', true); storyMedia.value = ''; return; }
   if (f.type.startsWith('image/') && f.size > 12 * 1024 * 1024) { setStoryStatus('Story photo must be under 12MB.', true); storyMedia.value = ''; return; }
-  if (f.type.startsWith('video/') && f.size > 100 * 1024 * 1024) { setStoryStatus('Story video must be under 100MB.', true); storyMedia.value = ''; return; }
+  if (f.type.startsWith('video/') && f.size > 10 * 1024 * 1024) { setStoryStatus('Story video must be under 10MB.', true); storyMedia.value = ''; return; }
   selectedFile = f;
   let mediaEl;
   if (f.type.startsWith('video/')) {
@@ -1080,7 +1080,7 @@ storyForm?.addEventListener('submit', async e => {
     e.preventDefault();
     if (!currentUser) { setStoryStatus('Please login first.', true); return; }
     const text = storyMessage.value.trim();
-    if (!text && !selectedFile) return setStoryStatus('Write something or add a photo/video.', true);
+    if (!text && !selectedFile) return setStoryStatus('Write a caption or add a photo/video.', true);
     storySubmit.disabled = true; storySubmit.textContent = 'Sharing…';
     try {
       const me = await getMyProfile(currentUser.uid);

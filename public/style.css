@@ -626,8 +626,7 @@ h1, h2, h3, h4, .brand strong {
   backdrop-filter: blur(8px);
   display: flex;
   justify-content: center;
-  align-items: flex-start;
-  overflow-y: auto;
+  align-items: center;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
   padding: 16px 12px;
