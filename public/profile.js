@@ -237,12 +237,14 @@ async function openEdit(u) {
 }
 // ── Connect / disconnect ─────────────────────────────────────────────────────
 async function connect(uid) {
-  if (!me || uid === me.uid) { alert('You cannot connect with yourself.'); return; }
+  if (!me || uid === me.uid) { showToast('You cannot connect with yourself', 'warn'); return; }
   try {
     const a = doc(db, 'users', me.uid, 'following', uid);
     const b = doc(db, 'users', uid, 'followers', me.uid);
     const s = await getDoc(a);
     if (s.exists()) {
+      const confirmed = confirm('Unfollow this user?');
+      if (!confirmed) return;
       await deleteDoc(a); await deleteDoc(b).catch(() => { });
     } else {
       const mine = await getCachedUser(me.uid);
@@ -255,13 +257,12 @@ async function connect(uid) {
         console.warn('[Profile] Connection saved, notification delivery failed:', notificationErr);
       }
     }
-    // Invalidate connection-related caches so counts + state refresh
     trioCache.invalidate(`connstate_${me.uid}_${uid}`);
     trioCache.invalidate(`following_${me.uid}`);
     trioCache.invalidate(`following_ids_${me.uid}`);
     trioCache.invalidate(`followers_${uid}`);
     await loadProfile(uid);
-  } catch (err) { console.error(err); alert(err.message || 'Connection update failed.'); }
+  } catch (err) { console.error(err); showToast(err.message || 'Connection update failed', 'error'); }
 }
 
 // ── Profile menu (three-dot) ───────────────────────────────────────────────────
