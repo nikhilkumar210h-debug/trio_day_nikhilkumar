@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="en">
 
 <head>
@@ -33,7 +33,7 @@
   <link rel="stylesheet" href="styles/header.css">
   <link rel="stylesheet" href="styles/components.css">
   <link rel="stylesheet" href="style.css?v=20260921-story4">
-  <link rel="stylesheet" href="styles/polish.css?v=7">
+<link rel="stylesheet" href="styles/polish.css?v=7">
   <link rel="stylesheet" href="styles/home.css?v=36">
   <link rel="sitemap" href="sitemap.xml">
   <link rel="stylesheet" href="styles/experience-polish.css?v=1">
@@ -57,32 +57,38 @@
       <div class="today-greeting-copy">
         <span class="today-kicker">TODAY</span>
         <h1 class="greeting-main"><span class="greeting-text">Good day, <span id="greetingName">Friend</span> <span aria-hidden="true">👋</span></span><span id="todayAvatar" class="today-avatar" role="img">N</span></h1>
-        <p class="greeting-sub" id="greetingSub">One clear move. Then the next.</p>
+        <p class="greeting-sub" id="greetingSub">One clear move. Then the next.</p><a href="challenge.html" class="today-challenge-link" style="display:inline-flex;margin-top:9px;padding:8px 11px;border:1px solid rgba(139,92,246,.22);border-radius:999px;background:rgba(139,92,246,.09);color:var(--color-primary-text);text-decoration:none;font-size:10px;font-weight:850">⚡ Take a challenge →</a>
       </div>
     </section>
 
-    <!-- Today's Challenge — above the fold -->
-    <section id="todayFocus" class="today-section" aria-label="Today's Focus">
+    <!-- Stories strip (preserves heroStories id) -->
+    <section id="storiesStrip" class="nkm-stories-strip" aria-label="Stories">
+      <div id="heroStories" style="display:flex; gap:10px; align-items:center;"></div>
+      <div id="heroStoriesEmpty" class="nkm-pulse-card--empty" style="display:none; padding:10px 14px; font-size:12px; border:1px dashed var(--border); border-radius:12px; color:var(--color-ink-dim)">No stories yet</div>
+    </section>
+
+    <!-- Today's live signal -->
+    <section class="today-visual" aria-label="Today's visual summary">
+      <div class="today-visual-orbit" aria-hidden="true"><span>☸</span></div>
+      <div class="today-visual-copy">
+        <strong id="todayVisualTitle">One meaningful move</strong>
+        <span id="todayVisualMeta">Pick one and start.</span>
+      </div>
+      <div class="today-visual-bars" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+    </section>
+
+    <!-- Today's Focus — real task data -->
+    <section id="dailyQuestionCard" class="daily-question-card" aria-label="Daily question"></section><section id="friendStreakCard" class="daily-question-card" aria-label="Friend streak" hidden></section><section id="todayFocus" class="today-section" aria-label="Today's Focus">
       <div class="today-focus-heading">
-        <h2 class="today-section-title">Today's Challenge <span class="today-focus-label">ONE MOMENT</span></h2>
+        <h2 class="today-section-title">Today’s Challenge <span class="today-focus-label">ONE MOMENT</span></h2>
         <div class="today-focus-label-copy">PUBLIC MOMENT · PICK · COMPARE · DISCUSS</div>
       </div>
       <div id="focusPrimary" class="focus-primary"><div class="td-skeleton td-skeleton--wide" aria-hidden="true"></div></div>
       <div id="focusSecondary" class="focus-secondary"></div>
     </section>
 
-    <!-- Stories strip (compact) -->
-    <section id="storiesStrip" class="nkm-stories-strip" aria-label="Stories" style="margin-top:12px">
-      <div id="heroStories" style="display:flex; gap:8px; align-items:center;"></div>
-      <div id="heroStoriesEmpty" class="nkm-pulse-card--empty" style="display:none; padding:8px 12px; font-size:11px; border:1px dashed var(--border); border-radius:10px; color:var(--color-ink-dim)">No stories yet</div>
-    </section>
-
-    <!-- Daily Question -->
-    <section id="dailyQuestionCard" class="daily-question-card" aria-label="Daily question" style="margin-top:12px"></section>
-    <section id="friendStreakCard" class="daily-question-card" aria-label="Friend streak" hidden></section>
-
     <!-- Today V2: living social layer -->
-    <section id="todayLive" class="td-v2-live" aria-label="What's happening now" style="margin-top:16px">
+    <section id="todayLive" class="td-v2-live" aria-label="What's happening now">
       <div class="td-v2-live-head"><div><span class="td-v2-eyebrow">HAPPENING NOW</span><h2>There is always a next move.</h2><p id="todayLiveCopy">Fresh challenges and people are moving through Trio Day right now.</p></div><span class="td-v2-live-dot"><i></i>LIVE</span></div>
       <div id="todayFreshChallenges" class="td-v2-feed"><div class="td-v2-feed-skeleton"></div><div class="td-v2-feed-skeleton"></div><div class="td-v2-feed-skeleton"></div></div>
       <div class="td-v2-feed-actions"><a href="challenge.html" class="nkm-btn nkm-btn--primary">Explore all challenges →</a><a href="challenge-create.html" class="nkm-btn nkm-btn--secondary">Ask the community</a></div>
@@ -105,6 +111,7 @@
       <h2 class="today-section-title">People</h2>
       <div id="peopleList" class="people-strip"></div>
     </section>
+
 
   </main>
 
@@ -206,7 +213,7 @@
               <button type="button" class="sticker-btn" data-sticker="🌟" role="option">🌟</button>
               <button type="button" class="sticker-btn" data-sticker="🎉" role="option">🎉</button>
               <button type="button" class="sticker-btn" data-sticker="✨" role="option">✨</button>
-              <button type="button" class="sticker-btn" data-sticker="🎶" role="option">🎶</button
+              <button type="button" class="sticker-btn" data-sticker="🎶" role="option">🎶</button>
               <button type="button" class="sticker-btn" data-sticker="💪" role="option">💪</button>
               <button type="button" class="sticker-btn" data-sticker="🙏" role="option">🙏</button>
               <button type="button" class="sticker-btn" data-sticker="👑" role="option">👑</button>
@@ -255,6 +262,7 @@
 
   <script type="module" src="ui/nav.js?v=20260922-nav7"></script>
   <script type="module" src="ui/sheet.js"></script>
-  <script type="module" src="daily-question.js?v=20260929"></script><script type="module" src="friend-streak.js?v=20260929"></script></body>
+<script type="module" src="daily-question.js?v=20260929"></script><script type="module" src="friend-streak.js?v=20260929"></script></body>
 
 </html>
+
