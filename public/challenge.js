@@ -449,9 +449,11 @@ function attachDiscussion(c, card, discussion) {
   const oldUnsub = threadUnsubs.get(c.id);
   if (oldUnsub) oldUnsub();
 
+  const renderedIds = new Set();
   const unsub = onSnapshot(threadQuery, async snap => {
     const rows = snap.docs.map(d => ({id:d.id, ...d.data()}));
     feed.innerHTML = '';
+    renderedIds.clear();
     if (!rows.length) {
       empty.hidden = false;
     } else {
@@ -465,11 +467,13 @@ function attachDiscussion(c, card, discussion) {
         const data = d.data();
         return [data.uid, Number.isInteger(Number(data.choice)) ? c.o[Number(data.choice)] : ''];
       }));
-      const nodes = await Promise.all(rows.map(async m => {
+      for (const m of rows) {
+        if (renderedIds.has(m.id)) continue;
+        renderedIds.add(m.id);
         const replies = await getThreadReplies(c.id, m.id);
-        return renderThreadMessage(m, c.id, profileMap.get(m.uid), answerMap.get(m.uid) || '', replies);
-      }));
-      nodes.forEach(node => feed.appendChild(node));
+        const node = await renderThreadMessage(m, c.id, profileMap.get(m.uid), answerMap.get(m.uid) || '', replies);
+        feed.appendChild(node);
+      }
     }
     count.textContent = rows.length ? rows.length + ' ' + (rows.length === 1 ? 'voice' : 'voices') : 'Be the first voice';
     feed.scrollTop = 0;
@@ -669,6 +673,9 @@ function addCard(c) {
     if (!discussion.hidden) {
       attachDiscussion(c, card, discussion);
       inputFocusIfNeeded(discussion);
+    } else {
+      const unsub = threadUnsubs.get(c.id);
+      if (unsub) { unsub(); threadUnsubs.delete(c.id); }
     }
   });
 
