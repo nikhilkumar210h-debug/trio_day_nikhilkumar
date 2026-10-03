@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#0a0f1a">
+  <meta name="description" content="Trio Day Challenge: Compare your answer with the community split and join the discussion.">
+  <meta name="keywords" content="challenge, social question, community, compare answers, India">
+  <meta property="og:title" content="Challenge · Trio Day">
+  <meta property="og:description" content="Pick a side, see the community split, and join the discussion.">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://nkm-ind.web.app/c/">
+  <meta property="og:image" content="https://nkm-ind.web.app/icons/icon-512.png">
+  <meta name="twitter:title" content="Challenge · Trio Day">
+  <meta name="twitter:description" content="Pick a side, see the community split, and join the discussion.">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="canonical" href="https://nkm-ind.web.app/c/">
+  <link rel="icon" href="icons/trio-day-logo.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/trio-day-logo.svg">
+  <title>Challenge · Trio Day</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet"></noscript>
+  <link rel="stylesheet" href="styles/tokens.css">
+  <link rel="stylesheet" href="styles/components-unified.css">
+  <link rel="stylesheet" href="styles/layout-unified.css">
+  <link rel="stylesheet" href="styles/challenge.css?v=20261003">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"Question","name":"Trio Day Challenge","description":"A community challenge where people pick a side and compare answers.","answerCount":0,"upvoteCount":0,"dateCreated":"","author":{"@type":"Organization","name":"Trio Day Community"}}</script>
+</head>
+<body class="app-page">
+  <div class="tricolor-strip"><span></span><span></span><span></span></div>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="index.html"><span class="brand-chakra"><img src="icons/trio-day-logo.svg" alt="Trio Day" style="width:32px;height:32px;display:block;border-radius:9px"></span><span class="brand-copy"><strong>trio_day</strong><small>CHALLENGE</small></span></a>
+      <div class="topbar-actions"><div id="authStatus" class="auth-status"></div></div>
+    </div>
+  </header>
+  <main class="challenge-page">
+    <section class="challenge-hero" aria-label="Challenge header">
+      <span class="challenge-kicker">CHALLENGE</span>
+      <h1 id="challengeQuestion">Loading…</h1>
+      <p id="challengeMeta" style="color:var(--color-ink-muted);font-size:12px;line-height:1.6;margin:8px 0 0"></p>
+      <div class="td3-hero-pills" style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap"><span>CHOOSE</span><span>COMPARE</span><span>DISCUSS</span></div>
+    </section>
+    <article class="challenge-main-card" id="challengeCard" aria-label="Challenge">
+      <div class="challenge-moment-head"><span class="challenge-tag" id="challengeTag">CHALLENGE</span><span class="challenge-format" id="challengeFormat">QUICK PICK</span></div>
+      <h2 id="challengeQuestionDisplay"></h2>
+      <div class="challenge-creator"><span class="challenge-creator-label">by</span><span class="challenge-creator-name" id="challengeCreator">Trio Day</span></div>
+      <div class="challenge-main-options" id="challengeOptions" role="radiogroup" aria-label="Challenge options"></div>
+      <button type="button" class="challenge-result-preview" hidden aria-expanded="false" aria-label="View community results"></button>
+      <div class="challenge-result" hidden id="challengeResult" aria-label="Community results"></div>
+      <div class="challenge-links">
+        <button type="button" class="nkm-btn nkm-btn--secondary challenge-discuss-btn">💬 Join the discussion</button>
+        <button type="button" class="nkm-btn nkm-btn--secondary challenge-share-btn">↗ Share</button>
+        <button type="button" class="nkm-btn nkm-btn--secondary challenge-opposite-btn">Opposite chat</button>
+        <button type="button" class="nkm-btn nkm-btn--primary challenge-next-btn" data-challenge-id="">Next Challenge →</button>
+      </div>
+      <section class="challenge-thread" hidden aria-label="Public challenge discussion">
+        <div class="challenge-thread-head"><div><strong>Open discussion</strong><span>Everyone answering this challenge can join.</span></div><span class="challenge-thread-count">Be the first voice</span></div>
+        <div class="challenge-thread-feed"></div>
+        <div class="challenge-thread-empty">No one has said their piece yet. Start the debate.</div>
+        <div class="challenge-thread-compose"><label for="thread-input" class="label-text">Your comment</label><input id="thread-input" class="challenge-thread-input" maxlength="280" placeholder="Why did you pick that?" aria-label="Your comment"><button type="button" class="nkm-btn nkm-btn--primary challenge-thread-send">Send</button></div>
+      </section>
+    </article>
+  </main>
+  <nav class="bottom-nav" aria-label="Primary navigation"><div class="nav-row"></div></nav>
+  <script src="auth-preload.js"></script>
+  <script type="module" src="auth-guard.js"></script>
+  <script type="module" src="auth-ui.js"></script>
+  <script type="module" src="theme.js"></script>
+  <script type="module" src="ui/header.js"></script>
+  <script type="module" src="ui/nav.js?v=20260922-nav7"></script>
+  <script type="module" src="challenge-detail.js?v=20261003"></script>
+</body></html>

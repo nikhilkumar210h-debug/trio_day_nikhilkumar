@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#0a0f1a">
+  <meta name="description" content="Browse past daily questions on Trio Day. See how the community answered each day.">
+  <meta name="keywords" content="daily questions, community answers, archive, Trio Day">
+  <meta property="og:title" content="Daily Questions Archive · Trio Day">
+  <meta property="og:description" content="Browse past daily questions and see how the community answered.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://nkm-ind.web.app/daily-questions.html">
+  <meta property="og:image" content="https://nkm-ind.web.app/icons/icon-512.png">
+  <meta name="twitter:title" content="Daily Questions Archive · Trio Day">
+  <meta name="twitter:description" content="Browse past daily questions and see how the community answered.">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="canonical" href="https://nkm-ind.web.app/daily-questions.html">
+  <link rel="icon" href="icons/trio-day-logo.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/trio-day-logo.svg">
+  <title>Daily Questions Archive · Trio Day</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet"></noscript>
+  <link rel="stylesheet" href="styles/tokens.css">
+  <link rel="stylesheet" href="styles/components-unified.css">
+  <link rel="stylesheet" href="styles/layout-unified.css">
+  <link rel="stylesheet" href="styles/home.css?v=36">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"CollectionPage","name":"Daily Questions Archive","description":"Browse past daily questions and see how the community answered.","url":"https://nkm-ind.web.app/daily-questions.html"}</script>
+</head>
+<body class="app-page">
+  <div class="tricolor-strip"><span></span><span></span><span></span></div>
+  <header class="topbar"><div class="topbar-inner"><a class="brand" href="index.html"><span class="brand-chakra"><img src="icons/trio-day-logo.svg" alt="Trio Day" style="width:32px;height:32px;display:block;border-radius:9px"></span><span class="brand-copy"><strong>trio_day</strong><small>DAILY QUESTIONS</small></span></a><div class="topbar-actions"><div id="authStatus" class="auth-status"></div></div></div></header>
+  <main class="app-main">
+    <section style="margin-bottom:24px"><span class="today-kicker">ARCHIVE</span><h1 style="font-family:var(--font-display);font-size:clamp(28px,5vw,40px);margin:8px 0">Daily Questions Archive</h1><p style="color:var(--color-ink-muted);margin:0">Browse past questions and see how the community answered.</p></section>
+    <section>
+      <div class="nkm-tabs" id="dateTabs" role="tablist" aria-label="Date filter" style="margin-bottom:16px"></div>
+      <div id="questionsList" class="daily-questions-list" style="display:flex;flex-direction:column;gap:12px"></div>
+    </section>
+  </main>
+  <nav class="bottom-nav" aria-label="Primary navigation"><div class="nav-row"></div></nav>
+  <script src="auth-preload.js"></script>
+  <script type="module" src="auth-guard.js"></script>
+  <script type="module" src="auth-ui.js"></script>
+  <script type="module" src="theme.js"></script>
+  <script type="module" src="ui/header.js"></script>
+  <script type="module" src="ui/nav.js?v=20260922-nav7"></script>
+  <script type="module" src="daily-archive.js?v=20261003"></script>
+</body></html>

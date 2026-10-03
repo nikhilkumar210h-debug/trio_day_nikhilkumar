@@ -1,15 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>https://nkm-ind.web.app/</loc><changefreq>daily</changefreq><priority>1.00</priority></url>
-  <url><loc>https://nkm-ind.web.app/all-users.html</loc><changefreq>daily</changefreq><priority>0.80</priority></url>
+  <url><loc>https://nkm-ind.web.app/c/</loc><changefreq>daily</changefreq><priority>0.90</priority></url>
   <url><loc>https://nkm-ind.web.app/challenge.html</loc><changefreq>daily</changefreq><priority>0.90</priority></url>
   <url><loc>https://nkm-ind.web.app/challenge-create.html</loc><changefreq>daily</changefreq><priority>0.60</priority></url>
+  <url><loc>https://nkm-ind.web.app/daily-questions.html</loc><changefreq>daily</changefreq><priority>0.70</priority></url>
+  <url><loc>https://nkm-ind.web.app/topics.html</loc><changefreq>daily</changefreq><priority>0.70</priority></url>
+  <url><loc>https://nkm-ind.web.app/all-users.html</loc><changefreq>daily</changefreq><priority>0.80</priority></url>
   <url><loc>https://nkm-ind.web.app/chat.html</loc><changefreq>daily</changefreq><priority>0.70</priority></url>
   <url><loc>https://nkm-ind.web.app/private-chat.html</loc><changefreq>daily</changefreq><priority>0.60</priority></url>
   <url><loc>https://nkm-ind.web.app/profile.html</loc><changefreq>daily</changefreq><priority>0.80</priority></url>
   <url><loc>https://nkm-ind.web.app/leaderboard.html</loc><changefreq>daily</changefreq><priority>0.70</priority></url>
-  <url><loc>https://nkm-ind.web.app/login.html</loc><changefreq>daily</changefreq><priority>0.40</priority></url>
+  <url><loc>https://nkm-ind.web.app/login.html</loc><changefreq>monthly</changefreq><priority>0.40</priority></url>
   <url><loc>https://nkm-ind.web.app/privacy.html</loc><changefreq>monthly</changefreq><priority>0.30</priority></url>
   <url><loc>https://nkm-ind.web.app/terms.html</loc><changefreq>monthly</changefreq><priority>0.30</priority></url>
   <url><loc>https://nkm-ind.web.app/help.html</loc><changefreq>monthly</changefreq><priority>0.30</priority></url>
+  <url><loc>https://nkm-ind.web.app/about.html</loc><changefreq>monthly</changefreq><priority>0.30</priority></url>
 </urlset>

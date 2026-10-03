@@ -1,4 +1,12 @@
 User-agent: *
 Allow: /
+Disallow: /login.html
+Disallow: /profile.html
+Disallow: /chat.html
+Disallow: /private-chat.html
+Disallow: /notifications.html
+Disallow: /settings.html
+Disallow: /challenge-create.html
+Disallow: /temp-chat.html
 Sitemap: https://nkm-ind.web.app/sitemap.xml
-# If you later restrict crawlers, update this file. Place additional rules above the Sitemap line.
+# Crawl public pages only. Private pages require authentication.
