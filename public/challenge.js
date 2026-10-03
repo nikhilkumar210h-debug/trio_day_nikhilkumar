@@ -567,7 +567,7 @@ function addCard(c) {
     '<div class="challenge-no-right">No right answer · pick your side</div>' +
     creatorMeta(c) +
     '<div class="challenge-main-options">' +
-      c.o.map((x,i) => '<button type="button" data-choice="' + i + '"><span class="choice-letter">' + String.fromCharCode(65+i) + '</span><span>' + esc(x) + '</span></button>').join('') +
+      c.o.map((x,i) => '<button type="button" data-choice="' + i + '" aria-label="Option ' + String.fromCharCode(65+i) + ': ' + esc(x) + '"><span class="choice-letter">' + String.fromCharCode(65+i) + '</span><span>' + esc(x) + '</span></button>').join('') +
     '</div>' +
     '<button type="button" class="challenge-result-preview" hidden aria-expanded="false"></button>' +
     '<div class="challenge-result" hidden></div>' +
@@ -730,7 +730,7 @@ function addCard(c) {
         '<div class="challenge-thread-head"><div><strong>Open discussion</strong><span>Everyone answering this challenge can join.</span></div><span class="challenge-thread-count">Be the first voice</span></div>' +
         '<div class="challenge-thread-feed"></div>' +
         '<div class="challenge-thread-empty">No one has said their piece yet. Start the debate.</div>' +
-        '<div class="challenge-thread-compose"><input class="challenge-thread-input" maxlength="280" placeholder="Why did you pick that?"><button type="button" class="nkm-btn nkm-btn--primary challenge-thread-send">Send</button></div>';
+        '<div class="challenge-thread-compose"><label for="thread-input-' + c.id + '" class="label-text">Your comment</label><input id="thread-input-' + c.id + '" class="challenge-thread-input" maxlength="280" placeholder="Why did you pick that?" aria-label="Your comment"><button type="button" class="nkm-btn nkm-btn--primary challenge-thread-send">Send</button></div>';
       card.appendChild(discussion);
       cards.get(c.id).discussion = discussion;
     }

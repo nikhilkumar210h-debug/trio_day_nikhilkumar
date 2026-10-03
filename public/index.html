@@ -123,14 +123,14 @@
       </div>
       <form id="storyForm" novalidate>
         <label class="field" style="margin-bottom:6px"><span class="label-text" style="font-size:10px; opacity:0.85">Caption</span><textarea id="storyMessage"
-            placeholder="Add a caption…" rows="2" maxlength="500" style="font-size:14px"></textarea></label>
+            placeholder="Add a caption…" rows="2" maxlength="500" style="font-size:14px" aria-label="Story caption"></textarea></label>
         <div class="field" style="margin-top:8px">
           <span class="label-text" style="font-size:10px; letter-spacing:0.05em; opacity:0.8">Photo / Video</span>
           <label class="upload-area" for="storyMedia" style="padding:12px">
             <span class="upload-icon" style="width:36px;height:36px;font-size:18px">🎬</span>
             <span class="upload-text"><strong>Choose a photo or video</strong><small>Photo up to 12MB · video up to 10MB</small></span>
           </label>
-          <input type="file" id="storyMedia" accept="image/*,video/*" capture="environment" hidden>
+          <input type="file" id="storyMedia" accept="image/*,video/*" capture="environment" hidden aria-label="Story photo or video">
           <div id="storyPreview" class="media-preview" hidden></div>
         </div>
         
@@ -156,11 +156,11 @@
             </div>
             <div class="filter-intensity">
               <label>Intensity <span id="filterIntensityValue">100%</span></label>
-              <input type="range" id="filterIntensity" min="0" max="100" value="100">
+              <input type="range" id="filterIntensity" min="0" max="100" value="100" aria-label="Filter intensity">
             </div>
           </div>
           <div class="editor-panel" id="textPanel" hidden>
-            <input type="text" id="textInput" placeholder="Type your text…" maxlength="100">
+            <input type="text" id="textInput" placeholder="Type your text…" maxlength="100" aria-label="Text to add to story">
             <div class="text-options">
               <label>Color</label>
               <div class="text-colors">
@@ -170,11 +170,11 @@
                 <button type="button" class="text-color-btn" data-color="#ec4899" style="background:#ec4899" title="Pink"></button>
                 <button type="button" class="text-color-btn" data-color="#10b981" style="background:#10b981" title="Green"></button>
                 <button type="button" class="text-color-btn" data-color="#f59e0b" style="background:#f59e0b" title="Amber"></button>
-                <input type="color" id="textColorWheel" class="color-wheel" value="#ffffff" title="Pick any color — color wheel">
+                <input type="color" id="textColorWheel" class="color-wheel" value="#ffffff" title="Pick any color — color wheel" aria-label="Custom text color">
                 <span class="color-wheel-label">Wheel</span>
               </div>
               <label>Font</label>
-              <select id="textFont">
+              <select id="textFont" aria-label="Text font">
                 <option value="Inter">Inter</option>
                 <option value="Space Grotesk">Space Grotesk</option>
                 <option value="Baloo 2">Baloo 2</option>
@@ -182,7 +182,7 @@
                 <option value="Courier New">Courier New</option>
               </select>
               <label>Size <span id="textSizeValue">24px</span></label>
-              <input type="range" id="textSize" min="12" max="48" value="24">
+              <input type="range" id="textSize" min="12" max="48" value="24" aria-label="Text size">
             </div>
             <button type="button" id="addTextBtn" class="btn primary" style="margin-top:8px">Add Text to Story</button>
           </div>
