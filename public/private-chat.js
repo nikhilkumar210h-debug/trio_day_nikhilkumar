@@ -14,8 +14,6 @@ let activePeer = null;
 let privateUnsub = null;
 const params = new URLSearchParams(location.search);
 const peerUid = params.get('uid');
-let messageSelectionMode = false;
-const selectedMessageIds = new Set();
 
 import { createSheet } from './ui/sheet.js';
 import { showToast } from './ui/toast.js';
@@ -59,52 +57,6 @@ function setPeerHeader() {
   $('peerAvatar').innerHTML = avatarHtml(activePeer);
 }
 
-function updateBulkToolbar() {
-  const box = $('privateMessages');
-  const rows = box ? Array.from(box.querySelectorAll('.private-msg-row.mine[data-msg-id]')) : [];
-  const visibleIds = new Set(rows.map(row => row.dataset.msgId));
-  for (const id of selectedMessageIds) {
-    if (!visibleIds.has(id)) selectedMessageIds.delete(id);
-  }
-
-  const selectBtn = $('selectMessagesBtn');
-  const count = $('bulkSelectionCount');
-  const selectAllBtn = $('selectAllMessagesBtn');
-  const deleteBtn = $('deleteSelectedMessagesBtn');
-  const cancelBtn = $('cancelMessageSelectionBtn');
-
-  if (selectBtn) selectBtn.hidden = messageSelectionMode;
-  if (count) {
-    count.hidden = !messageSelectionMode;
-    count.textContent = selectedMessageIds.size + ' selected';
-  }
-  if (selectAllBtn) {
-    selectAllBtn.hidden = !messageSelectionMode;
-    const allSelected = rows.length > 0 && rows.every(row => selectedMessageIds.has(row.dataset.msgId));
-    selectAllBtn.textContent = allSelected ? 'Clear selection' : 'Select all shown';
-    selectAllBtn.disabled = rows.length === 0;
-  }
-  if (deleteBtn) {
-    deleteBtn.hidden = !messageSelectionMode;
-    deleteBtn.textContent = 'Delete selected (' + selectedMessageIds.size + ')';
-    deleteBtn.disabled = selectedMessageIds.size === 0;
-  }
-  if (cancelBtn) cancelBtn.hidden = !messageSelectionMode;
-
-  rows.forEach(row => {
-    const label = row.querySelector('.message-select-control');
-    const checkbox = row.querySelector('.message-select-checkbox');
-    if (label) label.hidden = !messageSelectionMode;
-    if (checkbox) checkbox.checked = selectedMessageIds.has(row.dataset.msgId);
-  });
-}
-
-function setMessageSelectionMode(enabled) {
-  messageSelectionMode = enabled;
-  if (!enabled) selectedMessageIds.clear();
-  updateBulkToolbar();
-}
-
 async function deletePrivateMessage(msgDocId) {
   if (!currentUser || !activePeer) return;
   const confirmed = window.confirm('Yeh message delete karna chahte ho? Dono sides se hata diya jayega.');
@@ -113,69 +65,12 @@ async function deletePrivateMessage(msgDocId) {
     SoundManager.delete();
     const ref = doc(db, 'privateChats', chatId(currentUser.uid, activePeer.uid), 'messages', msgDocId);
     await deleteDoc(ref);
-    selectedMessageIds.delete(msgDocId);
-    // Remove immediately; the live Firestore listener will reconcile the complete list.
-    const row = Array.from($('privateMessages')?.querySelectorAll('.private-msg-row') || [])
-      .find(item => item.dataset.msgId === msgDocId);
-    row?.remove();
-    updateBulkToolbar();
   } catch (err) {
     console.error('Delete failed:', err);
     showToast('Message delete nahi hua: ' + (err?.message || err), 'error');
   }
 }
 
-async function deleteSelectedPrivateMessages() {
-  if (!currentUser || !activePeer || selectedMessageIds.size === 0) return;
-  const ids = Array.from(selectedMessageIds);
-  if (!window.confirm('Delete ' + ids.length + ' selected messages? Ye dono sides se remove ho jayenge.')) return;
-
-  const deleteBtn = $('deleteSelectedMessagesBtn');
-  if (deleteBtn) deleteBtn.disabled = true;
-
-  try {
-    const activeChatId = chatId(currentUser.uid, activePeer.uid);
-    let batch = writeBatch(db);
-    let pending = 0;
-    let deleted = 0;
-
-    for (const id of ids) {
-      batch.delete(doc(db, 'privateChats', activeChatId, 'messages', id));
-      pending++;
-      deleted++;
-      // Stay below Firestore's 500-write limit per batch.
-      if (pending >= 450) {
-        await batch.commit();
-        batch = writeBatch(db);
-        pending = 0;
-      }
-    }
-    if (pending > 0) await batch.commit();
-
-    selectedMessageIds.clear();
-    setMessageSelectionMode(false);
-    SoundManager.delete();
-    showToast(deleted + ' messages deleted.', 'success');
-  } catch (err) {
-    console.error('Bulk message delete failed:', err);
-    showToast('Messages delete nahi hue: ' + (err?.message || err), 'error');
-  } finally {
-    updateBulkToolbar();
-  }
-}
-
-$('selectMessagesBtn')?.addEventListener('click', () => setMessageSelectionMode(true));
-$('cancelMessageSelectionBtn')?.addEventListener('click', () => setMessageSelectionMode(false));
-$('selectAllMessagesBtn')?.addEventListener('click', () => {
-  const rows = Array.from($('privateMessages')?.querySelectorAll('.private-msg-row.mine[data-msg-id]') || []);
-  const allSelected = rows.length > 0 && rows.every(row => selectedMessageIds.has(row.dataset.msgId));
-  rows.forEach(row => {
-    if (allSelected) selectedMessageIds.delete(row.dataset.msgId);
-    else selectedMessageIds.add(row.dataset.msgId);
-  });
-  updateBulkToolbar();
-});
-$('deleteSelectedMessagesBtn')?.addEventListener('click', deleteSelectedPrivateMessages);
 async function markMessagesAsSeen() {
   if (!currentUser || !activePeer) return;
   try {
@@ -223,8 +118,6 @@ function renderMessages(snap) {
   let lastMs = 0;
   if(snap.empty){
     box.innerHTML='<div class="nkm-chat-empty"><p>No messages yet.</p><p>Say hi to start the conversation.</p></div>';
-    selectedMessageIds.clear();
-    updateBulkToolbar();
     return;
   }
 
@@ -241,7 +134,6 @@ function renderMessages(snap) {
 
     row.innerHTML = `
       ${!mine && !isGrouped ? `<a class="message-avatar" href="profile.html?uid=${encodeURIComponent(m.uid || activePeer.uid)}">${avatarHtml(activePeer)}</a>` : (!mine && isGrouped ? '<span style="width:28px;flex:none"></span>' : '')}
-      ${mine ? `<label class="message-select-control" hidden title="Select message"><input type="checkbox" class="message-select-checkbox" aria-label="Select your message"></label>` : ''}
       <div class="message-stack">
         <div class="message-bubble" data-bubble>
           <div class="message-sender">${esc(m.name || (mine ? currentUser.displayName || currentUser.email?.split('@')[0] : nameOf(activePeer)) || 'User')}:</div>
@@ -252,15 +144,6 @@ function renderMessages(snap) {
       <button class="nkm-msg-menu" type="button" aria-label="More" data-menu>⋯</button>`;
 
     box.appendChild(row);
-    const selectBox = row.querySelector('.message-select-checkbox');
-    if (selectBox) {
-      selectBox.checked = selectedMessageIds.has(msgDocId);
-      selectBox.addEventListener('change', () => {
-        if (selectBox.checked) selectedMessageIds.add(msgDocId);
-        else selectedMessageIds.delete(msgDocId);
-        updateBulkToolbar();
-      });
-    }
     const menuBtn = row.querySelector('[data-menu]');
     if(menuBtn) menuBtn.addEventListener('click', (e)=>{ e.stopPropagation(); openMsgMenu(msgDocId, mine); });
     const bubble = row.querySelector('[data-bubble]');
@@ -294,7 +177,6 @@ function renderMessages(snap) {
     debouncedMarkAsSeen();
   }
 
-  updateBulkToolbar();
   requestAnimationFrame(() => { box.scrollTop = box.scrollHeight; });
 }
 
