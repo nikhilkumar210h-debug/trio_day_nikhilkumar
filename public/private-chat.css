@@ -319,3 +319,26 @@
 .private-chat-page .chat-input-row{padding:7px 8px;gap:6px}
 .private-chat-page .chat-input-row input{height:36px;font-size:11px}
 .private-chat-page .chat-input-row button{min-height:36px;padding:7px 12px;font-size:10px}
+
+/* Sender label inside every private message bubble; keep the existing left/right layout. */
+.private-chat-page .message-sender {
+  display: block;
+  margin: 0 1px 5px;
+  font-size: 10px;
+  line-height: 1.2;
+  font-weight: 750;
+  color: var(--color-ink-muted);
+  overflow-wrap: anywhere;
+}
+.private-chat-page .private-msg-row.mine .message-sender {
+  text-align: right;
+  color: var(--color-primary);
+}
+.private-chat-page .private-msg-row.theirs .message-sender {
+  text-align: left;
+}
+.private-chat-page .message-content {
+  display: block;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
