@@ -135,9 +135,9 @@ function renderMessages(snap) {
     row.innerHTML = `
       ${!mine && !isGrouped ? `<a class="message-avatar" href="profile.html?uid=${encodeURIComponent(m.uid || activePeer.uid)}">${avatarHtml(activePeer)}</a>` : (!mine && isGrouped ? '<span style="width:28px;flex:none"></span>' : '')}
       <div class="message-stack">
-        ${!mine && !isGrouped ? `<a class="message-author" href="profile.html?uid=${encodeURIComponent(m.uid || activePeer.uid)}">${esc(m.name || nameOf(activePeer))}</a>` : ''}
         <div class="message-bubble" data-bubble>
-          ${messageHtml(m)}
+          <div class="message-sender">${esc(m.name || (mine ? currentUser.displayName || currentUser.email?.split('@')[0] : nameOf(activePeer)) || 'User')}:</div>
+          <div class="message-content">${messageHtml(m)}</div>
           <div class="message-time">${esc(timeOf(m.createdAtMs || m.createdAt))} ${mine && m.seen ? '<span class="msg-seen" title="Seen">✓ seen</span>' : ''}</div>
         </div>
       </div>
