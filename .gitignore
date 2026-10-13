@@ -67,3 +67,7 @@ test-results/
 
 # Local development vars (additional patterns)
 *.dev.vars
+
+.playwright-mcp/
+local_changes_backup.patch
+temp_secret.bin
