@@ -5,8 +5,10 @@ import {
   setDoc, addDoc, deleteDoc, serverTimestamp, onSnapshot, runTransaction
 } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 import { listCommunityTasks } from './gamification/community-tasks.js?v=20260919-community5';
-import { workerPost } from './gamification/worker-config.js';
+import { awardXp } from './gamification/xp-levels.js';
+import { bumpChallengeStreak } from './gamification/streaks.js';
 import { getCachedUser } from './services/userCache.js';
+import { SoundManager } from './sound-manager.js';
 
 const CHALLENGES = [
   {id:'trip', category:'Life', tag:'CHOICE', q:'You get one free trip tomorrow. Where are you going?', o:['Japan 🇯🇵','Switzerland 🇨🇭','Somewhere unexpected 🌍'], createdAtMs:1790121600000},
@@ -24,7 +26,10 @@ const CHALLENGES = [
   {id:'focus-mode', category:'Study', tag:'STUDY', q:'What helps you protect a focused study session?', o:['Phone away 📵','Timed blocks ⏱️','Study with someone 👥'], createdAtMs:1789084800000},
   {id:'build-vs-watch', category:'Tech', tag:'TECH', q:'You have one evening for tech. What sounds better?', o:['Build a mini tool 🔧','Learn a new concept 🧠','Explore a cool project 🔍'], createdAtMs:1788998400000},
   {id:'small-kindness', category:'Community', tag:'COMMUNITY', q:'What small action makes a group feel better?', o:['Welcome someone 👋','Share credit 🙌','Help without being asked ❤️'], createdAtMs:1788912000000},
-  {id:'choose-fast', category:'Fun', tag:'QUICK PICK', q:'Your friends give you three spontaneous plans. What do you choose?', o:['Food hunt 🍜','Game night 🎮','Random walk 🚶'], createdAtMs:1788825600000}
+  {id:'choose-fast', category:'Fun', tag:'QUICK PICK', q:'Your friends give you three spontaneous plans. What do you choose?', o:['Food hunt 🍜','Game night 🎮','Random walk 🚶'], createdAtMs:1788825600000},
+  // Detective Mystery showcase challenges
+  {id:'detective-mystery-1', category:'Fun', tag:'DETECTIVE', q:'A priceless artifact vanished from the museum at midnight. The security footage shows only three shadows. Who took it?', o:['The night guard 🕵️','The curator 🏛️','A master thief 🎭'], clues:['Clue 1: The artifact\'s case was opened with a key, not forced.','Clue 2: Muddy footprints lead to the east wing — the curator\'s office.','Clue 3: The night guard was on vacation that week.'], createdAtMs:1790208000000, isDetective:true},
+  {id:'detective-mystery-2', category:'Tech', tag:'DETECTIVE', q:'A genius developer pushed code that broke production at 3 AM. The commit message reads: "It works on my machine." Who really broke it?', o:['The developer who pushed 💻','The reviewer who approved 👀','The CI system that passed ✅'], clues:['Clue 1: The broken test was skipped locally due to an env flag.','Clue 2: The reviewer auto-approved while in a meeting.','Clue 3: The CI cache served a stale green build from yesterday.'], createdAtMs:1790121600000, isDetective:true}
 ];
 
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -480,6 +485,7 @@ function attachDiscussion(c, card, discussion) {
   threadUnsubs.set(c.id, unsub);
 
   send.onclick = async () => {
+    if (send.disabled) return;
     if (!currentUser) return;
     const text = input.value.trim();
     if (!text) return;
@@ -523,10 +529,33 @@ function addCard(c) {
   const formatLabels = {quick:'⚡ QUICK PICK',rather:'↔ WOULD YOU',hot:'🔥 HOT TAKE',scenario:'✦ SCENARIO'};
   const format = c.format || 'quick';
   const twist = c.twist || '';
+  const isDetective = c.isDetective || (c.interaction?.kind === 'detective');
+  const clues = c.clues || c.interaction?.clues || [];
+  const hasClues = Array.isArray(clues) && clues.length > 0;
+  
+  // Detective badge HTML
+  const detectiveBadge = hasClues 
+    ? '<span class="challenge-detective-badge" title="Detective Mystery — progressive clues">🕵️ Detective Mystery</span>'
+    : '';
+  
+  // Clue reveal UI (only for detective challenges)
+  let detectiveUI = '';
+  if (hasClues) {
+    const cluesJson = JSON.stringify(clues).replace(/'/g, '\\\'');
+    detectiveUI = '<div class="challenge-detective-clues" data-clues=\'' + cluesJson + '\'>' +
+      clues.map((clue, idx) => '<div class="clue-row" data-clue-index="' + idx + '">' +
+        '<span class="clue-marker">' + (idx === 0 ? '🔓' : '🔒') + '</span>' +
+        '<span class="clue-text">' + esc(clue) + '</span>' +
+        (idx > 0 ? '<button type="button" class="clue-reveal-btn" data-reveal-index="' + idx + '" aria-label="Reveal Clue ' + (idx + 1) + '">🔓 Reveal Clue</button>' : '') +
+      '</div>').join('') +
+    '</div>';
+  }
+  
   card.innerHTML =
-    '<div class="challenge-moment-head"><span class="challenge-tag">' + esc(c.tag || 'COMMUNITY') + '</span><span class="challenge-format">' + esc(formatLabels[format] || '⚡ QUICK PICK') + '</span></div>' +
+    '<div class="challenge-moment-head"><span class="challenge-tag">' + esc(c.tag || 'COMMUNITY') + '</span><span class="challenge-format">' + esc(formatLabels[format] || '⚡ QUICK PICK') + '</span>' + detectiveBadge + '</div>' +
     '<h2>' + esc(c.q) + '</h2>' +
     (twist ? '<div class="challenge-twist">✦ ' + esc(twist) + '</div>' : '') +
+    detectiveUI +
     '<div class="challenge-no-right">No right answer · pick your side</div>' +
     creatorMeta(c) +
     '<div class="challenge-main-options">' +
@@ -557,7 +586,10 @@ function addCard(c) {
 
   card.querySelectorAll('[data-choice]').forEach(btn => btn.addEventListener('click', async () => {
     if (!currentUser) return;
+    if (card.dataset.submitting === '1') return;
+    card.dataset.submitting = '1';
     const choice = Number(btn.dataset.choice);
+    card.querySelectorAll('[data-choice]').forEach(x => { x.disabled = true; });
     try {
       await updateChallengeCounter(c.id, currentUser.uid, choice);
       if (answeredChallengeIds) answeredChallengeIds.add(c.id);
@@ -565,9 +597,10 @@ function addCard(c) {
       try {
         const gamificationUser = auth.currentUser;
         if (gamificationUser) {
-          await workerPost('/gamification/award-xp', { meta: { challengeId: c.id } }, gamificationUser);
-          await workerPost('/gamification/bump-streak', { challengeId: c.id }, gamificationUser);
-          window.dispatchEvent(new CustomEvent('trio-xp-changed', { detail: { uid: gamificationUser.uid } }));
+          // awardXp/bumpChallengeStreak send the user's timezone so streak days
+          // follow the user's real local calendar, and surface badge unlocks.
+          await awardXp(gamificationUser.uid, 25, { challengeId: c.id });
+          await bumpChallengeStreak(gamificationUser.uid, c.id);
         }
       } catch (gamErr) {
         console.warn('[Challenge] gamification sync failed:', gamErr);
@@ -586,6 +619,9 @@ function addCard(c) {
       console.error(err);
       result.hidden = false;
       result.textContent = 'Could not save your answer. Please try again.';
+      card.querySelectorAll('[data-choice]').forEach(x => { x.disabled = false; });
+    } finally {
+      card.dataset.submitting = '';
     }
   }));
 
@@ -660,6 +696,60 @@ function addCard(c) {
     }
   });
 
+  // Detective clue reveal handlers
+  if (hasClues) {
+    const cluesContainer = card.querySelector('.challenge-detective-clues');
+    if (cluesContainer) {
+      // Load persisted revealed clues from localStorage
+      const storageKey = 'trio_detective_clues_' + c.id;
+      let revealedIndices = new Set([0]); // Clue 1 (index 0) always revealed
+      try {
+        const stored = localStorage.getItem(storageKey);
+        if (stored) {
+          const arr = JSON.parse(stored);
+          if (Array.isArray(arr)) revealedIndices = new Set(arr);
+        }
+      } catch (_) {}
+      
+      // Apply initial revealed state
+      cluesContainer.querySelectorAll('.clue-row').forEach((row, idx) => {
+        const isRevealed = revealedIndices.has(idx);
+        row.classList.toggle('clue-revealed', isRevealed);
+        const marker = row.querySelector('.clue-marker');
+        if (marker) marker.textContent = isRevealed ? '🔓' : '🔒';
+        const btn = row.querySelector('.clue-reveal-btn');
+        if (btn) btn.hidden = isRevealed || idx === 0;
+      });
+      
+      // Reveal button handlers
+      cluesContainer.querySelectorAll('.clue-reveal-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const idx = Number(btn.dataset.revealIndex);
+          const row = cluesContainer.querySelector('.clue-row[data-clue-index="' + idx + '"]');
+          if (!row || row.classList.contains('clue-revealed')) return;
+          
+          // Animate reveal
+          row.classList.add('clue-revealing');
+          SoundManager.success();
+          
+          setTimeout(() => {
+            row.classList.remove('clue-revealing');
+            row.classList.add('clue-revealed');
+            const marker = row.querySelector('.clue-marker');
+            if (marker) marker.textContent = '🔓';
+            btn.hidden = true;
+            
+            // Persist
+            revealedIndices.add(idx);
+            try {
+              localStorage.setItem(storageKey, JSON.stringify([...revealedIndices]));
+            } catch (_) {}
+          }, 300);
+        });
+      });
+    }
+  }
+
   host?.appendChild(card);
 }
 
@@ -721,12 +811,13 @@ async function loadCommunityChallenges() {
   try {
     const tasks = await listCommunityTasks({kind:'challenge',status:'active',max:24});
     const custom = tasks
-      .filter(t => t.interaction?.kind === 'choice' && t.interaction?.question && Array.isArray(t.interaction?.options))
+      .filter(t => t.interaction?.kind && t.interaction?.question && Array.isArray(t.interaction?.options))
       .map(t => ({
         id:t.id, tag:'COMMUNITY', q:t.interaction.question, o:t.interaction.options,
         creatorUid:t.creatorUid || '', creatorName:t.creatorName || 'Admin',
         creatorRole:t.creatorRole || (t.creatorUid ? 'Member' : 'Admin'),
         category:t.category || 'Community', format:t.interaction.format || 'quick', twist:t.interaction.twist || '',
+        clues: t.interaction.clues || [], kind: t.interaction.kind || 'choice',
         createdAtMs:Number(t.createdAtMs || t.createdAt?.toMillis?.() || 0)
       }));
 

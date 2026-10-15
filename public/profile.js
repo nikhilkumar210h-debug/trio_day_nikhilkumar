@@ -219,7 +219,9 @@ async function openEdit(u) {
   });
 
   overlay.querySelector('.save-edit').onclick = async () => {
-    const st = overlay.querySelector('#editStatus'), btn = overlay.querySelector('.save-edit'); btn.disabled = true;
+    const st = overlay.querySelector('#editStatus'), btn = overlay.querySelector('.save-edit');
+    if (btn.disabled) return;
+    btn.disabled = true;
     try {
       const name = overlay.querySelector('#editName').value.trim() || 'User';
       let photoURL = u.photoURL || null;
@@ -488,6 +490,40 @@ async function loadProfile(uid) {
     if ($('pgBadges')) $('pgBadges').innerHTML = renderBadgesHtml(current.badges || []);
     const rank = await getMyGlobalRank(me.uid);
     if ($('pgRank')) $('pgRank').textContent = rank ? ('#' + rank) : (xp > 0 ? 'Outside top 50' : 'Not ranked yet');
+    
+    // Streak Shield UI
+    const shields = Number(current.shields) || 0;
+    const shieldSection = $('streakShieldSection');
+    const shieldCount = $('pgShields');
+    const shieldBtn = $('activateShieldBtn');
+    const shieldStatus = $('shieldStatusText');
+    if (shieldSection) shieldSection.style.display = 'block';
+    if (shieldCount) shieldCount.textContent = shields;
+    if (shieldBtn) {
+      shieldBtn.hidden = false;
+      shieldBtn.onclick = async () => {
+        if (shieldBtn.disabled) return;
+        shieldBtn.disabled = true;
+        shieldBtn.textContent = 'Activating…';
+        const { useStreakShield } = await import('./gamification/streaks.js');
+        const result = await useStreakShield(me.uid);
+        if (result) {
+          if (shieldCount) shieldCount.textContent = result.shields;
+          if (result.alreadyProtected) {
+            if (shieldStatus) { shieldStatus.textContent = 'Streak already protected for today'; shieldStatus.style.display = 'block'; shieldStatus.style.color = 'var(--color-warning-text)'; }
+          } else {
+            if (shieldStatus) { shieldStatus.textContent = '✅ Shield activated! Your streak is safe for today.'; shieldStatus.style.display = 'block'; shieldStatus.style.color = 'var(--color-success-text)'; }
+          }
+        }
+        shieldBtn.disabled = false;
+        shieldBtn.textContent = result?.shields > 0 ? 'Activate Shield' : 'No Shields Left';
+        if (result?.shields === 0) shieldBtn.disabled = true;
+      };
+      shieldBtn.textContent = shields > 0 ? 'Activate Shield' : 'No Shields Left';
+      shieldBtn.disabled = shields === 0;
+    }
+    if (shieldStatus) shieldStatus.style.display = 'none';
+    
     await loadRecentActivities(uid);
   }
 

@@ -7,6 +7,7 @@
   min-height: 52px;
   height: 52px;
   top: 3px;
+  z-index: var(--z-sticky);
 }
 .topbar-inner {
   min-height: 52px;
@@ -54,8 +55,8 @@
 }
 @media (min-width: 840px) { .nkm-header-search-btn { display: none; } }
 /* Keep header above content but below sheets (200+ ) */
-.topbar { z-index: 60; }
-.tricolor-strip { z-index: 61; }
+.topbar { z-index: var(--z-sticky); }
+.tricolor-strip { z-index: var(--z-sticky); }
 /* Vertical centering — all header controls centered in 48px bar */
 .topbar-inner, .topbar-actions, #authStatus, .notification-wrap, .auth-chip { display: flex; align-items: center; }
 .auth-chip { align-items: center; line-height: 1; }

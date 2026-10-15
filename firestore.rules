@@ -144,21 +144,34 @@ service cloud.firestore {
       }
     }
 
-    // Gamification fields that ONLY Cloud Functions / server logic may write.
-    // A client-side update that touches any of these keys is rejected.
-    function noGamificationWrite() {
-      return !request.resource.data.diff(resource.data).affectedKeys()
-        .hasAny([
-          'xp', 'level', 'streakCurrent', 'streakBest', 'streakLastDate',
-          'weeklyXp', 'monthlyXp', 'badges'
-        ]);
+    // Gamification fields that ONLY Cloud Functions / the gamification Worker
+    // (Admin SDK) may write. Clients can neither modify nor create them.
+    function gamificationKeys() {
+      return [
+        'xp', 'level', 'streakCurrent', 'streakBest', 'streakLastDate',
+        'weeklyXp', 'monthlyXp', 'badges', 'shields'
+      ];
     }
 
-    // Allow userId change only if current value is missing (first-time set).
+    // An update is rejected when any protected gamification field is added,
+    // changed, or removed (deleteField) by a client.
+    function noGamificationWrite() {
+      return !request.resource.data.diff(resource.data).affectedKeys()
+        .hasAny(gamificationKeys());
+    }
+
+    // A client may set userId only on first write: the profile must not have a
+    // Trio UID yet, and the incoming value must be a well-formed TRIO UID.
     function canChangeUserId() {
-      return !('userId' in resource.data)
+      return (
+        !('userId' in resource.data)
         || resource.data.userId == null
-        || resource.data.userId == '';
+        || resource.data.userId == ''
+      ) && (
+        'userId' in request.resource.data
+        && request.resource.data.userId is string
+        && request.resource.data.userId.matches('^TRIO-[A-Z0-9]{8}$')
+      );
     }
 
         match /usersPrivate/{userId} {
@@ -168,7 +181,9 @@ service cloud.firestore {
 
     match /users/{userId} {
       allow read: if signedIn();
-      allow create: if owner(userId);
+      // A new profile must never seed protected gamification fields.
+      allow create: if owner(userId)
+        && !request.resource.data.hasAny(gamificationKeys());
       allow update: if owner(userId)
       && noGamificationWrite()
       && (!request.resource.data.diff(resource.data).affectedKeys().hasAll(['userId']) || canChangeUserId());
@@ -274,23 +289,24 @@ service cloud.firestore {
     }
 
     match /privateChats/{chatId}/messages/{messageId} {
-      // chatId format: uid1_uid2 where uid1 < uid2 lexicographically
-      // Allow access only if current user is one of the two participants
-      allow read: if signedIn() && (chatId == request.auth.uid + '_' + request.auth.uid
-        || (chatId.matches('^' + request.auth.uid + '_[^_]+$')
-          || chatId.matches('^[^_]+_' + request.auth.uid + '$')));
-      allow create: if signedIn() && (chatId.matches('^' + request.auth.uid + '_[^_]+$')
-          || chatId.matches('^[^_]+_' + request.auth.uid + '$'))
+      // chatId format: uid1_uid2 where uid1 < uid2 lexicographically.
+      // Access is granted only to the two participants, and both participants
+      // must be distinct users — self-chats (uid_uid) are never permitted.
+      function isChatParticipant() {
+        return chatId.split('_').size() == 2
+          && chatId.split('_')[0] != chatId.split('_')[1]
+          && (chatId.split('_')[0] == request.auth.uid
+            || chatId.split('_')[1] == request.auth.uid);
+      }
+
+      allow read: if signedIn() && isChatParticipant();
+      allow create: if signedIn() && isChatParticipant()
         && request.resource.data.uid == request.auth.uid && request.resource.data.text is string
         && request.resource.data.text.size() > 0 && request.resource.data.text.size() <= 500;
-      allow update: if signedIn()
-        && (chatId.matches('^' + request.auth.uid + '_[^_]+$')
-          || chatId.matches('^[^_]+_' + request.auth.uid + '$'))
+      allow update: if signedIn() && isChatParticipant()
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['seen'])
         && request.resource.data.seen is number;
-      allow delete: if signedIn()
-        && (chatId.matches('^' + request.auth.uid + '_[^_]+$')
-          || chatId.matches('^[^_]+_' + request.auth.uid + '$'))
+      allow delete: if signedIn() && isChatParticipant()
         && resource.data.uid == request.auth.uid;
     }
 
@@ -343,7 +359,11 @@ service cloud.firestore {
           && request.resource.data.text.size() > 0
           && request.resource.data.text.size() <= 280
           && request.resource.data.expireAt > request.time;
-        allow update, delete: if false;
+        allow update: if false;
+        allow delete: if signedIn()
+          && get(/databases/$(database)/documents/tempChats/$(roomId)).data.participants.hasAny([request.auth.uid])
+          && get(/databases/$(database)/documents/tempChats/$(roomId)).data.expireAt > request.time
+          && resource.data.uid == request.auth.uid;
       }
     }
 
@@ -395,13 +415,25 @@ service cloud.firestore {
 
       function validChallengeInteraction() {
         return request.resource.data.interaction is map
-          && request.resource.data.interaction.kind == 'choice'
+          && request.resource.data.interaction.kind in ['choice', 'detective']
           && request.resource.data.interaction.question is string
           && request.resource.data.interaction.question.size() > 0
           && request.resource.data.interaction.question.size() <= 240
           && request.resource.data.interaction.options is list
           && request.resource.data.interaction.options.size() >= 2
-          && request.resource.data.interaction.options.size() <= 5;
+          && request.resource.data.interaction.options.size() <= 5
+          && (
+            request.resource.data.interaction.get('clues', null) == null
+            || (
+              request.resource.data.interaction.clues is list
+              && request.resource.data.interaction.clues.size() >= 1
+              && request.resource.data.interaction.clues.size() <= 3
+              && request.resource.data.interaction.clues[0] is string
+              && request.resource.data.interaction.clues[0].size() <= 160
+              && (request.resource.data.interaction.clues.size() < 2 || (request.resource.data.interaction.clues[1] is string && request.resource.data.interaction.clues[1].size() <= 160))
+              && (request.resource.data.interaction.clues.size() < 3 || (request.resource.data.interaction.clues[2] is string && request.resource.data.interaction.clues[2].size() <= 160))
+            )
+          );
       }
 
       allow create: if signedIn()

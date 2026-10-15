@@ -59,6 +59,7 @@ async function loadList() {
       await loadList();
     };
   });
+}
 
 
 onAuthStateChanged(auth, async user => {
@@ -73,7 +74,7 @@ onAuthStateChanged(auth, async user => {
 
   $('badgesBtn').onclick = async () => {
     trioCache.invalidate('badge_catalog');
-    await ensureBadgeCatalog();
+    await ensureBadgeCatalog({ force: true });
     $('adminStatus').textContent = 'Badges seeded ✅';
   };
   $('expireBtn').onclick = async () => {

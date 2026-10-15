@@ -14,13 +14,13 @@ html { scroll-behavior: smooth; }
 body {
   margin: 0;
   min-height: 100vh;
+  min-height: 100dvh;
   overflow-x: hidden;
   background:
     radial-gradient(ellipse 80% 50% at 10% -10%, var(--color-primary-soft) 0%, transparent 50%),
     radial-gradient(ellipse 60% 40% at 90% 15%, var(--color-secondary-soft) 0%, transparent 45%),
     radial-gradient(ellipse 100% 60% at 50% 100%, var(--color-warm-soft) 0%, transparent 50%),
     var(--color-bg);
-  background-attachment: fixed;
   color: var(--color-ink);
   font-family: var(--font-sans);
   font-size: var(--text-base);
@@ -48,7 +48,7 @@ h1, h2, h3, h4, .brand strong {
   display: flex;
   position: fixed;
   inset: 0 0 auto;
-  z-index: 200;
+  z-index: var(--z-sticky);
 }
 .tricolor-strip span { flex: 1; }
 .tricolor-strip span:nth-child(1) { background: linear-gradient(90deg, #ff9933, #ff7700); }
@@ -59,7 +59,7 @@ h1, h2, h3, h4, .brand strong {
 .topbar {
   position: sticky;
   top: 3px;
-  z-index: 100;
+  z-index: var(--z-sticky);
   background: var(--color-bg-elevated);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
@@ -156,7 +156,7 @@ h1, h2, h3, h4, .brand strong {
   height: 56px;
   border-radius: 50%;
   font-size: 24px;
-  z-index: 44;
+  z-index: var(--z-sticky);
   box-shadow: 0 8px 24px var(--color-primary-glow);
   transition: transform var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
 }
@@ -281,8 +281,8 @@ h1, h2, h3, h4, .brand strong {
 .hero-stories::-webkit-scrollbar { display: none; }
 .hero-story-circle {
   flex: 0 0 auto;
-  width: 66px;
-  height: 66px;
+  width: 72px;
+  height: 72px;
   border-radius: 50%;
   padding: 3px;
   background: linear-gradient(45deg, #feda75, #fa7e1e, #d62976, #962fbf, #4f5bd5);
@@ -631,7 +631,7 @@ h1, h2, h3, h4, .brand strong {
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
   padding: 16px 12px;
-  z-index: 160;
+  z-index: var(--z-modal);
   animation: fadeIn var(--duration-fast) var(--ease-out);
 }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -1265,10 +1265,11 @@ h1, h2, h3, h4, .brand strong {
   position: fixed;
   left: 0; right: 0; bottom: 0;
   height: 50vh;
+  height: 50dvh;
   width: 100%;
   transform: translateY(100%);
   transition: transform var(--duration-slow) var(--ease-out), opacity var(--duration-fast);
-  z-index: 140;
+  z-index: var(--z-sheet);
   box-shadow: 0 -8px 32px rgba(15, 23, 42, 0.15);
   border-radius: var(--radius-xl) var(--radius-xl) 0 0;
   overflow: hidden;

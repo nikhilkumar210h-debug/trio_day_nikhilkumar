@@ -1,7 +1,8 @@
 import { auth } from '../firebase-init.js';
-import { levelFromXp } from './constants.js';
+import { levelFromXp, getUserTimeZone } from './constants.js';
 import { workerPost } from './worker-config.js';
 import { trioCache } from '../trio-cache.js';
+import { announceBadgesEarned } from '../ui/achievements.js';
 
 export { levelFromXp };
 
@@ -10,6 +11,8 @@ export { levelFromXp };
  *
  * All Firestore writes (xp, level, weeklyXp, monthlyXp, leaderboards, badges)
  * happen server-side. The client never touches protected fields directly.
+ * The user's timezone is included so period/streak keys follow the user's
+ * real local day instead of the Worker's UTC clock.
  *
  * Returns { xp, level, leveledUp, awarded, badgesEarned } or null on failure.
  */
@@ -21,7 +24,11 @@ export async function awardXp(uid, amount, meta = {}) {
 
   let result;
   try {
-    result = await workerPost('/gamification/award-xp', { amount, meta }, user);
+    result = await workerPost(
+      '/gamification/award-xp',
+      { amount, meta, timeZone: getUserTimeZone() },
+      user
+    );
   } catch (err) {
     console.error('[awardXp] Worker call failed:', err.message);
     return null;
@@ -43,11 +50,15 @@ export async function awardXp(uid, amount, meta = {}) {
     }));
   } catch (_) { /* non-browser context */ }
 
+  // Present any badges the Worker just unlocked as an achievement popup + sound
+  const badgesEarned = result.badgesEarned || [];
+  if (badgesEarned.length > 0) announceBadgesEarned(badgesEarned);
+
   return {
     xp:          result.xp,
     level:       result.level,
     leveledUp:   result.leveledUp,
     awarded:     result.awarded,
-    badgesEarned: result.badgesEarned || []
+    badgesEarned
   };
 }

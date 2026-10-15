@@ -89,13 +89,25 @@ async function saveUserProfile(user, chosenName = '') {
   const snap = await getDoc(ref).catch(() => null);
   const old = snap?.exists() ? snap.data() : {};
   const name = chosenName.trim() || old.name || user.displayName || user.email?.split('@')[0] || 'User';
-  // IMPORTANT: once a Trio UID exists, never replace it on login or profile updates.
-  let permanentUid = old.userId || makeUserId(user.uid);
+  // IMPORTANT: once a Trio UID exists, never replace it on login or profile
+  // updates. A new userId is generated only when the profile has none, so
+  // existing users never touch the protected `userId` field.
+  const profile = {
+    uid: user.uid,
+    name,
+    email: deleteField(),
+    photoURL: old.photoURL || user.photoURL || null,
+    bio: old.bio || '',
+    emailHidden: Boolean(old.emailHidden),
+    updatedAt: serverTimestamp()
+  };
   if (!old.userId) {
+    let permanentUid = makeUserId(user.uid);
     const existing = await getDocs(query(collection(db, 'users'), where('userId', '==', permanentUid), limit(1))).catch(() => ({ docs: [] }));
     if (existing.docs.some(d => d.id !== user.uid)) {
       permanentUid = makeUserId(user.uid, 1);
     }
+    profile.userId = permanentUid;
   }
 
   await setDoc(doc(db, 'usersPrivate', user.uid), {
@@ -103,16 +115,7 @@ async function saveUserProfile(user, chosenName = '') {
     updatedAt: serverTimestamp()
   }, { merge: true });
 
-  await setDoc(ref, {
-    uid: user.uid,
-    userId: permanentUid,
-    name,
-    email: deleteField(),
-    photoURL: old.photoURL || user.photoURL || null,
-    bio: old.bio || '',
-    emailHidden: Boolean(old.emailHidden),
-    updatedAt: serverTimestamp()
-  }, { merge: true });
+  await setDoc(ref, profile, { merge: true });
 }
 
 function setLoginMethod(next) {
@@ -188,68 +191,54 @@ async function handleGoogle() {
   }
 }
 
+const TRIO_UID_LOGIN_TIMEOUT_MS = 15000;
+
 async function loginWithTrioUid(trioUid, password) {
-  // Firebase Callable is the primary UID-login path because it is part of the
-  // same Firebase project as Auth. Render remains a resilience fallback.
+  // The Firebase Callable is the ONLY Trio UID sign-in path. It runs inside the
+  // same Firebase project as Auth, so credentials never leave the project and
+  // no third-party fallback endpoint is ever trusted.
   const [{ getFunctions, httpsCallable }, { app }] = await Promise.all([
     import('https://www.gstatic.com/firebasejs/10.13.0/firebase-functions.js'),
     import('./firebase-auth.js')
   ]);
 
-  let firebaseError = null;
+  let timedOut = false;
   try {
     const functions = getFunctions(app, 'us-central1');
     const callable = httpsCallable(functions, 'signInWithTrioUid');
     const result = await Promise.race([
       callable({ trioUid, password }),
       new Promise((_, reject) => setTimeout(() => {
-        const error = new Error('UID login service timed out.');
+        timedOut = true;
+        const error = new Error('Trio UID sign-in timed out. Please try again.');
         error.code = 'auth/api-timeout';
         reject(error);
-      }, 8000))
+      }, TRIO_UID_LOGIN_TIMEOUT_MS))
     ]);
     const customToken = result?.data?.customToken;
-    if (!customToken) throw new Error('UID login service returned an invalid response.');
+    if (!customToken) {
+      const invalid = new Error('Trio UID sign-in service returned an invalid response.');
+      invalid.code = 'auth/api-error';
+      throw invalid;
+    }
     return signInWithCustomToken(auth, customToken);
   } catch (error) {
-    firebaseError = error;
+    // Map failures to clear, non-leaking messages for the login form.
     if (error?.code === 'functions/unauthenticated') {
       const invalid = new Error('Invalid Trio UID or password.');
       invalid.code = 'auth/invalid-credential';
       throw invalid;
     }
-  }
-
-  const apiBase = window.TRIO_API_BASE_URL ||
-    (location.hostname === '127.0.0.1' || location.hostname === 'localhost'
-      ? 'http://127.0.0.1:5000'
-      : 'https://trio-day-api.onrender.com');
-
-  try {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 8000);
-    try {
-      const response = await fetch(apiBase + '/api/auth/trio-uid', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ trioUid, password }),
-        signal: controller.signal
-      });
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        const error = new Error(data.error || 'Unable to sign in with Trio UID.');
-        error.code = response.status === 401 ? 'auth/invalid-credential' : 'auth/api-error';
-        throw error;
-      }
-      if (!data.customToken) throw new Error('UID login service returned an invalid response.');
-      return signInWithCustomToken(auth, data.customToken);
-    } finally {
-      clearTimeout(timer);
+    // Rate limiting and Firebase Auth SDK errors keep their codes so the
+    // existing failure-recording and message mapping keep working.
+    if (error?.code === 'functions/resource-exhausted' || String(error?.code || '').startsWith('auth/')) {
+      throw error;
     }
-  } catch (error) {
-    if (error?.code === 'auth/invalid-credential') throw error;
-    if (firebaseError?.code === 'auth/invalid-credential') throw firebaseError;
-    const unavailable = new Error('Trio UID login service is temporarily unavailable. Try again in a moment.');
+    const unavailable = new Error(
+      timedOut
+        ? 'Trio UID sign-in timed out. Please try again.'
+        : 'Trio UID sign-in is temporarily unavailable. Please try again in a moment.'
+    );
     unavailable.code = 'auth/api-error';
     throw unavailable;
   }

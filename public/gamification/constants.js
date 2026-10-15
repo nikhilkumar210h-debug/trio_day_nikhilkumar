@@ -16,6 +16,20 @@ export const NOTIF_TYPES = [
 
 function pad(n) { return String(n).padStart(2, '0'); }
 
+/**
+ * The user's IANA timezone. Sent with every gamification Worker request so
+ * streak days are computed in the user's real local calendar day instead of
+ * the Worker's UTC day (IST users otherwise lose streak credit between
+ * 00:00 and 05:30 IST).
+ */
+export function getUserTimeZone() {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Kolkata';
+  } catch (_) {
+    return 'Asia/Kolkata';
+  }
+}
+
 export function localDateKey(d = new Date()) {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }

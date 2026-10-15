@@ -113,6 +113,13 @@ export const SoundManager = {
   delete() { playTone(220, 0.1, 0.1, 'triangle'); },
   like() { playTone(1000, 0.06, 0.07); setTimeout(() => playTone(1300, 0.05, 0.06), 50); },
   success() { playTone(660, 0.08, 0.1); setTimeout(() => playTone(880, 0.08, 0.1), 80); setTimeout(() => playTone(1100, 0.1, 0.08), 160); },
+  achievement() {
+    // Ascending fanfare for badge unlocks / level ups.
+    playTone(523, 0.09, 0.09);
+    setTimeout(() => playTone(659, 0.09, 0.09), 90);
+    setTimeout(() => playTone(784, 0.09, 0.09), 180);
+    setTimeout(() => playTone(1047, 0.18, 0.1), 270);
+  },
   storyTap() { playTone(500, 0.03, 0.06); },
   moodSelect() { playTone(900, 0.04, 0.06); },
 };

@@ -20,6 +20,19 @@
 @media(prefers-reduced-motion:reduce){.challenge-main-card.challenge-switching-out{animation:none;opacity:0}.challenge-next-btn::after{transition:none}}
 </style>
 <style>
+/* Detective Mystery styles */
+.challenge-detective-badge{display:inline-flex;align-items:center;gap:4px;padding:4px 8px;border-radius:999px;background:linear-gradient(135deg,rgba(139,92,246,.2),rgba(6,182,212,.2));color:var(--color-primary-text);font-size:8px;font-weight:900;letter-spacing:.05em;border:1px solid rgba(139,92,246,.3);margin-left:8px;animation:detectivePulse 2.5s ease-in-out infinite}
+@keyframes detectivePulse{0%,100%{box-shadow:0 0 0 0 rgba(139,92,246,.3)}50%{box-shadow:0 0 0 6px rgba(139,92,246,0)}}
+.challenge-moment-head{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
+.challenge-detective-clues{margin-top:12px;padding:12px;border:1px solid var(--color-border);border-radius:14px;background:var(--color-glass)}
+.clue-row{display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;opacity:0.6;transition:opacity .3s ease, transform .3s ease}.clue-row:last-child{margin-bottom:0}.clue-row.clue-revealed{opacity:1}.clue-row.clue-revealing{animation:clueReveal .6s cubic-bezier(.16,1,.3,1) forwards}
+@keyframes clueReveal{0%{opacity:0.6;transform:translateX(-10px);filter:blur(4px)}100%{opacity:1;transform:translateX(0);filter:blur(0)}}
+.clue-marker{flex:none;width:24px;height:24px;border-radius:50%;background:var(--color-primary-soft);color:var(--color-primary-text);font-size:10px;font-weight:900;display:grid;place-items:center;transition:background .3s ease, color .3s ease}.clue-row.clue-revealed .clue-marker{background:var(--color-success-soft);color:var(--color-success-text)}
+.clue-text{flex:1;font-size:12px;line-height:1.5;color:var(--color-ink-muted)}.clue-row.clue-revealed .clue-text{color:var(--color-ink)}
+.clue-reveal-btn{flex:none;padding:6px 10px;border:1px solid var(--color-border);border-radius:999px;background:var(--color-primary-soft);color:var(--color-primary-text);font-size:9px;font-weight:800;cursor:pointer;transition:all .2s ease;white-space:nowrap}.clue-reveal-btn:hover{background:var(--color-primary);color:#fff;border-color:var(--color-primary);transform:scale(1.02)}.clue-reveal-btn:active{transform:scale(.98)}
+@media(max-width:640px){.challenge-detective-badge{font-size:7px;padding:3px 6px}.clue-text{font-size:11px}.clue-reveal-btn{font-size:8px;padding:5px 8px}}
+</style>
+<style>
 /* Discussion stays secondary: compact until the user explicitly opens it. */
 .challenge-thread{margin-top:10px;padding:11px;border-radius:15px}.challenge-thread-head strong{font-size:10px}.challenge-thread-head span{font-size:8px}.challenge-thread-feed{gap:5px;max-height:220px;margin-top:8px}.challenge-thread-message{padding:7px;gap:7px;border-radius:11px}.challenge-thread-avatar{width:25px;height:25px;border-radius:8px;font-size:9px}.challenge-thread-meta strong{font-size:9px}.challenge-thread-meta span{font-size:7px}.challenge-thread-message p{font-size:9px;line-height:1.35;margin-top:3px}.challenge-thread-compose{gap:5px;margin-top:7px}.challenge-thread-input{padding:8px 9px;border-radius:10px;font-size:9px}
 </style><style>

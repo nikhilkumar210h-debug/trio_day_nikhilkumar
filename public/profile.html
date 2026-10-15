@@ -99,6 +99,21 @@
                     <div class="profile-progress-stat"><strong id="pgStreak">0</strong><span>Day Streak</span></div>
                     <div class="profile-progress-stat"><strong id="pgBest">0</strong><span>Best Streak</span></div>
                 </div>
+                <!-- Streak Shield -->
+                <div id="streakShieldSection" class="streak-shield-section" style="margin-top:16px;padding:14px;border:1px solid var(--color-border);border-radius:14px;background:var(--color-glass);display:none">
+                    <div class="streak-shield-head" style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px">
+                        <div style="display:flex;align-items:center;gap:8px">
+                            <span style="font-size:20px">🛡️</span>
+                            <div>
+                                <strong style="font-size:13px">Streak Shield</strong>
+                                <div style="font-size:11px;color:var(--color-ink-muted)">Protect your streak for a day</div>
+                            </div>
+                        </div>
+                        <span id="pgShields" class="streak-shield-count" style="font-size:24px;font-weight:800;color:var(--color-primary-text);font-family:var(--font-display)">0</span>
+                    </div>
+                    <button id="activateShieldBtn" type="button" class="nkm-btn nkm-btn--primary" style="width:100%;font-weight:700" hidden>Activate Shield</button>
+                    <p id="shieldStatusText" class="streak-shield-status" style="margin-top:8px;font-size:11px;color:var(--color-ink-muted);text-align:center;display:none"></p>
+                </div>
                 <div class="profile-progress-footer">
                     <a href="leaderboard.html" aria-label="Leaderboard">🏆</a>
                 </div>

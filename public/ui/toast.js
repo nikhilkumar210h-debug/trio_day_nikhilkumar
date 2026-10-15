@@ -18,7 +18,7 @@ export function showToast(message, type = 'success') {
     font-size: 0.95rem;
     font-weight: 600;
     box-shadow: 0 4px 20px rgba(0,0,0,0.4);
-    z-index: 9999;
+    z-index: 5000;
     white-space: nowrap;
     max-width: calc(100vw - 2rem);
     text-align: center;

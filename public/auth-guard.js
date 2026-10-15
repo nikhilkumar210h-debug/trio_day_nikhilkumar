@@ -11,7 +11,10 @@ const PUBLIC_PAGES = new Set([
   'terms.html'
 ]);
 
+let authResolved = false;
+
 onAuthStateChanged(auth, (user) => {
+  authResolved = true;
   const page = (location.pathname.split('/').pop() || 'index.html').toLowerCase();
   if (!user) {
     if (!PUBLIC_PAGES.has(page)) {
@@ -25,7 +28,12 @@ onAuthStateChanged(auth, (user) => {
 });
 
 
+// Fallback redirect ONLY if Firebase Auth never resolved (genuine init failure).
+// If the listener already fired, it made the decision — never bounce a slow
+// network session into a login redirect loop.
 setTimeout(() => {
+  if (authResolved) return;
+  if (auth.currentUser) return;
   if (!document.documentElement.classList.contains('auth-ok') && location.pathname.split('/').pop() !== 'login.html') {
     window.location.href = 'login.html?redirect=' + encodeURIComponent((location.pathname.split('/').pop() || 'index.html') + location.search);
   }

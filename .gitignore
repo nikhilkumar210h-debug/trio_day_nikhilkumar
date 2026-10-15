@@ -61,9 +61,13 @@ workers/.wrangler/
 test-results/
 
 # Service account keys in any directory
-**/serviceAccountKey.json
+**/serviceAccountKey*.json
 **/service-account*.json
 **/firebase-adminsdk-*.json
+
+# Python bytecode caches (legacy backend)
+__pycache__/
+backend/__pycache__/
 
 # Local development vars (additional patterns)
 *.dev.vars

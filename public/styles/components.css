@@ -142,3 +142,53 @@
 @keyframes nkm-shimmer { to { transform: translateX(100%); } }
 .nkm-skeleton--text { height: 12px; border-radius: var(--radius-full); }
 .nkm-skeleton--card { height: 88px; border-radius: var(--radius-md); }
+
+/* ── Toggle Switch ── */
+.nkm-toggle {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  width: 48px;
+  height: 28px;
+  flex-shrink: 0;
+}
+.nkm-toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.nkm-toggle-slider {
+  position: absolute;
+  inset: 0;
+  background: var(--color-border);
+  border-radius: var(--radius-full);
+  transition: background var(--duration-fast) var(--ease-out), border-color var(--duration-fast) var(--ease-out);
+  border: 1px solid var(--color-border);
+}
+.nkm-toggle-slider::before {
+  content: '';
+  position: absolute;
+  left: 2px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--color-ink);
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--duration-fast) var(--ease-spring), background var(--duration-fast) var(--ease-out);
+}
+.nkm-toggle input:checked + .nkm-toggle-slider {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+.nkm-toggle input:checked + .nkm-toggle-slider::before {
+  transform: translateY(-50%) translateX(20px);
+}
+.nkm-toggle input:focus-visible + .nkm-toggle-slider {
+  box-shadow: 0 0 0 3px var(--color-primary-soft);
+}
+.nkm-toggle input:disabled + .nkm-toggle-slider {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

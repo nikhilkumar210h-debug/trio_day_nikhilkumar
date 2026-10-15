@@ -1,5 +1,7 @@
 /** Achievement popup + SVG progress ring helpers. */
 
+import { SoundManager } from '../sound-manager.js';
+
 let root;
 
 function ensureRoot() {
@@ -69,6 +71,27 @@ export function hideAchievement() {
   if (!root) return;
   root.classList.remove('open');
   setTimeout(() => { if (root) root.hidden = true; }, 280);
+}
+
+/**
+ * Present badges returned by the gamification Worker (award-xp / bump-streak)
+ * as an achievement popup with the achievement sound. UI-only and safe to call
+ * from any page — failures never propagate to the caller.
+ * @param {Array<{id:string, name?:string, icon?:string}>} badgesEarned
+ */
+export function announceBadgesEarned(badgesEarned) {
+  if (!Array.isArray(badgesEarned) || badgesEarned.length === 0) return;
+  try {
+    SoundManager.achievement();
+    showAchievement({
+      title: 'Achievement unlocked!',
+      subtitle: badgesEarned.length === 1
+        ? 'You earned a new badge'
+        : `You earned ${badgesEarned.length} new badges`,
+      icon: '🏅',
+      badges: badgesEarned
+    });
+  } catch (_) { /* UI-only: never break the gamification flow */ }
 }
 
 /** SVG progress ring HTML */

@@ -1078,6 +1078,7 @@ setTimeout(loadEditorFromPreview, 100);
 
 storyForm?.addEventListener('submit', async e => {
     e.preventDefault();
+    if (storySubmit?.disabled) return;
     if (!currentUser) { setStoryStatus('Please login first.', true); return; }
     const text = storyMessage.value.trim();
     if (!text && !selectedFile) return setStoryStatus('Write something or add a photo/video.', true);

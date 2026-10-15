@@ -6,6 +6,8 @@
 <link rel="stylesheet" href="styles/tokens.css"><link rel="stylesheet" href="styles/nav.css"><link rel="stylesheet" href="styles/header.css"><link rel="stylesheet" href="styles/components.css"><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="styles/polish.css?v=6">
 <style>
 .challenge-create{max-width:760px;margin:auto;padding:28px 18px 100px}.cc-hero{padding:24px 0 18px}.cc-kicker{font-size:11px;font-weight:800;letter-spacing:.16em;opacity:.65}.cc-hero h1{font-size:clamp(30px,6vw,48px);margin:8px 0}.cc-hero p{opacity:.72;max-width:620px}.cc-card{border:1px solid var(--color-border);background:var(--color-surface);border-radius:24px;padding:22px;margin-top:16px}.cc-label{display:block;font-size:12px;font-weight:800;margin:0 0 8px}.cc-input,.cc-textarea{width:100%;box-sizing:border-box;border:1px solid var(--color-border);background:var(--color-bg);color:var(--color-ink);border-radius:14px;padding:13px;font:inherit;outline:none}.cc-textarea{min-height:100px;resize:vertical}.cc-field{margin-bottom:18px}.cc-options{display:grid;gap:10px}.cc-option{display:flex;gap:9px;align-items:center}.cc-option input{flex:1}.cc-remove{border:0;background:transparent;color:inherit;opacity:.55;cursor:pointer}.cc-actions{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}.cc-note{font-size:12px;opacity:.6;margin-top:10px}.cc-preview{border:1px solid var(--color-border);border-radius:18px;padding:18px}.cc-preview strong{display:block;font-size:17px;margin-bottom:14px}.cc-preview button{width:100%;text-align:left;margin:5px 0;border:1px solid var(--color-border);background:var(--color-bg);color:var(--color-ink);border-radius:12px;padding:11px;cursor:pointer}
+.cc-detective{margin-top:16px;padding:16px;border:1px solid var(--color-border);border-radius:16px;background:var(--color-glass)}.cc-detective-toggle{display:flex;align-items:center;gap:10px;cursor:pointer}.cc-detective-toggle input{width:20px;height:20px;accent-color:var(--color-primary)}.cc-detective-label{font-weight:700;font-size:13px}.cc-detective-desc{font-size:11px;opacity:.7;margin-top:2px}.cc-clues{margin-top:14px;display:none;flex-direction:column;gap:10px}.cc-clue-input{display:flex;gap:8px;align-items:center}.cc-clue-input input{flex:1;max-width:100%}.cc-clue-num{flex:none;width:28px;height:28px;border-radius:50%;background:var(--color-primary-soft);color:var(--color-primary-text);font-size:11px;font-weight:900;display:grid;place-items:center}.cc-detective-hint{font-size:10px;opacity:.6}
+.cc-preview-detective{margin-top:10px;padding:10px;border:1px solid var(--color-border);border-radius:10px;background:var(--color-glass);font-size:12px}.cc-preview-detective strong{display:block;margin-bottom:6px;color:var(--color-primary-text)}.cc-preview-detective p{margin:4px 0;color:var(--color-ink-muted)}
 </style>
 </head>
 <body class="app-page">
@@ -19,6 +21,22 @@
 <div class="cc-field"><label class="cc-label" for="question">Your question</label><textarea id="question" class="cc-textarea" maxlength="240" placeholder="e.g. You get one free trip tomorrow. Where are you going?"></textarea></div>
 <div class="cc-field"><label class="cc-label">Answer choices</label><div id="options" class="cc-options"></div><button id="addOption" type="button" class="nkm-btn">+ Add choice</button></div>
 <div class="cc-field"><label class="cc-label" for="topic">Topic <span style="opacity:.5">(optional)</span></label><input id="topic" class="cc-input" maxlength="50" placeholder="Travel, food, tech…"></div>
+
+<!-- Detective Mystery Mode -->
+<div class="cc-card cc-detective" id="detectiveSection">
+  <label class="cc-detective-toggle">
+    <input type="checkbox" id="detectiveMode" aria-label="Enable Detective Mystery Mode">
+    <span class="cc-detective-label">🕵️ Detective Mystery Mode</span>
+  </label>
+  <p class="cc-detective-desc">Turn this challenge into a progressive mystery. Players unlock clues one by one before making their choice.</p>
+  <div class="cc-clues" id="cluesContainer" aria-label="Progressive clues">
+    <div class="cc-clue-input"><span class="cc-clue-num">1</span><input type="text" class="cc-input" id="clue1" maxlength="160" placeholder="Clue 1 — visible from the start"></div>
+    <div class="cc-clue-input"><span class="cc-clue-num">2</span><input type="text" class="cc-input" id="clue2" maxlength="160" placeholder="Clue 2 — unlocked after player action"></div>
+    <div class="cc-clue-input"><span class="cc-clue-num">3</span><input type="text" class="cc-input" id="clue3" maxlength="160" placeholder="Clue 3 — final reveal"></div>
+  </div>
+  <p class="cc-detective-hint">Clue 1 is always visible. Clues 2 & 3 are progressively revealed by players. Max 160 characters each.</p>
+</div>
+
 <div class="cc-actions"><a class="nkm-btn" href="all-users.html">← Back</a><button id="publish" type="button" class="nkm-btn nkm-btn--primary">Publish Challenge →</button></div>
 <div id="status" class="cc-note" aria-live="polite"></div>
 </section>

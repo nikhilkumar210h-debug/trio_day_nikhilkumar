@@ -1,9 +1,19 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
+    // Legacy flat uploads (files created before per-user isolation was added).
+    // Existing media links keep working; no new writes are allowed here.
     match /uploads/{fileName} {
       allow read: if true;
+      allow write: if false;
+    }
+    // Per-user isolation: a signed-in user may only write inside their own
+    // folder (/uploads/{uid}/{fileName}). Reads stay available to signed-in
+    // users so shared story media remains viewable.
+    match /uploads/{uid}/{fileName} {
+      allow read: if request.auth != null;
       allow write: if request.auth != null
+        && request.auth.uid == uid
         && request.resource.size < 40 * 1024 * 1024
         && (request.resource.contentType.matches('image/.*') || request.resource.contentType.matches('video/.*'));
     }

@@ -1,18 +1,27 @@
 /**
  * Gamification Worker URL.
  *
- * After deploying workers/gamification.js with:
- *   npx wrangler deploy --name trio-gamification
+ * Default: the deployed Workers.dev URL (no secrets — the URL is public;
+ * auth is via Firebase ID tokens).
  *
- * Replace the placeholder below with the actual Workers.dev URL shown in the
- * deploy output, e.g.:
- *   https://trio-gamification.<your-subdomain>.workers.dev
- *
- * This is the ONLY file that needs to change when the Worker URL changes.
- * It contains no secrets — the URL is public (auth is via Firebase ID tokens).
+ * Override: set window.__TRIO_CONFIG__ = { gamificationWorkerUrl: '...' }
+ * before this module runs to point all gamification calls at a different
+ * Worker (e.g. a preview or local deployment).
  */
-export const GAMIFICATION_WORKER_URL =
+
+const DEFAULT_GAMIFICATION_WORKER_URL =
   'https://trio-gamification.trioday-nikhil.workers.dev';
+
+/** Resolve the gamification Worker base URL for this session. */
+export function getGamificationWorkerUrl() {
+  try {
+    const override = window.__TRIO_CONFIG__?.gamificationWorkerUrl;
+    if (typeof override === 'string' && /^https?:\/\//i.test(override)) {
+      return override.replace(/\/+$/, '');
+    }
+  } catch (_) { /* non-browser context */ }
+  return DEFAULT_GAMIFICATION_WORKER_URL;
+}
 
 /**
  * POST to the gamification Worker with the current user's Firebase ID token.
@@ -26,7 +35,7 @@ export async function workerPost(path, body, user) {
   // getIdToken(false) returns cached token; pass true to force refresh if needed
   const idToken = await user.getIdToken(false);
 
-  const res = await fetch(`${GAMIFICATION_WORKER_URL}${path}`, {
+  const res = await fetch(`${getGamificationWorkerUrl()}${path}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -46,7 +55,7 @@ export async function workerPost(path, body, user) {
     // On 401 try once with a fresh token, then fail
     if (res.status === 401) {
       const freshToken = await user.getIdToken(true);
-      const retry = await fetch(`${GAMIFICATION_WORKER_URL}${path}`, {
+      const retry = await fetch(`${getGamificationWorkerUrl()}${path}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

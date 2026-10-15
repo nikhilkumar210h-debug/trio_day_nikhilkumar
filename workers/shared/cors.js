@@ -1,7 +1,9 @@
 // Shared CORS helpers — Phase 0 dedupe (was duplicated in gamification.js + send-push.js)
 export const ALLOWED_ORIGINS = [
   "https://trio-day.trioday-nikhil.workers.dev",
-  "https://trio-day.trioday-nikhil.workers.dev"
+  "https://nkm-ind.web.app",
+  "https://nkm-ind.firebaseapp.com",
+  "https://trio-day.web.app"
 ];
 
 // Local dev origins — the browser's Origin header includes the port

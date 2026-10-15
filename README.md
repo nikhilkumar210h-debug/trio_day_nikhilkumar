@@ -39,7 +39,7 @@ The app should not depend on having an existing social graph just to provide fir
 
 - **Frontend / canonical production:** Cloudflare Workers  
   https://trio-day.trioday-nikhil.workers.dev/
-- **Backend/API:** Render-hosted Flask backend.
+- **Backend/API:** Cloudflare Workers (gamification, media sign, notifications). The legacy Render-hosted Flask backend has been retired and removed.
 - **Authentication + database:** Firebase Authentication + Cloud Firestore.
 - **Media:** Cloudinary where configured.
 - **Notifications:** Existing OneSignal/notification Worker where configured.

@@ -58,6 +58,9 @@ const SYSTEM_BADGES = [
 // ─── CORS (inline to avoid module resolution issues) ─────────────────────────────
 const ALLOWED_ORIGINS = [
   "https://trio-day.trioday-nikhil.workers.dev",
+  "https://nkm-ind.web.app",
+  "https://nkm-ind.firebaseapp.com",
+  "https://trio-day.web.app",
 ];
 
 // Local dev origins — the browser's Origin header includes the port
@@ -93,33 +96,83 @@ function json(data, status, origin) {
   });
 }
 
-// ─── Period key helpers (matches gamification/constants.js) ───────────────────
+// ─── Period key helpers (timezone-aware) ─────────────────────────────────────
+// Clients send the user's IANA timezone with each request. Streak/period keys
+// must follow the USER's local calendar day, not the Worker's UTC clock —
+// otherwise users in IST (UTC+5:30) lose streak credit for anything answered
+// between 00:00 and 05:30 IST. Invalid/missing timezones fall back to UTC.
+
+const DEFAULT_USER_TIME_ZONE = 'UTC';
+const tzDayFormatters = new Map();
+
+function validTimeZone(tz) {
+  const candidate = String(tz || '').trim();
+  if (!candidate) return null;
+  try {
+    new Intl.DateTimeFormat('en-CA', { timeZone: candidate, year: 'numeric', month: '2-digit', day: '2-digit' });
+    return candidate;
+  } catch (_) {
+    return null;
+  }
+}
+
+function resolveUserTimeZone(tz) {
+  return validTimeZone(tz) || DEFAULT_USER_TIME_ZONE;
+}
+
+function tzDayFormatter(tz) {
+  let fmt = tzDayFormatters.get(tz);
+  if (!fmt) {
+    fmt = new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' });
+    tzDayFormatters.set(tz, fmt);
+  }
+  return fmt;
+}
 
 function pad(n) { return String(n).padStart(2, '0'); }
 
-function localDateKey(d = new Date()) {
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+// en-CA with numeric year / 2-digit month+day formats as YYYY-MM-DD.
+function localDateKey(now = new Date(), timeZone = DEFAULT_USER_TIME_ZONE) {
+  return tzDayFormatter(timeZone).format(now);
 }
 
-function localWeekKey(d = new Date()) {
-  const date = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-  const day = (date.getDay() + 6) % 7; // Mon=0
-  date.setDate(date.getDate() - day + 3);
-  const week1 = new Date(date.getFullYear(), 0, 4);
+// Walk back hour by hour until the formatted day changes. Robust across DST
+// shifts where "now minus 24h" can land on the same local day.
+function yesterdayDateKey(now = new Date(), timeZone = DEFAULT_USER_TIME_ZONE) {
+  const todayKey = localDateKey(now, timeZone);
+  for (let i = 1; i <= 30; i++) {
+    const key = localDateKey(new Date(now.getTime() - i * 3600 * 1000), timeZone);
+    if (key !== todayKey) return key;
+  }
+  return todayKey;
+}
+
+function tzCalendarParts(now, timeZone) {
+  const parts = tzDayFormatter(timeZone).formatToParts(now);
+  const out = { year: 1970, month: 1, day: 1 };
+  for (const p of parts) {
+    if (p.type === 'year') out.year = Number(p.value);
+    else if (p.type === 'month') out.month = Number(p.value);
+    else if (p.type === 'day') out.day = Number(p.value);
+  }
+  return out;
+}
+
+function localWeekKey(now = new Date(), timeZone = DEFAULT_USER_TIME_ZONE) {
+  const { year, month, day } = tzCalendarParts(now, timeZone);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  const dayIdx = (date.getUTCDay() + 6) % 7; // Mon=0
+  date.setUTCDate(date.getUTCDate() - dayIdx + 3);
+  const week1 = new Date(Date.UTC(date.getUTCFullYear(), 0, 4));
   const weekNo = 1 + Math.round(
-    ((date - week1) / 86400000 - 3 + ((week1.getDay() + 6) % 7)) / 7
+    ((date - week1) / 86400000 - 3 + ((week1.getUTCDay() + 6) % 7)) / 7
   );
-  return `${date.getFullYear()}-W${pad(weekNo)}`;
+  return `${date.getUTCFullYear()}-W${pad(weekNo)}`;
 }
 
-function localMonthKey(d = new Date()) {
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}`;
-}
-
-function yesterdayDateKey() {
-  const d = new Date();
-  d.setDate(d.getDate() - 1);
-  return localDateKey(d);
+function localMonthKey(now = new Date(), timeZone = DEFAULT_USER_TIME_ZONE) {
+  const { year, month } = tzCalendarParts(now, timeZone);
+  return `${year}-${pad(month)}`;
 }
 
 function levelFromXp(xp) {
@@ -497,6 +550,7 @@ async function upsertLeaderboard(projectId, accessToken, boardId, entry, valueKe
 async function handleAwardXp(uid, body, env) {
   const challengeId=String(body?.meta?.challengeId||'').trim();
   if(!challengeId) throw new Error('challengeId required');
+  const userTimeZone=resolveUserTimeZone(body?.timeZone);
   const projectId='nkm-ind', token=await getAccessToken(env);
   const answer=await fsGet(projectId,token,'challengeAnswers/'+uid+'_'+challengeId);
   if(!answer || answer.uid!==uid || answer.challengeId!==challengeId || !Number.isInteger(Number(answer.choice))) throw new Error('Challenge answer not found');
@@ -511,7 +565,8 @@ async function handleAwardXp(uid, body, env) {
   if(!created) return {ok:true,xp:Number(userData.xp)||0,level:Number(userData.level)||levelFromXp(userData.xp),leveledUp:false,awarded:0,alreadyAwarded:true,badgesEarned:[]};
 
   const prevXp=Number(userData.xp)||0, newXp=prevXp+amount, newLevel=levelFromXp(newXp);
-  const weekKey=localWeekKey(), monthKey=localMonthKey();
+  const now=new Date();
+  const weekKey=localWeekKey(now,userTimeZone), monthKey=localMonthKey(now,userTimeZone);
   const weeklyXp=(userData.weeklyXpKey===weekKey?Number(userData.weeklyXp)||0:0)+amount;
   const monthlyXp=(userData.monthlyXpKey===monthKey?Number(userData.monthlyXp)||0:0)+amount;
   const allowedBadges = new Set(SYSTEM_BADGES.map(b => b.id));
@@ -535,6 +590,7 @@ async function handleBumpStreak(uid, body, env) {
   const challengeId = String(body?.challengeId || '').trim();
   if (!challengeId) throw new Error('challengeId required');
 
+  const userTimeZone = resolveUserTimeZone(body?.timeZone);
   const projectId='nkm-ind', token=await getAccessToken(env);
   const answer=await fsGet(projectId,token,'challengeAnswers/'+uid+'_'+challengeId);
   if(!answer || answer.uid!==uid || answer.challengeId!==challengeId || !Number.isInteger(Number(answer.choice))) throw new Error('Challenge answer not found');
@@ -543,18 +599,59 @@ async function handleBumpStreak(uid, body, env) {
   if(task && (task.kind!=='challenge' || task.activityType!=='challenge')) throw new Error('Not a Challenge');
   if(task?.creatorUid===uid) throw new Error('Creators cannot earn streaks from their own Challenge');
   const userData=await fsGet(projectId,token,'users/'+uid)||{};
-  const today=localDateKey(),yesterday=yesterdayDateKey(),last=userData.streakLastDate||null;
-  if(last===today) return {ok:true,streakCurrent:Number(userData.streakCurrent)||0,streakBest:Number(userData.streakBest)||0,alreadyCounted:true};
+  const now=new Date();
+  const today=localDateKey(now,userTimeZone), yesterday=yesterdayDateKey(now,userTimeZone), last=userData.streakLastDate||null;
+  if(last===today) return {ok:true,streakCurrent:Number(userData.streakCurrent)||0,streakBest:Number(userData.streakBest)||0,alreadyCounted:true, shields: Number(userData.shields) || 0};
   const streakCurrent=last===yesterday?(Number(userData.streakCurrent)||0)+1:1;
   const streakBest=Math.max(Number(userData.streakBest)||0,streakCurrent);
+  
+  // Award shield at 7-day milestones (7, 14, 21, 28, ...), max 3 shields
+  let shields = Number(userData.shields) || 0;
+  const prevStreak = last === yesterday ? (Number(userData.streakCurrent) || 0) : 0;
+  if (streakCurrent % 7 === 0 && streakCurrent > prevStreak && shields < 3) {
+    shields = Math.min(3, shields + 1);
+  }
+  
   const currentBadges=Array.isArray(userData.badges)?userData.badges:[];
   const earned=evaluateBadgesDelta(currentBadges,Number(userData.xp)||0,streakCurrent);
-  const patch={streakCurrent,streakBest,streakLastDate:today};
+  const patch={streakCurrent,streakBest,streakLastDate:today, shields};
   if(earned.length) patch.badges=[...currentBadges,...earned];
   await fsPatch(projectId,token,'users/'+uid,patch,Object.keys(patch));
   const entry={uid,name:userData.name||'User',photoURL:userData.photoURL||null,level:Number(userData.level)||levelFromXp(userData.xp),xp:Number(userData.xp)||0,weeklyXp:Number(userData.weeklyXp)||0,monthlyXp:Number(userData.monthlyXp)||0,streakCurrent};
   await upsertLeaderboard(projectId,token,'streak',entry,'streakCurrent');
-  return {ok:true,streakCurrent,streakBest,alreadyCounted:false,badgesEarned:earned.map(id=>SYSTEM_BADGES.find(b=>b.id===id)||{id})};
+  return {ok:true,streakCurrent,streakBest,alreadyCounted:false,badgesEarned:earned.map(id=>SYSTEM_BADGES.find(b=>b.id===id)||{id}), shields};
+}
+
+async function handleUseShield(uid, body, env) {
+  const userTimeZone = resolveUserTimeZone(body?.timeZone);
+  const projectId='nkm-ind', token=await getAccessToken(env);
+  const userData=await fsGet(projectId,token,'users/'+uid)||{};
+  const shields = Number(userData.shields) || 0;
+  if (shields <= 0) {
+    return {ok:false, error: 'No shields available', shields: 0};
+  }
+  
+  const now = new Date();
+  const today = localDateKey(now, userTimeZone);
+  const last = userData.streakLastDate || null;
+  
+  // If streak is already counted for today, no need to use shield
+  if (last === today) {
+    return {ok:true, streakCurrent: Number(userData.streakCurrent) || 0, streakBest: Number(userData.streakBest) || 0, shields, alreadyProtected: true};
+  }
+  
+  // Use one shield to protect/freeze streak for today
+  const newShields = shields - 1;
+  const streakCurrent = Number(userData.streakCurrent) || 0;
+  const streakBest = Number(userData.streakBest) || 0;
+  
+  const patch = { shields: newShields, streakLastDate: today };
+  await fsPatch(projectId, token, 'users/' + uid, patch, Object.keys(patch));
+  
+  const entry = {uid, name: userData.name || 'User', photoURL: userData.photoURL || null, level: Number(userData.level) || levelFromXp(userData.xp), xp: Number(userData.xp) || 0, weeklyXp: Number(userData.weeklyXp) || 0, monthlyXp: Number(userData.monthlyXp) || 0, streakCurrent};
+  await upsertLeaderboard(projectId, token, 'streak', entry, 'streakCurrent');
+  
+  return {ok:true, streakCurrent, streakBest, shields: newShields, alreadyProtected: false};
 }
 
 // ─── Request router ───────────────────────────────────────────────────────────
@@ -637,6 +734,7 @@ export default {
       let result;
       if (path === '/gamification/award-xp') result = await handleAwardXp(uid, body, env);
       else if (path === '/gamification/bump-streak') result = await handleBumpStreak(uid, body, env);
+      else if (path === '/gamification/use-shield') result = await handleUseShield(uid, body, env);
       else return json({ error: 'Unknown route' }, 404, origin);
       return json(result, 200, origin);
     } catch (err) {

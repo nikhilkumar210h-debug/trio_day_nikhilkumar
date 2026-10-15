@@ -65,26 +65,26 @@
   --color-danger-ink: #ffffff;
 
   /* ═══════════════════════════════════════════════════════════════════
-     DARK THEME PRIMITIVES (default)
+     DARK THEME PRIMITIVES (default) — Deep Obsidian
      ───────────────────────────────────────────────────────────────── */
-  --color-bg-dark: #08051A;
-  --color-bg-elevated-dark: #0F0A27;
-  --color-bg-hover-dark: #171039;
-  --color-surface-dark: #17113A;
-  --color-surface-strong-dark: #21164A;
-  --color-surface-hover-dark: #2A1B59;
+  --color-bg-dark: #090a0f;
+  --color-bg-elevated-dark: #12141d;
+  --color-bg-hover-dark: #1a1d2a;
+  --color-surface-dark: #12141d;
+  --color-surface-strong-dark: #1a1d2a;
+  --color-surface-hover-dark: #222632;
 
-  --color-glass-dark: rgba(196, 181, 253, 0.055);
-  --color-glass-strong-dark: rgba(196, 181, 253, 0.10);
-  --color-glass-hover-dark: rgba(196, 181, 253, 0.14);
+  --color-glass-dark: rgba(255, 255, 255, 0.04);
+  --color-glass-strong-dark: rgba(255, 255, 255, 0.08);
+  --color-glass-hover-dark: rgba(255, 255, 255, 0.12);
 
   --color-ink-dark: #f1f5f9;
   --color-ink-muted-dark: #94a3b8;
   --color-ink-dim-dark: #64748b;
   --color-ink-on-primary-dark: #ffffff;
 
-  --color-border-dark: rgba(196, 181, 253, 0.14);
-  --color-border-strong-dark: rgba(196, 181, 253, 0.24);
+  --color-border-dark: rgba(255, 255, 255, 0.08);
+  --color-border-strong-dark: rgba(255, 255, 255, 0.14);
   --color-border-focus-dark: #8B5CF6;
 
   /* ═══════════════════════════════════════════════════════════════════
@@ -180,6 +180,7 @@
   /* ═══════════════════════════════════════════════════════════════════
      TRANSITIONS / MOTION
      ───────────────────────────────────────────────────────────────── */
+  --ease-spring: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
   --duration-fast: 120ms;
@@ -187,10 +188,11 @@
   --duration-slow: 300ms;
 
   /* ═══════════════════════════════════════════════════════════════════
-     Z-INDEX SCALE
+     Z-INDEX SCALE — Standardized across all components
      ───────────────────────────────────────────────────────────────── */
   --z-dropdown: 100;
   --z-sticky: 200;
+  --z-sheet: 250;
   --z-modal: 300;
   --z-toast: 400;
   --z-tooltip: 500;
@@ -266,8 +268,8 @@
 
   /* Text / Ink — darker for WCAG AA contrast on light backgrounds */
   --color-ink-light: #0f172a;
-  --color-ink-muted-light: #334155;   /* Was #475569 — darker for readability */
-  --color-ink-dim-light: #64748b;      /* Was #94a3b8 — much darker for "dim" text */
+  --color-ink-muted-light: #334155;
+  --color-ink-dim-light: #64748b;
   --color-ink-on-primary-light: #ffffff;
 
   /* Accent text — darker indigo for light surfaces */

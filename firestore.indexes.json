@@ -205,6 +205,16 @@
   ],
   "fieldOverrides": [
     {
+      "collectionGroup": "users",
+      "fieldPath": "userId",
+      "indexes": [
+        {
+          "order": "ASCENDING",
+          "queryScope": "COLLECTION"
+        }
+      ]
+    },
+    {
       "collectionGroup": "members",
       "fieldPath": "uid",
       "indexes": [

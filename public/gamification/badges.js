@@ -4,12 +4,38 @@ import { SYSTEM_BADGES } from './constants.js';
 import { trioCache } from '../trio-cache.js';
 import { escapeHtml as escapeAttr } from '../utils.js';
 
-export async function ensureBadgeCatalog() {
+// Bump this version whenever SYSTEM_BADGES changes so the catalog re-seeds once.
+const BADGE_CATALOG_VERSION = 'v1';
+const BADGE_CATALOG_SEED_KEY = 'trio_badge_catalog_seeded_' + BADGE_CATALOG_VERSION;
+
+function badgeCatalogSeeded() {
+  try { return localStorage.getItem(BADGE_CATALOG_SEED_KEY) === '1'; } catch { return false; }
+}
+
+function markBadgeCatalogSeeded() {
+  try { localStorage.setItem(BADGE_CATALOG_SEED_KEY, '1'); } catch { /* private mode */ }
+}
+
+/**
+ * Ensure the badge catalog documents exist in Firestore. Seeding writes 6
+ * documents, so it is gated by a localStorage version key and only runs once
+ * per browser (pass { force: true } to re-seed, e.g. from the admin panel).
+ * @param {{ force?: boolean }} [options]
+ */
+export async function ensureBadgeCatalog({ force = false } = {}) {
   const cached = trioCache.get('badge_catalog');
   if (cached) return cached;
-  await Promise.all(SYSTEM_BADGES.map(b =>
-    setDoc(doc(db, 'badges', b.id), { ...b, createdAt: serverTimestamp() }, { merge: true })
-  ));
+  if (force || !badgeCatalogSeeded()) {
+    try {
+      await Promise.all(SYSTEM_BADGES.map(b =>
+        setDoc(doc(db, 'badges', b.id), { ...b, createdAt: serverTimestamp() }, { merge: true })
+      ));
+    } catch (_) {
+      // Best-effort seeding only: the catalog is code-defined and renders fine
+      // even when the Firestore write is unavailable (e.g. non-admin users).
+    }
+    markBadgeCatalogSeeded();
+  }
   trioCache.set('badge_catalog', SYSTEM_BADGES, trioCache.TTL.LONG);
   return SYSTEM_BADGES;
 }

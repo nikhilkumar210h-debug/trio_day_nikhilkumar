@@ -1,10 +1,7 @@
-# Functions folder (unused)
+# Functions folder
 
-Push notifications moved to **OneSignal** + Cloudflare Worker:
+`signInWithTrioUid` — the server-side Trio UID login callable — lives in `index.js`.
 
-- Client: onesignal.js / 
-otifications.js
-- Worker: workers/send-push.js
-- Config: onesignal-config.js (PUSH_API_URL)
-
-Do not deploy this folder.
+- Client: public/auth.js (calls the `signInWithTrioUid` callable)
+- Deployed with: `firebase deploy --only functions`
+- The retired OneSignal push Worker (`workers/send-push.js`) has been removed; use workers/send-notification.js.

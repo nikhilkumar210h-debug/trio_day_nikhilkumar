@@ -6,7 +6,9 @@
 <meta name="theme-color" content="#0a0f1a">
 <title>Settings — Trio Day</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
 <link rel="stylesheet" href="styles/tokens.css">
 <link rel="stylesheet" href="styles/nav.css">
 <link rel="stylesheet" href="styles/header.css">
@@ -15,51 +17,154 @@
 <link rel="stylesheet" href="styles/polish.css?v=6">
 </head>
 <body class="app-page">
+<div class="tricolor-strip"><span></span><span></span><span></span></div>
 <header class="topbar">
   <div class="topbar-inner">
-    <a class="brand" href="index.html"><span class="brand-chakra">☸</span><span class="brand-copy"><strong>trio_day</strong><small>SETTINGS</small></span></a>
+    <a class="brand" href="index.html"><span class="brand-chakra"></span><span class="brand-copy"><strong>trio_day</strong><small>SETTINGS</small></span></a>
     <div id="authStatus" class="auth-status"></div>
   </div>
 </header>
 <main class="app-main" style="max-width:760px;padding-bottom:110px">
-  <section class="creator-panel">
-    <div class="creator-step-heading">
-      <div class="creator-step-badge">⚙</div>
-      <div><h2>Settings</h2><p>Manage the parts of Trio Day that are available here.</p></div>
+  <section class="nkm-card" style="margin-bottom:16px">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--color-border)">
+      <div>
+        <h2 style="font-size:var(--text-xl);font-weight:var(--font-extrabold);margin:0">Appearance</h2>
+        <p style="font-size:var(--text-sm);color:var(--color-ink-muted);margin:4px 0 0">Choose how Trio Day looks on your device</p>
+      </div>
     </div>
-    <div style="display:grid;gap:10px;margin-top:16px">
-      <a class="nkm-btn" href="profile.html">👤 Profile & account</a>
-      <a class="nkm-btn" href="notifications.html">🔔 Notifications</a>
-      <div style="padding:12px;border:1px solid var(--color-border);border-radius:14px;background:var(--color-glass)">
-        <strong style="display:block;font-size:12px;margin-bottom:8px">Appearance</strong>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button type="button" class="nkm-btn" data-theme-choice="dark">🌙 Dark</button>
-          <button type="button" class="nkm-btn" data-theme-choice="light">☀️ Light</button>
-          <button type="button" class="nkm-btn" data-theme-choice="system">◐ System</button>
+    <div class="theme-choice-list" id="themeChoices" role="radiogroup" aria-label="Theme selection">
+      <!-- Populated by settings.js -->
+    </div>
+  </section>
+
+  <section class="nkm-card" style="margin-bottom:16px">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--color-border)">
+      <div>
+        <h2 style="font-size:var(--text-xl);font-weight:var(--font-extrabold);margin:0">Sound & Haptics</h2>
+        <p style="font-size:var(--text-sm);color:var(--color-ink-muted);margin:4px 0 0">Toggle UI sounds and vibration feedback</p>
+      </div>
+    </div>
+    <div class="nkm-setting-row" style="display:flex;align-items:center;justify-content:space-between;padding:16px 0;border-bottom:1px solid var(--color-border)">
+      <div>
+        <div style="font-weight:600;font-size:var(--text-base)">Sound Effects</div>
+        <div style="font-size:var(--text-sm);color:var(--color-ink-muted);margin-top:2px">Button clicks, message sounds, and UI feedback</div>
+      </div>
+      <label class="nkm-toggle" style="margin-left:12px">
+        <input type="checkbox" id="soundToggle" data-setting="sound">
+        <span class="nkm-toggle-slider"></span>
+      </label>
+    </div>
+    <div class="nkm-setting-row" style="display:flex;align-items:center;justify-content:space-between;padding:16px 0">
+      <div>
+        <div style="font-weight:600;font-size:var(--text-base)">Haptic Feedback</div>
+        <div style="font-size:var(--text-sm);color:var(--color-ink-muted);margin-top:2px">Vibration on supported devices</div>
+      </div>
+      <label class="nkm-toggle" style="margin-left:12px">
+        <input type="checkbox" id="hapticToggle" data-setting="haptic">
+        <span class="nkm-toggle-slider"></span>
+      </label>
+    </div>
+  </section>
+
+  <section class="nkm-card" style="margin-bottom:16px">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--color-border)">
+      <div>
+        <h2 style="font-size:var(--text-xl);font-weight:var(--font-extrabold);margin:0">Notifications</h2>
+        <p style="font-size:var(--text-sm);color:var(--color-ink-muted);margin:4px 0 0">Manage push notification preferences</p>
+      </div>
+    </div>
+    <div id="notificationSettings" class="notification-settings-container">
+      <div style="display:flex;align-items:center;justify-content:center;gap:12px;padding:24px;color:var(--color-ink-muted)">
+        <span class="td-skeleton td-skeleton--line" style="width:200px"></span>
+      </div>
+    </div>
+  </section>
+
+  <section class="nkm-card" style="margin-bottom:16px">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--color-border)">
+      <div>
+        <h2 style="font-size:var(--text-xl);font-weight:var(--font-extrabold);margin:0">Data & Privacy</h2>
+        <p style="font-size:var(--text-sm);color:var(--color-ink-muted);margin:4px 0 0">Manage local data and cache</p>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 0">
+      <div>
+        <div style="font-weight:600;font-size:var(--text-base)">Clear Local Cache</div>
+        <div style="font-size:var(--text-sm);color:var(--color-ink-muted);margin-top:2px">Remove cached user data, images, and temporary files</div>
+      </div>
+      <button type="button" class="nkm-btn nkm-btn--sm" id="clearCacheBtn" style="background:var(--color-danger-soft);border-color:var(--color-danger);color:var(--color-danger);font-weight:var(--font-semibold)">
+        Clear Cache
+      </button>
+    </div>
+  </section>
+
+  <section class="nkm-card" style="margin-bottom:16px">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--color-border)">
+      <div>
+        <h2 style="font-size:var(--text-xl);font-weight:var(--font-extrabold);margin:0">Account</h2>
+        <p style="font-size:var(--text-sm);color:var(--color-ink-muted);margin:4px 0 0">Account management and quick actions</p>
+      </div>
+    </div>
+    <div style="display:grid;gap:10px">
+      <a class="nkm-btn" href="profile.html" style="justify-content:flex-start;text-align:left;gap:12px">
+        <span style="width:24px;height:24px;display:grid;place-items:center;font-size:18px">👤</span>
+        <div style="flex:1;text-align:left">
+          <div style="font-weight:600">View Profile</div>
+          <div style="font-size:var(--text-xs);color:var(--color-ink-muted)">Edit your profile, view stats & badges</div>
         </div>
+        <span style="color:var(--color-ink-dim)">›</span>
+      </a>
+      <button type="button" class="nkm-btn" id="copyUidBtn" style="justify-content:flex-start;text-align:left;gap:12px;background:var(--color-glass);border-color:var(--color-border)">
+        <span style="width:24px;height:24px;display:grid;place-items:center;font-size:18px">📋</span>
+        <div style="flex:1;text-align:left">
+          <div style="font-weight:600">Copy TRIO UID</div>
+          <div style="font-size:var(--text-xs);color:var(--color-ink-muted)">Copy your unique identifier to clipboard</div>
+        </div>
+      </button>
+      <button type="button" class="nkm-btn" id="signOutBtn" style="justify-content:flex-start;text-align:left;gap:12px;background:var(--color-danger-soft);border-color:var(--color-danger);color:var(--color-danger);font-weight:var(--font-semibold)">
+        <span style="width:24px;height:24px;display:grid;place-items:center;font-size:18px">🚪</span>
+        <div style="flex:1;text-align:left">
+          <div style="font-weight:600">Sign Out</div>
+          <div style="font-size:var(--text-xs);color:var(--color-ink-muted)">Sign out of your account on this device</div>
+        </div>
+      </button>
+    </div>
+  </section>
+
+  <section class="nkm-card">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--color-border)">
+      <div>
+        <h2 style="font-size:var(--text-xl);font-weight:var(--font-extrabold);margin:0">About</h2>
+        <p style="font-size:var(--text-sm);color:var(--color-ink-muted);margin:4px 0 0">App version and legal</p>
+      </div>
+    </div>
+    <div style="display:grid;gap:10px">
+      <a class="nkm-btn" href="terms.html" style="justify-content:flex-start;text-align:left;gap:12px;background:var(--color-glass);border-color:var(--color-border)">
+        <div style="flex:1;text-align:left">
+          <div style="font-weight:600">Terms of Service</div>
+          <div style="font-size:var(--text-xs);color:var(--color-ink-muted)">Read our terms and conditions</div>
+        </div>
+      </a>
+      <a class="nkm-btn" href="privacy-policy.html" style="justify-content:flex-start;text-align:left;gap:12px;background:var(--color-glass);border-color:var(--color-border)">
+        <div style="flex:1;text-align:left">
+          <div style="font-weight:600">Privacy Policy</div>
+          <div style="font-size:var(--text-xs);color:var(--color-ink-muted)">How we handle your data</div>
+        </div>
+      </a>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;color:var(--color-ink-dim);font-size:var(--text-xs);border-top:1px solid var(--color-border);margin-top:8px">
+        <span>Trio Day</span>
+        <span id="appVersion">v1.0.0</span>
       </div>
     </div>
   </section>
 </main>
 <nav class="bottom-nav" aria-label="Primary navigation"><div class="nav-row"></div></nav>
 <script src="auth-preload.js"></script>
-  <script type="module" src="auth-guard.js"></script>
+<script type="module" src="auth-guard.js"></script>
 <script type="module" src="auth-ui.js"></script>
 <script type="module" src="theme.js"></script>
 <script type="module" src="ui/header.js"></script>
 <script type="module" src="ui/nav.js?v=20260922-nav7"></script>
-<script type="module">
-document.querySelectorAll('[data-theme-choice]').forEach(btn => btn.addEventListener('click', () => {
-  const value = btn.dataset.themeChoice;
-  try {
-    if (value === 'system') {
-      localStorage.removeItem('trio-theme');
-      window.TrioTheme?.initTheme();
-    } else {
-      window.TrioTheme?.applyTheme(value);
-    }
-  } catch {}
-}));
-</script>
+<script type="module" src="settings.js"></script>
 </body>
 </html>

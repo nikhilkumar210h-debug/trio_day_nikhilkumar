@@ -55,6 +55,171 @@ function setPeerHeader() {
   $('peerName').textContent = nameOf(activePeer);
   const peerIdEl = $('peerId'); if (peerIdEl) { peerIdEl.textContent = ''; peerIdEl.hidden = true; }
   $('peerAvatar').innerHTML = avatarHtml(activePeer);
+
+  // Header "Select" button
+  const selectBtn = $('selectMessagesBtn');
+  if (selectBtn) {
+    selectBtn.onclick = () => enterSelectionMode();
+  }
+}
+
+// ─── Multi-Select State ─────────────────────────────────────────────────────
+let selectionMode = false;
+const selectedIds = new Set();
+const bulkBar = document.createElement('div');
+bulkBar.id = 'bulkActionBar';
+bulkBar.className = 'bulk-action-bar';
+bulkBar.hidden = true;
+bulkBar.innerHTML = `
+  <span class="bulk-count" aria-live="polite">0 selected</span>
+  <button type="button" class="bulk-btn bulk-select-all" data-action="select-all">Select All Mine</button>
+  <button type="button" class="bulk-btn bulk-cancel" data-action="cancel">Cancel</button>
+  <button type="button" class="bulk-btn bulk-delete danger" data-action="delete" disabled>Delete (0)</button>
+`;
+document.body.appendChild(bulkBar);
+
+function updateBulkBar() {
+  const count = selectedIds.size;
+  bulkBar.querySelector('.bulk-count').textContent = `${count} selected`;
+  const delBtn = bulkBar.querySelector('[data-action="delete"]');
+  delBtn.textContent = `Delete (${count})`;
+  delBtn.disabled = count === 0;
+  bulkBar.querySelector('[data-action="select-all"]').textContent = count === getOwnMessageCount() ? 'Deselect All' : 'Select All Mine';
+}
+
+function getOwnMessageCount() {
+  const rows = document.querySelectorAll('.private-msg-row.mine:not(.is-deleting)');
+  return rows.length;
+}
+
+function enterSelectionMode(initialMsgId = null) {
+  if (selectionMode) return;
+  selectionMode = true;
+  if (initialMsgId) selectedIds.add(initialMsgId);
+  document.body.classList.add('selection-mode');
+  bulkBar.hidden = false;
+  requestAnimationFrame(() => bulkBar.classList.add('open'));
+  updateBulkBar();
+  syncSelectionUI();
+}
+
+function exitSelectionMode() {
+  if (!selectionMode) return;
+  selectionMode = false;
+  selectedIds.clear();
+  document.body.classList.remove('selection-mode');
+  bulkBar.classList.remove('open');
+  setTimeout(() => { bulkBar.hidden = true; }, 220);
+  syncSelectionUI();
+}
+
+function toggleSelection(msgDocId) {
+  if (selectedIds.has(msgDocId)) selectedIds.delete(msgDocId);
+  else selectedIds.add(msgDocId);
+  updateBulkBar();
+  syncSelectionUI();
+}
+
+function selectAllMine() {
+  const ownRows = document.querySelectorAll('.private-msg-row.mine:not(.is-deleting)');
+  if (selectedIds.size === ownRows.length) {
+    selectedIds.clear();
+  } else {
+    ownRows.forEach(r => selectedIds.add(r.dataset.msgId));
+  }
+  updateBulkBar();
+  syncSelectionUI();
+}
+
+function syncSelectionUI() {
+  document.querySelectorAll('.private-msg-row').forEach(row => {
+    const msgId = row.dataset.msgId;
+    const isSelected = selectedIds.has(msgId);
+    row.classList.toggle('selected', isSelected);
+    row.setAttribute('aria-selected', isSelected);
+    row.classList.toggle('selectable', selectionMode && row.classList.contains('mine'));
+  });
+  const selectAllBtn = bulkBar.querySelector('[data-action="select-all"]');
+  if (selectAllBtn) selectAllBtn.textContent = selectedIds.size === getOwnMessageCount() ? 'Deselect All' : 'Select All Mine';
+}
+
+async function deleteSelectedMessages() {
+  if (!currentUser || !activePeer || selectedIds.size === 0) return;
+  const delBtn = bulkBar.querySelector('[data-action="delete"]');
+  const originalText = delBtn.textContent;
+  delBtn.disabled = true;
+  delBtn.textContent = 'Deleting…';
+  SoundManager.delete();
+
+  const chatIdStr = chatId(currentUser.uid, activePeer.uid);
+  const idsToDelete = Array.from(selectedIds);
+
+  // Optimistic: mark rows as deleting
+  idsToDelete.forEach(id => {
+    const row = document.querySelector(`.private-msg-row[data-msg-id="${id}"]`);
+    if (row) row.classList.add('is-deleting');
+  });
+
+  try {
+    // Chunk into batches of 450
+    const BATCH_LIMIT = 450;
+    for (let i = 0; i < idsToDelete.length; i += BATCH_LIMIT) {
+      const chunk = idsToDelete.slice(i, i + BATCH_LIMIT);
+      const batch = writeBatch(db);
+      for (const msgDocId of chunk) {
+        const ref = doc(db, 'privateChats', chatIdStr, 'messages', msgDocId);
+        batch.delete(ref);
+      }
+      await batch.commit();
+    }
+    showToast(`Deleted ${idsToDelete.length} message${idsToDelete.length > 1 ? 's' : ''}`);
+    exitSelectionMode();
+  } catch (err) {
+    console.error('Batch delete failed:', err);
+    showToast('Delete failed: ' + (err?.message || err), 'error');
+    // Rollback optimistic state
+    idsToDelete.forEach(id => {
+      const row = document.querySelector(`.private-msg-row[data-msg-id="${id}"]`);
+      if (row) row.classList.remove('is-deleting');
+    });
+    delBtn.disabled = false;
+    delBtn.textContent = originalText;
+    updateBulkBar();
+  }
+}
+
+// ─── Bulk Bar Event Delegation ──────────────────────────────────────────────
+bulkBar.addEventListener('click', e => {
+  const btn = e.target.closest('[data-action]');
+  if (!btn) return;
+  const action = btn.dataset.action;
+  if (action === 'cancel') exitSelectionMode();
+  else if (action === 'select-all') selectAllMine();
+  else if (action === 'delete') deleteSelectedMessages();
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && selectionMode) exitSelectionMode();
+});
+
+function openMsgMenu(msgDocId, isMine) {
+  const { open, close } = createSheet({ title: isMine ? 'Message' : 'Message', content: `
+    <div style="display:grid;gap:8px">
+      <button class="nkm-btn" type="button" data-copy>Copy text</button>
+      ${isMine ? '<button class="nkm-btn" type="button" data-del style="color:#ef4444;border-color:rgba(239,68,68,.2)">Delete</button>' : ''}
+      ${isMine ? '<button class="nkm-btn" type="button" data-select>Select Messages</button>' : ''}
+    </div>
+  `});
+  open();
+  const copyBtn = document.querySelector('[data-copy]');
+  const delBtn = document.querySelector('[data-del]');
+  const selectBtn = document.querySelector('[data-select]');
+  if (copyBtn) copyBtn.addEventListener('click', async ()=>{
+    const txt = document.querySelector(`[data-msg-id="${msgDocId}"] .msg-text-content`)?.textContent || '';
+    try{ await navigator.clipboard.writeText(txt); copyBtn.textContent='Copied!'; setTimeout(close,700);}catch{ prompt('Copy', txt); }
+  });
+  if (delBtn) delBtn.addEventListener('click', ()=>{ close(); deletePrivateMessage(msgDocId); });
+  if (selectBtn) selectBtn.addEventListener('click', ()=>{ close(); enterSelectionMode(msgDocId); });
 }
 
 async function deletePrivateMessage(msgDocId) {
@@ -94,24 +259,6 @@ function debouncedMarkAsSeen() {
   seenDebounce = setTimeout(markMessagesAsSeen, 1000);
 }
 
-function openMsgMenu(msgDocId, isMine) {
-  const { open, close } = createSheet({ title: isMine ? 'Message' : 'Message', content: `
-    <div style="display:grid;gap:8px">
-      <button class="nkm-btn" type="button" data-copy>Copy text</button>
-      ${isMine ? '<button class="nkm-btn" type="button" data-del style="color:#ef4444;border-color:rgba(239,68,68,.2)">Delete</button>' : ''}
-    </div>
-  `});
-  open();
-  const copyBtn = document.querySelector('[data-copy]');
-  const delBtn = document.querySelector('[data-del]');
-  // copy handled via delegation to row's data
-  if (copyBtn) copyBtn.addEventListener('click', async ()=>{
-    const txt = document.querySelector(`[data-msg-id="${msgDocId}"] .msg-text-content`)?.textContent || '';
-    try{ await navigator.clipboard.writeText(txt); copyBtn.textContent='Copied!'; setTimeout(close,700);}catch{ prompt('Copy', txt); }
-  });
-  if (delBtn) delBtn.addEventListener('click', ()=>{ close(); deletePrivateMessage(msgDocId); });
-}
-
 function renderMessages(snap) {
   const box = $('privateMessages');
   box.innerHTML = '';
@@ -131,6 +278,8 @@ function renderMessages(snap) {
     const row = document.createElement('div');
     row.className = `private-msg-row ${mine ? 'mine' : 'theirs'} ${isGrouped ? 'grouped' : 'group-break'}`;
     row.dataset.msgId = msgDocId;
+    if (selectionMode && selectedIds.has(msgDocId)) row.classList.add('selected');
+    if (selectionMode && mine) row.classList.add('selectable');
 
     row.innerHTML = `
       ${!mine && !isGrouped ? `<a class="message-avatar" href="profile.html?uid=${encodeURIComponent(m.uid || activePeer.uid)}">${avatarHtml(activePeer)}</a>` : (!mine && isGrouped ? '<span style="width:28px;flex:none"></span>' : '')}
@@ -141,7 +290,8 @@ function renderMessages(snap) {
           <div class="message-time">${esc(timeOf(m.createdAtMs || m.createdAt))} ${mine && m.seen ? '<span class="msg-seen" title="Seen">✓ seen</span>' : ''}</div>
         </div>
       </div>
-      <button class="nkm-msg-menu" type="button" aria-label="More" data-menu>⋯</button>`;
+      <button class="nkm-msg-menu" type="button" aria-label="More" data-menu>⋯</button>
+      ${mine ? '<div class="msg-select-indicator" aria-hidden="true">✓</div>' : ''}`;
 
     box.appendChild(row);
     const menuBtn = row.querySelector('[data-menu]');
@@ -150,14 +300,31 @@ function renderMessages(snap) {
     if(bubble){
       let pressTimer = null;
       const open = ()=> openMsgMenu(msgDocId, mine);
+      // Mobile long-press to enter selection mode
+      bubble.addEventListener('touchstart', ()=>{ pressTimer = setTimeout(() => { enterSelectionMode(msgDocId); }, 420); }, {passive:true});
+      bubble.addEventListener('touchend', ()=>{ clearTimeout(pressTimer); });
+      bubble.addEventListener('touchmove', ()=>{ clearTimeout(pressTimer); });
+      // Desktop: click opens menu, Shift+Click enters selection mode
       bubble.addEventListener('click', (e)=>{
-        // mobile tap or desktop selection: open sheet when not hovering delete button
+        if (e.shiftKey && mine) { e.preventDefault(); e.stopPropagation(); enterSelectionMode(msgDocId); return; }
         if (window.matchMedia('(hover:none)').matches || window.innerWidth <= 839) open();
       });
       bubble.addEventListener('contextmenu', (e)=>{ e.preventDefault(); open(); });
-      bubble.addEventListener('touchstart', ()=>{ pressTimer = setTimeout(open, 480); }, {passive:true});
-      bubble.addEventListener('touchend', ()=>{ clearTimeout(pressTimer); });
-      bubble.addEventListener('touchmove', ()=>{ clearTimeout(pressTimer); });
+    }
+    // Click on selectable row in selection mode toggles selection
+    if (mine) {
+      row.addEventListener('click', (e) => {
+        if (selectionMode && !e.target.closest('[data-menu], [data-bubble]')) {
+          toggleSelection(msgDocId);
+        }
+      });
+    } else if (selectionMode) {
+      // Non-mine message in selection mode - show ownership toast
+      row.addEventListener('click', (e) => {
+        if (!e.target.closest('[data-menu], [data-bubble], a')) {
+          showToast('You can only select and delete your own messages', 'warn');
+        }
+      });
     }
     prevUid = m.uid;
   });
@@ -195,6 +362,7 @@ $('privateForm').addEventListener('submit', async e => {
   if (!activePeer || !currentUser) return;
   const input = $('privateInput');
   const sendBtn = $('privateForm')?.querySelector('button[type="submit"]');
+  if (sendBtn?.disabled) return;
   const text = input.value.trim();
   if (!text) return;
   if (sendBtn) sendBtn.disabled = true;

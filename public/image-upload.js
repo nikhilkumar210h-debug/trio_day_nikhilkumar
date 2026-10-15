@@ -2,7 +2,22 @@
 const CLOUD_NAME = 'vyhglthg';
 import { auth } from './firebase-init.js';
 // Worker endpoint for signed upload params — set after deployment
-const MEDIA_SIGN_URL = 'https://trio-media-upload.trioday-nikhil.workers.dev/media/sign';
+const DEFAULT_MEDIA_SIGN_URL = 'https://trio-media-upload.trioday-nikhil.workers.dev/media/sign';
+
+/** Media signer endpoint; window.__TRIO_CONFIG__.mediaSignUrl overrides the default. */
+function mediaSignUrl() {
+  try {
+    const override = window.__TRIO_CONFIG__?.mediaSignUrl;
+    if (typeof override === 'string' && /^https?:\/\//i.test(override)) return override.replace(/\/+$/, '');
+  } catch (_) { /* non-browser context */ }
+  return DEFAULT_MEDIA_SIGN_URL;
+}
+
+/** Sanitise a client-supplied file name for the Storage fallback path. */
+function safeStorageFileName(name, fallbackExt) {
+  const clean = String(name || '').replace(/[^a-zA-Z0-9._-]/g, '_').replace(/^_+/, '').slice(-120);
+  return clean || `upload_${Date.now()}.${fallbackExt || 'webp'}`;
+}
 
 function randomId() {
   return Math.random().toString(36).slice(2, 10);
@@ -72,7 +87,7 @@ function canvasToBlob(canvas, type, quality) {
 async function getSignedParams(kind, firebaseToken) {
   const token = firebaseToken || await auth.currentUser?.getIdToken();
   if (!token) throw Error('Please sign in again before uploading media.');
-  const res = await fetch(MEDIA_SIGN_URL, {
+  const res = await fetch(mediaSignUrl(), {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -152,6 +167,26 @@ async function uploadSignedVideo(file, signedParams, signal) {
   return data.secure_url;
 }
 
+/**
+ * Firebase Storage fallback — last resort when the signed Cloudinary path is
+ * unavailable. Uploads are isolated per user (uploads/<uid>/<fileName>) so the
+ * Storage rules can enforce request.auth.uid == uid.
+ * @param {Blob|File} blobOrFile
+ * @param {string} [fileName]
+ * @returns {Promise<string>} download URL
+ */
+export async function uploadToStorageFallback(blobOrFile, fileName) {
+  const user = auth.currentUser;
+  if (!user) throw Error('Please sign in again before uploading media.');
+  const { getStorage, ref, uploadBytes, getDownloadURL } =
+    await import('https://www.gstatic.com/firebasejs/10.13.0/firebase-storage.js');
+  const objectRef = ref(getStorage(), `uploads/${user.uid}/${safeStorageFileName(fileName, 'webp')}`);
+  await uploadBytes(objectRef, blobOrFile, {
+    contentType: blobOrFile?.type || 'application/octet-stream'
+  });
+  return getDownloadURL(objectRef);
+}
+
 /** Story media — ORIGINAL QUALITY (short term 24h) — signed upload */
 export async function uploadStoryMedia(uid, file, firebaseToken, signal) {
   if (file?.type?.startsWith('video/') || file?.type?.startsWith('audio/')) {
@@ -161,21 +196,27 @@ export async function uploadStoryMedia(uid, file, firebaseToken, signal) {
   }
   // Image story: upload original file directly, keep original quality (no compress, no resize)
   if (file.size > 12 * 1024 * 1024) throw Error('Story photo must be under 12MB (original quality).');
-  const signed = await getSignedParams('story_image', firebaseToken);
-  // For original quality story images, upload the file directly (not compressed blob)
-  const form = new FormData();
-  form.append('file', file, file.name || `story_${Date.now()}.jpg`);
-  form.append('api_key', signed.apiKey);
-  form.append('timestamp', String(signed.timestamp));
-  form.append('signature', signed.signature);
-  form.append('folder', signed.folder);
-  form.append('public_id', signed.publicId);
-  form.append('overwrite', String(signed.overwrite));
+  try {
+    const signed = await getSignedParams('story_image', firebaseToken);
+    // For original quality story images, upload the file directly (not compressed blob)
+    const form = new FormData();
+    form.append('file', file, file.name || `story_${Date.now()}.jpg`);
+    form.append('api_key', signed.apiKey);
+    form.append('timestamp', String(signed.timestamp));
+    form.append('signature', signed.signature);
+    form.append('folder', signed.folder);
+    form.append('public_id', signed.publicId);
+    form.append('overwrite', String(signed.overwrite));
 
-  const res = await fetch(signed.uploadUrl, { method: 'POST', body: form, signal });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok || !data.secure_url) throw Error(data?.error?.message || `Cloudinary upload failed (${res.status})`);
-  return data.secure_url;
+    const res = await fetch(signed.uploadUrl, { method: 'POST', body: form, signal });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.secure_url) throw Error(data?.error?.message || `Cloudinary upload failed (${res.status})`);
+    return data.secure_url;
+  } catch (err) {
+    if (signal?.aborted) throw err;
+    console.warn('[uploadStoryMedia] Cloudinary upload unavailable, using Firebase Storage fallback:', err.message);
+    return uploadToStorageFallback(file, `story_${Date.now()}`);
+  }
 }
 
 /** Profile photo → Cloudinary folder trio/profiles (signed, overwrite) */
@@ -185,6 +226,12 @@ export async function uploadProfileImage(uid, file, firebaseToken, signal) {
     maxBytes: 500_000,
     startQuality: 0.76
   });
-  const signed = await getSignedParams('profile', firebaseToken);
-  return uploadSignedBlob(blob, signed, signal, `avatar.${ext}`);
+  try {
+    const signed = await getSignedParams('profile', firebaseToken);
+    return uploadSignedBlob(blob, signed, signal, `avatar.${ext}`);
+  } catch (err) {
+    if (signal?.aborted) throw err;
+    console.warn('[uploadProfileImage] Cloudinary upload unavailable, using Firebase Storage fallback:', err.message);
+    return uploadToStorageFallback(blob, `avatar_${Date.now()}.${ext}`);
+  }
 }
