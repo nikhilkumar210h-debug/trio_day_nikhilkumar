@@ -116,7 +116,7 @@ Before significant code work, read [PLAN.md](PLAN.md), identify the stage being 
 - Firebase Cloud Functions for the Trio UID authentication callable.
 - Cloudflare Workers for server-authoritative gamification and notification operations.
 - Cloudinary for media.
-- Service worker for caching/offline behavior.
+- No service worker for app content — `public/pwa-retire.js` unregisters every non-OneSignal service worker and clears Cache Storage on page load; only the OneSignal push workers (`public/push/onesignal/`) run (third-party SDK, no app cache versioning).
 
 ## Architecture inventory (Step 4 REA audit — 2026-10-17)
 
@@ -501,4 +501,39 @@ The current release branch implements the planned Challenge-first loop in one pa
 - Cost: strictly $0 — no new paid APIs; all writes via Workers; Firestore reads bounded/cached.
 
 **Next recommended steps:** deploy Workers + hosting; verify `dailyAnswers` read rule relaxation works as expected in production; test OpenTDB CORS from Workers domain; confirm cache-busted assets load correctly on the live deployment.
+
+### Phase 5 — Live Post-Deploy Fixes: Revived Today Modules & Connections Loader Guarantee (2026-10-18)
+
+**Scope rule honored: only the two live-reported bugs (and the import-death root cause they share); no unrelated features touched. `firestore.rules` untouched.**
+
+**Live-reported bugs**
+1. `/` — "Today's Trio Pulse" (`#trioPulse`) and "60-Second Daily Brain & Career Sprint" (`#brainSprintCard`) not rendering (only the old layout: greeting, story strip, Daily Question).
+2. `/profile` — Connections section stuck on "Loading connections…".
+
+**Root cause (both reports share one fatal bug — module-graph death)**
+- `public/image-upload.js` never re-exported `cloudinaryAutoUrl` (the function lives in `utils.js`), yet `script.js`, `profile.js`, and `challenge-create.js` all imported `{ …, cloudinaryAutoUrl }` **from `image-upload.js`**. ES-module linking fails hard when a named import is missing — so on every page load the **entire `script.js` and `profile.js` module graphs died before executing a single line** (the `SyntaxError: … does not provide an export named 'cloudinaryAutoUrl'` was the only trace, silent to page visitors). `challenge.js` used `cloudinaryAutoUrl` at all without importing it.
+- Secondary (would have broken rendering even after reviving the graph):
+  - `script.js` `renderBrainSprint()` used `esc(...)` and `renderTrioPulse()`'s `buildCard()` used `esc(...)` while only importing `escapeHtml` — `ReferenceError` before each section could un-hide.
+  - `renderTrioPulse()` toggled a `.hidden` CSS class, but the HTML uses `hidden` **attributes** and no global `.hidden { display:none }` rule exists — locked/unlocked/empty states could never transition.
+  - `script.js:213` referenced undefined `SoundFX` (real module API is `SoundManager` — imported in `script.js` as such) — throws on sprint answer click.
+  - `renderBrainSprint()`/`renderTrioPulse()` only ran via the signed-in `onAuthStateChanged` path — one failure in `ensureUserProfile` (unguarded await) skipped both; signed-out users force-hid `#trioPulse` (`script.js:91`).
+  - `loadConnections()` ran last in `loadProfile()` behind two unguarded awaits (`getMyGlobalRank`, `loadRecentActivities`) and never cleared its "Loading connections…" placeholder on the success path (rows were appended *below* it) — with no timeout, a stalled (never-settling) Firestore promise left the placeholder forever.
+
+**Fixes**
+1. `public/image-upload.js`: `import { cloudinaryAutoUrl } from './utils.js'` (fixes wrong `'../utils.js'` path) + `export { cloudinaryAutoUrl };` re-export — revives all three dead module graphs. Import specifiers bumped to `./image-upload.js?v=20261018-img1` in `script.js`, `profile.js`, `challenge-create.js` (repo's existing `?v=` module-import convention). `challenge.js` now imports `cloudinaryAutoUrl` from `./utils.js`.
+2. `public/script.js` (cache-busted in `index.html` as `script.js?v=20261018-pulse2`): `esc` added to the `utils.js` import; `SoundFX[...]` → `SoundManager.success()/delete()`; boot block at module end calls `renderBrainSprint()` + `renderTrioPulse()` **immediately on page load** (never gated on auth); `ensureUserProfile` awaited inside try/catch so one failure can't skip later renders; signed-out branch re-renders the pulse (locked/empty visible to guests) instead of force-hiding it; `renderTrioPulse()` state machine now drives the `hidden` attribute (locked/unlocked/empty transitions actually work); `fill()` guards null containers.
+3. `public/index.html`: `#brainSprintCard` and `#trioPulse` moved **directly below the Daily Question card** (before Today's Challenge), `hidden` attributes removed (skeleton/locked placeholder content is the visible initial state), 3 static locked placeholder cards pre-filled in `#trioPulseCardsLocked`.
+4. `public/profile.js` (cache-busted in `profile.html` as `profile.js?v=20261018-conn2`): `loadConnections()` clears the placeholder before appending rows, carries a **2-second watchdog that unconditionally replaces "Loading connections…" with the empty state** (cleared in `finally`, with a post-run sweep); `getMyGlobalRank` + `loadRecentActivities` awaits are try/catch-guarded inside `loadProfile()` so the connections step can never be skipped; the `onAuthStateChanged` handler wraps `loadProfile` in try/catch with a fallback `loadConnections()`, plus a hard 2-second handler-level watchdog that re-calls `loadConnections()` if any placeholder text survives.
+5. Service Worker: **no custom SW exists** — `public/pwa-retire.js` unregisters every non-OneSignal service worker and clears Cache Storage on page load; the only SWs are the third-party OneSignal push workers (`public/push/onesignal/`), which have no app cache version to bump. Architecture note (line ~119) corrected accordingly; freshness is ensured via the `?v=` bump in `index.html`.
+
+**Verification results**
+- `node scripts/validate-repo.mjs`: **passed — 55 JS files and 21 HTML files scanned, 0 errors**.
+- Live HTML checks (`https://trio-day.trioday-nikhil.workers.dev/`): `script.js?v=20261018-pulse2` served; both sections present un-hidden, ordered Daily Question → Brain Sprint → Trio Pulse → Today's Challenge; 3 locked placeholder cards present.
+- Browser test (identical files on local dev server, isolated Chrome context): zero console errors — module graph initializes; Brain Sprint card renders with live ⏱ countdown; Trio Pulse renders its state UI (empty state as guest; locked placeholders hidden/cleared by JS); Daily Question + greeting render again (previously dead with script.js).
+- Live module-graph proof: preserved network log shows `/script.js?v=20261018-pulse2` executing and fetching `/image-upload.js?v=20261018-img1` plus its full transitive chain (`trio-cache.js`, `services/userCache.js`, `services/infiniteChallenges.js`, `gamification/community-tasks.js`, `utils.js`) — no dead imports.
+- `/profile` signed-out redirect confirmed working (profile.js now evaluates — its auth handler runs); connections loading is guaranteed: placeholder is replaced unconditionally within 2 s on any path (success/empty/error/watchdog).
+- Cost: strictly $0 — no new paid APIs, no rule changes; all edits are client-side static assets.
+
+**Next recommended steps:** verify signed-in `/` and `/profile` with a real account in production (community-answer unlock flow + connections rows/empty state); consider auditing other `esc`-style alias imports (`profile.js` already aliases `escapeHtml as esc`) to prevent recurrence; keep module-import specifiers versioned when their target file changes.
+
 

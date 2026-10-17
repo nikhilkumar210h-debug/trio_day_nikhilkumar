@@ -1,7 +1,9 @@
 /** Cloudinary signed upload via Worker (no unsigned preset). */
 const CLOUD_NAME = 'vyhglthg';
 import { auth } from './firebase-init.js';
-import { cloudinaryAutoUrl } from '../utils.js';
+import { cloudinaryAutoUrl } from './utils.js';
+// Re-export: script.js / profile.js / challenge-create.js import this from here.
+export { cloudinaryAutoUrl };
 // Worker endpoint for signed upload params — set after deployment
 const DEFAULT_MEDIA_SIGN_URL = 'https://trio-media-upload.trioday-nikhil.workers.dev/media/sign';
 

@@ -1,6 +1,6 @@
 import { auth, db } from './firebase-init.js';
 import { notifyUser } from './services/notificationHelpers.js';
-import { uploadStoryMedia, cloudinaryAutoUrl } from './image-upload.js';
+import { uploadStoryMedia, cloudinaryAutoUrl } from './image-upload.js?v=20261018-img1';
 import { trioCache } from './trio-cache.js';
 import { getCachedUserProfile, getMyProfile, getCachedUser, ensureUserProfile } from './services/userCache.js';
 import { SoundManager } from './sound-manager.js';
@@ -10,7 +10,7 @@ import {
   doc, getDoc, setDoc, deleteDoc, query, orderBy,
   getDocs, getCountFromServer, limit, where
 } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
-import { makeUserId, escapeHtml, initials, formatTime, getFilterCSS } from './utils.js';
+import { makeUserId, escapeHtml, esc, initials, formatTime, getFilterCSS } from './utils.js';
 import { listCommunityTasks, getMyJoinedTaskIds } from './gamification/community-tasks.js?v=20260921-fix2';
 import { InfiniteChallenges } from './services/infiniteChallenges.js';
 
@@ -81,14 +81,25 @@ SoundManager.init();
 onAuthStateChanged(auth, async user => {
   currentUser = user;
   if (user) {
-    myProfile = await ensureUserProfile(user);
+    try {
+      myProfile = await ensureUserProfile(user);
+    } catch (err) {
+      console.warn('[Today] profile ensure failed:', err);
+      myProfile = null;
+    }
     initTodayScreen(user.uid);
     startNotificationDot(user.uid);
-    await renderTrioPulse();
+    try {
+      await renderTrioPulse();
+    } catch (err) {
+      console.warn('[Today] Trio Pulse render failed:', err);
+    }
   } else {
     myProfile = null;
     initTodayScreen(null);
-    const section = $('trioPulse'); if (section) section.hidden = true;
+    // Trio Pulse stays visible for guests in its locked/empty state —
+    // it is rendered immediately at module init below and must never be hidden.
+    await renderTrioPulse().catch(err => console.warn('[Today] Trio Pulse render failed:', err));
   }
 });
 
@@ -101,7 +112,8 @@ window.addEventListener('trio:daily-answer-saved', () => {
 async function initTodayScreen(uid) {
   renderGreeting();
   renderTodayLive();
-  renderBrainSprint();
+  // Brain Sprint no longer depends on auth state — it renders immediately at
+  // module init (bottom of this file) so it is always visible on page load.
   await renderStoryStrip(uid);
   if (uid) {
     await Promise.all([
@@ -210,7 +222,7 @@ async function renderBrainSprint() {
       resultEl.style.background = isCorrect ? 'rgba(16,185,129,.1)' : 'rgba(239,68,68,.1)';
       resultEl.style.borderColor = isCorrect ? 'rgba(16,185,129,.3)' : 'rgba(239,68,68,.3)';
       resultEl.style.color = isCorrect ? '#10b981' : '#ef4444';
-      SoundFX[isCorrect ? 'win' : 'locked']();
+      if (isCorrect) SoundManager.success(); else SoundManager.delete();
     });
   });
 }
@@ -472,6 +484,7 @@ async function renderTrioPulse() {
   };
 
   const fill = (container, items, locked) => {
+    if (!container) return;
     container.innerHTML = '';
     items.forEach(a => container.insertAdjacentHTML('beforeend', buildCard(a, locked)));
     while (container.children.length < 3) {
@@ -484,27 +497,29 @@ async function renderTrioPulse() {
     }
   };
 
+  // State is controlled via the `hidden` ATTRIBUTE (there is no global
+  // `.hidden` CSS rule — class toggling alone would never change visibility).
   if (others.length === 0) {
-    locked?.classList.add('hidden');
-    unlocked?.classList.add('hidden');
-    empty?.classList.remove('hidden');
+    if (locked) locked.hidden = true;
+    if (unlocked) unlocked.hidden = true;
+    if (empty) empty.hidden = false;
     section.hidden = false;
     trioPulseDate = date;
     return;
   }
 
-  empty?.classList.add('hidden');
+  if (empty) empty.hidden = true;
   section.hidden = false;
   trioPulseDate = date;
 
   if (hasAnswered) {
     // Unblur smoothly: reveal real names/answers + CTA.
-    locked?.classList.add('hidden');
-    unlocked?.classList.remove('hidden');
+    if (locked) locked.hidden = true;
+    if (unlocked) unlocked.hidden = false;
     fill(cardsUnlocked, others, false);
   } else {
-    locked?.classList.remove('hidden');
-    unlocked?.classList.add('hidden');
+    if (locked) locked.hidden = false;
+    if (unlocked) unlocked.hidden = true;
     fill(cardsLocked, others, true);
   }
 }
@@ -1624,4 +1639,11 @@ input.value = ''; counter.textContent = '0 / 199';
   });
   window.CommentWidget = { openFor, close };
 })();
+
+// ── Boot: render always-on Today sections immediately ────────────────────────
+// `#brainSprintCard` and `#trioPulse` must never wait for auth resolution
+// (or die with it). Both render right after module parse — guests see the
+// locked/empty states; the auth listener re-renders once signed in.
+renderBrainSprint().catch(err => console.warn('[Today] Brain Sprint boot render failed:', err));
+renderTrioPulse().catch(err => console.warn('[Today] Trio Pulse boot render failed:', err));
 

@@ -1,6 +1,6 @@
 import { auth, db } from './firebase-init.js';
 import { notifyUser } from './services/notificationHelpers.js';
-import { uploadProfileImage, cloudinaryAutoUrl } from './image-upload.js';
+import { uploadProfileImage, cloudinaryAutoUrl } from './image-upload.js?v=20261018-img1';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
 import { trioCache } from './trio-cache.js';
 import { renderBadgesHtml } from './gamification/badges.js';
@@ -96,6 +96,13 @@ async function loadConnections(uid, mode = 'followers') {
   document.querySelectorAll('[data-connections-mode]').forEach(t => t.classList.toggle('active', t.dataset.connectionsMode === mode));
   box.innerHTML = '<div class="connections-loading" aria-live="polite">Loading connections…</div>';
 
+  // Hard failsafe: "Loading connections…" may never outlive 2 seconds.
+  // A stalled (never-settling) Firestore read still resolves the UI to the
+  // empty state instead of leaving the placeholder on screen forever.
+  const loaderWatchdog = setTimeout(() => {
+    if (box.querySelector('.connections-loading')) box.innerHTML = CONNECTIONS_EMPTY_STATE;
+  }, 2000);
+
   try {
     const ids = mode === 'followers' ? await getCachedFollowerIds(uid) : await getCachedFollowingIds(uid);
     const filtered = ids.filter(id => id !== uid);
@@ -111,6 +118,8 @@ async function loadConnections(uid, mode = 'followers') {
       return;
     }
 
+    // Replace the loader entirely — never append rows below the placeholder text.
+    box.innerHTML = '';
     visible.forEach(u => {
       const a = document.createElement('a');
       a.className = 'connection-row';
@@ -125,6 +134,7 @@ async function loadConnections(uid, mode = 'followers') {
     console.warn('[Profile] Connections unavailable:', err);
     box.innerHTML = CONNECTIONS_EMPTY_STATE;
   } finally {
+    clearTimeout(loaderWatchdog);
     // The "Loading connections…" placeholder must never survive this function.
     if (box.querySelector('.connections-loading')) box.innerHTML = CONNECTIONS_EMPTY_STATE;
   }
@@ -513,7 +523,14 @@ async function loadProfile(uid) {
     if ($('pgXpInto')) $('pgXpInto').textContent = into + ' / ' + XP_PER_LEVEL + ' XP';
     if ($('pgNextLevel')) $('pgNextLevel').textContent = 'Next: Level ' + (level + 1);
     if ($('pgBadges')) $('pgBadges').innerHTML = renderBadgesHtml(current.badges || []);
-    const rank = await getMyGlobalRank(me.uid);
+    // Guarded: a leaderboard lookup failure/hang must never abort loadProfile
+    // — the Connections panel below must always render.
+    let rank = null;
+    try {
+      rank = await getMyGlobalRank(me.uid);
+    } catch (rankErr) {
+      console.warn('[Profile] Global rank unavailable:', rankErr);
+    }
     if ($('pgRank')) $('pgRank').textContent = rank ? ('#' + rank) : (xp > 0 ? 'Outside top 50' : 'Not ranked yet');
     
     // Streak Shield UI
@@ -548,8 +565,12 @@ async function loadProfile(uid) {
       shieldBtn.disabled = shields === 0;
     }
     if (shieldStatus) shieldStatus.style.display = 'none';
-    
-    await loadRecentActivities(uid);
+
+    try {
+      await loadRecentActivities(uid);
+    } catch (activityErr) {
+      console.warn('[Profile] Recent activity render failed:', activityErr);
+    }
   }
 
   async function loadRecentActivities(uid) {
@@ -669,7 +690,20 @@ onAuthStateChanged(auth, async u => {
   }
   me = u;
   const uid = params.get('uid') || u.uid;
-  await loadProfile(uid);
+  // Hard guarantee: "Loading connections…" can never outlive 2 seconds —
+  // even if loadProfile stalls or throws before reaching loadConnections().
+  setTimeout(() => {
+    const box = $('connectionsList');
+    if (box?.querySelector('.connections-loading')) loadConnections(uid, 'followers').catch(() => {});
+  }, 2000);
+  try {
+    await loadProfile(uid);
+  } catch (err) {
+    console.error('[Profile] loadProfile failed:', err);
+    try {
+      await loadConnections(uid, 'followers');
+    } catch (_) { /* empty state already guaranteed by loadConnections */ }
+  }
 });
 
 // ── "+ Add a short bio" direct wiring (Phase 1) ──────────────────────────────

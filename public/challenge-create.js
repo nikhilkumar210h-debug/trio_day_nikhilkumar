@@ -2,7 +2,7 @@
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 import { createCommunityTask } from './gamification/community-tasks.js?v=20260919-community5';
-import { uploadStoryMedia, cloudinaryAutoUrl } from './image-upload.js';
+import { uploadStoryMedia, cloudinaryAutoUrl } from './image-upload.js?v=20261018-img1';
 import { showToast } from './ui/toast.js';
 import { escapeHtml as esc } from './utils.js';
 

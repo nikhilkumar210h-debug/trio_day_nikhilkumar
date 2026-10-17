@@ -11,6 +11,7 @@ import { getCachedUser } from './services/userCache.js';
 import { InfiniteChallenges } from './services/infiniteChallenges.js';
 import { SoundFX } from './ui/sound.js';
 import { SoundManager } from './sound-manager.js';
+import { cloudinaryAutoUrl } from './utils.js';
 
 const CHALLENGES = [
   {id:'trip', category:'Life', tag:'CHOICE', q:'You get one free trip tomorrow. Where are you going?', o:['Japan 🇯🇵','Switzerland 🇨🇭','Somewhere unexpected 🌍'], createdAtMs:1790121600000},
