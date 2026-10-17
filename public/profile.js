@@ -7,7 +7,7 @@ import { renderBadgesHtml } from './gamification/badges.js';
 import { xpIntoLevel, XP_PER_LEVEL, levelFromXp } from './gamification/constants.js';
 import { SoundManager } from './sound-manager.js';
 import { createSheet } from './ui/sheet.js';
-import { getCachedUser } from './services/userCache.js';
+import { getCachedUser, ensureUserProfile } from './services/userCache.js';
 import { getMyGlobalRank } from './gamification/leaderboards.js';
 import { getCommunityTask } from './gamification/community-tasks.js?v=20260921-profile';
 import { signOut, updateProfile } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
@@ -89,36 +89,45 @@ async function isConnected(myUid, theirUid) {
 }
 
 // ── Load connections panel ───────────────────────────────────────────────────
+const CONNECTIONS_EMPTY_STATE = '<div class="connections-empty">No connections yet — Match in a challenge to connect!</div>';
+
 async function loadConnections(uid, mode = 'followers') {
   const box = $('connectionsList'); if (!box) return;
   document.querySelectorAll('[data-connections-mode]').forEach(t => t.classList.toggle('active', t.dataset.connectionsMode === mode));
   box.innerHTML = '<div class="connections-loading" aria-live="polite">Loading connections…</div>';
 
-  const ids = mode === 'followers' ? await getCachedFollowerIds(uid) : await getCachedFollowingIds(uid);
-  const filtered = ids.filter(id => id !== uid);
-  if (!filtered.length) {
-    box.innerHTML = mode === 'followers'
-      ? '<div class="connections-empty">No followers yet.</div>'
-      : '<div class="connections-empty">Not following anyone yet.</div>';
-    return;
-  }
+  try {
+    const ids = mode === 'followers' ? await getCachedFollowerIds(uid) : await getCachedFollowingIds(uid);
+    const filtered = ids.filter(id => id !== uid);
+    if (!filtered.length) {
+      box.innerHTML = CONNECTIONS_EMPTY_STATE;
+      return;
+    }
 
-  const profiles = await Promise.all(filtered.slice(0, 100).map(id => getCachedUser(id)));
-  const visible = profiles.filter(Boolean);
-  if (!visible.length) {
-    box.innerHTML = '<div class="connections-empty">No connection profiles available.</div>';
-    return;
-  }
+    const profiles = await Promise.all(filtered.slice(0, 100).map(id => getCachedUser(id).catch(() => null)));
+    const visible = profiles.filter(Boolean);
+    if (!visible.length) {
+      box.innerHTML = CONNECTIONS_EMPTY_STATE;
+      return;
+    }
 
-  visible.forEach(u => {
-    const a = document.createElement('a');
-    a.className = 'connection-row';
-    a.href = `profile.html?uid=${encodeURIComponent(u.uid)}`;
-    const av = u.photoURL ? `<img src="${esc(u.photoURL)}" alt="">` : (u.name || 'U').charAt(0).toUpperCase();
-    const publicUid = u.userId || makeUserId(u.uid);
-    a.innerHTML = `<span class="user-avatar">${av}</span><span class="meta"><strong>${esc(u.name || 'User')}</strong><small class="muted">${mode === 'followers' ? 'Follows you' : 'You follow'} · TRIO UID · ${esc(publicUid)}</small></span><span class="connection-arrow">›</span>`;
-    box.appendChild(a);
-  });
+    visible.forEach(u => {
+      const a = document.createElement('a');
+      a.className = 'connection-row';
+      a.href = `profile.html?uid=${encodeURIComponent(u.uid)}`;
+      const av = u.photoURL ? `<img src="${esc(u.photoURL)}" alt="">` : (u.name || 'U').charAt(0).toUpperCase();
+      const publicUid = u.userId || makeUserId(u.uid);
+      a.innerHTML = `<span class="user-avatar">${av}</span><span class="meta"><strong>${esc(u.name || 'User')}</strong><small class="muted">${mode === 'followers' ? 'Follows you' : 'You follow'} · TRIO UID · ${esc(publicUid)}</small></span><span class="connection-arrow">›</span>`;
+      box.appendChild(a);
+    });
+  } catch (err) {
+    // Firestore/network failure — degrade to the empty state, never a stuck loader.
+    console.warn('[Profile] Connections unavailable:', err);
+    box.innerHTML = CONNECTIONS_EMPTY_STATE;
+  } finally {
+    // The "Loading connections…" placeholder must never survive this function.
+    if (box.querySelector('.connections-loading')) box.innerHTML = CONNECTIONS_EMPTY_STATE;
+  }
 }
 // ── Edit profile modal ───────────────────────────────────────────────────────
 async function openEdit(u) {
@@ -230,7 +239,9 @@ async function openEdit(u) {
         st.textContent = 'Uploading profile photo…'; const token = await me.getIdToken(); photoURL = await uploadProfileImage(me.uid, croppedFile, token);
       }
       const bio = overlay.querySelector('#editBio').value.trim();
-      await updateDoc(doc(db, 'users', me.uid), { name, bio, photoURL, updatedAt: serverTimestamp() });
+      // setDoc + merge (not updateDoc) so saving also self-heals a missing
+      // users/{uid} document instead of failing with "document not found".
+      await setDoc(doc(db, 'users', me.uid), { name, displayName: name, bio, photoURL, updatedAt: serverTimestamp() }, { merge: true });
       await updateProfile(me, { displayName: name, photoURL: photoURL || null });
       trioCache.invalidate(`user_${me.uid}`); await me.reload(); close(); await loadProfile(me.uid);
     } catch (err) { console.error(err); st.textContent = err.message || 'Save failed.'; }
@@ -401,8 +412,21 @@ async function loadProfile(uid) {
   // 1. User document — always refresh own profile so server-authoritative XP/streak is current
   const isOwnProfile = me && me.uid === uid;
   if (isOwnProfile) trioCache.invalidate(`user_${uid}`);
-  const userData = await getCachedUser(uid);
-  if (!userData) { if ($('profileName')) $('profileName').textContent = 'User not found'; return; }
+  let userData = await getCachedUser(uid);
+  if (!userData && isOwnProfile) {
+    // Self-heal: the signed-in user must always have a users/{uid} document.
+    // Instead of dead-ending with "User not found", create the default profile.
+    userData = await ensureUserProfile(me);
+  }
+  if (!userData) {
+    // Graceful missing-profile state — never leave the page half-dead.
+    if ($('profileName')) $('profileName').textContent = 'User not found';
+    const missingMenuBtn = $('profileMenuBtn');
+    if (missingMenuBtn) missingMenuBtn.hidden = true;
+    // Always resolve the Connections card so "Loading connections…" can never stick.
+    await loadConnections(uid, 'followers');
+    return;
+  }
   current = { ...userData, uid: userData.uid || uid };
   // Older accounts may not have the public Trio UID yet. Generate it once,
   // then persist that exact value; later logins always reuse the stored value.
@@ -424,9 +448,10 @@ async function loadProfile(uid) {
     }
   }
 
-  // Render header
+  // Render header — resolved name stays in sync with the greeting chain:
+  // userDoc.displayName || userDoc.name || "Trio Member".
   avatar($('profileAvatar'), current);
-  $('profileName').textContent = current.name || 'User';
+  $('profileName').textContent = current.displayName || current.name || 'Trio Member';
   const uidBtn = $('profileUserId');
   const copyUidBtn = $('copyUidBtn');
   if (uidBtn) {
@@ -645,4 +670,21 @@ onAuthStateChanged(auth, async u => {
   me = u;
   const uid = params.get('uid') || u.uid;
   await loadProfile(uid);
+});
+
+// ── "+ Add a short bio" direct wiring (Phase 1) ──────────────────────────────
+// core-loop.js dispatches this event from the bio CTA. It opens the edit
+// profile modal directly — even when #profileMenuBtn is hidden or unwired,
+// and even while the profile document is still being self-healed.
+window.addEventListener('trio:open-bio-editor', () => {
+  if (!me) return;
+  const base = current || {
+    uid: me.uid,
+    name: me.displayName || 'User',
+    displayName: me.displayName || 'User',
+    bio: '',
+    photoURL: me.photoURL || null,
+    userId: makeUserId(me.uid)
+  };
+  openEdit(base);
 });

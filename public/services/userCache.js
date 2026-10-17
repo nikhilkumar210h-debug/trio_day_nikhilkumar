@@ -2,8 +2,9 @@
 // Replaces 6 duplicated getCachedUser* families across script.js, profile.js, all-users.js, auth-ui.js, chat.js
 // Reuse-first: trio-cache TTL + Firestore single fetch
 import { db } from '../firebase-init.js';
-import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
+import { doc, getDoc, setDoc, serverTimestamp, deleteField } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 import { trioCache } from '../trio-cache.js';
+import { makeUserId } from '../utils.js';
 
 /**
  * Cached single-user fetch (TTL DEFAULT 5m).
@@ -53,4 +54,67 @@ export async function findUserCached(uid) {
     }
   } catch {}
   return null;
+}
+
+/**
+ * Self-heal the signed-in user's users/{uid} profile document (Phase 1).
+ *
+ * Called on sign-in (auth.js), on every authenticated session (auth-guard.js),
+ * and when the owner opens /profile with a missing document (profile.js).
+ * Idempotent: an existing (or cached) profile short-circuits to a no-op.
+ *
+ * Default document: displayName + name, userId/trioUid (TRIO-XXXXXXXX),
+ * bio "", photoURL, emailHidden, createdAt, updatedAt. The user's email is
+ * scrubbed from the public doc (it lives in usersPrivate, per auth.js).
+ *
+ * NOTE — gamification fields are intentionally NOT seeded: firestore.rules
+ * `gamificationKeys()` rejects client writes to xp/level/streak*. The
+ * gamification Worker owns them, and all readers already coerce missing
+ * values (xp→0, level→1 via levelFromXp, streakCurrent→0).
+ *
+ * @returns {Promise<Object|null>} the (fresh or healed) profile data, or null when unavailable.
+ */
+export async function ensureUserProfile(authUser, chosenName = '') {
+  if (!authUser?.uid) return null;
+  const uid = authUser.uid;
+
+  // Fast path: cache hit or existing document.
+  const existing = await getCachedUser(uid);
+  if (existing) return existing;
+
+  // Canonical resolved name: doc → chosen → Firebase Auth profile → default.
+  const displayName = String(chosenName || '').trim()
+    || authUser.displayName
+    || (authUser.email ? String(authUser.email).split('@')[0] : '')
+    || 'Trio Member';
+  const trioUid = makeUserId(uid);
+
+  const profile = {
+    uid,
+    name: displayName,
+    displayName,
+    userId: trioUid,
+    trioUid,
+    bio: '',
+    photoURL: authUser.photoURL || null,
+    emailHidden: false,
+    email: deleteField(),
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp()
+  };
+
+  try {
+    await setDoc(doc(db, 'users', uid), profile, { merge: true });
+  } catch (err) {
+    console.warn('[userCache] Profile self-heal failed:', err);
+    return null;
+  }
+
+  // Re-fetch so callers get server-accurate data (serverTimestamp resolves).
+  const fresh = await getDoc(doc(db, 'users', uid)).catch(() => null);
+  const data = fresh?.exists()
+    ? fresh.data()
+    : { ...profile, createdAt: Date.now(), updatedAt: Date.now() };
+  trioCache.set(`user_${uid}`, data, trioCache.TTL.DEFAULT);
+  return data;
 }

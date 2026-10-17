@@ -95,12 +95,14 @@ async function saveUserProfile(user, chosenName = '') {
   const profile = {
     uid: user.uid,
     name,
+    displayName: name, // keeps the navbar greeting and /profile header in sync
     email: deleteField(),
     photoURL: old.photoURL || user.photoURL || null,
     bio: old.bio || '',
     emailHidden: Boolean(old.emailHidden),
     updatedAt: serverTimestamp()
   };
+  if (!snap?.exists()) profile.createdAt = serverTimestamp(); // default-doc seed field
   if (!old.userId) {
     let permanentUid = makeUserId(user.uid);
     const existing = await getDocs(query(collection(db, 'users'), where('userId', '==', permanentUid), limit(1))).catch(() => ({ docs: [] }));
@@ -108,14 +110,32 @@ async function saveUserProfile(user, chosenName = '') {
       permanentUid = makeUserId(user.uid, 1);
     }
     profile.userId = permanentUid;
+    profile.trioUid = permanentUid;
   }
 
-  await setDoc(doc(db, 'usersPrivate', user.uid), {
-    email: user.email || null,
-    updatedAt: serverTimestamp()
-  }, { merge: true });
+  // Critical write FIRST: a missing users/{uid} document is exactly what makes
+  // /profile dead-end ("User not found"). One retry absorbs transient failures.
+  let lastError = null;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      await setDoc(ref, profile, { merge: true });
+      lastError = null;
+      break;
+    } catch (err) {
+      lastError = err;
+    }
+  }
+  if (lastError) throw lastError;
 
-  await setDoc(ref, profile, { merge: true });
+  // Best-effort private email mirror — must never block profile creation.
+  try {
+    await setDoc(doc(db, 'usersPrivate', user.uid), {
+      email: user.email || null,
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+  } catch (err) {
+    console.warn('[Auth] usersPrivate sync failed (non-blocking):', err);
+  }
 }
 
 function setLoginMethod(next) {

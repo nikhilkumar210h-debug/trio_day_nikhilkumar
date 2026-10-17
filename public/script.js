@@ -2,7 +2,7 @@ import { auth, db } from './firebase-init.js';
 import { notifyUser } from './services/notificationHelpers.js';
 import { uploadStoryMedia } from './image-upload.js';
 import { trioCache } from './trio-cache.js';
-import { getCachedUserProfile, getMyProfile, getCachedUser } from './services/userCache.js';
+import { getCachedUserProfile, getMyProfile, getCachedUser, ensureUserProfile } from './services/userCache.js';
 import { SoundManager } from './sound-manager.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
 import {
@@ -15,6 +15,7 @@ import { listCommunityTasks, getMyJoinedTaskIds } from './gamification/community
 
 const $ = id => document.getElementById(id);
 let currentUser = null;
+let myProfile = null; // users/{uid} doc — keeps greeting and /profile names in sync
 let storyPrivacy = 'public';
 
 async function getChallengeResponseCount(challengeId) {
@@ -79,10 +80,11 @@ SoundManager.init();
 onAuthStateChanged(auth, async user => {
   currentUser = user;
   if (user) {
-    await ensureUserProfile(user);
+    myProfile = await ensureUserProfile(user);
     initTodayScreen(user.uid);
     startNotificationDot(user.uid);
   } else {
+    myProfile = null;
     initTodayScreen(null);
   }
 });
@@ -105,17 +107,19 @@ function renderGreeting() {
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
   const nameEl = $('greetingName');
   const subEl = $('greetingSub');
+  // Resolved name chain (Phase 1): userDoc.displayName || userDoc.name ||
+  // authUser.displayName || "Trio Member" — always matches the /profile header.
+  const resolvedName = (myProfile?.displayName || myProfile?.name) || currentUser?.displayName || 'Trio Member';
   if (nameEl) {
-    const userName = currentUser?.displayName || 'Friend';
-    nameEl.textContent = userName.split(' ')[0];
+    nameEl.textContent = resolvedName.split(' ')[0];
   }
   const avatarEl = $('todayAvatar');
   if (avatarEl) {
-    const name = currentUser?.displayName || 'N';
-    const initial = name.trim().charAt(0).toUpperCase() || 'N';
-    if (currentUser?.photoURL) avatarEl.innerHTML = '<img src="' + escapeHtml(currentUser.photoURL) + '" alt="">';
+    const initial = resolvedName.trim().charAt(0).toUpperCase() || 'N';
+    const photo = myProfile?.photoURL || currentUser?.photoURL;
+    if (photo) avatarEl.innerHTML = '<img src="' + escapeHtml(photo) + '" alt="">';
     else avatarEl.textContent = initial;
-    avatarEl.title = name;
+    avatarEl.title = resolvedName;
     avatarEl.onclick = () => { location.href = 'profile.html'; };
   }
   if (subEl) {
@@ -694,24 +698,6 @@ function startNotificationDot(uid) {
 
 function updateCommunityPulse() {
   // No-op: replaced by initTodayScreen sections
-}
-
-async function ensureUserProfile(user) {
-  const ref = doc(db, 'users', user.uid);
-  const snap = await getDoc(ref).catch(() => null);
-  const baseName = user.displayName || user.email?.split('@')[0] || 'User';
-  const existing = snap?.exists() ? snap.data() : {};
-  const profileData = {
-    uid:       user.uid,
-    userId:    existing.userId   || makeUserId(user.uid),
-    name:      existing.name     || baseName,
-    email:     user.email        || existing.email    || null,
-    photoURL:  existing.photoURL || user.photoURL     || null,
-    bio:       existing.bio      || '',
-    updatedAt: serverTimestamp()
-  };
-  await setDoc(ref, profileData, { merge: true }).catch(err => console.error('Profile sync failed', err));
-  trioCache.set(`user_${user.uid}`, { ...existing, ...profileData, updatedAt: Date.now() });
 }
 
 async function notifyStoryOwner(story, type) {

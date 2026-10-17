@@ -219,7 +219,7 @@ async function deleteExpiredTempChats(env){
     const deleted=await fetch('https://firestore.googleapis.com/v1/'+name,{method:'DELETE',headers:{Authorization:'Bearer '+token}});
     if(deleted.ok){
       deletedCount++;
-      const match=name.match(/\\/tempChats\\/([^/]+)\\/tempMessages\\//);
+      const match=name.match(/\/tempChats\/([^/]+)\/tempMessages\//);
       if(match&&!seenRooms.has(match[1])){seenRooms.add(match[1]);rooms.push(match[1]);}
     }
   }

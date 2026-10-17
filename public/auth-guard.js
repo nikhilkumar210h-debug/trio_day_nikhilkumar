@@ -25,6 +25,17 @@ onAuthStateChanged(auth, (user) => {
   }
   document.documentElement.classList.add('auth-ok');
   document.documentElement.classList.remove('auth-pending');
+
+  // Session-wide self-heal (Phase 1): guarantee users/{uid} exists on every
+  // authenticated session. Fire-and-forget — never blocks or diverts the gate.
+  if (user) {
+    void (async () => {
+      try {
+        const { ensureUserProfile } = await import('./services/userCache.js');
+        await ensureUserProfile(user);
+      } catch (_) { /* never blocks auth */ }
+    })();
+  }
 });
 
 

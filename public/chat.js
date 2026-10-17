@@ -7,10 +7,15 @@ import {
   collection, getDocs, query, orderBy, limit, addDoc
 } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 import { notifyUser } from './services/notificationHelpers.js';
+import { getCachedUser } from './services/userCache.js';
 
 const $ = id => document.getElementById(id);
 let currentUser = null;
 let users = [];
+// Conversation partner profiles, fetched on demand (cache-backed) in
+// watchInbox() — replaces the old assumption that partners are always inside
+// an arbitrary first-20 users snapshot. Saves Spark free-tier reads.
+const peerProfiles = new Map();
 const conversations = new Map();
 const params = new URLSearchParams(location.search);
 const challengeId = params.get('challenge');
@@ -46,18 +51,18 @@ function isChatUnread(uid, peerId, latest) {
 function renderInbox(filter = '') {
   const list = $('userList'); if (!list) return;
   const qText = filter.trim().toLowerCase(); list.innerHTML = '';
-  const rows = users
-    .filter(u => u.uid && u.uid !== currentUser.uid && conversations.has(u.uid))
-    .filter(u => { const text = `${nameOf(u)} ${previewText(conversations.get(u.uid)?.latest)}`.toLowerCase(); return !qText || text.includes(qText); })
-    .sort((a, b) => (conversations.get(b.uid)?.latest?.createdAtMs || 0) - (conversations.get(a.uid)?.latest?.createdAtMs || 0))
-    .slice(0,20);
+  const rows = [...conversations.keys()]
+    .filter(pid => pid && pid !== currentUser.uid)
+    .map(pid => ({ peer: peerProfiles.get(pid) || { uid: pid }, latest: conversations.get(pid)?.latest, unread: conversations.get(pid)?.unread }))
+    .filter(r => { const text = `${nameOf(r.peer)} ${previewText(r.latest)}`.toLowerCase(); return !qText || text.includes(qText); })
+    .sort((a, b) => (b.latest?.createdAtMs || 0) - (a.latest?.createdAtMs || 0))
+    .slice(0, 20);
   const countBadge = $('conversationCount'); if (countBadge) countBadge.textContent = String(rows.length);
   if (rows.length === 0) {
     list.innerHTML = `<div class="nkm-chat-empty"><span>✉</span><p>No conversations yet.</p><a class="nkm-btn nkm-btn--primary nkm-btn--sm" href="all-users.html">Start a Conversation</a></div>`;
     return;
   }
-  rows.forEach(peer => {
-    const latest = conversations.get(peer.uid)?.latest, unread = conversations.get(peer.uid)?.unread;
+  rows.forEach(({ peer, latest, unread }) => {
     const row = document.createElement('div'); row.className = 'nkm-chat-row';
     const open = document.createElement('a'); open.href = `private-chat.html?uid=${encodeURIComponent(peer.uid)}`; open.className='nkm-chat-row-main';
     open.innerHTML = `<span class="nkm-chat-avatar">${avatarHtml(peer)}</span>
@@ -111,7 +116,7 @@ async function watchInbox() {
   // Profile cache normally provides follower IDs; fall back to the authoritative subcollection when cold.
   const followerIds = followersSnap.length ? followersSnap : await (async()=>{
     try {
-      const snap = await getDocs(collection(db, 'users', currentUser.uid, 'followers'));
+      const snap = await getDocs(query(collection(db, 'users', currentUser.uid, 'followers'), limit(100)));
       const ids = snap.docs.map(d => d.id).filter(id => id !== currentUser.uid).slice(0, 100);
       trioCache.set(`followers_ids_${currentUser.uid}`, ids, trioCache.TTL.SHORT);
       return ids;
@@ -134,6 +139,12 @@ async function watchInbox() {
     }catch{ return null; }
   }));
   previews.filter(Boolean).forEach(p=> conversations.set(p.pid, {latest:p.latest, unread:p.unread}));
+  // Fetch participant profiles on demand (trio-cache backed, 5-min TTL) — only
+  // for peers with an actual conversation, never an unbounded users dump.
+  await Promise.all(previews.filter(Boolean).map(async p => {
+    const profile = await getCachedUser(p.pid).catch(() => null);
+    peerProfiles.set(p.pid, profile || { uid: p.pid });
+  }));
   renderInbox($('userSearch')?.value || '');
 }
 
@@ -143,10 +154,18 @@ async function loadUsers() {
   if (cached) {
     users = cached;
   } else {
-    const snap = await getDocs(query(collection(db, 'users'), limit(20)));
-    users = snap.docs.map(d => ({ ...d.data(), uid: d.data().uid || d.id }));
-    trioCache.set(cacheKey, users, trioCache.TTL.LONG);
-    users.forEach(u => { const k = `user_${u.uid}`; if (!trioCache.get(k)) trioCache.set(k, u, trioCache.TTL.LONG); });
+    // Bounded, error-safe directory fetch (fallback peer source only). A
+    // permission/network failure must never block watchInbox()/renderInbox()
+    // below — the 3 skeleton cards must always clear.
+    try {
+      const snap = await getDocs(query(collection(db, 'users'), limit(20)));
+      users = snap.docs.map(d => ({ ...d.data(), uid: d.data().uid || d.id }));
+      trioCache.set(cacheKey, users, trioCache.TTL.LONG);
+      users.forEach(u => { const k = `user_${u.uid}`; if (!trioCache.get(k)) trioCache.set(k, u, trioCache.TTL.LONG); });
+    } catch (err) {
+      console.warn('[Chat] users list unavailable:', err);
+      users = [];
+    }
   }
   if (!users.some(u => u.uid === currentUser.uid))
     users.push({ uid: currentUser.uid, name: nameOf(currentUser), email: currentUser.email });

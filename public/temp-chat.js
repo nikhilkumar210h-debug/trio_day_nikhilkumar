@@ -1,4 +1,4 @@
-﻿import { auth, db } from './firebase-init.js';
+import { auth, db } from './firebase-init.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
 import {
   collection, doc, getDoc, setDoc, addDoc, query, orderBy, onSnapshot,

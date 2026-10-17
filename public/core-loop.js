@@ -35,16 +35,19 @@
     if (!bio.textContent.trim().toLowerCase().includes('no bio')) return;
     const actions = document.getElementById('profileActions');
     if (!actions) return;
-    const link = document.createElement('a');
-    link.className = 'nkm-btn nkm-btn--secondary core-loop-bio-cta';
-    link.href = '#';
-    link.textContent = '+ Add a short bio';
-    link.addEventListener('click', (event) => {
+    // A <button> (never <a href="#">) so this CTA can never navigate to "/profile#".
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'nkm-btn nkm-btn--secondary core-loop-bio-cta';
+    btn.textContent = '+ Add a short bio';
+    btn.setAttribute('aria-label', 'Add a short profile bio');
+    btn.addEventListener('click', (event) => {
       event.preventDefault();
-      document.getElementById('profileMenuBtn')?.click();
+      // Open the bio editor directly — profile.js owns the edit modal. Works
+      // even when #profileMenuBtn is hidden or not wired yet.
+      window.dispatchEvent(new CustomEvent('trio:open-bio-editor'));
     });
-    link.setAttribute('aria-label', 'Add a short profile bio');
-    actions.appendChild(link);
+    actions.appendChild(btn);
   }
   function enhanceStoryEmpty() {
     const empty = document.getElementById('heroStoriesEmpty');
