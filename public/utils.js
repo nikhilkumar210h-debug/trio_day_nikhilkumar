@@ -33,7 +33,7 @@ export function avatarHtml(u) {
   const photo = u?.photoURL || u?.photoUrl || u?.avatarURL || u?.avatarUrl || null;
   const name = nameOf(u);
   if (photo) {
-    return `<img src="${escapeHtml(photo)}" alt="${escapeHtml(name)}" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null;this.style.display='none';this.parentElement.textContent=(this.alt||'U').charAt(0).toUpperCase();this.parentElement.style.display='grid';this.parentElement.style.placeItems='center';">`;
+    return `<img src="${cloudinaryAutoUrl(escapeHtml(photo))}" alt="${escapeHtml(name)}" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null;this.style.display='none';this.parentElement.textContent=(this.alt||'U').charAt(0).toUpperCase();this.parentElement.style.display='grid';this.parentElement.style.placeItems='center';">`;
   }
   return escapeHtml(name.charAt(0).toUpperCase());
 }
@@ -47,4 +47,17 @@ export function getFilterCSS(filter, intensity) {
     case 'cinematic': return `saturate(${(1 - intensity * 0.3) * 100}%) contrast(${(1 + intensity * 0.4) * 100}%) brightness(${(1 - intensity * 0.1) * 100}%) hue-rotate(${-5 * intensity}deg)`;
     default: return 'none';
   }
+}
+
+/** Inject Cloudinary automatic format/quality delivery into a secure_url.
+ *  Cloudinary secure URLs look like .../image/upload/v123/folder/public_id.ext.
+ *  Inserting f_auto,q_auto right after /image/upload/ lets Cloudinary serve the
+ *  optimal format (WebP/AVIF) and quality per client. Idempotent.
+ */
+export function cloudinaryAutoUrl(secureUrl) {
+  if (!secureUrl || typeof secureUrl !== 'string') return secureUrl;
+  if (/f_auto,q_auto/.test(secureUrl)) return secureUrl;
+  return secureUrl.replace(/\/image\/upload\/(\/?v\d+\/)?/, (_match, version) =>
+    '/image/upload/f_auto,q_auto/' + (version || '')
+  );
 }

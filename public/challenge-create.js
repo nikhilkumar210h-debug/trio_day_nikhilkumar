@@ -2,6 +2,7 @@
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 import { createCommunityTask } from './gamification/community-tasks.js?v=20260919-community5';
+import { uploadStoryMedia, cloudinaryAutoUrl } from './image-upload.js';
 import { showToast } from './ui/toast.js';
 import { escapeHtml as esc } from './utils.js';
 
@@ -9,6 +10,7 @@ const $ = id => document.getElementById(id);
 let me = null, profile = {};
 let choices = ['', '', ''];
 let momentFormat = 'quick';
+let challengeImageUrl = null;
 
 function render() {
   $('options').innerHTML = choices.map((v, i) => `<div class="cc-option"><input class="cc-input" maxlength="100" data-choice="${i}" value="${esc(v)}" placeholder="Choice ${i+1}">${choices.length > 2 ? `<button class="cc-remove" type="button" data-remove="${i}">Remove</button>` : ''}</div>`).join('');
@@ -50,6 +52,32 @@ $('detectiveMode')?.addEventListener('change', () => {
 });
 // Clue inputs update preview
 ['clue1', 'clue2', 'clue3'].forEach(id => { $(id)?.addEventListener('input', preview); });
+
+// Image upload (Phase 4)
+$('challengeImage')?.addEventListener('change', async () => {
+  const file = $('challengeImage').files?.[0];
+  if (!file) return;
+  if (!file.type.startsWith('image/')) return showToast('Please select an image file.', 'warn');
+  const previewEl = $('challengeImagePreview');
+  previewEl.style.display = 'block';
+  previewEl.innerHTML = '<strong>Uploading image…</strong>';
+  try {
+    const token = await me.getIdToken();
+    const url = await uploadStoryMedia(me.uid, file, token);
+    challengeImageUrl = cloudinaryAutoUrl(url);
+    previewEl.innerHTML = `<img src="${challengeImageUrl}" style="max-width:200px;max-height:200px;border-radius:10px;margin-top:6px"><button type="button" id="removeImage" class="nkm-btn" style="margin-top:8px">Remove image</button>`;
+    $('removeImage')?.addEventListener('click', () => {
+      challengeImageUrl = null;
+      previewEl.style.display = 'none';
+      $('challengeImage').value = '';
+    });
+    showToast('Image uploaded.', 'success');
+  } catch (err) {
+    console.error('Image upload failed:', err);
+    previewEl.innerHTML = '';
+    showToast('Image upload failed.', 'error');
+  }
+});
 
 $('publish').addEventListener('click', async () => {
   if ($('publish').disabled) return;
@@ -95,6 +123,7 @@ $('publish').addEventListener('click', async () => {
       target: 1,
       metric: 'manual',
       xpReward: 25,
+      imageUrl: challengeImageUrl || null,
       interaction
     });
     $('status').textContent = 'Published ✓'; showToast('Challenge published.');

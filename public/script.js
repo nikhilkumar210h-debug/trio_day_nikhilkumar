@@ -1,6 +1,6 @@
 import { auth, db } from './firebase-init.js';
 import { notifyUser } from './services/notificationHelpers.js';
-import { uploadStoryMedia } from './image-upload.js';
+import { uploadStoryMedia, cloudinaryAutoUrl } from './image-upload.js';
 import { trioCache } from './trio-cache.js';
 import { getCachedUserProfile, getMyProfile, getCachedUser, ensureUserProfile } from './services/userCache.js';
 import { SoundManager } from './sound-manager.js';
@@ -12,6 +12,7 @@ import {
 } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 import { makeUserId, escapeHtml, initials, formatTime, getFilterCSS } from './utils.js';
 import { listCommunityTasks, getMyJoinedTaskIds } from './gamification/community-tasks.js?v=20260921-fix2';
+import { InfiniteChallenges } from './services/infiniteChallenges.js';
 
 const $ = id => document.getElementById(id);
 let currentUser = null;
@@ -83,15 +84,24 @@ onAuthStateChanged(auth, async user => {
     myProfile = await ensureUserProfile(user);
     initTodayScreen(user.uid);
     startNotificationDot(user.uid);
+    await renderTrioPulse();
   } else {
     myProfile = null;
     initTodayScreen(null);
+    const section = $('trioPulse'); if (section) section.hidden = true;
   }
+});
+
+// Reveal the Trio Pulse immediately when the current user saves today's answer.
+window.addEventListener('trio:daily-answer-saved', () => {
+  trioPulseUnlocked = true;
+  renderTrioPulse();
 });
 
 async function initTodayScreen(uid) {
   renderGreeting();
   renderTodayLive();
+  renderBrainSprint();
   await renderStoryStrip(uid);
   if (uid) {
     await Promise.all([
@@ -132,6 +142,77 @@ function renderGreeting() {
     ];
     subEl.textContent = messages[Math.floor(Math.random() * messages.length)];
   }
+}
+
+// ── Phase 3: 60-Second Brain & Career Sprint (instant play, no signup) ─────
+let brainSprintTimer = null;
+let brainSprintTimeLeft = 60;
+let brainSprintAnswered = false;
+
+async function renderBrainSprint() {
+  const section = $('brainSprintCard');
+  const content = $('brainSprintContent');
+  if (!section || !content) return;
+
+  // Pick a quick challenge from the bank (no Firestore reads — cached in sessionStorage via OpenTDB fallback)
+  const card = InfiniteChallenges.getBankChallenge(new Set());
+  const optionsHtml = card.o.map((o, i) =>
+    '<button type="button" class="brain-sprint-option" data-choice="' + i + '">' +
+    '<span class="choice-letter">' + String.fromCharCode(65 + i) + '</span>' +
+    esc(o) + '</button>').join('');
+
+  content.innerHTML =
+    '<div class="brain-sprint-head">' +
+    '<span class="brain-sprint-kicker">BRAIN SPRINT</span>' +
+    '<span class="brain-sprint-timer" id="brainSprintTimer">⏱ 60s</span>' +
+    '</div>' +
+    '<div class="brain-sprint-question">' + esc(card.q) + '</div>' +
+    '<div class="brain-sprint-options">' + optionsHtml + '</div>' +
+    '<div class="brain-sprint-result" id="brainSprintResult"></div>';
+
+  section.hidden = false;
+  brainSprintTimeLeft = 60;
+  brainSprintAnswered = false;
+  const timerEl = $('brainSprintTimer');
+  if (timerEl) {
+    timerEl.textContent = '⏱ 60s';
+    if (brainSprintTimer) clearInterval(brainSprintTimer);
+    brainSprintTimer = setInterval(() => {
+      brainSprintTimeLeft--;
+      timerEl.textContent = '⏱ ' + brainSprintTimeLeft + 's';
+      if (brainSprintTimeLeft <= 0) {
+        clearInterval(brainSprintTimer);
+        if (!brainSprintAnswered) {
+          $('brainSprintResult').textContent = "Time's up! The answer was: " + card.o[0];
+          $('brainSprintResult').style.display = 'block';
+        }
+      }
+    }, 1000);
+  }
+
+  content.querySelectorAll('.brain-sprint-option').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (brainSprintAnswered) return;
+      brainSprintAnswered = true;
+      clearInterval(brainSprintTimer);
+      const choice = Number(btn.dataset.choice);
+      const resultEl = $('brainSprintResult');
+      const correctIdx = card.correctIdx || 0;
+      const isCorrect = choice === correctIdx;
+      content.querySelectorAll('.brain-sprint-option').forEach(b => {
+        b.disabled = true;
+        if (Number(b.dataset.choice) === correctIdx) b.classList.add('selected');
+      });
+      resultEl.textContent = isCorrect
+        ? 'Correct! You got it in ' + (60 - brainSprintTimeLeft) + 's ⚡'
+        : 'Not quite. The answer was: ' + card.o[correctIdx];
+      resultEl.style.display = 'block';
+      resultEl.style.background = isCorrect ? 'rgba(16,185,129,.1)' : 'rgba(239,68,68,.1)';
+      resultEl.style.borderColor = isCorrect ? 'rgba(16,185,129,.3)' : 'rgba(239,68,68,.3)';
+      resultEl.style.color = isCorrect ? '#10b981' : '#ef4444';
+      SoundFX[isCorrect ? 'win' : 'locked']();
+    });
+  });
 }
 
 async function renderStoryStrip(uid) {
@@ -275,7 +356,7 @@ async function renderStoryStrip(uid) {
           preview.innerHTML = '<span class="hero-story-video-mark">▶</span>';
         } else {
           const img = document.createElement('img');
-          img.src = s.mediaUrl;
+          img.src = cloudinaryAutoUrl(s.mediaUrl);
           img.alt = '';
           img.loading = 'lazy';
           preview.appendChild(img);
@@ -324,6 +405,110 @@ async function renderStoryStrip(uid) {
 
   setTimeout(() => { wrap.scrollLeft = 0; }, 50);
 }
+
+// ── Today's Trio Pulse — "answer to unlock 3 responses" habit loop (Phase 2) ──
+// Below the Daily Question widget: up to 3 community answers for today's
+// questionKey are fetched from dailyAnswers (limit(3), cached in trio-cache).
+// Cards stay glassmorphic-blurred until the current user saves their own
+// answer for today (or if they already answered), then unblur smoothly with
+// author names/avatars and a "Compare in Challenges →" CTA.
+let trioPulseDate = null;
+let trioPulseUnlocked = false;
+
+async function renderTrioPulse() {
+  const section = $('trioPulse'); if (!section) return;
+  const date = new Date().toISOString().slice(0, 10); // same key() as daily-question.js
+  const answerKey = 'daily_answer_' + date;
+  const savedLocally = (localStorage.getItem(answerKey) || '').trim();
+
+  // Fetch up to 3 answers for today's question. Bounded reads: one query,
+  // cached in trio-cache. Firestore rules (firestore.rules:372) allow reading
+  // dailyAnswers only by the doc owner; if the read is rejected the UI degrades
+  // gracefully to placeholder cards. A rules change (allow read: if signedIn(),
+  // same model as challengeAnswers at firestore.rules:227) unlocks real data.
+  let answers = [];
+  try {
+    const cached = trioCache.get('trioPulse_' + date);
+    if (cached) {
+      answers = cached;
+    } else {
+      const snap = await getDocs(query(
+        collection(db, 'dailyAnswers'),
+        where('questionKey', '==', date),
+        limit(3)
+      ));
+      answers = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      trioCache.set('trioPulse_' + date, answers, trioCache.TTL.SHORT);
+    }
+  } catch (err) {
+    console.warn('[Trio Pulse] could not load community answers:', err);
+  }
+
+  const others = answers.filter(a => a.uid && a.uid !== (currentUser?.uid || '')).slice(0, 3);
+  // Already answered today? (saved locally just now, or a fetched doc is ours)
+  const hasAnswered = !!savedLocally || answers.some(a => a.uid === currentUser?.uid);
+  trioPulseUnlocked = hasAnswered;
+
+  const locked = $('trioPulseLocked');
+  const unlocked = $('trioPulseUnlocked');
+  const empty = $('trioPulseEmpty');
+  const cardsLocked = $('trioPulseCardsLocked');
+  const cardsUnlocked = $('trioPulseCardsUnlocked');
+
+  const stableColor = (name) => { let h = 0; for (const ch of String(name || '')) h = (h * 31 + ch.charCodeAt(0)) >>> 0; return `hsla(${h % 360}, 55%, 50%, 1)`; };
+  const initials = (name) => String(name || 'Trio member').trim().charAt(0).toUpperCase() || 'T';
+
+  const buildCard = (a, locked) => {
+    const name = a.name || 'Trio member';
+    const text = a.answer || '';
+    const style = locked ? 'filter: blur(7px); user-select: none; pointer-events: none; opacity: .92;' : '';
+    return `<article class="trio-pulse-card" style="${style}">
+      <span class="trio-pulse-avatar" style="background:${stableColor(name)}">${initials(name)}</span>
+      <div class="trio-pulse-copy">
+        <span class="trio-pulse-name">${locked ? '●●●●' : escapeHtml(name)}</span>
+        <p class="trio-pulse-text">${locked ? '…' : escapeHtml(text)}</p>
+      </div>
+    </article>`;
+  };
+
+  const fill = (container, items, locked) => {
+    container.innerHTML = '';
+    items.forEach(a => container.insertAdjacentHTML('beforeend', buildCard(a, locked)));
+    while (container.children.length < 3) {
+      const ph = document.createElement('div');
+      ph.className = 'trio-pulse-card--placeholder';
+      ph.innerHTML = locked
+        ? '<span class="trio-pulse-avatar">?</span><div class="trio-pulse-copy"><span class="trio-pulse-name">—</span><p class="trio-pulse-text">…</p></div>'
+        : '<span class="trio-pulse-avatar">–</span><div class="trio-pulse-copy"><span class="trio-pulse-name">—</span><p class="trio-pulse-text">No answer yet</p></div>';
+      container.appendChild(ph);
+    }
+  };
+
+  if (others.length === 0) {
+    locked?.classList.add('hidden');
+    unlocked?.classList.add('hidden');
+    empty?.classList.remove('hidden');
+    section.hidden = false;
+    trioPulseDate = date;
+    return;
+  }
+
+  empty?.classList.add('hidden');
+  section.hidden = false;
+  trioPulseDate = date;
+
+  if (hasAnswered) {
+    // Unblur smoothly: reveal real names/answers + CTA.
+    locked?.classList.add('hidden');
+    unlocked?.classList.remove('hidden');
+    fill(cardsUnlocked, others, false);
+  } else {
+    locked?.classList.remove('hidden');
+    unlocked?.classList.add('hidden');
+    fill(cardsLocked, others, true);
+  }
+}
+
 function openStoryViewer(s) {
   const ov = document.createElement('div');
   ov.className = 'story-viewer-overlay';
@@ -336,7 +521,7 @@ function openStoryViewer(s) {
     : s.mediaUrl?.match(/\.mp4|\.webm|\.mov/i)
       ? `<video src="${s.mediaUrl}" controls autoplay playsinline class="story-viewer-media"></video>`
       : s.mediaUrl
-        ? `<img src="${s.mediaUrl}" class="story-viewer-media" loading="eager" alt="Story">`
+        ? `<img src="${cloudinaryAutoUrl(s.mediaUrl || '')}" class="story-viewer-media" loading="eager" alt="Story">`
         : '';
   ov.innerHTML = `<div class="story-viewer-card"><div style="overflow:auto">${mediaTag}<div class="story-viewer-body"><strong>${safeN}</strong><p style="margin:6px 0;color:#94a3b8;font-size:13px">${safeM}</p><div class="story-viewer-reactions"><button type="button" class="action-btn mood-btn" data-mood="❤️">❤️</button><button type="button" class="action-btn mood-btn" data-mood="😂">😂</button><button type="button" class="action-btn mood-btn" data-mood="😍">😍</button><button type="button" class="action-btn mood-btn" data-mood="🔥">🔥</button><button type="button" class="action-btn mood-btn" data-mood="💯">💯</button><button type="button" class="action-btn mood-btn" data-mood="🎉">🎉</button></div><div class="story-viewer-reply"><input type="text" maxlength="200" placeholder="Reply to ${safeN}…"><button type="button" class="btn primary sm" data-send>Send</button></div><div class="story-viewer-actions"><button type="button" class="btn secondary" style="flex:1" data-close>Close</button>${isOwn ? '<button type="button" class="btn" style="flex:1;background:#ef4444;color:#fff;border:0" data-del>Delete Story</button>' : '<button type="button" class="btn ghost" style="flex:1" data-share>↗ Share</button>'}</div></div></div></div>`;
 

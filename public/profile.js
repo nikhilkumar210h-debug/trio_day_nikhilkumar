@@ -1,6 +1,6 @@
 import { auth, db } from './firebase-init.js';
 import { notifyUser } from './services/notificationHelpers.js';
-import { uploadProfileImage } from './image-upload.js';
+import { uploadProfileImage, cloudinaryAutoUrl } from './image-upload.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
 import { trioCache } from './trio-cache.js';
 import { renderBadgesHtml } from './gamification/badges.js';
@@ -22,7 +22,7 @@ const params = new URLSearchParams(location.search);
 let me = null, current = null;
 function avatar(el, u) {
   el.innerHTML = '';
-  if (u?.photoURL) { const i = document.createElement('img'); i.src = u.photoURL; i.alt = 'Profile photo'; i.width = 96; i.height = 96; i.decoding = 'async'; i.loading = 'lazy'; i.style.aspectRatio = '1 / 1'; el.appendChild(i); }
+  if (u?.photoURL) { const i = document.createElement('img'); i.src = cloudinaryAutoUrl(u.photoURL || ''); i.alt = 'Profile photo'; i.width = 96; i.height = 96; i.decoding = 'async'; i.loading = 'lazy'; i.style.aspectRatio = '1 / 1'; el.appendChild(i); }
   else el.textContent = (u?.name || 'U').charAt(0).toUpperCase();
 }
 

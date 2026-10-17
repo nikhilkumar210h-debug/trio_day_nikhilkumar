@@ -8,16 +8,20 @@ function fallback(){const k=key();let h=0;for(const ch of k)h=(h*31+ch.charCodeA
 let currentDailyQuestion=null;
 async function loadDailyQuestion(){const host=document.getElementById('dailyQuestionCard');if(!host)return;const k=key();try{const cached=JSON.parse(localStorage.getItem('trio_daily_question')||'null');if(cached?.date===k) return render(cached);}catch{}let data=fallback();try{const snap=await getDoc(doc(db,'config','dailyQuestion'));if(snap.exists()&&snap.data().date===k&&snap.data().question)data={date:k,question:snap.data().question};}catch{}try{localStorage.setItem('trio_daily_question',JSON.stringify(data));}catch{}render(data);}
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
-async function saveDailyAnswer(questionKey, answer, user){
+export async function saveDailyAnswer(questionKey, answer, user){
   if(!user) return false;
   try{
     await setDoc(doc(db,'dailyAnswers',user.uid+'_'+questionKey),{
       uid:user.uid,
       questionKey,
       answer,
+      name: user.displayName || (user.email ? user.email.split('@')[0] : '') || 'Trio Member',
+      photoURL: user.photoURL || null,
       createdAt:serverTimestamp(),
       createdAtMs:Date.now()
     },{merge:true});
+    // Tell today's page to unblur the Trio Pulse community cards immediately.
+    try{window.dispatchEvent(new CustomEvent('trio:daily-answer-saved',{detail:{questionKey}}));}catch(e){console.warn('[DailyQuestion] pulse event failed',e);}
     return true;
   }catch(e){
     console.warn('[DailyQuestion] save answer failed',e);

@@ -1,6 +1,7 @@
 /** Cloudinary signed upload via Worker (no unsigned preset). */
 const CLOUD_NAME = 'vyhglthg';
 import { auth } from './firebase-init.js';
+import { cloudinaryAutoUrl } from '../utils.js';
 // Worker endpoint for signed upload params — set after deployment
 const DEFAULT_MEDIA_SIGN_URL = 'https://trio-media-upload.trioday-nikhil.workers.dev/media/sign';
 
@@ -194,13 +195,28 @@ export async function uploadStoryMedia(uid, file, firebaseToken, signal) {
     const signed = await getSignedParams('story_video', firebaseToken);
     return uploadSignedVideo(file, signed, signal);
   }
-  // Image story: upload original file directly, keep original quality (no compress, no resize)
-  if (file.size > 12 * 1024 * 1024) throw Error('Story photo must be under 12MB (original quality).');
+  // Image story: client-compress to WebP (longest edge ≤1080px, ~0.80 quality)
+  // before upload, saving Cloudinary storage and bandwidth. Animated GIFs are
+  // uploaded untouched — canvas would destroy the animation; videos bypass this
+  // branch entirely.
+  let uploadFile = file;
+  if (file.type !== 'image/gif') {
+    try {
+      const { blob, contentType, ext } = await compressImageFile(file, {
+        maxEdge: 1080,
+        maxBytes: 1_000_000,
+        startQuality: 0.80
+      });
+      uploadFile = new File([blob], (file.name || `story_${Date.now()}`) + '.' + ext, { type: contentType });
+    } catch (err) {
+      console.warn('[uploadStoryMedia] client WebP compression skipped:', err.message);
+    }
+  }
+  if (uploadFile.size > 12 * 1024 * 1024) throw Error('Story photo must be under 12MB (original quality).');
   try {
     const signed = await getSignedParams('story_image', firebaseToken);
-    // For original quality story images, upload the file directly (not compressed blob)
     const form = new FormData();
-    form.append('file', file, file.name || `story_${Date.now()}.jpg`);
+    form.append('file', uploadFile, uploadFile.name);
     form.append('api_key', signed.apiKey);
     form.append('timestamp', String(signed.timestamp));
     form.append('signature', signed.signature);
@@ -211,11 +227,11 @@ export async function uploadStoryMedia(uid, file, firebaseToken, signal) {
     const res = await fetch(signed.uploadUrl, { method: 'POST', body: form, signal });
     const data = await res.json().catch(() => ({}));
     if (!res.ok || !data.secure_url) throw Error(data?.error?.message || `Cloudinary upload failed (${res.status})`);
-    return data.secure_url;
+    return cloudinaryAutoUrl(data.secure_url);
   } catch (err) {
     if (signal?.aborted) throw err;
     console.warn('[uploadStoryMedia] Cloudinary upload unavailable, using Firebase Storage fallback:', err.message);
-    return uploadToStorageFallback(file, `story_${Date.now()}`);
+    return uploadToStorageFallback(uploadFile, `story_${Date.now()}`);
   }
 }
 
@@ -228,7 +244,8 @@ export async function uploadProfileImage(uid, file, firebaseToken, signal) {
   });
   try {
     const signed = await getSignedParams('profile', firebaseToken);
-    return uploadSignedBlob(blob, signed, signal, `avatar.${ext}`);
+    const url = await uploadSignedBlob(blob, signed, signal, `avatar.${ext}`);
+    return cloudinaryAutoUrl(url);
   } catch (err) {
     if (signal?.aborted) throw err;
     console.warn('[uploadProfileImage] Cloudinary upload unavailable, using Firebase Storage fallback:', err.message);

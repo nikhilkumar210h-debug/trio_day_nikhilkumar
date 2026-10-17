@@ -8,6 +8,8 @@ import { listCommunityTasks } from './gamification/community-tasks.js?v=20260919
 import { awardXp } from './gamification/xp-levels.js';
 import { bumpChallengeStreak } from './gamification/streaks.js';
 import { getCachedUser } from './services/userCache.js';
+import { InfiniteChallenges } from './services/infiniteChallenges.js';
+import { SoundFX } from './ui/sound.js';
 import { SoundManager } from './sound-manager.js';
 
 const CHALLENGES = [
@@ -41,6 +43,10 @@ const shareChallengeUrl = c => new URL('challenge.html?id=' + encodeURIComponent
 const threadUnsubs = new Map();
 let answeredChallengeIds = null;
 let answeredChallengesPromise = null;
+// Phase 3: Unlimited challenge state
+let activeTimers = new Map();      // challengeId -> interval id
+let clueXpMap = { clue1: 100, clue2: 60, clue3: 30 }; // Clue 1=100 XP, Clue 2=60 XP, Clue 3=30 XP
+let lastAnswerTime = null;
 
 async function getResponses(id) {
   try {
@@ -522,7 +528,7 @@ function attachDiscussion(c, card, discussion) {
   };
 }
 
-function addCard(c) {
+function createCardElement(c) {
   const card = document.createElement('article');
   card.className = 'challenge-main-card';
   card.dataset.challengeId = c.id;
@@ -554,6 +560,7 @@ function addCard(c) {
   card.innerHTML =
     '<div class="challenge-moment-head"><span class="challenge-tag">' + esc(c.tag || 'COMMUNITY') + '</span><span class="challenge-format">' + esc(formatLabels[format] || '⚡ QUICK PICK') + '</span>' + detectiveBadge + '</div>' +
     '<h2>' + esc(c.q) + '</h2>' +
+    (c.imageUrl ? '<img src="' + cloudinaryAutoUrl(c.imageUrl) + '" class="challenge-clue-image" style="width:100%;max-height:260px;border-radius:16px;object-fit:cover;margin:12px 0;border:1px solid var(--border)">' : '') +
     (twist ? '<div class="challenge-twist">✦ ' + esc(twist) + '</div>' : '') +
     detectiveUI +
     '<div class="challenge-no-right">No right answer · pick your side</div>' +
@@ -566,8 +573,13 @@ function addCard(c) {
     '<div class="challenge-links">' +
       '<button type="button" class="nkm-btn nkm-btn--secondary challenge-discuss-btn">💬 Join the discussion</button>' +
       '<button type="button" class="nkm-btn nkm-btn--secondary challenge-share-btn">↗ Share</button>' +
+      '<button type="button" class="nkm-btn nkm-btn--secondary challenge-whatsapp-btn">📱 Challenge 2 Friends on WhatsApp</button>' +
       '<button type="button" class="nkm-btn nkm-btn--secondary challenge-opposite-btn">10-min opposite chat</button>' +
       '<a class="nkm-btn nkm-btn--primary challenge-next-btn" href="#">Next Challenge →</a>' +
+    '</div>' +
+    '<div class="challenge-timer-bar" style="margin-top:8px;display:flex;gap:10px;align-items:center;justify-content:space-between;font-size:10px;color:var(--color-ink-muted);padding:6px 10px;border:1px solid var(--border);border-radius:10px;background:rgba(139,92,246,.06)">' +
+      '<span id="timer-' + esc(c.id) + '" class="challenge-timer">⏱ 60s</span>' +
+      '<span id="clue-xp-' + esc(c.id) + '" class="challenge-clue-xp" hidden>💡 Clue 1 = 100 XP · Clue 2 = 60 XP · Clue 3 = 30 XP</span>' +
     '</div>' +
     '<section class="challenge-thread" hidden aria-label="Public challenge discussion">' +
       '<div class="challenge-thread-head"><div><strong>Open discussion</strong><span>Everyone answering this challenge can join.</span></div><span class="challenge-thread-count">Be the first voice</span></div>' +
@@ -584,27 +596,84 @@ function addCard(c) {
   const oppositeBtn = card.querySelector('.challenge-opposite-btn');
   cards.set(c.id, {card, resultPreview, result, discussion, c});
 
+  // ── Phase 3: Live timer + clue multiplier (Phase 3) ──────────────────────
+  const timerEl = card.querySelector('#timer-' + esc(c.id));
+  const clueXpEl = card.querySelector('#clue-xp-' + esc(c.id));
+  let timeLeft = 60;
+  if (c.isDetective && clueXpEl) clueXpEl.hidden = false;
+  if (timerEl) {
+    timerEl.textContent = '⏱ ' + timeLeft + 's';
+    const tick = () => {
+      timeLeft--;
+      if (timeLeft <= 0) {
+        timerEl.textContent = '⏱ Time up';
+        clearInterval(timerId);
+        activeTimers.delete(c.id);
+        return;
+      }
+      timerEl.textContent = '⏱ ' + timeLeft + 's';
+      SoundFX.countdownTick();
+    };
+    const timerId = setInterval(tick, 1000);
+    activeTimers.set(c.id, timerId);
+    // Cleanup timer when card is removed/switched
+    card.addEventListener('challenge-card-remove', () => clearInterval(timerId));
+  }
+
+  // WhatsApp share handler
+  const whatsappBtn = card.querySelector('.challenge-whatsapp-btn');
+  if (whatsappBtn) {
+    whatsappBtn.addEventListener('click', async () => {
+      SoundFX.click();
+      const text = encodeURIComponent('Take this challenge on Trio Day: *' + esc(c.q) + '*\n\nOptions:\n' + c.o.map((o,i) => (i+1) + '. ' + o).join('\n') + '\n\nWhat would you choose?');
+      const url = encodeURIComponent(location.origin + '/challenge.html?id=' + c.id);
+      const waUrl = 'https://wa.me/?text=' + text + '%0A%0A' + url;
+      try {
+        if (navigator.share) {
+          await navigator.share({ title: 'Trio Day Challenge', text: c.q, url: location.origin + '/challenge.html?id=' + c.id });
+        } else {
+          window.open(waUrl, '_blank');
+        }
+        SoundFX.xpPop();
+      } catch (err) {
+        window.open(waUrl, '_blank');
+      }
+    });
+  }
+
   card.querySelectorAll('[data-choice]').forEach(btn => btn.addEventListener('click', async () => {
     if (!currentUser) return;
     if (card.dataset.submitting === '1') return;
     card.dataset.submitting = '1';
     const choice = Number(btn.dataset.choice);
+    SoundFX.voteClick();
+    // Stop the live timer on answer
+    const timerId = activeTimers.get(c.id);
+    if (timerId) { clearInterval(timerId); activeTimers.delete(c.id); }
     card.querySelectorAll('[data-choice]').forEach(x => { x.disabled = true; });
     try {
       await updateChallengeCounter(c.id, currentUser.uid, choice);
       if (answeredChallengeIds) answeredChallengeIds.add(c.id);
       localStorage.setItem('trio_last_challenge', JSON.stringify({id:c.id,choice,at:Date.now()}));
+      // Phase 3: Clue multiplier XP — Clue 1 = 100 XP, Clue 2 = 60 XP, Clue 3 = 30 XP
+      let xp = 25;
+      if (c.isDetective) {
+        const revealedCount = Number(card.dataset.revealedCount || 1);
+        xp = revealedCount <= 1 ? clueXpMap.clue1 : revealedCount <= 2 ? clueXpMap.clue2 : clueXpMap.clue3;
+      }
       try {
         const gamificationUser = auth.currentUser;
         if (gamificationUser) {
           // awardXp/bumpChallengeStreak send the user's timezone so streak days
           // follow the user's real local calendar, and surface badge unlocks.
-          await awardXp(gamificationUser.uid, 25, { challengeId: c.id });
+          await awardXp(gamificationUser.uid, xp, { challengeId: c.id });
           await bumpChallengeStreak(gamificationUser.uid, c.id);
+          SoundFX.xpPop();
         }
       } catch (gamErr) {
         console.warn('[Challenge] gamification sync failed:', gamErr);
       }
+      SoundFX.win();
 
       card.querySelectorAll('[data-choice]').forEach(x => {
         x.disabled = false;
@@ -639,12 +708,19 @@ function addCard(c) {
     const beforeCurrent = ordered.slice(0, Math.max(0, currentPos));
     const next = [...afterCurrent, ...beforeCurrent].find(x => !answered.has(x.c.id));
     if (!next) {
-      const note = document.createElement('div');
-      note.className = 'challenge-all-done';
-      note.setAttribute('role', 'status');
-      note.textContent = 'Aaj ke sab challenges ho gaye ✓';
-      const existing = card.querySelector('.challenge-all-done');
-      if (!existing) card.querySelector('.challenge-links')?.appendChild(note);
+      // Phase 3: Never run out of content — pull from the unlimited engine
+      const bankCard = InfiniteChallenges.getBankChallenge(answered);
+      const newCardEl = addCardElement(bankCard);
+      // Switch to the new card
+      card.classList.remove('challenge-switching-in');
+      card.classList.add('challenge-switching-out');
+      newCardEl.classList.remove('challenge-switching-out');
+      newCardEl.classList.add('challenge-switching-in');
+      setTimeout(() => {
+        card.classList.remove('challenge-switching-out');
+        newCardEl.scrollIntoView({behavior:'smooth', block:'center'});
+        setTimeout(() => newCardEl.classList.remove('challenge-switching-in'), 520);
+      }, 260);
       return;
     }
     card.classList.remove('challenge-switching-in');
@@ -677,14 +753,47 @@ function addCard(c) {
   shareBtn.addEventListener('click', () => shareChallenge(c));
   oppositeBtn.addEventListener('click', async () => {
     if (!currentUser) return;
+    SoundFX.click();
     const mine = await getDoc(doc(db,'challengeAnswers',currentUser.uid + '_' + c.id)).catch(() => null);
-    if (!mine?.exists()) { alert('Pick an answer first.'); return; }
+    if (!mine?.exists()) { SoundFX.locked(); return; }
     const myChoice = Number(mine.data().choice);
-    const snap = await getDocs(query(collection(db,'challengeAnswers'), where('challengeId','==',c.id), limit(40))).catch(() => null);
-    const other = snap?.docs.find(d => d.data()?.uid !== currentUser.uid && Number(d.data()?.choice) !== myChoice);
-    if (!other) { alert('No one on the opposite side yet. Check back when someone picks differently.'); return; }
-    const params = new URLSearchParams({challenge:c.id, other:other.data().uid});
-    location.href = 'temp-chat.html?' + params.toString();
+
+    // Phase 3: Check tempChats for a waiting opposite voter (4-second window).
+    // Firestore rules allow reading tempChats where we are a participant, so we
+    // construct the roomId and probe each opposite voter's room.
+    const snap = await getDocs(query(collection(db,'challengeAnswers'), where('challengeId','==',c.id), limit(20))).catch(() => null);
+    const oppositeVoters = snap?.docs.filter(d => d.data()?.uid !== currentUser.uid && Number(d.data()?.choice) !== myChoice) || [];
+
+    const roomKey = (a, b) => [a, b].sort().join('_') + '_' + c.id;
+    let foundRoom = null;
+    const deadline = Date.now() + 4000; // 4-second window
+
+    for (const voterDoc of oppositeVoters) {
+      if (Date.now() > deadline) break;
+      const otherUid = voterDoc.data()?.uid;
+      if (!otherUid) continue;
+      const rId = roomKey(currentUser.uid, otherUid);
+      try {
+        const roomSnap = await getDoc(doc(db, 'tempChats', rId));
+        if (roomSnap.exists()) {
+          const data = roomSnap.data();
+          const expireAt = Number(data?.expireAtMs || 0);
+          if (expireAt > Date.now() && data.participants && data.participants.includes(currentUser.uid)) {
+            foundRoom = { roomId: rId, otherUid };
+            break;
+          }
+        }
+      } catch { /* room not readable — skip */ }
+    }
+
+    if (foundRoom) {
+      const params = new URLSearchParams({challenge: c.id, other: foundRoom.otherUid});
+      location.href = 'temp-chat.html?' + params.toString();
+    } else {
+      // No live human available — launch Undercover Challenger Mode
+      const params = new URLSearchParams({challenge: c.id, undercover: '1', myChoice: String(myChoice)});
+      location.href = 'temp-chat.html?' + params.toString();
+    }
   });
 
   discussBtn.addEventListener('click', () => {
@@ -730,7 +839,7 @@ function addCard(c) {
           
           // Animate reveal
           row.classList.add('clue-revealing');
-          SoundManager.success();
+          SoundFX.clueReveal();
           
           setTimeout(() => {
             row.classList.remove('clue-revealing');
@@ -739,8 +848,17 @@ function addCard(c) {
             if (marker) marker.textContent = '🔓';
             btn.hidden = true;
             
-            // Persist
+            // Track revealed count for XP multiplier
             revealedIndices.add(idx);
+            const revealedCount = revealedIndices.size;
+            card.dataset.revealedCount = revealedCount;
+            const clueXpEl = card.querySelector('#clue-xp-' + esc(c.id));
+            if (clueXpEl) {
+              const remaining = Math.max(0, 3 - revealedCount);
+              clueXpEl.textContent = '💡 Clue ' + (revealedCount + 1) + ' = ' + (remaining > 0 ? clueXpMap['clue' + remaining] : 0) + ' XP remaining';
+            }
+            
+            // Persist
             try {
               localStorage.setItem(storageKey, JSON.stringify([...revealedIndices]));
             } catch (_) {}
@@ -751,6 +869,20 @@ function addCard(c) {
   }
 
   host?.appendChild(card);
+  return card;
+}
+
+// addCard: create + append (used by initial load)
+// addCardElement: create + append (used by infinite engine — element must be in DOM)
+function addCard(c) {
+  const el = createCardElement(c);
+  host?.appendChild(el);
+  return el;
+}
+function addCardElement(c) {
+  const el = createCardElement(c);
+  host?.appendChild(el);
+  return el;
 }
 
 function inputFocusIfNeeded(discussion) {

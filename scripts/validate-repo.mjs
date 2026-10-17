@@ -1,6 +1,8 @@
 import { readdir, readFile } from 'node:fs/promises';
 import { join, relative, dirname, normalize } from 'node:path';
 import { spawnSync } from 'node:child_process';
+import { readFileSync, writeFileSync, mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 
 const root = process.cwd();
 const publicDir = join(root, 'public');
@@ -20,14 +22,21 @@ const jsFiles = files.filter(f => f.endsWith('.js'));
 
 let failed = false;
 
+// Use a temp .mjs file so Node treats ESM modules as modules
+// (package.json has no "type": "module").
+const tmpDir = mkdtempSync(join(tmpdir(), 'trio-validate-'));
 for (const file of jsFiles) {
-  const r = spawnSync(process.execPath, ['--check', file], { encoding: 'utf8' });
+  const src = readFileSync(file, 'utf8');
+  const tmpFile = join(tmpDir, 'validate-' + Math.random().toString(36).slice(2) + '.mjs');
+  writeFileSync(tmpFile, src);
+  const r = spawnSync(process.execPath, ['--check', tmpFile], { encoding: 'utf8' });
   if (r.status !== 0) {
     failed = true;
     console.error('\nJS syntax error:', relative(root, file));
     console.error(r.stderr || r.stdout);
   }
 }
+rmSync(tmpDir, { recursive: true, force: true });
 
 const existing = new Set(files.map(f => normalize(relative(publicDir, f)).replaceAll('\\', '/')));
 const htmlFiles = files.filter(f => f.endsWith('.html'));

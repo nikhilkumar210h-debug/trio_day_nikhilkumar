@@ -367,9 +367,10 @@ service cloud.firestore {
       }
     }
 
-    // Daily Question answers — user-scoped, merge-safe writes
+    // Daily Question answers — user-scoped writes, signed-in reads
+    // (read relaxed to match challengeAnswers so / reveals real community answers)
     match /dailyAnswers/{answerId} {
-      allow read: if signedIn() && request.auth.uid == answerId.split('_')[0];
+      allow read: if signedIn();
       allow create: if signedIn()
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.questionKey is string

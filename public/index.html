@@ -25,12 +25,12 @@
   <link rel="preload" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
   <noscript><link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet"></noscript>
   <style>:root{--primary:#8B5CF6;--primary-strong:#6366F1;--bg:#08051A;--surface:#17113A;--ink:#f1f5f9;--ink-muted:#94a3b8;--border:rgba(196,181,253,.14);--r-lg:18px;--r-xl:24px}*{box-sizing:border-box}html{scroll-behavior:smooth;background:var(--color-bg)}body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif}.tricolor-strip{height:3px;display:flex;position:fixed;inset:0 0 auto;z-index:200}.tricolor-strip span{flex:1}.tricolor-strip span:nth-child(1){background:linear-gradient(90deg,#ff9933,#ff7700)}.tricolor-strip span:nth-child(2){background:#fff}.tricolor-strip span:nth-child(3){background:linear-gradient(90deg,#128807,#0a6305)}.topbar{position:sticky;top:3px;z-index:100;background:var(--color-bg-elevated);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}.topbar-inner{max-width:1280px;margin:auto;min-height:48px;padding:0 12px;display:flex;align-items:center;justify-content:space-between}.app-main{width:min(1000px,100%);margin:auto;padding:20px 16px}.skeleton-card{height:auto;aspect-ratio:16/9;max-height:220px;border:1px solid var(--border);border-radius:16px;background:linear-gradient(90deg,rgba(255,255,255,.04) 0%,rgba(255,255,255,.08) 50%,rgba(255,255,255,.04) 100%);background-size:200% 100%}.skeleton-stack[hidden],#feedLoading[hidden]{display:none!important}.bottom-nav{position:fixed;left:0;right:0;bottom:0;background:var(--color-bg-elevated);backdrop-filter:blur(18px);border-top:1px solid rgba(196,181,253,.14);z-index:55;padding-bottom:env(safe-area-inset-bottom)}.nav-row{width:min(520px,100%);margin:auto;display:grid;grid-template-columns:repeat(4,1fr);gap:2px;padding:6px 6px 4px;align-items:end}.nav-btn{padding:6px 2px 4px;border-radius:12px;color:var(--color-ink-dim);font-size:10px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;gap:2px;min-height:44px;display:flex;flex-direction:column;align-items:center;justify-content:center}.nav-btn.active{color:var(--color-primary-text);background:rgba(139,92,246,.12)}.nav-btn--create{background:linear-gradient(135deg,#6366F1 0%,#4F46E5 100%);color:#fff;border:1px solid rgba(255,255,255,.08);border-radius:16px;height:48px;margin-bottom:4px;box-shadow:0 4px 12px rgba(99,102,241,.28);gap:0}.nav-btn--create .nav-icon svg{stroke:#fff}</style>
-  <link rel="stylesheet" href="styles/tokens.css">
-  <link rel="stylesheet" href="styles/skeleton.css">
-  <link rel="stylesheet" href="styles/sheet.css">
-  <link rel="stylesheet" href="styles/nav.css">
-  <link rel="stylesheet" href="styles/header.css">
-  <link rel="stylesheet" href="styles/components.css">
+  <link rel="stylesheet" href="styles/tokens.css?v=20261018">
+  <link rel="stylesheet" href="styles/skeleton.css?v=20261018">
+  <link rel="stylesheet" href="styles/sheet.css?v=20261018">
+  <link rel="stylesheet" href="styles/nav.css?v=20261018">
+  <link rel="stylesheet" href="styles/header.css?v=20261018">
+  <link rel="stylesheet" href="styles/components.css?v=20261018">
   <link rel="stylesheet" href="style.css?v=20260921-story4">
 <link rel="stylesheet" href="styles/polish.css?v=7">
   <link rel="stylesheet" href="styles/home.css?v=36">
@@ -84,6 +84,41 @@
       </div>
       <div id="focusPrimary" class="focus-primary"><div class="td-skeleton td-skeleton--wide" aria-hidden="true"></div></div>
       <div id="focusSecondary" class="focus-secondary"></div>
+    </section>
+
+    <!-- Phase 3: 60-Second Daily Brain & Career Sprint — instant playable card -->
+    <section id="brainSprintCard" class="today-section" aria-label="Brain Sprint" hidden>
+      <div class="today-focus-heading">
+        <h2 class="today-section-title">60-Second Brain &amp; Career Sprint <span class="today-focus-label">INSTANT PLAY</span></h2>
+        <div class="today-focus-label-copy">Answer fast · compare instantly · no signup needed</div>
+      </div>
+      <div id="brainSprintContent" class="brain-sprint-content">
+        <div class="td-skeleton td-skeleton--wide" aria-hidden="true"></div>
+      </div>
+    </section>
+
+    <!-- Today's Trio Pulse — BeReal-style answer-to-unlock community answers (Phase 2) -->
+    <section id="trioPulse" class="trio-pulse" aria-label="Today's Trio Pulse" hidden>
+      <div class="trio-pulse-head">
+        <span class="trio-pulse-kicker">TODAY'S TRIO PULSE</span>
+        <div>
+          <h2 class="trio-pulse-title">Today's Trio Pulse</h2>
+          <p class="trio-pulse-sub">Save your answer above to see how 3 others answered today.</p>
+        </div>
+      </div>
+      <div id="trioPulseLocked" class="trio-pulse-state trio-pulse-locked">
+        <div class="trio-pulse-pill">🔒 Save your answer above to unlock how 3 others answered</div>
+        <div id="trioPulseCardsLocked" class="trio-pulse-cards"></div>
+      </div>
+      <div id="trioPulseUnlocked" class="trio-pulse-state trio-pulse-unlocked" hidden>
+        <div class="trio-pulse-pill trio-pulse-pill--ok">✨ Unlocked — here's how others answered</div>
+        <div id="trioPulseCardsUnlocked" class="trio-pulse-cards"></div>
+        <a id="trioPulseCompare" class="nkm-btn nkm-btn--secondary nkm-btn--sm" href="challenge.html">Compare in Challenges →</a>
+      </div>
+      <div id="trioPulseEmpty" class="trio-pulse-empty" hidden>
+        <span class="trio-pulse-icon">⚡</span>
+        <p>Be the first to answer today's question — save yours above to unlock the community pulse.</p>
+      </div>
     </section>
 
     <!-- Today V2: living social layer -->
@@ -252,15 +287,16 @@
     </div>
   </div>
 
-  <script src="auth-preload.js"></script>
-  <script type="module" src="auth-guard.js"></script>
+  <script src="auth-preload.js?v=20261018"></script>
+  <script type="module" src="auth-guard.js?v=20261018"></script>
   <script type="module" src="script.js?v=20260921-today4"></script>
-  <script type="module" src="auth-ui.js"></script>
-  <script type="module" src="theme.js"></script>
-  <script type="module" src="ui/header.js"></script>
+  <script type="module" src="auth-ui.js?v=20261018"></script>
+  <script type="module" src="theme.js?v=20261018"></script>
+  <script type="module" src="ui/header.js?v=20261018"></script>
 
   <script type="module" src="ui/nav.js?v=20260922-nav7"></script>
-  <script type="module" src="ui/sheet.js"></script>
+  <script type="module" src="ui/sound.js?v=20261018"></script>
+  <script type="module" src="ui/sheet.js?v=20261018"></script>
 <script type="module" src="daily-question.js?v=20260929"></script><script type="module" src="friend-streak.js?v=20260929"></script></body>
 
 </html>

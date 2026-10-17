@@ -7,18 +7,37 @@ import {
 import { showToast } from './ui/toast.js';
 import { createSheet } from './ui/sheet.js';
 import { esc } from './utils.js';
+import { SoundFX } from './ui/sound.js';
+import { awardXp } from './gamification/xp-levels.js';
 
 const params = new URLSearchParams(location.search);
 const challenge = params.get('challenge');
 const other = params.get('other');
-let me = null, roomId = '', unsub = null, expiresAt = 0;
+const isUndercover = params.get('undercover') === '1';
+const myChoice = Number(params.get('myChoice') || -1);
+const challengeQ = params.get('q') || 'The challenge';
+let undercoverReplies = 0;
+let undercoverAiInterval = null;
 const $ = id => document.getElementById(id);
+
+// Keep Trio Streak state
+let streakSavedBy = new Set(); // uids who clicked keep-streak
+let streakIsMine = false;
 
 function roomKey(a, b, c) { return [a, b].sort().join('_') + '_' + c; }
 
 function tick() {
   const left = Math.max(0, expiresAt - Date.now());
   $('timer').textContent = Math.floor(left / 60000).toString().padStart(2, '0') + ':' + Math.floor((left % 60000) / 1000).toString().padStart(2, '0');
+  // Streak bar progress (10 min = 600000ms)
+  const fill = $('streakFill');
+  if (fill) {
+    const pct = expiresAt ? Math.max(0, Math.min(100, Math.round((left / 600000) * 100))) : 0;
+    fill.style.width = pct + '%';
+    fill.classList.remove('warn', 'crit');
+    if (pct <= 10) fill.classList.add('crit');
+    else if (pct <= 25) fill.classList.add('warn');
+  }
   if (left <= 0) {
     $('input').disabled = true;
     $('send').disabled = true;
@@ -198,10 +217,18 @@ async function deleteSingleMessage(msgDocId) {
 }
 
 async function start() {
-  if (!me || !challenge || !other || other === me.uid) {
-    console.warn('[temp-chat] Missing params:', { me: !!me, challenge, other, same: other === me?.uid });
+  if (!me || !challenge) {
+    console.warn('[temp-chat] Missing params:', { me: !!me, challenge });
     return location.href = 'challenge.html';
   }
+
+  // Phase 3: Undercover Challenger Mode — no live human, AI defends opposite side
+  if (isUndercover) {
+    startUndercoverMode();
+    return;
+  }
+
+  if (!other || other === me.uid) {
   roomId = roomKey(me.uid, other, challenge);
   console.log('[temp-chat] roomId:', roomId);
   const ref = doc(db, 'tempChats', roomId);
@@ -226,6 +253,55 @@ async function start() {
     selectBtn.onclick = () => enterSelectionMode();
   }
 
+  // Keep Trio Streak button
+  const keepBtn = $('keepStreakBtn');
+  const streakStorageKey = 'trio_streak_saved_' + challenge;
+  if (keepBtn) {
+    // Restore saved state from session
+    try {
+      if (localStorage.getItem(streakStorageKey) === '1') {
+        keepBtn.classList.add('saved');
+        keepBtn.textContent = '✅ Streak Saved';
+        streakSavedBy.add(me.uid);
+      }
+    } catch { /* localStorage unavailable */ }
+    keepBtn.onclick = async () => {
+      if (!roomId) return;
+      keepBtn.disabled = true;
+      try {
+        // Mark saved locally (session)
+        try { localStorage.setItem(streakStorageKey, '1'); } catch { }
+        streakSavedBy.add(me.uid);
+        keepBtn.classList.add('saved');
+        keepBtn.textContent = '✅ Streak Saved';
+        SoundFX.win();
+        showToast('Streak saved!');
+
+        // Award XP for keeping the streak
+        await awardXp(me.uid, 25, { challengeId: challenge, reason: 'keep_streak' });
+
+        // Open/create private 1:1 chat with the other participant
+        if (other) {
+          const chatId = [me.uid, other].sort().join('_');
+          const pcRef = doc(db, 'privateChats', chatId);
+          await setDoc(pcRef, {
+            participants: [me.uid, other],
+            challengeId: challenge,
+            createdAt: serverTimestamp(),
+            createdAtMs: Date.now()
+          }, { merge: true });
+          showToast('🔥 Streak kept! Private chat unlocked.', 'success');
+          setTimeout(() => { location.href = 'private-chat.html?uid=' + encodeURIComponent(other); }, 1200);
+        }
+      } catch (err) {
+        console.error('Keep streak failed:', err);
+        showToast('Could not save streak.', 'error');
+      } finally {
+        keepBtn.disabled = false;
+      }
+    };
+  }
+
   const q = query(collection(db, 'tempChats', roomId, 'tempMessages'), orderBy('createdAtMs', 'asc'));
   unsub = onSnapshot(q, s => {
     const rows = s.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -248,6 +324,152 @@ async function start() {
       messagesEl.scrollTop = messagesEl.scrollHeight;
     }
   }, () => { $('messages').innerHTML = '<div class="temp-empty">This temporary room is unavailable.</div>'; });
+  }
+}
+
+// ── Phase 3: Undercover Challenger Mode ─────────────────────────────────────
+// Instant 10-minute debate against an AI challenger defending the opposite choice.
+// After 5 user replies, the user guesses "Real Human or Undercover AI?" for bonus XP.
+function startUndercoverMode() {
+  // UI: mark as undercover mode
+  const timerEl = $('timer');
+  if (timerEl) timerEl.textContent = '🤖 Undercover';
+  const messagesEl = $('messages');
+  if (messagesEl) messagesEl.innerHTML = '';
+
+  // Create a record-keeping room (user messages are stored; AI messages are local only)
+  roomId = roomKey(me.uid, 'undercover_ai', challenge);
+  const ref = doc(db, 'tempChats', roomId);
+  setDoc(ref, {
+    participants: [me.uid, 'undercover_ai'],
+    challengeId: challenge,
+    isUndercover: true,
+    myChoice,
+    createdAt: serverTimestamp(),
+    createdAtMs: Date.now(),
+    expireAt: new Date(Date.now() + 600000),
+    expiresAtMs: Date.now() + 600000
+  }).catch(() => {});
+
+  expiresAt = Date.now() + 600000;
+  setInterval(tick, 1000); tick();
+
+  // AI intro
+  setTimeout(() => addAiMessage("Hey! I took the opposite side. Ready to debate? 💬"), 800);
+
+  // AI periodic messages (every 18–25 seconds)
+  const aiMsgs = [
+    "Don't you think you're missing the bigger picture?",
+    "I'm pretty confident in my take. What about you?",
+    "Let's be real — my answer makes more sense here.",
+    "You still sticking with your choice?",
+    "This is where it gets interesting...",
+    "Hmm, I'm not so sure about that one."
+  ];
+  undercoverAiInterval = setInterval(() => {
+    addAiMessage(aiMsgs[Math.floor(Math.random() * aiMsgs.length)]);
+  }, 20000);
+
+  const input = $('input');
+  const sendBtn = $('send');
+
+  if (sendBtn) {
+    sendBtn.onclick = async () => {
+      const text = input.value.trim();
+      if (!text || Date.now() >= expiresAt) return;
+      SoundFX.voteClick();
+      sendBtn.disabled = true;
+      try {
+        // Store user message in Firestore (record-keeping only)
+        await addDoc(collection(db, 'tempChats', roomId, 'tempMessages'), {
+          uid: me.uid,
+          name: me.displayName || 'Trio member',
+          text,
+          createdAt: serverTimestamp(),
+          createdAtMs: Date.now(),
+          expireAt: new Date(expiresAt)
+        });
+        input.value = '';
+        undercoverReplies++;
+
+        // AI responds after a short delay
+        setTimeout(() => {
+          const aiReplies = [
+            "Hmm, interesting point, but I still think I'm right.",
+            "You make a good case, but here's why I disagree...",
+            "Fair enough. But what about this angle?",
+            "I see where you're coming from, yet my choice holds up.",
+            "OK, but have you considered...?"
+          ];
+          addAiMessage(aiReplies[Math.floor(Math.random() * aiReplies.length)]);
+        }, 1500);
+
+        // After 5 user replies, show the "Real Human or Undercover AI?" guess
+        if (undercoverReplies >= 5 && undercoverAiInterval) {
+          clearInterval(undercoverAiInterval);
+          undercoverAiInterval = null;
+          setTimeout(() => showUndercoverGuessDialog(), 2000);
+        }
+      } catch (err) {
+        console.error('Undercover message failed:', err);
+      } finally {
+        sendBtn.disabled = false;
+      }
+    };
+  }
+
+  if (input) {
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); sendBtn.click(); } });
+  }
+}
+
+function addAiMessage(text) {
+  const messagesEl = $('messages');
+  if (!messagesEl) return;
+  const row = document.createElement('div');
+  row.className = 'temp-message';
+  row.innerHTML = '<strong>🤖 Undercover AI</strong><p>' + esc(text) + '</p>';
+  messagesEl.appendChild(row);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+  SoundFX.undercoverReveal();
+}
+
+function showUndercoverGuessDialog() {
+  const { open, close } = createSheet({
+    title: 'Real Human or Undercover AI?',
+    content: `
+      <div style="display:flex;flex-direction:column;gap:12px;text-align:center">
+        <p style="font-size:14px;color:var(--color-ink)">You've exchanged 5 messages. Was your chat partner a real human or an undercover AI?</p>
+        <div style="display:flex;gap:8px;justify-content:center">
+          <button type="button" class="nkm-btn nkm-btn--primary" data-guess="human">👤 Real Human</button>
+          <button type="button" class="nkm-btn nkm-btn--secondary" data-guess="ai">🤖 Undercover AI</button>
+        </div>
+        <p style="font-size:11px;color:var(--color-ink-muted)">Correct guess = bonus XP!</p>
+      </div>
+    `,
+    actions: ''
+  });
+  close();
+  const sheet = document.querySelector('.nkm-sheet');
+  sheet.querySelectorAll('[data-guess]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const guess = btn.dataset.guess;
+      const correct = 'ai'; // It's always AI in undercover mode
+      const won = guess === correct;
+      close();
+      SoundFX[won ? 'win' : 'locked']();
+      // Award bonus XP for correct guess
+      if (won && me) {
+        import('./gamification/xp-levels.js').then(mod => {
+          return mod.awardXp(me.uid, 25, { challengeId: challenge, reason: 'undercover_guess' });
+        }).then(res => {
+          if (res) showToast('Correct! +25 XP 🎯', 'success');
+        }).catch(() => showToast('Nice try! It was an AI.'));
+      } else {
+        showToast('It was an Undercover AI. Better luck next time!');
+      }
+    });
+  });
 }
 
 function attachMessageHandlers(container) {

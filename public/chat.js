@@ -59,7 +59,7 @@ function renderInbox(filter = '') {
     .slice(0, 20);
   const countBadge = $('conversationCount'); if (countBadge) countBadge.textContent = String(rows.length);
   if (rows.length === 0) {
-    list.innerHTML = `<div class="nkm-chat-empty"><span>✉</span><p>No conversations yet.</p><a class="nkm-btn nkm-btn--primary nkm-btn--sm" href="all-users.html">Start a Conversation</a></div>`;
+    list.innerHTML = `<div class="nkm-chat-empty"><span>✉</span><p>No conversations yet.</p><div style="margin-top:10px"><a class="nkm-btn nkm-btn--primary nkm-btn--sm" href="all-users.html">Start a Conversation</a></div><div style="margin-top:8px"><a class="nkm-btn nkm-btn--secondary nkm-btn--sm" href="challenge.html">🔥 Start a 10-Min Debate →</a></div></div>`;
     return;
   }
   rows.forEach(({ peer, latest, unread }) => {
@@ -73,6 +73,8 @@ function renderInbox(filter = '') {
       <span class="nkm-chat-time">${esc(timeOf(latest?.createdAtMs))}</span>`;
     row.appendChild(open);
     if (unread) row.insertAdjacentHTML('beforeend','<span class="nkm-chat-unread" title="New"></span>');
+    // Streak badge for active peers (Phase 4)
+    row.insertAdjacentHTML('beforeend','<span class="nkm-chat-streak" title="Keep Trio Streak">🔥</span>');
     if (pendingChallengeShare) {
       const shareBtn = document.createElement('button');
       shareBtn.type='button'; shareBtn.className='nkm-btn nkm-btn--sm nkm-btn--primary challenge-inbox-share';
