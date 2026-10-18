@@ -537,3 +537,99 @@ The current release branch implements the planned Challenge-first loop in one pa
 **Next recommended steps:** verify signed-in `/` and `/profile` with a real account in production (community-answer unlock flow + connections rows/empty state); consider auditing other `esc`-style alias imports (`profile.js` already aliases `escapeHtml as esc`) to prevent recurrence; keep module-import specifiers versioned when their target file changes.
 
 
+---
+
+## Production Readiness (Phase 4 — 2026-10-18)
+
+### Architecture Summary
+- **Frontend**: Static HTML/CSS/ES modules served via Cloudflare Workers Static Assets (`wrangler.jsonc` assets-only config)
+- **Auth/Database**: Firebase Auth (Email/Password, Google, Trio UID) + Cloud Firestore
+- **Serverless API**: 4 Cloudflare Workers (gamification, gamification-cron, media-upload, notifications)
+- **Media**: Cloudinary (signed uploads via Worker) with Firebase Storage fallback
+- **Notifications**: OneSignal (push) + custom Worker (Firestore writes)
+- **No Service Worker** for app content — cache-busting via `?v=` query strings on all module imports
+
+### Setup Steps
+1. **Prerequisites**: Node.js 18+, `firebase-tools@latest`, `wrangler@latest`
+2. **Firebase Project**: Create project `nkm-ind` (or use existing), enable Auth (Email/Password, Google), create Firestore database
+3. **Cloudflare Account**: Create account, add custom domain if desired
+4. **Cloudinary Account**: Create account (free tier), note cloud name, API key, API secret
+5. **OneSignal Account**: Create app (free tier), note App ID, REST API key
+6. **Environment Variables** (in Cloudflare Worker secrets):
+   - `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY` (service account)
+   - `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`
+   - `ONESIGNAL_APP_ID`, `ONESIGNAL_REST_API_KEY`
+   - `FIREBASE_API_KEY` (public, for client SDK)
+
+### Deploy Steps
+```bash
+# 1. Install dependencies (for validation only)
+npm install
+
+# 2. Validate repo
+node scripts/validate-repo.mjs
+
+# 3. Deploy Cloudflare Workers (each has own wrangler.toml)
+cd workers && npx wrangler deploy   # gamification
+cd ../workers/gamification-cron && npx wrangler deploy
+cd ../workers/media-upload && npx wrangler deploy
+cd ../workers/send-notification && npx wrangler deploy
+
+# 4. Deploy frontend to Cloudflare Workers Static Assets
+cd ../.. && npx wrangler deploy
+
+# 5. Deploy Firestore rules & indexes
+npx firebase deploy --only firestore:rules,firestore:indexes
+
+# 6. Deploy Firebase Functions (Trio UID auth)
+cd functions && npm install && cd .. && npx firebase deploy --only functions
+```
+
+### Free-Tier Limits & Budget
+| Service | Free Tier Limit | Trio Day Usage | Headroom |
+|---------|----------------|----------------|----------|
+| **Cloudflare Workers** | 100k req/day | ~5k/day | 95% |
+| **Cloudflare Workers KV** | 100k ops/day | ~1k/day (rate limits) | 99% |
+| **Firebase Auth** | 50k MAU | <1k MAU | 98% |
+| **Firestore Reads** | 50k/day | ~8k/day (bounded queries + caching) | 84% |
+| **Firestore Writes** | 20k/day | ~2k/day (answers, messages, XP via Workers) | 90% |
+| **Firestore Storage** | 1 GB | ~200 MB (media via Cloudinary) | 80% |
+| **Cloudinary** | 25 GB bandwidth, 25k transformations | ~2 GB, ~5k transforms | 92% |
+| **OneSignal** | 10k subscribed users | <1k | 90% |
+
+**Read/Write Budget Strategy**:
+- All list queries bounded (`limit()`) and cached via `trio-cache.js` (TTL: 30s–10min)
+- Transactional counters for challenge stats (1 write per answer)
+- Temp chat cleanup capped at 200 deletes/cron run
+- Daily Question published by cron (1 write/day)
+- No unbounded collection group queries in client code
+
+### Performance Targets
+- **Lighthouse Mobile**: ≥90 Performance, ≥90 Accessibility, ≥90 Best Practices, ≥90 SEO
+- **Core Web Vitals**: LCP <2.5s, FID <100ms, CLS <0.1
+- **Cache-Busting**: All module imports use `?v=YYYYMMDD-hash` pattern
+
+### Accessibility
+- Semantic HTML5 landmarks (`main`, `nav`, `header`, `section`, `article`)
+- `aria-current="page"` on active navigation
+- `aria-label` on icon-only buttons
+- `focus-visible` styles on all interactive elements
+- Color contrast AA (verified against design tokens)
+- `prefers-reduced-motion` respected (0.01ms animations)
+- Minimum 44×44px tap targets
+
+### SEO & Metadata
+- Meta description, OG/Twitter cards on all pages
+- `sitemap.xml` with pretty URLs (auto-pretty-urls)
+- `robots.txt` allowing all crawlers
+- `manifest.json` for PWA installability
+- Canonical URLs via Cloudflare Workers `html_handling: auto-pretty-urls`
+
+### Monitoring & Debugging
+- `console.warn` for non-critical failures (never blocks UI)
+- `try/catch` around every first Firestore call
+- Loading/empty/error states on all lists
+- Toast notifications for user feedback
+- No silent failures — always show user-facing feedback
+
+

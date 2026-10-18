@@ -58,6 +58,12 @@
   --color-warm-soft: rgba(245, 158, 11, 0.12);
   --color-warm-ink: #0f172a;
 
+  /* Accent alias for streak/XP — matches warm */
+  --color-streak: var(--color-warm);
+  --color-streak-strong: var(--color-warm-strong);
+  --color-streak-soft: var(--color-warm-soft);
+  --color-streak-ink: var(--color-warm-ink);
+
   --color-danger: #ef4444;
   --color-danger-strong: #dc2626;
   --color-danger-soft: rgba(239, 68, 68, 0.12);
@@ -157,9 +163,10 @@
   /* ═══════════════════════════════════════════════════════════════════
      CONTROL HEIGHTS
      ───────────────────────────────────────────────────────────────── */
-  --control-sm: 32px;
-  --control-md: 40px;
-  --control-lg: 48px;
+  --control-xs: 28px;
+  --control-sm: 36px;
+  --control-md: 44px;  /* Default button height - meets 44px tap target */
+  --control-lg: 52px;  /* Hero CTA height */
   --control-xl: 56px;
 
   --input-h: 44px;
@@ -487,6 +494,12 @@ h4 { font-size: var(--text-xl); font-weight: var(--font-semibold); }
 }
 
 /* Button sizes */
+.btn--xs {
+  min-height: var(--control-xs);
+  padding: 0 var(--space-2);
+  font-size: var(--text-xs);
+  border-radius: var(--radius-sm);
+}
 .btn--sm {
   min-height: var(--control-sm);
   padding: 0 var(--space-3);
@@ -496,6 +509,11 @@ h4 { font-size: var(--text-xl); font-weight: var(--font-semibold); }
   min-height: var(--control-lg);
   padding: 0 var(--space-6);
   font-size: var(--text-base);
+}
+.btn--xl {
+  min-height: var(--control-xl);
+  padding: 0 var(--space-8);
+  font-size: var(--text-md);
 }
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -702,4 +720,7 @@ h4 { font-size: var(--text-xl); font-weight: var(--font-semibold); }
   font-size: var(--text-sm);
   margin-bottom: var(--space-4);
   max-width: 280px;
+}
+.empty-state__action {
+  margin-top: var(--space-2);
 }

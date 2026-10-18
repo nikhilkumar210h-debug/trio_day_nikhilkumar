@@ -123,12 +123,26 @@ function renderCommunityResult(result, c, counts, selectedChoice) {
       '<span class="result-bar-value">' + value + '</span>' +
     '</div>';
   }).join('');
+  
+  // WhatsApp share button for result
+  const waText = encodeURIComponent('Take this challenge on Trio Day: *' + esc(c.q) + '*\n\nOptions:\n' + c.o.map((o,i) => (i+1) + '. ' + o).join('\n') + '\n\nWhat would you choose?');
+  const waUrl = encodeURIComponent(location.origin + '/challenge.html?id=' + c.id);
+  const whatsappLink = 'https://wa.me/?text=' + waText + '%0A%0A' + waUrl;
+  
   result.innerHTML =
     '<div class="result-summary"><strong>' +
       (Number.isInteger(selectedChoice) ? same + ' ' + (same === 1 ? 'person' : 'people') + ' chose your answer' : 'Community choices') +
     '</strong><span>' +
       total + ' total response' + (total === 1 ? '' : 's') + (enoughForPercent ? ' · community split' : '') +
-    '</span></div><div class="result-bars">' + rows + '</div>';
+    '</span></div><div class="result-bars">' + rows + '</div>' +
+    '<div class="result-actions" style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">' +
+      '<button type="button" class="nkm-btn nkm-btn--secondary result-whatsapp-btn" style="display:inline-flex;align-items:center;gap:6px" data-wa-url="' + whatsappLink + '">' +
+        '📱 Share on WhatsApp' +
+      '</button>' +
+      '<button type="button" class="nkm-btn nkm-btn--ghost result-share-btn" style="display:inline-flex;align-items:center;gap:6px" data-url="' + location.origin + '/challenge.html?id=' + c.id + '">' +
+        '↗ Share link' +
+      '</button>' +
+    '</div>';
   result.hidden = true;
 }
 
@@ -685,6 +699,45 @@ function createCardElement(c) {
       renderCommunityResult(result, c, counts, choice);
       renderAnswerCounts(card, c, counts);
       await renderResultPreview(resultPreview, c, responses);
+      
+      // Add handlers for result action buttons (shown immediately after answer)
+      const waBtn = result.querySelector('.result-whatsapp-btn');
+      if (waBtn) {
+        waBtn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          SoundFX.click();
+          const url = waBtn.dataset.waUrl;
+          try {
+            if (navigator.share) {
+              await navigator.share({ title: 'Trio Day Challenge', text: c.q, url: location.origin + '/challenge.html?id=' + c.id });
+            } else {
+              window.open(url, '_blank');
+            }
+            SoundFX.xpPop();
+          } catch {
+            window.open(url, '_blank');
+          }
+        });
+      }
+      const shareBtn = result.querySelector('.result-share-btn');
+      if (shareBtn) {
+        shareBtn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          SoundFX.click();
+          const url = shareBtn.dataset.url;
+          try {
+            if (navigator.share) {
+              await navigator.share({ title: 'Trio Day Challenge', text: c.q, url });
+            } else {
+              await navigator.clipboard.writeText(url);
+              alert('Challenge link copied ✓');
+            }
+          } catch {
+            await navigator.clipboard.writeText(url);
+            alert('Challenge link copied ✓');
+          }
+        });
+      }
     } catch (err) {
       console.error(err);
       result.hidden = false;
@@ -748,53 +801,252 @@ function createCardElement(c) {
       renderCommunityResult(result, c, counts, Number.isInteger(myChoice) ? myChoice : null);
       result.hidden = false;
       await renderVoterPeek(result, c, responses);
+      
+      // Add handlers for result action buttons
+      const waBtn = result.querySelector('.result-whatsapp-btn');
+      if (waBtn) {
+        waBtn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          SoundFX.click();
+          const url = waBtn.dataset.waUrl;
+          try {
+            if (navigator.share) {
+              await navigator.share({ title: 'Trio Day Challenge', text: c.q, url: location.origin + '/challenge.html?id=' + c.id });
+            } else {
+              window.open(url, '_blank');
+            }
+            SoundFX.xpPop();
+          } catch {
+            window.open(url, '_blank');
+          }
+        });
+      }
+      const shareBtn = result.querySelector('.result-share-btn');
+      if (shareBtn) {
+        shareBtn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          SoundFX.click();
+          const url = shareBtn.dataset.url;
+          try {
+            if (navigator.share) {
+              await navigator.share({ title: 'Trio Day Challenge', text: c.q, url });
+            } else {
+              await navigator.clipboard.writeText(url);
+              alert('Challenge link copied ✓');
+            }
+          } catch {
+            await navigator.clipboard.writeText(url);
+            alert('Challenge link copied ✓');
+          }
+        });
+      }
     }
   });
 
   shareBtn.addEventListener('click', () => shareChallenge(c));
   oppositeBtn.addEventListener('click', async () => {
-    if (!currentUser) return;
     SoundFX.click();
-    const mine = await getDoc(doc(db,'challengeAnswers',currentUser.uid + '_' + c.id)).catch(() => null);
-    if (!mine?.exists()) { SoundFX.locked(); return; }
-    const myChoice = Number(mine.data().choice);
-
-    // Phase 3: Check tempChats for a waiting opposite voter (4-second window).
-    // Firestore rules allow reading tempChats where we are a participant, so we
-    // construct the roomId and probe each opposite voter's room.
-    const snap = await getDocs(query(collection(db,'challengeAnswers'), where('challengeId','==',c.id), limit(20))).catch(() => null);
-    const oppositeVoters = snap?.docs.filter(d => d.data()?.uid !== currentUser.uid && Number(d.data()?.choice) !== myChoice) || [];
-
-    const roomKey = (a, b) => [a, b].sort().join('_') + '_' + c.id;
-    let foundRoom = null;
-    const deadline = Date.now() + 4000; // 4-second window
-
-    for (const voterDoc of oppositeVoters) {
-      if (Date.now() > deadline) break;
-      const otherUid = voterDoc.data()?.uid;
-      if (!otherUid) continue;
-      const rId = roomKey(currentUser.uid, otherUid);
-      try {
-        const roomSnap = await getDoc(doc(db, 'tempChats', rId));
-        if (roomSnap.exists()) {
-          const data = roomSnap.data();
-          const expireAt = Number(data?.expireAtMs || 0);
-          if (expireAt > Date.now() && data.participants && data.participants.includes(currentUser.uid)) {
-            foundRoom = { roomId: rId, otherUid };
-            break;
-          }
-        }
-      } catch { /* room not readable — skip */ }
+    
+    // Check auth first - show feedback, don't silently return
+    if (!currentUser) {
+      showToast('Please sign in to find an opposite match', 'info');
+      location.href = 'login.html?redirect=' + encodeURIComponent('challenge.html');
+      return;
     }
+    
+    // Check if user has answered this challenge
+    const mine = await getDoc(doc(db,'challengeAnswers',currentUser.uid + '_' + c.id)).catch(() => null);
+    if (!mine?.exists()) { 
+      showToast('Answer the challenge first to find an opposite match', 'info');
+      SoundFX.locked(); 
+      return; 
+    }
+    const myChoice = Number(mine.data().choice);
+    const oppositeChoice = myChoice === 0 ? 1 : 0; // Assuming binary choice for matchmaking
 
-    if (foundRoom) {
-      const params = new URLSearchParams({challenge: c.id, other: foundRoom.otherUid});
-      location.href = 'temp-chat.html?' + params.toString();
-    } else {
-      // No live human available — launch Undercover Challenger Mode
+    // Show waiting UI immediately
+    const sheet = createSheet({
+      title: 'Finding an Opposite Match',
+      content: `
+        <div style="display:flex;flex-direction:column;align-items:center;gap:16px;padding:8px">
+          <div class="matching-spinner" style="width:48px;height:48px;border:3px solid var(--color-border);border-top-color:var(--color-primary);border-radius:50%;animation:spin 1s linear infinite"></div>
+          <div style="text-align:center">
+            <p style="font-size:14px;color:var(--color-ink);margin:0 0 4px">Looking for someone who chose differently…</p>
+            <p style="font-size:11px;color:var(--color-ink-muted);margin:0">This usually takes < 30 seconds</p>
+          </div>
+          <div id="matchmakingTimer" style="font-size:12px;font-weight:600;color:var(--color-primary-text);font-variant-numeric:tabular-nums">60s</div>
+          <div style="display:flex;gap:8px;width:100%">
+            <button type="button" class="nkm-btn nkm-btn--secondary" id="cancelMatchmaking" style="flex:1">Cancel</button>
+            <button type="button" class="nkm-btn nkm-btn--primary" id="inviteWhatsAppBtn" style="flex:1">📱 Invite on WhatsApp</button>
+          </div>
+        </div>
+        <style>
+          @keyframes spin { to { transform: rotate(360deg); } }
+        </style>
+      `,
+      actions: []
+    });
+    
+    const sheetEl = sheet.el;
+    const cancelBtn = sheetEl.querySelector('#cancelMatchmaking');
+    const inviteBtn = sheetEl.querySelector('#inviteWhatsAppBtn');
+    const timerEl = sheetEl.querySelector('#matchmakingTimer');
+    
+    let cancelled = false;
+    let matched = false;
+    let waitDocRef = null;
+    let checkInterval = null;
+    let timeoutId = null;
+    
+    // Start 60-second countdown
+    let timeLeft = 60;
+    const countdown = () => {
+      if (timerEl) timerEl.textContent = timeLeft + 's';
+      timeLeft--;
+      if (timeLeft < 0) {
+        clearInterval(countdownInterval);
+        onTimeout();
+      }
+    };
+    const countdownInterval = setInterval(countdown, 1000);
+    
+    const cleanup = () => {
+      clearInterval(countdownInterval);
+      if (checkInterval) clearInterval(checkInterval);
+      if (timeoutId) clearTimeout(timeoutId);
+      if (waitDocRef) {
+        // Clean up our queue entry
+        deleteDoc(waitDocRef).catch(() => {});
+      }
+    };
+    
+    const onTimeout = async () => {
+      if (matched || cancelled) return;
+      cleanup();
+      sheet.close();
+      showToast('No match found. Try inviting a friend!', 'info');
+      // Fallback to Undercover mode
       const params = new URLSearchParams({challenge: c.id, undercover: '1', myChoice: String(myChoice)});
       location.href = 'temp-chat.html?' + params.toString();
+    };
+    
+    const onMatch = (otherUid, roomId) => {
+      if (matched || cancelled) return;
+      matched = true;
+      cleanup();
+      sheet.close();
+      showToast('Match found! Opening chat…', 'success');
+      SoundFX.win();
+      const params = new URLSearchParams({challenge: c.id, other: otherUid});
+      location.href = 'temp-chat.html?' + params.toString();
+    };
+    
+    cancelBtn.addEventListener('click', () => {
+      cancelled = true;
+      cleanup();
+      sheet.close();
+      showToast('Matchmaking cancelled', 'info');
+    });
+    
+    inviteBtn.addEventListener('click', () => {
+      cancelled = true;
+      cleanup();
+      sheet.close();
+      // Open WhatsApp with challenge link
+      const text = encodeURIComponent('Take this challenge on Trio Day: *' + esc(c.q) + '*\n\nOptions:\n' + c.o.map((o,i) => (i+1) + '. ' + o).join('\n') + '\n\nWhat would you choose?');
+      const url = encodeURIComponent(location.origin + '/challenge.html?id=' + c.id);
+      window.open('https://wa.me/?text=' + text + '%0A%0A' + url, '_blank');
+      SoundFX.xpPop();
+    });
+    
+    // Create our waiting queue entry
+    try {
+      const queueRef = collection(db, 'matchmakingQueue', c.id, 'waiting');
+      const waitDoc = await addDoc(queueRef, {
+        uid: currentUser.uid,
+        name: currentUser.displayName || 'Trio member',
+        photoURL: currentUser.photoURL || null,
+        choice: myChoice,
+        side: myChoice,
+        createdAt: serverTimestamp(),
+        createdAtMs: Date.now(),
+        expiresAtMs: Date.now() + 65000 // 65 seconds (5s buffer)
+      });
+      waitDocRef = waitDoc;
+    } catch (err) {
+      console.error('Failed to join queue:', err);
+      showToast('Could not join matchmaking queue', 'error');
+      sheet.close();
+      return;
     }
+    
+    // Poll for match - check if someone on opposite side is waiting
+    checkInterval = setInterval(async () => {
+      if (cancelled || matched) return;
+      
+      try {
+        // Query for opposite side waiters
+        const oppositeQuery = query(
+          queueRef,
+          where('side', '==', oppositeChoice),
+          where('uid', '!=', currentUser.uid),
+          where('expiresAtMs', '>', Date.now()),
+          limit(1)
+        );
+        
+        const snap = await getDocs(oppositeQuery);
+        if (!snap.empty) {
+          const otherDoc = snap.docs[0];
+          const otherData = otherDoc.data();
+          const otherUid = otherData.uid;
+          
+          // Found a match! Use transaction to pair and create tempChat room
+          const roomId = [currentUser.uid, otherUid].sort().join('_') + '_' + c.id;
+          const tempChatRef = doc(db, 'tempChats', roomId);
+          
+          try {
+            await runTransaction(db, async (tx) => {
+              // Check if room already exists and is valid
+              const roomSnap = await tx.get(tempChatRef);
+              if (roomSnap.exists()) {
+                const roomData = roomSnap.data();
+                if (Number(roomData?.expiresAtMs || 0) > Date.now()) {
+                  // Room exists and is valid
+                  return;
+                }
+              }
+              
+              // Create the tempChat room with 10-minute expiry
+              const expiresAtMs = Date.now() + 600000; // 10 minutes
+              tx.set(tempChatRef, {
+                participants: [currentUser.uid, otherUid],
+                challengeId: c.id,
+                createdAt: serverTimestamp(),
+                createdAtMs: Date.now(),
+                expireAt: new Date(expiresAtMs),
+                expiresAtMs: expiresAtMs
+              });
+              
+              // Remove both from queue
+              tx.delete(otherDoc.ref);
+              if (waitDocRef) tx.delete(waitDocRef);
+            });
+            
+            onMatch(otherUid, roomId);
+            return;
+          } catch (txErr) {
+            console.warn('Transaction failed, retrying...', txErr);
+            // Transaction failed, will retry on next poll
+          }
+        }
+      } catch (err) {
+        console.warn('Matchmaking check failed:', err);
+      }
+    }, 2000); // Check every 2 seconds
+    
+    // Also set a hard timeout
+    timeoutId = setTimeout(onTimeout, 60000);
+    
   });
 
   discussBtn.addEventListener('click', () => {

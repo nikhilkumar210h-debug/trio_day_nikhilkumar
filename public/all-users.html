@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#2D1B69"><title>Discover — Trio Day</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap"><link rel="stylesheet" href="styles/tokens.css?v=20261018"><link rel="stylesheet" href="styles/skeleton.css?v=20261018"><link rel="stylesheet" href="styles/nav.css?v=20261018"><link rel="stylesheet" href="styles/header.css?v=20261018"><link rel="stylesheet" href="styles/components.css?v=20261018"><link rel="stylesheet" href="style.css?v=20261018">
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#2D1B69"><title>Discover — Trio Day</title><link rel="manifest" href="manifest.json"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap"><link rel="stylesheet" href="styles/tokens.css?v=20261018"><link rel="stylesheet" href="styles/skeleton.css?v=20261018"><link rel="stylesheet" href="styles/nav.css?v=20261018"><link rel="stylesheet" href="styles/header.css?v=20261018"><link rel="stylesheet" href="styles/components.css?v=20261018"><link rel="stylesheet" href="style.css?v=20261018">
 <link rel="stylesheet" href="styles/polish.css?v=3"><style>
 .discover-shell{width:min(1040px,100%);margin:auto;padding:20px 16px 112px}@media(min-width:840px){.discover-shell{margin-left:calc(72px + max(16px,(100% - 72px - 1040px)/2) + 24px)!important;margin-right:0!important;width:min(1040px,calc(100% - 72px - 56px))!important;max-width:none;box-sizing:border-box}}@media(min-width:1280px){.discover-shell{margin-left:calc(240px + max(16px,(100% - 240px - 1040px)/2) + 24px)!important;width:min(1040px,calc(100% - 240px - 56px))!important}}
 .discover-brand{display:inline-flex;align-items:center;gap:7px;font-size:9px;letter-spacing:.18em;font-weight:900;color:var(--color-primary-text)}.discover-brand-mark{width:25px;height:25px;border-radius:9px;display:grid;place-items:center;background:rgba(99,102,241,.14);border:1px solid rgba(99,102,241,.2);font-size:13px}.discover-brand-hero h1{font-size:34px;line-height:1;letter-spacing:-.045em;margin:10px 0 8px}.discover-brand-hero p{font-size:11px;line-height:1.6;color:var(--color-ink-muted);max-width:700px;margin:0}
@@ -17,15 +17,60 @@
 .directory-meta{font-size:10px;color:var(--color-ink-muted)}
 .directory-rank{width:28px;text-align:center;font-size:11px;font-weight:var(--font-black);color:var(--color-primary-text)}
 .discover-empty{padding:28px;text-align:center;border:1px dashed var(--border);border-radius:17px;color:var(--color-ink-muted);font-size:11px}
-@media(max-width:640px){.discover-shell{padding-left:12px;padding-right:12px}.discover-brand-hero h1{font-size:28px}.discover-lanes{grid-template-columns:1fr 1fr}}
-</style>
-</head><body class="app-page"><header class="topbar"><div class="topbar-inner"><a class="brand" href="index.html"><span class="brand-chakra">☸</span><span class="brand-copy"><strong>trio_day</strong><small>DISCOVER</small></span></a><div id="authStatus" class="auth-status"></div></div></header><main class="discover-shell"><section class="discover-brand-hero"><span class="discover-brand"><span class="discover-brand-mark">✦</span> DISCOVER · TRIO DAY</span><h1>Something new is happening.</h1><p>Jump into a live question, find a different perspective, or start the next conversation yourself.</p><div class="discover-student-filters"><a href="challenge.html?category=Career">Career</a><a href="challenge.html?category=Study">Study</a><a href="challenge.html?category=College">College</a><a href="challenge.html?category=Tech">Tech</a><a href="challenge.html?category=Life">Life</a><a href="challenge.html?category=Fun">Fun</a></div></section><section><div class="activity-section-head"><div><h2>Choose your lane</h2><p>Filter fast. Start faster.</p></div></div><div class="discover-lanes">
-<a class="discover-lane-card lane-challenge" href="challenge.html"><span class="lane-icon">⚡</span><span class="lane-copy"><strong>Challenges</strong><small>Quick choices, guesses and debates that put you in the same moment as other people.</small></span><span class="lane-arrow">↗</span></a>
-<a class="discover-lane-card lane-connect" href="search.html"><span class="lane-icon">◎</span><span class="lane-copy"><strong>Connect</strong><small>Meet people, see who is around and turn a challenge into a conversation.</small></span><span class="lane-arrow">↗</span></a>
-<a class="discover-lane-card lane-create" href="challenge-create.html"><span class="lane-icon">✦</span><span class="lane-copy"><strong>Create</strong><small>Start a question or social prompt for the community to answer.</small></span><span class="lane-arrow">↗</span></a>
-</div></section>
 
-<!-- Phase 3: Live Trio Directory & Top Streak Leaderboard -->
+/* Category chips */
+.category-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.category-chip{display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:999px;background:var(--color-glass);border:1px solid var(--border);color:var(--color-ink);text-decoration:none;font-size:11px;font-weight:600;transition:all .15s ease}
+.category-chip:hover{border-color:var(--cat-color);background:color-mix(in srgb, var(--cat-color) 15%, transparent)}
+.category-icon{font-size:12px}
+
+/* Trending challenges */
+.trending-section{margin-top:24px}
+.trending-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:var(--space-2)}
+.trending-kicker{font-size:var(--text-xs);font-weight:var(--font-black);letter-spacing:.14em;text-transform:uppercase;color:var(--color-primary-text)}
+.trending-title{font-size:var(--text-lg);margin:0 0 2px}
+.trending-sub{font-size:var(--text-xs);color:var(--color-ink-muted);margin:0}
+.trending-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.trending-card{display:block;text-decoration:none;color:inherit;border:1px solid var(--border);border-radius:16px;background:var(--color-surface);overflow:hidden;transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}
+.trending-card:hover{transform:translateY(-4px);border-color:rgba(139,92,246,.42);box-shadow:0 18px 45px rgba(0,0,0,.14)}
+.trending-image{width:100%;height:140px;object-fit:cover}
+.trending-placeholder{width:100%;height:140px;display:flex;align-items:center;justify-content:center;font-size:48px;background:var(--color-glass)}
+.trending-content{padding:12px}
+.trending-title{font-size:14px;font-weight:700;margin:4px 0;line-height:1.3}
+.trending-desc{font-size:11px;color:var(--color-ink-muted);margin:0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+
+/* Search entry */
+.search-entry{display:flex;align-items:center;justify-content:center;padding:20px}
+.search-entry-btn{display:inline-flex;align-items:center;gap:10px;padding:14px 24px;border-radius:14px;border:1px solid var(--border);background:var(--color-surface);color:var(--color-ink);font-size:14px;font-weight:700;cursor:pointer;transition:all .15s ease;box-shadow:var(--shadow-sm)}
+.search-entry-btn:hover{border-color:rgba(139,92,246,.4);background:var(--color-primary-soft);color:var(--color-primary-text);transform:translateY(-2px);box-shadow:var(--shadow-md)}
+.search-entry-icon{font-size:18px}
+
+@media(max-width:640px){.discover-shell{padding-left:12px;padding-right:12px}.discover-brand-hero h1{font-size:28px}.discover-lanes{grid-template-columns:1fr 1fr}.trending-grid{grid-template-columns:1fr}}
+</style>
+</head><body class="app-page"><header class="topbar"><div class="topbar-inner"><a class="brand" href="index.html"><span class="brand-chakra">☸</span><span class="brand-copy"><strong>trio_day</strong><small>DISCOVER</small></span></a><div id="authStatus" class="auth-status"></div></div></header><main class="discover-shell"><section class="discover-brand-hero"><span class="discover-brand"><span class="discover-brand-mark">✦</span> DISCOVER · TRIO DAY</span><h1>Something new is happening.</h1><p>Jump into a live question, find a different perspective, or start the next conversation yourself.</p><div id="categoryChips" class="category-chips" aria-label="Challenge categories"></div></section>
+
+<section class="activity-section-head"><div><h2>Choose your lane</h2><p>Filter fast. Start faster.</p></div></section>
+<div class="discover-lanes">
+  <a class="discover-lane-card lane-challenge" href="challenge.html"><span class="lane-icon">⚡</span><span class="lane-copy"><strong>Challenges</strong><small>Quick choices, guesses and debates that put you in the same moment as other people.</small></span><span class="lane-arrow">↗</span></a>
+  <a class="discover-lane-card lane-connect" href="search.html"><span class="lane-icon">◎</span><span class="lane-copy"><strong>Connect</strong><small>Meet people, see who is around and turn a challenge into a conversation.</small></span><span class="lane-arrow">↗</span></a>
+  <a class="discover-lane-card lane-create" href="challenge-create.html"><span class="lane-icon">✦</span><span class="lane-copy"><strong>Create</strong><small>Start a question or social prompt for the community to answer.</small></span><span class="lane-arrow">↗</span></a>
+</div>
+
+<!-- Trending Challenges -->
+<section class="trending-section" aria-label="Trending Challenges">
+  <div class="trending-head">
+    <span class="trending-kicker">TRENDING NOW</span>
+    <div>
+      <h2 class="trending-title">Trending Challenges</h2>
+      <p class="trending-sub">Most popular community challenges right now · cached 10 min</p>
+    </div>
+  </div>
+  <div id="trendingList" class="trending-grid">
+    <div class="discover-empty">Loading trending challenges…</div>
+  </div>
+</section>
+
+<!-- Live Trio Directory & Top Streak Leaderboard -->
 <section class="trio-directory" aria-label="Live Trio Directory">
   <div class="trio-directory-head">
     <span class="trio-directory-kicker">LIVE DIRECTORY</span>
@@ -39,5 +84,14 @@
   </div>
 </section>
 
+<!-- People Search Entry -->
+<section class="search-entry" style="margin-top:24px;border:1px solid var(--border);border-radius:24px;background:var(--color-surface);padding:var(--space-4);text-align:center">
+  <button id="searchEntryBtn" class="search-entry-btn" type="button" aria-label="Search people">
+    <span class="search-entry-icon">🔍</span>
+    <span>Search People →</span>
+  </button>
+  <p style="margin:10px 0 0;font-size:11px;color:var(--color-ink-muted)">Find friends, see who's active, connect over challenges</p>
+</section>
+
 <section class="discover-create"><div class="discover-create-copy"><strong>Make the next question</strong><small>Create a social prompt. Let the community answer it.</small></div><a class="nkm-btn nkm-btn--primary" href="challenge-create.html">Create prompt</a></section></main><nav class="bottom-nav" aria-label="Primary navigation"><div class="nav-row"></div></nav><script src="auth-preload.js?v=20261018"></script>
-  <script type="module" src="auth-guard.js?v=20261018"></script><script type="module" src="auth-ui.js?v=20260920-audit2"></script><script type="module" src="theme.js?v=20261018"></script><script type="module" src="ui/header.js?v=20261018"></script><script type="module" src="ui/nav.js?v=20260922-nav7"></script><script type="module" src="all-users.js?v=20261017-phase3"></script></body></html>
+  <script type="module" src="auth-guard.js?v=20261018"></script><script type="module" src="auth-ui.js?v=20260920-audit2"></script><script type="module" src="theme.js?v=20261018"></script><script type="module" src="ui/header.js?v=20261018"></script><script type="module" src="ui/nav.js?v=20260922-nav7"></script><script type="module" src="all-users.js?v=20261018-discover"></script></body></html>

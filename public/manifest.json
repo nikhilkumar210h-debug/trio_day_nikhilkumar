@@ -1,0 +1,55 @@
+{
+  "name": "Trio Day",
+  "short_name": "Trio Day",
+  "description": "Share your stories, meet new people, and connect with the community. One small meaningful thing every day with a few people.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#08051A",
+  "theme_color": "#8B5CF6",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "categories": ["social", "lifestyle"],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Challenges",
+      "short_name": "Challenges",
+      "description": "Quick choices, guesses and debates",
+      "url": "/challenge.html",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Discover",
+      "short_name": "Discover",
+      "description": "Find trending challenges and people",
+      "url": "/all-users.html",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Chat",
+      "short_name": "Chat",
+      "description": "Your conversations",
+      "url": "/chat.html",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}
