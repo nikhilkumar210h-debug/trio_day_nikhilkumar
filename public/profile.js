@@ -89,7 +89,7 @@ async function isConnected(myUid, theirUid) {
 }
 
 // ── Load connections panel ───────────────────────────────────────────────────
-const CONNECTIONS_EMPTY_STATE = '<div class="connections-empty">No connections yet — Match in a challenge to connect!</div>';
+const CONNECTIONS_EMPTY_STATE = '<div class="connections-empty">No connections yet — Start an activity to connect!</div>';
 
 async function loadConnections(uid, mode = 'followers') {
   const box = $('connectionsList'); if (!box) return;
@@ -581,57 +581,51 @@ async function loadProfile(uid) {
 
   const rows = [];
   const seen = new Set();
-  const builtInChallenges = new Map([
-    ['trip', { title: 'Free trip', icon: '🌍', xp: 25 }],
-    ['hour', { title: 'One free hour', icon: '⏱️', xp: 25 }],
-    ['weekend', { title: 'Make something this weekend', icon: '🛠️', xp: 25 }],
-    ['food', { title: 'Pick one forever', icon: '🍽️' }]
-  ]);
 
   try {
-    const [challengeSnap, communitySnap] = await Promise.all([
-      getDocs(query(collection(db, 'challengeAnswers'), where('uid', '==', uid), limit(24))).catch(() => null),
-      getDocs(query(collectionGroup(db, 'completions'), where('uid', '==', uid), limit(24))).catch(() => null)
+    // Fetch user task progress from Supabase via Worker
+    const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+    const weekKey = new Date().toISOString().split('T')[0]; // We'll use week key format from Worker
+    
+    // For now, fetch from Firestore activity completions (written by Worker)
+    const [completionsSnap, skipsSnap] = await Promise.all([
+      getDocs(query(collection(db, 'users', uid, 'taskCompletions'), orderBy('createdAtMs', 'desc'), limit(24))).catch(() => ({ docs: [] })),
+      getDocs(query(collection(db, 'users', uid, 'taskSkips'), orderBy('createdAtMs', 'desc'), limit(24))).catch(() => ({ docs: [] }))
     ]);
 
-    if (challengeSnap) {
-      challengeSnap.docs.forEach(d => {
-        const v = d.data() || {};
-        const challengeId = String(v.challengeId || '').trim();
-        const builtIn = builtInChallenges.get(challengeId);
-        const key = 'challenge:' + (challengeId || d.id);
-        if (seen.has(key)) return;
-        seen.add(key);
-        rows.push({
-          key,
-          title: builtIn?.title || 'Community Challenge',
-          type: 'challenge',
-          icon: builtIn?.icon || '⚡',
-          category: 'Challenge',
-          xp: Number(builtIn?.xp) || 25,
-          atMs: Number(v.createdAtMs) || 0,
-          source: 'challenge'
-        });
-      });
-    }
+    const activityIds = new Set();
+    const taskIds = new Set();
+    
+    completionsSnap.docs.forEach(d => {
+      const v = d.data() || {};
+      if (v.activityId) activityIds.add(v.activityId);
+      if (v.taskId) taskIds.add(v.taskId);
+    });
+    skipsSnap.docs.forEach(d => {
+      const v = d.data() || {};
+      if (v.activityId) activityIds.add(v.activityId);
+      if (v.taskId) taskIds.add(v.taskId);
+    });
 
-    if (communitySnap) {
-      const docs = communitySnap.docs.slice(0, 24);
-      const tasks = await Promise.all(docs.map(async d => {
-        const taskId = d.ref.parent?.parent?.id;
-        if (!taskId) return null;
-        const task = await getCommunityTask(taskId).catch(() => null);
-        if (!task) return null;
-        const key = 'community:' + taskId;
-        return {
-          key, title: task.title || 'Community activity',
-          type: 'community', icon: task.icon || '🎯',
-          category: 'Community', xp: Number(task.xpReward) || 0,
-          atMs: Number(d.data()?.atMs) || 0, source: 'community'
-        };
-      }));
-      tasks.filter(Boolean).forEach(v => {
-        if (!seen.has(v.key)) { seen.add(v.key); rows.push(v); }
+    // Fetch activity details from Supabase for display
+    // For now, use the Firestore data directly
+    const allTasks = [...completionsSnap.docs, ...skipsSnap.docs].slice(0, 24);
+    
+    for (const d of allTasks) {
+      const v = d.data() || {};
+      const key = 'task:' + (v.taskId || d.id);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      
+      rows.push({
+        key,
+        title: v.activityTitle || 'Activity',
+        type: v.status === 'completed' ? 'completed' : 'skipped',
+        icon: '⚡',
+        category: 'Activity',
+        xp: v.xpAwarded || 0,
+        atMs: Number(v.createdAtMs) || 0,
+        source: 'activity'
       });
     }
   } catch (e) {
@@ -642,19 +636,18 @@ async function loadProfile(uid) {
   const items = rows.slice(0, 10);
   if (summary) summary.textContent = items.length ? (items.length + ' recent') : 'No completions';
   if (!items.length) {
-    list.innerHTML = '<div class="profile-activity-empty"><span>⚡</span><strong>Your Challenge journey starts here.</strong><p>Answer a Challenge and your recent moments will appear here.</p><a href="challenge.html" class="nkm-btn nkm-btn--primary nkm-btn--sm">Open Challenges</a></div>';
+    list.innerHTML = '<div class="profile-activity-empty"><span>⚡</span><strong>Your Activity journey starts here.</strong><p>Complete an Activity and your recent moments will appear here.</p><a href="index.html" class="nkm-btn nkm-btn--primary nkm-btn--sm">Browse Activities</a></div>';
     return;
   }
 
   list.innerHTML = items.map(item => {
-    const type = { icon: item.icon || '⚡', label: item.type === 'community' ? 'Community' : 'Challenge' };
     const when = item.atMs ? new Date(item.atMs).toLocaleDateString(undefined, { day:'numeric', month:'short' }) : 'Recently';
-    return '<a class="profile-activity-item" href="' +
-      'challenge.html?challenge=' + encodeURIComponent(item.key.replace('community:','').replace('challenge:','')) +
-      '" aria-label="' + esc(item.title) + '">' +
-      '<span class="profile-activity-icon">' + (item.icon || type.icon) + '</span>' +
-      '<span class="profile-achievement-badge">✓</span>' +
-      '<span class="profile-activity-copy"><strong>' + esc(item.title) + '</strong><small>' + esc(type.label) + ' · ' + esc(when) + '</small></span>' +
+    const badge = item.type === 'completed' ? '✓' : '⏭';
+    const badgeClass = item.type === 'completed' ? 'profile-achievement-badge' : 'profile-skip-badge';
+    return '<a class="profile-activity-item" href="activity-player.html?act=' + encodeURIComponent(item.key.replace('task:','')) + '" aria-label="' + esc(item.title) + '">' +
+      '<span class="profile-activity-icon">' + (item.icon || '⚡') + '</span>' +
+      '<span class="' + badgeClass + '">' + badge + '</span>' +
+      '<span class="profile-activity-copy"><strong>' + esc(item.title) + '</strong><small>' + esc(item.category) + ' · ' + esc(when) + '</small></span>' +
       '<span class="profile-activity-xp">+' + item.xp + '</span>' +
       '</a>';
   }).join('');
