@@ -32,3 +32,5 @@
   *, *::before, *::after { animation-duration:.01ms !important; animation-iteration-count:1 !important; scroll-behavior:auto !important; transition-duration:.01ms !important; }
   .activity-card, .goal-card, .task-list-item { will-change:auto; }
 }
+
+.goal-career .goal-icon { color: var(--color-accent, #10b981); }
