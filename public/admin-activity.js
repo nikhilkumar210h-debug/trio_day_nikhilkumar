@@ -118,6 +118,11 @@ function setupTabs() {
 }
 
 function setupTaskForm() {
+  const activityPicker = $('taskActivityPicker');
+  if (activityPicker) {
+    activityPicker.innerHTML = '<option value="">Choose an activity…</option>' + activitiesCache.map(act => `<option value="${act.id}">${esc(act.title_en || act.title || 'Untitled activity')} · ${esc(act.category || '')}</option>`).join('');
+    activityPicker.addEventListener('change', () => { $('taskActivityId').value = activityPicker.value; });
+  }
   const preset = $('taskTemplate');
   if (!preset) return;
   const templates = {
@@ -407,6 +412,7 @@ function openTaskEditor(taskId) {
   taskForm.reset();
   $('taskId').value = task.id;
   $('taskActivityId').value = task.activity_id;
+  if ($('taskActivityPicker')) $('taskActivityPicker').value = task.activity_id;
   $('taskOrder').value = task.task_number;
   $('taskType').value = task.task_type || 'Action Step';
   $('taskTitle').value = task.title_en;
@@ -430,6 +436,7 @@ function openNewTaskEditor(activityId = null) {
   taskForm.reset();
   $('taskId').value = '';
   $('taskActivityId').value = activityId || (filterActivity.value || '');
+  if ($('taskActivityPicker')) $('taskActivityPicker').value = $('taskActivityId').value;
   $('taskOrder').value = 1;
   $('taskType').value = 'Action Step';
   $('taskActive').checked = true;
@@ -448,8 +455,11 @@ async function saveTask(e) {
   e.preventDefault();
   
   const formData = new FormData(taskForm);
+  const activityIdValue = $('taskActivityPicker')?.value || formData.get('activity_id');
+  if (!activityIdValue) { alert('Choose which activity this task belongs to.'); $('taskActivityPicker')?.focus(); return; }
+  $('taskActivityId').value = activityIdValue;
   const data = {
-    activity_id: formData.get('activity_id'),
+    activity_id: activityIdValue,
     task_number: parseInt(formData.get('task_number')) || 1,
     task_type: formData.get('type') || 'Action Step',
     title_en: formData.get('title'),
