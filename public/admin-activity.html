@@ -188,6 +188,10 @@
         <form id="taskForm" class="form-grid">
           <input type="hidden" id="taskId" name="id">
           <input type="hidden" id="taskActivityId" name="activity_id">
+          <div class="field field-full">
+            <label class="label-text" for="taskActivityPicker">Activity this task belongs to *</label>
+            <select id="taskActivityPicker" required><option value="">Choose an activity…</option></select>
+          </div>
           <div class="field field-full template-field">
             <label class="label-text" for="taskTemplate">Quick-start template <span class="field-hint">Optional · fills editable fields</span></label>
             <select id="taskTemplate" name="task_template">
