@@ -5,6 +5,7 @@
 #   FIREBASE_SA_CLIENT_EMAIL      Firebase service account email
 #   SUPABASE_URL                  https://vccypxwiqcuexxrhtgyq.supabase.co
 #   SUPABASE_ANON_KEY             Supabase anon/public key
+#   SUPABASE_SERVICE_ROLE_KEY     Supabase service role key (for admin writes & verification_prompt reads)
 #   ADMIN_EMAILS                  comma-separated: nikhilkumar210h@gmail.com,nikhilkumar45374@gmail.com
 #   CLOUDINARY_CLOUD_NAME         Your Cloudinary cloud name
 #   CLOUDINARY_API_KEY            Cloudinary API key

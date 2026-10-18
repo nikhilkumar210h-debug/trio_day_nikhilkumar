@@ -28,6 +28,10 @@ const ADMIN_EMAILS = ['nikhilkumar210h@gmail.com', 'nikhilkumar45374@gmail.com']
 
 const GUEST_TASK_LIMIT = 3;
 
+// Supabase column mapping for real schema
+const ACTIVITY_SELECT = 'id,display_order,category,title_en,title_hi,description_en,description_hi,difficulty,total_xp,cover_image_url,is_guest_allowed,is_published,created_at';
+const TASK_SELECT = 'id,activity_id,task_number,task_type,title_en,title_hi,instructions_en,instructions_hi,verification_prompt,min_time_seconds,xp_reward';
+
 // ─── STATE ──────────────────────────────────────────────────────────────────
 let currentUser = null;
 let userProfile = null;
@@ -212,23 +216,24 @@ function reRenderUI() {
 async function loadActivity() {
   try {
     // Fetch activity from Supabase
-    const actRes = await fetch(`${SUPABASE_URL}/rest/v1/activities?id=eq.${activityId}&select=*`, {
+    const actRes = await fetch(`${SUPABASE_URL}/rest/v1/activities?id=eq.${activityId}&select=${ACTIVITY_SELECT}&is_published=eq.true`, {
       headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` }
     });
     const actData = await actRes.json();
     if (!actData.length) throw new Error('Activity not found');
     activityData = actData[0];
     
-    // Fetch tasks
-    const taskRes = await fetch(`${SUPABASE_URL}/rest/v1/tasks?activity_id=eq.${activityId}&is_active=eq.true&order=order_index.asc`, {
+    // Fetch tasks - explicitly list columns, NEVER select=* (verification_prompt is hidden from anon)
+    const taskRes = await fetch(`${SUPABASE_URL}/rest/v1/tasks?activity_id=eq.${activityId}&is_published=eq.true&select=${TASK_SELECT}&order=task_number.asc`, {
       headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` }
     });
     tasks = await taskRes.json();
     
     if (!tasks.length) throw new Error('No tasks found');
     
-    // Setup UI
-    playerCatName.textContent = `${activityData.icon || '⚡'} ${activityData.title}`;
+    // Setup UI - use title_en/title_hi based on language
+    const actTitle = currentLanguage === 'HI' ? (activityData.title_hi || activityData.title_en) : activityData.title_en;
+    playerCatName.textContent = `${activityData.icon || '⚡'} ${actTitle}`;
     totalTaskNum.textContent = tasks.length;
     activityHeader.hidden = false;
     progressTrack.hidden = false;
@@ -256,26 +261,27 @@ function renderCurrentTask() {
   progressFill.style.width = `${progressPct}%`;
   currTaskNum.textContent = currentTaskIndex + 1;
   
-  // Task content
-  taskTypeBadge.textContent = `🧩 ${task.type || 'Task'}`;
+  // Task content - use title_en/title_hi based on language
+  const taskTitleText = currentLanguage === 'HI' ? (task.title_hi || task.title_en) : task.title_en;
+  const taskInstructions = currentLanguage === 'HI' ? (task.instructions_hi || task.instructions_en) : task.instructions_en;
+  
+  taskTypeBadge.textContent = `🧩 ${task.task_type || 'Task'}`;
   taskXpBadge.textContent = `⚡ +${task.xp_reward || 10} XP`;
-  taskTitle.textContent = task.title;
-  taskDetail.textContent = task.description || '';
+  taskTitle.textContent = taskTitleText;
+  taskDetail.textContent = taskInstructions || '';
   
   // Timer
   setupTimer(task.min_time_seconds || 0);
   
-  // Proof input
-  const requiresProof = task.verification_prompt && task.verification_prompt.trim();
-  if (requiresProof) {
-    proofInputWrapper.hidden = false;
-    proofLabel.textContent = t('proof_label');
-    proofTextarea.placeholder = t('proof_placeholder');
-    proofTextarea.value = '';
-    updateCharCount();
-  } else {
-    proofInputWrapper.hidden = true;
-  }
+  // Proof input - verification_prompt is NOT returned by Supabase (hidden from anon), 
+  // but Worker has it via service role. We'll show proof input for all tasks that need verification.
+  // For now, show proof input for all tasks except possibly simple ones.
+  // The Worker will handle the actual verification prompt.
+  proofInputWrapper.hidden = false;
+  proofLabel.textContent = t('proof_label');
+  proofTextarea.placeholder = t('proof_placeholder');
+  proofTextarea.value = '';
+  updateCharCount();
   
   // Buttons
   btnSkip.textContent = t('task_skip');
@@ -342,9 +348,8 @@ function updateTimerDisplay() {
 // ─── HANDLE COMPLETE ────────────────────────────────────────────────────────
 async function handleComplete(task) {
   const proof = proofTextarea.value.trim();
-  const requiresProof = task.verification_prompt && task.verification_prompt.trim();
   
-  if (requiresProof && !proof) {
+  if (!proof) {
     alert('Please provide your proof/reflection before completing.');
     proofTextarea.focus();
     return;
@@ -366,9 +371,8 @@ async function handleComplete(task) {
         body: JSON.stringify({
           activityId,
           taskId: task.id,
-          taskIndex: currentTaskIndex,
+          taskNumber: task.task_number,
           proof,
-          verificationPrompt: task.verification_prompt,
           timeSpent: taskStartTime ? Math.floor((Date.now() - taskStartTime) / 1000) : 0
         })
       });
@@ -422,7 +426,7 @@ async function handleSkip() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${idToken}`
         },
-        body: JSON.stringify({ activityId, taskId: tasks[currentTaskIndex].id, taskIndex: currentTaskIndex })
+        body: JSON.stringify({ activityId, taskId: tasks[currentTaskIndex].id, taskNumber: tasks[currentTaskIndex].task_number })
       });
     } catch (err) {
       console.warn('[ActivityPlayer] Skip API failed:', err);

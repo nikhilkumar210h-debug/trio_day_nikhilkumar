@@ -10,7 +10,7 @@
 
 import { auth, db } from './firebase-init.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
-import { collection, query, orderBy, limit, getDocs, onSnapshot, where } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
+import { collection, query, orderBy, limit, getDocs, onSnapshot, where, doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 import { SoundManager } from './sound-manager.js';
 import { escapeHtml as esc } from './utils.js';
 import { setAdminFlag } from './ui/nav.js';

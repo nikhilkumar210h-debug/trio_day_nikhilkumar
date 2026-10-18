@@ -89,6 +89,13 @@ async function initAdmin() {
   loadActivitiesForFilter();
 }
 
+// Get Firebase ID token for Worker API calls
+async function getIdToken() {
+  const user = auth.currentUser;
+  if (!user) throw new Error('Not authenticated');
+  return user.getIdToken();
+}
+
 function setupTabs() {
   document.querySelectorAll('.admin-tab').forEach(tab => {
     tab.onclick = () => {
@@ -102,12 +109,18 @@ function setupTabs() {
   });
 }
 
+function setupActivityForm() {
+  // Form submit handler is set up in setupModals()
+  // This function exists to satisfy initAdmin() call
+  // Additional form initialization can go here if needed
+}
+
 // ─── ACTIVITIES CRUD ────────────────────────────────────────────────────────
 async function loadActivities() {
   activitiesList.innerHTML = '<div class="skeleton-stack" style="width:100%;"><div class="skeleton-card" style="height:120px; aspect-ratio:auto; border-radius:12px; margin-bottom:12px; background:linear-gradient(90deg,rgba(255,255,255,.04) 0%,rgba(255,255,255,.08) 50%,rgba(255,255,255,.04) 100%); background-size:200% 100%; animation:shimmer 1.5s infinite linear;"></div></div>'.repeat(3);
   
   try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/activities?select=*&order=order_index.asc`, {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/activities?select=${ACTIVITY_SELECT}&order=display_order.asc`, {
       headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` }
     });
     activitiesCache = await res.json();
@@ -126,12 +139,12 @@ function renderActivitiesList() {
   
   activitiesList.innerHTML = activitiesCache.map(act => `
     <div class="task-list-item" data-id="${act.id}">
-      <span class="task-order">${act.order_index || 0}</span>
+      <span class="task-order">${act.display_order || 0}</span>
       <div class="task-info">
-        <div class="task-title">${act.icon || '⚡'} ${esc(act.title)}</div>
+        <div class="task-title">${act.icon || '⚡'} ${esc(act.title_en)}</div>
         <div class="task-meta">
-          Category: ${esc(act.category)} | ${act.is_guest_allowed ? '🔓 Guest Allowed' : '🔒 Members Only'} | ${act.is_active ? '✅ Active' : '⏸️ Inactive'}
-          ${act.cover_image ? ' | 🖼️ Has Image' : ''}
+          Category: ${esc(act.category)} | ${act.is_guest_allowed ? '🔓 Guest Allowed' : '🔒 Members Only'} | ${act.is_published ? '✅ Published' : '⏸️ Draft'}
+          ${act.cover_image_url ? ' | 🖼️ Has Image' : ''}
         </div>
       </div>
       <div class="task-actions">
@@ -163,23 +176,23 @@ function openActivityEditor(activityId) {
   createActivityTitle.textContent = 'Edit Activity';
   activityForm.querySelector('button[type="submit"]').textContent = '💾 Update Activity';
   
-  // Populate form
+  // Populate form with new column names
   $('activityId').value = act.id;
-  $('actTitle').value = act.title;
+  $('actTitle').value = act.title_en;
   $('actCategory').value = act.category;
   $('actIcon').value = act.icon || '';
-  $('actOrder').value = act.order_index || 0;
-  $('actDescription').value = act.description || '';
+  $('actOrder').value = act.display_order || 0;
+  $('actDescription').value = act.description_en || '';
   $('actDifficulty').value = act.difficulty || '';
-  $('actXpReward').value = act.xp_reward || '';
+  $('actXpReward').value = act.total_xp || '';
   $('actGuestAllowed').checked = act.is_guest_allowed || false;
-  $('actActive').checked = act.is_active !== false;
+  $('actActive').checked = act.is_published !== false;
   
   // Cover image
-  if (act.cover_image) {
-    $('actCoverUrl').value = act.cover_image;
+  if (act.cover_image_url) {
+    $('actCoverUrl').value = act.cover_image_url;
     $('actCoverUrl').style.display = 'block';
-    $('actCoverPreview').src = act.cover_image;
+    $('actCoverPreview').src = act.cover_image_url;
     $('actCoverPreview').hidden = false;
     $('actCoverUpload').classList.add('has-file');
     $('actCoverUpload .upload-text').innerHTML = '<strong>Image uploaded</strong><br><small>Click to replace</small>';
@@ -217,16 +230,16 @@ async function saveActivity(e) {
   
   const formData = new FormData(activityForm);
   const data = {
-    title: formData.get('title'),
+    title_en: formData.get('title'),
     category: formData.get('category'),
     icon: formData.get('icon') || '⚡',
-    order_index: parseInt(formData.get('order_index')) || 0,
-    description: formData.get('description') || '',
-    cover_image: formData.get('cover_image') || null,
+    display_order: parseInt(formData.get('order_index')) || 0,
+    description_en: formData.get('description') || '',
+    cover_image_url: formData.get('cover_image') || null,
     difficulty: formData.get('difficulty') || '',
-    xp_reward: formData.get('xp_reward') || '',
+    total_xp: parseInt(formData.get('xp_reward')) || 0,
     is_guest_allowed: formData.get('is_guest_allowed') === 'true',
-    is_active: formData.get('is_active') === 'true',
+    is_published: formData.get('is_active') === 'true',
     updated_at: new Date().toISOString()
   };
   
@@ -235,33 +248,21 @@ async function saveActivity(e) {
   submitBtn.textContent = 'Saving...';
   
   try {
-    let res;
-    if (editingActivityId) {
-      res = await fetch(`${SUPABASE_URL}/rest/v1/activities?id=eq.${editingActivityId}`, {
-        method: 'PATCH',
-        headers: {
-          'apikey': SUPABASE_ANON_KEY,
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-          'Content-Type': 'application/json',
-          'Prefer': 'return=representation'
-        },
-        body: JSON.stringify(data)
-      });
-    } else {
-      data.created_at = new Date().toISOString();
-      res = await fetch(`${SUPABASE_URL}/rest/v1/activities`, {
-        method: 'POST',
-        headers: {
-          'apikey': SUPABASE_ANON_KEY,
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-          'Content-Type': 'application/json',
-          'Prefer': 'return=representation'
-        },
-        body: JSON.stringify(data)
-      });
-    }
+    const idToken = await getIdToken();
+    const action = editingActivityId ? 'update' : 'create';
+    const activityId = editingActivityId || '';
     
-    if (!res.ok) throw new Error(`Supabase error: ${res.status}`);
+    const res = await fetch(`${WORKER_BASE}/api/admin/activity`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${idToken}`
+      },
+      body: JSON.stringify({ action, activityId, data })
+    });
+    
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Failed to save activity');
     
     showToast(editingActivityId ? 'Activity updated!' : 'Activity created!');
     resetActivityForm();
@@ -287,19 +288,19 @@ async function deleteActivity(activityId) {
   if (!confirm('Delete this activity and all its tasks? This cannot be undone.')) return;
   
   try {
-    // Delete tasks first
-    await fetch(`${SUPABASE_URL}/rest/v1/tasks?activity_id=eq.${activityId}`, {
-      method: 'DELETE',
-      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` }
+    const idToken = await getIdToken();
+    
+    const res = await fetch(`${WORKER_BASE}/api/admin/activity`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${idToken}`
+      },
+      body: JSON.stringify({ action: 'delete', activityId })
     });
     
-    // Delete activity
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/activities?id=eq.${activityId}`, {
-      method: 'DELETE',
-      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` }
-    });
-    
-    if (!res.ok) throw new Error(`Supabase error: ${res.status}`);
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Failed to delete activity');
     
     showToast('Activity deleted!');
     await loadActivities();
@@ -313,7 +314,7 @@ async function deleteActivity(activityId) {
 // ─── TASKS CRUD ─────────────────────────────────────────────────────────────
 async function loadTasks() {
   const activityFilter = filterActivity.value;
-  let url = `${SUPABASE_URL}/rest/v1/tasks?select=*,activities(title)&order=activity_id.asc,order_index.asc`;
+  let url = `${SUPABASE_URL}/rest/v1/tasks?select=${TASK_SELECT_ADMIN}&order=activity_id.asc,task_number.asc`;
   if (activityFilter) url += `&activity_id=eq.${activityFilter}`;
   
   tasksList.innerHTML = '<div class="skeleton-stack" style="width:100%;"><div class="skeleton-card" style="height:100px; aspect-ratio:auto; border-radius:12px; margin-bottom:12px; background:linear-gradient(90deg,rgba(255,255,255,.04) 0%,rgba(255,255,255,.08) 50%,rgba(255,255,255,.04) 100%); background-size:200% 100%; animation:shimmer 1.5s infinite linear;"></div></div>'.repeat(3);
@@ -338,11 +339,11 @@ function renderTasksList() {
   
   tasksList.innerHTML = tasksCache.map(task => `
     <div class="task-list-item" data-id="${task.id}">
-      <span class="task-order">${task.order_index}</span>
+      <span class="task-order">${task.task_number}</span>
       <div class="task-info">
-        <div class="task-title">${task.type || 'Task'}: ${esc(task.title)}</div>
+        <div class="task-title">${task.task_type || 'Task'}: ${esc(task.title_en)}</div>
         <div class="task-meta">
-          Activity: ${esc(task.activities?.title || 'Unknown')} | ${task.min_time_seconds ? `⏱️ ${task.min_time_seconds}s` : 'No timer'} | ⚡ ${task.xp_reward} XP | ${task.verification_prompt ? '🤖 AI Verify' : '✅ Auto-approve'} | ${task.is_active ? '✅ Active' : '⏸️ Inactive'}
+          Activity: ${esc(task.activity_id)} | ${task.min_time_seconds ? `⏱️ ${task.min_time_seconds}s` : 'No timer'} | ⚡ ${task.xp_reward} XP | ${task.verification_prompt ? '🤖 AI Verify' : '✅ Auto-approve'} | ${task.is_published ? '✅ Published' : '⏸️ Draft'}
         </div>
       </div>
       <div class="task-actions">
@@ -366,21 +367,21 @@ function openTaskEditor(taskId) {
   
   editingTaskId = taskId;
   $('taskModalEyebrow').textContent = 'Edit Task';
-  $('taskModalTitle').textContent = task.title;
+  $('taskModalTitle').textContent = task.title_en;
   
   taskForm.reset();
   $('taskId').value = task.id;
   $('taskActivityId').value = task.activity_id;
-  $('taskOrder').value = task.order_index;
-  $('taskType').value = task.type || 'Action Step';
-  $('taskTitle').value = task.title;
-  $('taskDescription').value = task.description || '';
+  $('taskOrder').value = task.task_number;
+  $('taskType').value = task.task_type || 'Action Step';
+  $('taskTitle').value = task.title_en;
+  $('taskDescription').value = task.description_en || '';
   $('taskInstructionsEn').value = task.instructions_en || '';
   $('taskInstructionsHi').value = task.instructions_hi || '';
   $('taskMinTime').value = task.min_time_seconds || 0;
   $('taskXp').value = task.xp_reward || 10;
   $('taskVerificationPrompt').value = task.verification_prompt || '';
-  $('taskActive').checked = task.is_active !== false;
+  $('taskActive').checked = task.is_published !== false;
   
   taskModal.hidden = false;
   document.body.style.overflow = 'hidden';
@@ -414,16 +415,16 @@ async function saveTask(e) {
   const formData = new FormData(taskForm);
   const data = {
     activity_id: formData.get('activity_id'),
-    order_index: parseInt(formData.get('order_index')) || 1,
-    type: formData.get('type') || 'Action Step',
-    title: formData.get('title'),
-    description: formData.get('description') || '',
+    task_number: parseInt(formData.get('order_index')) || 1,
+    task_type: formData.get('type') || 'Action Step',
+    title_en: formData.get('title'),
+    description_en: formData.get('description') || '',
     instructions_en: formData.get('instructions_en') || '',
     instructions_hi: formData.get('instructions_hi') || '',
     min_time_seconds: parseInt(formData.get('min_time_seconds')) || 0,
     xp_reward: parseInt(formData.get('xp_reward')) || 10,
     verification_prompt: formData.get('verification_prompt') || '',
-    is_active: formData.get('is_active') === 'true',
+    is_published: formData.get('is_active') === 'true',
     updated_at: new Date().toISOString()
   };
   
@@ -432,33 +433,21 @@ async function saveTask(e) {
   submitBtn.textContent = 'Saving...';
   
   try {
-    let res;
-    if (editingTaskId) {
-      res = await fetch(`${SUPABASE_URL}/rest/v1/tasks?id=eq.${editingTaskId}`, {
-        method: 'PATCH',
-        headers: {
-          'apikey': SUPABASE_ANON_KEY,
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-          'Content-Type': 'application/json',
-          'Prefer': 'return=representation'
-        },
-        body: JSON.stringify(data)
-      });
-    } else {
-      data.created_at = new Date().toISOString();
-      res = await fetch(`${SUPABASE_URL}/rest/v1/tasks`, {
-        method: 'POST',
-        headers: {
-          'apikey': SUPABASE_ANON_KEY,
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-          'Content-Type': 'application/json',
-          'Prefer': 'return=representation'
-        },
-        body: JSON.stringify(data)
-      });
-    }
+    const idToken = await getIdToken();
+    const action = editingTaskId ? 'update' : 'create';
+    const taskId = editingTaskId || '';
     
-    if (!res.ok) throw new Error(`Supabase error: ${res.status}`);
+    const res = await fetch(`${WORKER_BASE}/api/admin/task`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${idToken}`
+      },
+      body: JSON.stringify({ action, taskId, data })
+    });
+    
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Failed to save task');
     
     showToast(editingTaskId ? 'Task updated!' : 'Task created!');
     closeTaskModal();
@@ -477,12 +466,19 @@ async function deleteTask(taskId) {
   if (!confirm('Delete this task? This cannot be undone.')) return;
   
   try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/tasks?id=eq.${taskId}`, {
-      method: 'DELETE',
-      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` }
+    const idToken = await getIdToken();
+    
+    const res = await fetch(`${WORKER_BASE}/api/admin/task`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${idToken}`
+      },
+      body: JSON.stringify({ action: 'delete', taskId })
     });
     
-    if (!res.ok) throw new Error(`Supabase error: ${res.status}`);
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Failed to delete task');
     
     showToast('Task deleted!');
     await loadTasks();

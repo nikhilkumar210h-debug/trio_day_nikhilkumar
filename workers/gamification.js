@@ -55,11 +55,17 @@ const ADMIN_EMAILS = (globalThis.ADMIN_EMAILS || 'nikhilkumar210h@gmail.com,nikh
 // Supabase config (from env)
 const SUPABASE_URL = globalThis.SUPABASE_URL || 'https://vccypxwiqcuexxrhtgyq.supabase.co';
 const SUPABASE_ANON_KEY = globalThis.SUPABASE_ANON_KEY || 'sb_publishable_zJvP50wf3CW2PNfkOD9yCQ_ffFhsZEp';
+const SUPABASE_SERVICE_ROLE_KEY = globalThis.SUPABASE_SERVICE_ROLE_KEY || '';
 
 // Cloudinary config (from env)
 const CLOUDINARY_CLOUD_NAME = globalThis.CLOUDINARY_CLOUD_NAME || '';
 const CLOUDINARY_API_KEY = globalThis.CLOUDINARY_API_KEY || '';
 const CLOUDINARY_API_SECRET = globalThis.CLOUDINARY_API_SECRET || '';
+
+// Supabase column selects (real schema)
+const ACTIVITY_SELECT = 'id,display_order,category,title_en,title_hi,description_en,description_hi,difficulty,total_xp,cover_image_url,is_guest_allowed,is_published,created_at';
+const TASK_SELECT_PUBLIC = 'id,activity_id,task_number,task_type,title_en,title_hi,instructions_en,instructions_hi,min_time_seconds,xp_reward';
+const TASK_SELECT_ADMIN = 'id,activity_id,task_number,task_type,title_en,title_hi,instructions_en,instructions_hi,verification_prompt,min_time_seconds,xp_reward,is_published,created_at,updated_at';
 
 // ─── Per-UID rate limiting (10 requests/minute) ───────────────────────────────
 const RATE_LIMIT_WINDOW_MS = 60 * 1000;
@@ -557,14 +563,20 @@ function evaluateBadgesDelta(currentBadges, xp, streak) {
 }
 
 // ─── Supabase helpers ─────────────────────────────────────────────────────────
-async function supabaseRequest(method, path, body = null) {
-  const url = `${SUPABASE_URL}/rest/v1/${path}`;
-  const headers = {
-    'apikey': SUPABASE_ANON_KEY,
-    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+// Use service role key for writes and admin reads (verification_prompt), anon key for public reads
+function supabaseHeaders(useServiceRole = false) {
+  const key = useServiceRole && SUPABASE_SERVICE_ROLE_KEY ? SUPABASE_SERVICE_ROLE_KEY : SUPABASE_ANON_KEY;
+  return {
+    'apikey': key,
+    'Authorization': `Bearer ${key}`,
     'Content-Type': 'application/json',
     'Prefer': 'return=representation'
   };
+}
+
+async function supabaseRequest(method, path, body = null, useServiceRole = false) {
+  const url = `${SUPABASE_URL}/rest/v1/${path}`;
+  const headers = supabaseHeaders(useServiceRole);
   const res = await fetch(url, { method, headers, body: body ? JSON.stringify(body) : undefined });
   if (!res.ok) {
     const txt = await res.text();
@@ -572,6 +584,11 @@ async function supabaseRequest(method, path, body = null) {
   }
   if (res.status === 204) return null;
   return res.json();
+}
+
+// Admin read with service role to get verification_prompt
+async function supabaseAdminRequest(method, path, body = null) {
+  return supabaseRequest(method, path, body, true);
 }
 
 // ─── AI Verification (Cloudflare Workers AI or Gemini) ────────────────────────
@@ -617,26 +634,26 @@ async function verifyWithAI(proof, verificationPrompt, taskTitle, taskDescriptio
 
 // ─── Activity Completion Handler ──────────────────────────────────────────────
 async function handleCompleteTask(uid, body, env) {
-  const { activityId, taskId, taskIndex, proof, verificationPrompt, timeSpent } = body;
+  const { activityId, taskId, taskNumber, proof, timeSpent } = body;
   
   if (!activityId || !taskId) throw new Error('activityId and taskId required');
   
-  // Fetch task details from Supabase for verification context
-  const task = await supabaseRequest('GET', `tasks?id=eq.${taskId}&select=*`);
+  // Fetch task details from Supabase with service role to get verification_prompt
+  const task = await supabaseAdminRequest('GET', `tasks?id=eq.${taskId}&select=${TASK_SELECT_ADMIN}`);
   if (!task?.length) throw new Error('Task not found');
   const taskData = task[0];
   
   // Fetch activity for XP reward
-  const activity = await supabaseRequest('GET', `activities?id=eq.${activityId}&select=*`);
+  const activity = await supabaseRequest('GET', `activities?id=eq.${activityId}&select=${ACTIVITY_SELECT}`);
   if (!activity?.length) throw new Error('Activity not found');
   const activityData = activity[0];
   
-  // AI Verification
+  // AI Verification - use verification_prompt from task data
   const verification = await verifyWithAI(
     proof || '',
-    verificationPrompt || taskData.verification_prompt,
-    taskData.title,
-    taskData.description
+    taskData.verification_prompt,
+    taskData.title_en,  // Use English title for keyword extraction
+    taskData.instructions_en  // Use English instructions for keyword extraction
   );
   
   if (!verification.valid) {
@@ -650,8 +667,8 @@ async function handleCompleteTask(uid, body, env) {
   const projectId = 'nkm-ind';
   const token = await getAccessToken(env);
   
-  // Check if already awarded for this task
-  const grantKey = `activity_${activityId}_task_${taskId}`;
+  // Check if already awarded for this task (use taskNumber for uniqueness)
+  const grantKey = `activity_${activityId}_task_${taskNumber}`;
   const created = await fsCreateDoc(projectId, token, 'users/'+uid+'/xpAwards/'+grantKey, {
     uid, grantKey, amount: xpReward, createdAtMs: Date.now()
   });
@@ -692,9 +709,19 @@ async function handleCompleteTask(uid, body, env) {
     upsertLeaderboard(projectId, token, 'streak', entry, 'streakCurrent')
   ]);
   
-  // Log task completion
-  await fsCreateDoc(projectId, token, 'users/'+uid+'/taskCompletions/'+grantKey, {
-    uid, activityId, taskId, taskIndex, proof, xpReward, timeSpent, verified: true, createdAtMs: Date.now()
+  // Log task completion to user_task_progress (via Worker with service role)
+  const weekKeyStr = localWeekKey(new Date(), userTimeZone);
+  await supabaseAdminRequest('POST', 'user_task_progress', {
+    firebase_uid: uid,
+    activity_id: activityId,
+    task_id: taskId,
+    status: 'completed',
+    user_submission: proof,
+    ai_verified: true,
+    ai_feedback: verification.reason,
+    xp_awarded: xpReward,
+    week_key: weekKeyStr,
+    completed_at: new Date().toISOString()
   });
   
   return { ok: true, xp: newXp, level: newLevel, leveledUp: newLevel > levelFromXp(prevXp), awarded: xpReward, alreadyAwarded: false, badgesEarned: earned.map(id => SYSTEM_BADGES.find(b => b.id === id) || { id }) };
@@ -702,28 +729,43 @@ async function handleCompleteTask(uid, body, env) {
 
 // ─── Activity Skip Handler ────────────────────────────────────────────────────
 async function handleSkipTask(uid, body, env) {
-  const { activityId, taskId, taskIndex } = body;
+  const { activityId, taskId, taskNumber } = body;
   
   if (!activityId || !taskId) throw new Error('activityId and taskId required');
   
   const projectId = 'nkm-ind';
   const token = await getAccessToken(env);
   
-  // Log skip (no XP)
-  const grantKey = `activity_${activityId}_task_${taskId}_skip`;
+  // Log skip (no XP) to Firestore
+  const grantKey = `activity_${activityId}_task_${taskNumber}_skip`;
   await fsCreateDoc(projectId, token, 'users/'+uid+'/taskSkips/'+grantKey, {
-    uid, activityId, taskId, taskIndex, createdAtMs: Date.now()
+    uid, activityId, taskId, taskNumber, createdAtMs: Date.now()
+  });
+  
+  // Log skip to user_task_progress via Supabase (service role)
+  const userTimeZone = resolveUserTimeZone(body?.timeZone);
+  const weekKeyStr = localWeekKey(new Date(), userTimeZone);
+  await supabaseAdminRequest('POST', 'user_task_progress', {
+    firebase_uid: uid,
+    activity_id: activityId,
+    task_id: taskId,
+    status: 'skipped',
+    user_submission: null,
+    ai_verified: false,
+    ai_feedback: null,
+    xp_awarded: 0,
+    week_key: weekKeyStr,
+    completed_at: new Date().toISOString()
   });
   
   return { ok: true, skipped: true };
 }
 
 // ─── Admin Activity CRUD ──────────────────────────────────────────────────────
-async function handleAdminActivity(uid, body, env, request) {
-  const userData = await fsGet('nkm-ind', await getAccessToken(env), 'users/'+uid);
-  const userEmail = userData?.email || (await getUserEmailFromAuth(uid, env));
+async function handleAdminActivity(uid, body, env, request, tokenPayload) {
+  const userEmail = tokenPayload.email?.toLowerCase();
   
-  if (!ADMIN_EMAILS.includes(userEmail?.toLowerCase())) {
+  if (!userEmail || !ADMIN_EMAILS.includes(userEmail)) {
     throw new Error('Admin access required');
   }
   
@@ -733,30 +775,24 @@ async function handleAdminActivity(uid, body, env, request) {
     case 'create':
       data.created_at = new Date().toISOString();
       data.updated_at = new Date().toISOString();
-      return supabaseRequest('POST', 'activities', data);
+      return supabaseAdminRequest('POST', 'activities', data);
     case 'update':
       data.updated_at = new Date().toISOString();
-      return supabaseRequest('PATCH', `activities?id=eq.${activityId}`, data);
+      return supabaseAdminRequest('PATCH', `activities?id=eq.${activityId}`, data);
     case 'delete':
       // Delete tasks first
-      await supabaseRequest('DELETE', `tasks?activity_id=eq.${activityId}`);
-      return supabaseRequest('DELETE', `activities?id=eq.${activityId}`);
+      await supabaseAdminRequest('DELETE', `tasks?activity_id=eq.${activityId}`);
+      return supabaseAdminRequest('DELETE', `activities?id=eq.${activityId}`);
     default:
       throw new Error('Invalid action');
   }
 }
 
-async function getUserEmailFromAuth(uid, env) {
-  // This would need Firebase Admin SDK or we can get from token payload
-  return null;
-}
-
 // ─── Admin Task CRUD ──────────────────────────────────────────────────────────
-async function handleAdminTask(uid, body, env, request) {
-  const userData = await fsGet('nkm-ind', await getAccessToken(env), 'users/'+uid);
-  const userEmail = userData?.email || (await getUserEmailFromAuth(uid, env));
+async function handleAdminTask(uid, body, env, request, tokenPayload) {
+  const userEmail = tokenPayload.email?.toLowerCase();
   
-  if (!ADMIN_EMAILS.includes(userEmail?.toLowerCase())) {
+  if (!userEmail || !ADMIN_EMAILS.includes(userEmail)) {
     throw new Error('Admin access required');
   }
   
@@ -766,23 +802,22 @@ async function handleAdminTask(uid, body, env, request) {
     case 'create':
       data.created_at = new Date().toISOString();
       data.updated_at = new Date().toISOString();
-      return supabaseRequest('POST', 'tasks', data);
+      return supabaseAdminRequest('POST', 'tasks', data);
     case 'update':
       data.updated_at = new Date().toISOString();
-      return supabaseRequest('PATCH', `tasks?id=eq.${taskId}`, data);
+      return supabaseAdminRequest('PATCH', `tasks?id=eq.${taskId}`, data);
     case 'delete':
-      return supabaseRequest('DELETE', `tasks?id=eq.${taskId}`);
+      return supabaseAdminRequest('DELETE', `tasks?id=eq.${taskId}`);
     default:
       throw new Error('Invalid action');
   }
 }
 
 // ─── Cloudinary Signed Upload ─────────────────────────────────────────────────
-async function handleCloudinarySign(uid, body, env) {
-  const userData = await fsGet('nkm-ind', await getAccessToken(env), 'users/'+uid);
-  const userEmail = userData?.email || (await getUserEmailFromAuth(uid, env));
+async function handleCloudinarySign(uid, body, env, request, tokenPayload) {
+  const userEmail = tokenPayload.email?.toLowerCase();
   
-  if (!ADMIN_EMAILS.includes(userEmail?.toLowerCase())) {
+  if (!userEmail || !ADMIN_EMAILS.includes(userEmail)) {
     throw new Error('Admin access required');
   }
   
@@ -992,9 +1027,9 @@ export default {
       else if (path === '/gamification/use-shield') result = await handleUseShield(uid, body, env);
       else if (path === '/api/activity/complete-task') result = await handleCompleteTask(uid, body, env);
       else if (path === '/api/activity/skip-task') result = await handleSkipTask(uid, body, env);
-      else if (path === '/api/admin/activity') result = await handleAdminActivity(uid, body, env, request);
-      else if (path === '/api/admin/task') result = await handleAdminTask(uid, body, env, request);
-      else if (path === '/api/admin/cloudinary-sign') result = await handleCloudinarySign(uid, body, env);
+      else if (path === '/api/admin/activity') result = await handleAdminActivity(uid, body, env, request, tokenPayload);
+      else if (path === '/api/admin/task') result = await handleAdminTask(uid, body, env, request, tokenPayload);
+      else if (path === '/api/admin/cloudinary-sign') result = await handleCloudinarySign(uid, body, env, request, tokenPayload);
       else return json({ error: 'Unknown route' }, 404, origin);
       return json(result, 200, origin);
     } catch (err) {

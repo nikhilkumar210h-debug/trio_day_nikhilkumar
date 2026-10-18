@@ -24,12 +24,16 @@ const ADMIN_EMAILS = ['nikhilkumar210h@gmail.com', 'nikhilkumar45374@gmail.com']
 
 const GUEST_TASK_LIMIT = 3;
 const GOAL_CATEGORIES = [
-  { key: 'Learning', icon: '📚', title: 'Learning', sub: 'Core concepts & logic', color: '#8B5CF6' },
-  { key: 'Digital Skill', icon: '💻', title: 'Digital Skill', sub: 'Code, AI & tech mastery', color: '#06B6D4' },
-  { key: 'Personal Growth', icon: '🌱', title: 'Personal Growth', sub: 'Habits & discipline', color: '#10B981' },
-  { key: 'Mind & Emotion', icon: '🧠', title: 'Mind & Emotion', sub: 'Focus & mindfulness', color: '#F59E0B' },
-  { key: 'Social Life', icon: '🤝', title: 'Social Life', sub: 'Network & communication', color: '#EC4899' },
+  { key: 'Learning', icon: '📚', title: 'Learning', sub: 'Core concepts & logic', colorClass: 'goal-learning' },
+  { key: 'Digital Skill', icon: '💻', title: 'Digital Skill', sub: 'Code, AI & tech mastery', colorClass: 'goal-digital' },
+  { key: 'Personal Growth', icon: '🌱', title: 'Personal Growth', sub: 'Habits & discipline', colorClass: 'goal-growth' },
+  { key: 'Mind & Emotion', icon: '🧠', title: 'Mind & Emotion', sub: 'Focus & mindfulness', colorClass: 'goal-mind' },
+  { key: 'Social Life', icon: '🤝', title: 'Social Life', sub: 'Network & communication', colorClass: 'goal-social' },
 ];
+
+// Supabase column mapping for real schema
+const ACTIVITY_SELECT = 'id,display_order,category,title_en,title_hi,description_en,description_hi,difficulty,total_xp,cover_image_url,is_guest_allowed,is_published,created_at';
+const TASK_SELECT = 'id,activity_id,task_number,task_type,title_en,title_hi,instructions_en,instructions_hi,min_time_seconds,xp_reward';
 
 const TRANSLATIONS = {
   EN: {
@@ -186,7 +190,7 @@ function renderAuthStatus() {
       <button id="langToggleBtn" class="lang-toggle" aria-label="${t('language')}">${currentLanguage}</button>
       <div style="position:relative">
         <button id="profileAvatarBtn" class="profile-pic-btn" aria-label="Profile" style="background:none;border:none;padding:0;cursor:pointer">
-          ${photo ? `<img src="${esc(photo)}" alt="" style="width:42px;height:42px;border-radius:50%;border:2px solid #00FFCC;object-fit:cover">` : `<div class="profile-pic-placeholder" style="width:42px;height:42px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,#8B5CF6,#00FFCC);color:#05070B;font-weight:900;font-size:16px;border:2px solid #00FFCC">${esc(initial)}</div>`}
+          ${photo ? `<img src="${esc(photo)}" alt="" class="profile-avatar-img">` : `<div class="profile-avatar-placeholder">${esc(initial)}</div>`}
         </button>
       </div>
     `;
@@ -207,7 +211,7 @@ function renderAuthStatus() {
       <span class="xp-badge-nav">⚡ 0 XP</span>
       <button id="langToggleBtn" class="lang-toggle" aria-label="${t('language')}">${currentLanguage}</button>
       <a href="login.html" class="status-badge">🔑 Login (${remaining}/${GUEST_TASK_LIMIT} ${t('guest_trial')})</a>
-      <a href="login.html"><img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80" alt="Profile" class="profile-pic" style="width:42px;height:42px;border-radius:50%;border:2px solid #00FFCC;object-fit:cover"></a>
+      <a href="login.html"><img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80" alt="Profile" class="profile-pic"></a>
     `;
     
     const langBtn = $('langToggleBtn');
@@ -245,7 +249,7 @@ function showToast(msg) {
 
 // ─── VIEW SWITCHING ─────────────────────────────────────────────────────────
 function hideAllViews() {
-  [guestView, onboardingView, dashboardView].forEach(v => v?.hidden = true);
+  [guestView, onboardingView, dashboardView].forEach(v => { if (v) v.hidden = true; });
 }
 
 function showGuestView() {
@@ -372,20 +376,23 @@ async function renderDashboard() {
 
 // ─── ACTIVITY CARD RENDER ───────────────────────────────────────────────────
 function renderActivityCard(act, index, isLoggedIn) {
-  const imgHtml = act.cover_image 
-    ? `<img src="${esc(act.cover_image)}" alt="${esc(act.title)}" loading="lazy">`
+  const title = currentLanguage === 'HI' ? (act.title_hi || act.title_en) : act.title_en;
+  const description = currentLanguage === 'HI' ? (act.description_hi || act.description_en) : act.description_en;
+  
+  const imgHtml = act.cover_image_url 
+    ? `<img src="${esc(act.cover_image_url)}" alt="${esc(title)}" loading="lazy">`
     : `<div class="card-img-placeholder">${act.icon || '⚡'}</div>`;
   
-  const difficultyLabel = act.difficulty || (act.task_count ? `${act.task_count} Tasks` : '3 Tasks');
-  const xpLabel = act.xp_reward ? `+${act.xp_reward} XP` : '+100 XP';
+  const difficultyLabel = act.difficulty || '3 Tasks';
+  const xpLabel = act.total_xp ? `+${act.total_xp} XP` : '+100 XP';
   
   return `
     <a href="#" class="activity-card" data-activity-id="${act.id}" data-logged-in="${isLoggedIn}">
       <div class="card-left">
         <span class="card-number">${String(index).padStart(2, '0')}</span>
         <div class="card-info">
-          <h2>${esc(act.title)}</h2>
-          <p>${esc(act.description || 'Complete tasks to earn XP')}</p>
+          <h2>${esc(title)}</h2>
+          <p>${esc(description || 'Complete tasks to earn XP')}</p>
           <div class="card-tags">
             <span class="tag-pill">🎯 ${esc(difficultyLabel)}</span>
             <span class="tag-xp">⚡ ${esc(xpLabel)}</span>
@@ -428,7 +435,7 @@ async function fetchActivities({ category, guestAllowed, limit: lim = 10 } = {})
   const cacheKey = `${category || 'guest'}-${guestAllowed}-${lim}`;
   if (activitiesCache.has(cacheKey)) return activitiesCache.get(cacheKey);
   
-  let url = `${SUPABASE_URL}/rest/v1/activities?select=*&is_active=eq.true&order=order_index.asc&limit=${lim}`;
+  let url = `${SUPABASE_URL}/rest/v1/activities?select=${ACTIVITY_SELECT}&is_published=eq.true&order=display_order.asc&limit=${lim}`;
   if (category) url += `&category=eq.${encodeURIComponent(category)}`;
   if (guestAllowed) url += `&is_guest_allowed=eq.true`;
   
@@ -451,9 +458,9 @@ async function syncGuestXP() {
   if (!currentUser || guestTasksPlayed === 0) return;
   
   try {
-    // Check if already synced
+    // Check if already synced via user_sync_meta table
     const metaDoc = await getDoc(doc(db, 'user_sync_meta', currentUser.uid));
-    if (metaDoc.exists() && metaDoc.data().guestXpSynced) return;
+    if (metaDoc.exists() && metaDoc.data().guest_xp_claimed) return;
     
     const guestXP = guestTasksPlayed * 50; // Estimate
     const userRef = doc(db, 'users', currentUser.uid);
@@ -468,11 +475,11 @@ async function syncGuestXP() {
       updatedAt: serverTimestamp()
     });
     
-    // Mark as synced
+    // Mark as synced in user_sync_meta
     await setDoc(doc(db, 'user_sync_meta', currentUser.uid), {
-      guestXpSynced: true,
-      guestTasksSynced: guestTasksPlayed,
-      syncedAt: serverTimestamp()
+      guest_xp_claimed: true,
+      guest_tasks_synced: guestTasksPlayed,
+      claimed_at: serverTimestamp()
     });
     
     // Clear guest data
