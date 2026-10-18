@@ -1,19 +1,23 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#081018">
-<link rel="manifest" href="manifest.json">
-<script>!function(){try{var k='trio-theme',t=localStorage.getItem(k);if(t!=='light'&&t!=='dark'){t=localStorage.getItem('trio_theme');t=(t==='light'||t==='dark')?t:null;}if(!t){t=matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';}document.documentElement.setAttribute('data-theme',t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',t==='light'?'#f8fafc':'#08051A');}catch(e){}}</script>
-<title>Chat — Trio Day</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="preload" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
-<noscript><link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
- <style>:root{--primary:#8B5CF6;--bg:#08051A;--surface:#17113A;--ink:#f1f5f9;--border:rgba(196,181,253,.14)}*{box-sizing:border-box}html{scroll-behavior:smooth;background:var(--color-bg)}body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif}.tricolor-strip{height:3px;display:flex;position:fixed;inset:0 0 auto;z-index:200}.tricolor-strip span{flex:1}.tricolor-strip span:nth-child(1){background:linear-gradient(90deg,#ff9933,#ff7700)}.tricolor-strip span:nth-child(2){background:#fff}.tricolor-strip span:nth-child(3){background:linear-gradient(90deg,#128807,#0a6305)}.topbar{position:sticky;top:3px;z-index:100;background:var(--color-bg-elevated);border-bottom:1px solid var(--border)}.chat-main{width:min(720px,100%);margin:auto;padding:16px}.nkm-chat-head{margin-bottom:14px}.nkm-chat-head h1{font-size:22px;font-weight:800;letter-spacing:-.02em;margin:0}.nkm-chat-head p{font-size:12px;color:var(--color-ink-muted);margin:2px 0 0}.bottom-nav{position:fixed;left:0;right:0;bottom:0;background:var(--color-bg-elevated);backdrop-filter:blur(18px);border-top:1px solid rgba(196,181,253,.14);z-index:55;padding-bottom:env(safe-area-inset-bottom)}.nav-row{width:min(520px,100%);margin:auto;display:grid;grid-template-columns:1fr 1fr 72px 1fr 1fr;gap:2px;padding:6px 6px 4px;align-items:end}.nav-btn{padding:6px 2px 4px;border-radius:12px;color:var(--color-ink-dim);font-size:10px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;gap:2px;min-height:44px;display:flex;flex-direction:column;align-items:center;justify-content:center}.nav-btn.active{color:var(--color-primary-text);background:rgba(139,92,246,.12)}.nav-btn--create{background:linear-gradient(135deg,#6366F1 0%,#4F46E5 100%);color:#fff;border:1px solid rgba(255,255,255,.08);border-radius:16px;height:48px;margin-bottom:4px;box-shadow:0 4px 12px rgba(99,102,241,.28);gap:0}.nav-btn--create .nav-icon svg{stroke:#fff}</style>  <link rel="stylesheet" href="styles/tokens.css?v=20261018">  <link rel="stylesheet" href="styles/skeleton.css?v=20261018">  <link rel="stylesheet" href="styles/sheet.css?v=20261018">  <link rel="stylesheet" href="styles/nav.css?v=20261018">  <link rel="stylesheet" href="styles/header.css?v=20261018">  <link rel="stylesheet" href="styles/components.css?v=20261018">  <link rel="stylesheet" href="style.css?v=20261018">
-<link rel="stylesheet" href="styles/polish.css?v=3">
-<link rel="stylesheet" href="chat.css?v=34">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#070913">
+  <script>!function(){try{var k='trio-theme',t=localStorage.getItem(k);if(t!=='light'&&t!=='dark'){t=localStorage.getItem('trio_theme');t=(t==='light'||t==='dark')?t:null;}if(!t){t=matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';}document.documentElement.setAttribute('data-theme',t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',t==='light'?'#F8F7FF':'#070913');}catch(e){}}</script>
+  <title>Chat — Trio Day</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
+  <link rel="stylesheet" href="styles/tokens.css?v=20261018">
+  <link rel="stylesheet" href="styles/nav.css?v=20261018">
+  <link rel="stylesheet" href="styles/header.css?v=20261018">
+  <link rel="stylesheet" href="styles/components.css?v=20261018">
+  <link rel="stylesheet" href="style.css?v=20261018-activity">
+  <link rel="stylesheet" href="styles/polish.css?v=7">
+  <link rel="stylesheet" href="chat.css?v=34">
   <link rel="stylesheet" href="styles/experience-polish.css?v=1">
 </head>
 <body class="chat-page">
@@ -27,10 +31,22 @@
 <main class="chat-main nkm-chat">
   <div class="nkm-chat-head">
     <h1>Messages</h1>
-    <p>Recent conversations · <a href="challenge.html" style="color:var(--color-primary-text);text-decoration:none;font-weight:800">Challenge someone →</a></p>
+    <p>Recent conversations · <a href="index.html" style="color:var(--color-primary-text);text-decoration:none;font-weight:800">Start an Activity →</a></p>
   </div>
-  <section id="challengeContext" hidden style="margin:0 0 14px;padding:14px;border:1px solid var(--color-border);border-radius:16px;background:var(--color-surface)"><strong id="challengeContextTitle">Challenge conversation</strong><p id="challengeContextText" style="font-size:12px;color:var(--color-ink-muted);margin:5px 0 10px"></p><a id="challengeContextLink" class="nkm-btn nkm-btn--primary nkm-btn--sm" href="challenge.html">View challenge →</a></section>
-  <section class="td3-chat-spark" aria-label="Start from a shared moment"><div class="td3-chat-spark-icon">⚡</div><div><span>TURN A MOMENT INTO A CHAT</span><strong>Answered the same challenge?</strong><p>Open the challenge, compare your answers, then talk about it.</p></div><a href="challenge.html">Find one →</a></section>
+  <section id="activityContext" hidden style="margin:0 0 14px;padding:14px;border:1px solid var(--color-border);border-radius:16px;background:var(--color-surface)">
+    <strong id="activityContextTitle">Activity conversation</strong>
+    <p id="activityContextText" style="font-size:12px;color:var(--color-ink-muted);margin:5px 0 10px"></p>
+    <a id="activityContextLink" class="nkm-btn nkm-btn--primary nkm-btn--sm" href="activity-player.html">View activity →</a>
+  </section>
+  <section class="td3-chat-spark" aria-label="Start from a shared activity">
+    <div class="td3-chat-spark-icon">⚡</div>
+    <div>
+      <span>TURN A MOMENT INTO A CHAT</span>
+      <strong>Completed the same activity?</strong>
+      <p>Open the activity, compare your reflections, then talk about it.</p>
+    </div>
+    <a href="index.html">Browse Activities →</a>
+  </section>
   <section id="privateInbox" class="nkm-inbox-panel" aria-label="Private messages">
     <div class="nkm-inbox-head">
       <strong>Messages</strong><span id="conversationCount" class="nkm-badge">0</span>
@@ -38,20 +54,19 @@
     <div class="nkm-inbox-search"><input id="userSearch" class="nkm-search" type="search" placeholder="Search conversations…"></div>
     <div id="userList" class="nkm-inbox-list"><div class="td-skeleton td-skeleton--card"></div><div class="td-skeleton td-skeleton--card"></div><div class="td-skeleton td-skeleton--card"></div></div>
   </section>
-
 </main>
 
 <nav class="bottom-nav" aria-label="Primary navigation">
-        <div class="nav-row"></div>
-    </nav>
+    <div class="nav-row"></div>
+</nav>
 <script src="auth-preload.js?v=20261018"></script>
-  <script type="module" src="auth-guard.js?v=20261018"></script>
+<script type="module" src="auth-guard.js?v=20261018"></script>
 <script type="module" src="chat.js?v=20261017-chat1"></script>
 <script type="module" src="auth-ui.js?v=20260919-authui2"></script>
-  <script type="module" src="theme.js?v=20261018"></script>
+<script type="module" src="theme.js?v=20261018"></script>
 <script type="module" src="ui/header.js?v=20261018"></script>
-  <script type="module" src="ui/nav.js?v=20260922-nav7"></script>
-  <script type="module" src="ui/sound.js?v=20261018"></script>
-  <script type="module" src="ui/sheet.js?v=20261018"></script>
+<script type="module" src="ui/nav.js?v=20260922-nav7"></script>
+<script type="module" src="ui/sound.js?v=20261018"></script>
+<script type="module" src="ui/sheet.js?v=20261018"></script>
 </body>
 </html>
