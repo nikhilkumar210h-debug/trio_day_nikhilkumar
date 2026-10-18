@@ -22,8 +22,41 @@ const params = new URLSearchParams(location.search);
 let me = null, current = null;
 function avatar(el, u) {
   el.innerHTML = '';
-  if (u?.photoURL) { const i = document.createElement('img'); i.src = cloudinaryAutoUrl(u.photoURL || ''); i.alt = 'Profile photo'; i.width = 96; i.height = 96; i.decoding = 'async'; i.loading = 'lazy'; i.style.aspectRatio = '1 / 1'; el.appendChild(i); }
-  else el.textContent = (u?.name || 'U').charAt(0).toUpperCase();
+  const photo = u?.photoURL || u?.photoUrl || u?.avatarURL || u?.avatarUrl || null;
+  const name = u?.name || u?.displayName || 'U';
+  if (photo) {
+    const img = document.createElement('img');
+    img.src = cloudinaryAutoUrl(photo);
+    img.alt = 'Profile photo';
+    img.width = 96;
+    img.height = 96;
+    img.decoding = 'async';
+    img.loading = 'lazy';
+    img.style.aspectRatio = '1 / 1';
+    img.style.borderRadius = '50%';
+    img.style.objectFit = 'cover';
+    img.onerror = () => {
+      img.style.display = 'none';
+      el.textContent = name.charAt(0).toUpperCase();
+      el.style.display = 'grid';
+      el.style.placeItems = 'center';
+      el.style.fontSize = '48px';
+      el.style.fontWeight = '900';
+      el.style.background = 'linear-gradient(135deg, var(--color-primary), var(--color-accent))';
+      el.style.color = '#05070B';
+      el.style.borderRadius = '50%';
+    };
+    el.appendChild(img);
+  } else {
+    el.textContent = name.charAt(0).toUpperCase();
+    el.style.display = 'grid';
+    el.style.placeItems = 'center';
+    el.style.fontSize = '48px';
+    el.style.fontWeight = '900';
+    el.style.background = 'linear-gradient(135deg, var(--color-primary), var(--color-accent))';
+    el.style.color = '#05070B';
+    el.style.borderRadius = '50%';
+  }
 }
 
 // ── Cached connections list ─────────────────────────────────────────────────

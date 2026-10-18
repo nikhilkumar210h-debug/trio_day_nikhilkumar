@@ -17,7 +17,7 @@ import { auth, db } from './firebase-init.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
 import { doc, getDoc, updateDoc, setDoc, serverTimestamp, increment, collection, addDoc } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 import { SoundManager } from './sound-manager.js';
-import { escapeHtml as esc } from './utils.js';
+import { escapeHtml as esc, cloudinaryAutoUrl } from './utils.js';
 import { setAdminFlag } from './ui/nav.js';
 
 // ─── CONSTANTS ──────────────────────────────────────────────────────────────
@@ -172,7 +172,7 @@ function renderAuthStatus() {
       <button id="langToggleBtn" class="lang-toggle" aria-label="Language">${currentLanguage}</button>
       <div style="position:relative">
         <button id="profileAvatarBtn" class="profile-pic-btn" aria-label="Profile" style="background:none;border:none;padding:0;cursor:pointer">
-          ${photo ? `<img src="${esc(photo)}" alt="" style="width:42px;height:42px;border-radius:50%;border:2px solid #00FFCC;object-fit:cover">` : `<div class="profile-pic-placeholder" style="width:42px;height:42px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,#8B5CF6,#00FFCC);color:#05070B;font-weight:900;font-size:16px;border:2px solid #00FFCC">${esc(initial)}</div>`}
+          ${photo ? `<img src="${cloudinaryAutoUrl(esc(photo))}" alt="" style="width:42px;height:42px;border-radius:50%;border:2px solid #00FFCC;object-fit:cover">` : `<div class="profile-pic-placeholder" style="width:42px;height:42px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,#8B5CF6,#00FFCC);color:#05070B;font-weight:900;font-size:16px;border:2px solid #00FFCC">${esc(initial)}</div>`}
         </button>
       </div>
     `;
@@ -202,8 +202,7 @@ function toggleLanguage() {
   currentLanguage = currentLanguage === 'EN' ? 'HI' : 'EN';
   localStorage.setItem('trio_language', currentLanguage);
   document.documentElement.setAttribute('data-lang', currentLanguage);
-  renderAuthStatus();
-  reRenderUI();
+  location.reload(); // Simple and reliable - full page reload for language change
 }
 
 function reRenderUI() {

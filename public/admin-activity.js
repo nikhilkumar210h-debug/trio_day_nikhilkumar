@@ -75,7 +75,15 @@ function renderAuthStatus() {
       <button id="langToggleBtn" class="lang-toggle" aria-label="Language">${localStorage.getItem('trio_language') || 'EN'}</button>
       <div style="width:42px;height:42px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,#EF4444,#F97316);color:#fff;font-weight:900;font-size:16px;border:2px solid #EF4444">${esc(initial)}</div>
     `;
+    const langBtn = $('langToggleBtn');
+    if (langBtn) langBtn.onclick = toggleLanguage;
   }
+}
+
+function toggleLanguage() {
+  const lang = localStorage.getItem('trio_language') === 'EN' ? 'HI' : 'EN';
+  localStorage.setItem('trio_language', lang);
+  location.reload();
 }
 
 // ─── INIT ADMIN ─────────────────────────────────────────────────────────────

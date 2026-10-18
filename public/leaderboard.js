@@ -96,7 +96,9 @@ function renderAuthStatus() {
   if (langBtn) langBtn.onclick = () => {
     const lang = localStorage.getItem('trio_language') === 'EN' ? 'HI' : 'EN';
     localStorage.setItem('trio_language', lang);
-    location.reload();
+    // Smooth language change - just update the button text and re-render if needed
+    langBtn.textContent = lang;
+    // Could add toast notification here if needed
   };
 }
 
