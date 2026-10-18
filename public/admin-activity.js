@@ -173,7 +173,7 @@ function renderActivitiesList() {
 
 async function loadActivitiesForFilter() {
   filterActivity.innerHTML = '<option value="">All Activities</option>' + 
-    activitiesCache.map(act => `<option value="${act.id}">${esc(act.title)}</option>`).join('');
+    activitiesCache.map(act => `<option value="${act.id}">${esc(act.title_en || act.title || 'Untitled activity')}</option>`).join('');
 }
 
 function openActivityEditor(activityId) {
@@ -423,7 +423,7 @@ async function saveTask(e) {
   const formData = new FormData(taskForm);
   const data = {
     activity_id: formData.get('activity_id'),
-    task_number: parseInt(formData.get('order_index')) || 1,
+    task_number: parseInt(formData.get('task_number')) || 1,
     task_type: formData.get('type') || 'Action Step',
     title_en: formData.get('title'),
     description_en: formData.get('description') || '',
