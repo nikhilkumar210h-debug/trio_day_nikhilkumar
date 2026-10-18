@@ -336,9 +336,134 @@ Master is the production-safe source of truth. Changes should be made deliberate
 
 ---
 
-**Ready for deployment.** Next steps:
-1. Deploy updated `trio-gamification` Worker with new secrets
-2. Deploy static assets via `trio-day` Worker
-3. Verify Supabase tables `activities` and `tasks` exist with RLS
-4. Test Guest → Login → XP sync flow
-5. Test Admin Activity/Task creation with Cloudinary upload
+## ✅ **DEPLOYED (2026-10-18)**
+
+| Component | URL | Version |
+|-----------|-----|---------|
+| **Static Assets (trio-day)** | https://trio-day.trioday-nikhil.workers.dev | `37720b6e` |
+| **API Worker (trio-gamification)** | https://trio-gamification.trioday-nikhil.workers.dev | `d112f50d` |
+
+**Git Commit:** `adc5e88` — Stage 1-3 Activity system migration
+
+---
+
+## 📋 **Stage Status**
+
+| Stage | Status | Description |
+|-------|--------|-------------|
+| **Stage 1** | ✅ **DONE** | Crash bug fixes (optional chaining, missing imports, setupActivityForm) |
+| **Stage 2** | ✅ **DONE** | Real Supabase schema match (columns, service role key, Worker endpoints) |
+| **Stage 3** | ✅ **DONE** | Shared header/nav/theme (tokens.css, single header.js, single nav.js) |
+| **Stage 4** | 🔄 **IN PROGRESS** | Challenge cleanup in admin-tasks.html, all-users.html, chat.html, profile.html, sitemap.html, temp-chat.html |
+| **Stage 5** | ⏳ **PENDING** | Playwright MCP testing, final README, temp file cleanup |
+
+---
+
+## 🔐 **Required Worker Secrets (set before Stage 4 testing)**
+
+```bash
+npx wrangler secret put FIREBASE_SA_CLIENT_EMAIL
+npx wrangler secret put SUPABASE_URL
+npx wrangler secret put SUPABASE_ANON_KEY
+npx wrangler secret put SUPABASE_SERVICE_ROLE_KEY  # NEW - for admin writes & verification_prompt
+npx wrangler secret put ADMIN_EMAILS
+npx wrangler secret put CLOUDINARY_CLOUD_NAME
+npx wrangler secret put CLOUDINARY_API_KEY
+npx wrangler secret put CLOUDINARY_API_SECRET
+```
+
+---
+
+## 📋 **Supabase Tables Required (verify exist with RLS)**
+
+```sql
+-- activities table (existing)
+CREATE TABLE activities (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  display_order INT DEFAULT 0,
+  category TEXT NOT NULL CHECK (category IN ('Starter','Learning','Digital Skill','Personal Growth','Mind & Emotion','Social Life')),
+  title_en TEXT NOT NULL,
+  title_hi TEXT,
+  description_en TEXT,
+  description_hi TEXT,
+  difficulty TEXT CHECK (difficulty IN ('Easy','Medium','Hard','Boss Level')),
+  total_xp INT DEFAULT 0,
+  cover_image_url TEXT,
+  is_guest_allowed BOOLEAN DEFAULT false,
+  is_published BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- tasks table (existing)
+CREATE TABLE tasks (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  activity_id UUID REFERENCES activities(id) ON DELETE CASCADE,
+  task_number INT NOT NULL,
+  task_type TEXT CHECK (task_type IN ('Brainteaser','Action Step','Boss Task')),
+  title_en TEXT NOT NULL,
+  title_hi TEXT,
+  instructions_en TEXT,
+  instructions_hi TEXT,
+  verification_prompt TEXT,
+  min_time_seconds INT DEFAULT 0,
+  xp_reward INT DEFAULT 10,
+  is_published BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE(activity_id, task_number)
+);
+
+-- user_task_progress table (existing)
+CREATE TABLE user_task_progress (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  firebase_uid TEXT NOT NULL,
+  activity_id UUID REFERENCES activities(id),
+  task_id UUID REFERENCES tasks(id),
+  status TEXT CHECK (status IN ('completed','skipped')),
+  user_submission TEXT,
+  ai_verified BOOLEAN,
+  ai_feedback TEXT,
+  xp_awarded INT DEFAULT 0,
+  week_key TEXT, -- e.g. 2026-W42
+  completed_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE(firebase_uid, task_id, week_key)
+);
+
+-- user_sync_meta table (existing)
+CREATE TABLE user_sync_meta (
+  firebase_uid TEXT PRIMARY KEY,
+  selected_category TEXT,
+  guest_xp_claimed BOOLEAN DEFAULT false,
+  claimed_at TIMESTAMPTZ
+);
+```
+
+---
+
+## 🧪 **Testing Checklist (Stage 5)**
+
+Run Playwright MCP tests on all pages:
+- [ ] `/` (Today) — logged-out, logged-in, light, dark, 390px, 1280px
+- [ ] `/login` — logged-out, light, dark, 390px, 1280px
+- [ ] `/leaderboard` — logged-out, logged-in, light, dark, 390px, 1280px
+- [ ] `/chat` — logged-in, light, dark, 390px, 1280px
+- [ ] `/profile` — logged-in, light, dark, 390px, 1280px
+- [ ] `/all-users` — logged-in, light, dark, 390px, 1280px
+- [ ] `/help`, `/privacy`, `/terms` — logged-out/logged-in
+- [ ] `/admin-activity` — admin only, light/dark
+- [ ] `/activity-player.html?act=<id>` — complete, skip, guest limit, login sync
+
+**All tests must have: 0 console errors, 0 failed network calls.**
+
+---
+
+## 🗑️ **Cleanup (after Stage 4)**
+
+```bash
+# Remove temp files (already in .gitignore)
+rm -f temp_secret.bin temp_private_key.pem scripts/serviceAccountKey.json
+
+# Remove overly broad test ignore if hiding real tests
+# Edit .gitignore: remove *.spec.js line if needed
+```
