@@ -2,7 +2,7 @@
 (function(){
 'use strict';
 const isToday=document.body.classList.contains('today-page')||location.pathname.endsWith('/index.html')||location.pathname==='/';
-const isChallenge=document.body.classList.contains('app-page')&&location.pathname.includes('challenge.html');
+const isChallenge=document.body.classList.contains('app-page')&&location.pathname.includes('activity-player.html');
 const sparks=[
 ['⚡','Quick spark','Pick fast. Trust your first instinct.'],
 ['🧠','Think different','Your answer is only interesting when someone disagrees.'],
@@ -45,7 +45,7 @@ async function loadFreshCommunity(){
   const items=await mod.listCommunityTasks({status:'active',max:12});
   const fresh=Array.isArray(items)?items.slice(0,3):[];
   if(!fresh.length){
-   feed.innerHTML='<article class="td-v2-feed-card"><div class="td-v2-feed-top"><span class="td-v2-feed-tag">START HERE</span><span class="td-v2-feed-time">NOW</span></div><h3>Be the person who starts the next conversation.</h3><div class="td-v2-feed-options"><span>Create a challenge</span><span>Invite someone</span></div><div class="td-v2-feed-foot"><small>Your next moment can be yours.</small><a href="challenge-create.html">Create →</a></div></article>';
+   feed.innerHTML='<article class="td-v2-feed-card"><div class="td-v2-feed-top"><span class="td-v2-feed-tag">START HERE</span><span class="td-v2-feed-time">NOW</span></div><h3>Be the person who starts the next conversation.</h3><div class="td-v2-feed-options"><span>Create a challenge</span><span>Invite someone</span></div><div class="td-v2-feed-foot"><small>Your next moment can be yours.</small><a href="index.html">Create →</a></div></article>';
   }else{
    feed.innerHTML=fresh.map((c,i)=>{
     const title=escapeHtmlV2(c.title||c.question||'Community challenge');
@@ -53,13 +53,13 @@ async function loadFreshCommunity(){
     const icon=escapeHtmlV2(c.icon||['⚡','✦','◎'][i%3]);
     const id=encodeURIComponent(c.id||'');
     const count=Number(c.joins||c.completions||0);
-    return '<article class="td-v2-feed-card"><div><div class="td-v2-feed-top"><span class="td-v2-feed-tag">'+icon+' · COMMUNITY</span><span class="td-v2-feed-time">FRESH</span></div><h3>'+title+'</h3><div class="td-v2-feed-options"><span>'+desc.slice(0,55)+'</span></div></div><div class="td-v2-feed-foot"><small>'+count+' people moving through it</small><a href="challenge.html?challenge='+id+'">Open →</a></div></article>';
+    return '<article class="td-v2-feed-card"><div><div class="td-v2-feed-top"><span class="td-v2-feed-tag">'+icon+' · COMMUNITY</span><span class="td-v2-feed-time">FRESH</span></div><h3>'+title+'</h3><div class="td-v2-feed-options"><span>'+desc.slice(0,55)+'</span></div></div><div class="td-v2-feed-foot"><small>'+count+' people moving through it</small><a href="activity-player.html?act='+id+'">Open →</a></div></article>';
    }).join('');
   }
   feed.dataset.loaded='1';
  }catch(e){
   console.warn('[experience-v2] fresh community feed failed',e);
-  feed.innerHTML='<article class="td-v2-feed-card"><div><span class="td-v2-feed-tag">YOUR MOMENT</span><h3>What would you choose if nobody could judge the answer?</h3></div><div class="td-v2-feed-foot"><small>Start with the daily challenge.</small><a href="challenge.html">Go →</a></div></article>';
+  feed.innerHTML='<article class="td-v2-feed-card"><div><span class="td-v2-feed-tag">YOUR MOMENT</span><h3>What would you choose if nobody could judge the answer?</h3></div><div class="td-v2-feed-foot"><small>Start with the daily challenge.</small><a href="index.html">Go →</a></div></article>';
   feed.dataset.loaded='1';
  }
 }

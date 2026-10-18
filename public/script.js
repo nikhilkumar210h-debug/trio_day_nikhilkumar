@@ -667,7 +667,7 @@ async function renderTodayLive() {
         <div class="td-v2-live-card-top"><span>${escapeHtml(x.tag || 'MOMENT')}</span><b>${i===0?'LIVE NOW':i===1?'NEW':'NEXT'}</b></div>
         <h3>${escapeHtml(x.q)}</h3>
         <div class="td-v2-live-options">${x.o.slice(0,3).map((o,j)=>`<span><i>${String.fromCharCode(65+j)}</i>${escapeHtml(o)}</span>`).join('')}</div>
-        <a href="challenge.html?challenge=${encodeURIComponent(x.id)}">Make your choice <span>↗</span></a>
+        <a href="activity-player.html?act=${encodeURIComponent(x.id)}">Make your choice <span>↗</span></a>
       </article>`).join('');
   };
   render(fallback);
@@ -720,8 +720,8 @@ async function renderFocusAndContinue(uid) {
       </div>
       <p class="today-focus-note" id="todayChallengeNote">Your answer is public. Open the challenge to compare answers and join the same discussion.</p>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <a class="nkm-btn nkm-btn--primary" href="challenge.html?id=${encodeURIComponent(challenge.id)}">Open Challenges →</a>
-        <a class="nkm-btn nkm-btn--secondary" href="challenge.html?challenge=${encodeURIComponent(challenge.id)}">Join public discussion →</a>
+        <a class="nkm-btn nkm-btn--primary" href="activity-player.html?act=${encodeURIComponent(challenge.id)}">Open Activity →</a>
+        <a class="nkm-btn nkm-btn--secondary" href="activity-player.html?act=${encodeURIComponent(challenge.id)}">View Activity →</a>
       </div>
     </div>`;
 
@@ -748,7 +748,7 @@ async function renderFocusAndContinue(uid) {
       if (note) note.textContent = 'Locked in ✓ Your answer is saved. Compare the community split and join the discussion.';
       const compare = document.createElement('a');
       compare.className = 'nkm-btn nkm-btn--primary nkm-btn--sm';
-      compare.href = 'challenge.html?challenge=' + encodeURIComponent(challenge.id);
+      compare.href = 'activity-player.html?act=' + encodeURIComponent(challenge.id);
       compare.textContent = 'See the split →';
       const actionRow = focusPrimary.querySelector('.today-focus-frame > div:last-of-type');
       if (actionRow && !actionRow.querySelector('[data-today-compare]')) {
@@ -832,7 +832,7 @@ function buildChallengeCard(c, responseCount = 0) {
         </div>
         <div class="challenge-progress"><div class="challenge-progress-bar" style="width:${progress}%"></div></div>
       </div>
-      <a href="challenge.html?challenge=${encodeURIComponent(c.id)}" class="challenge-cta nkm-btn nkm-btn--secondary">View</a>
+      <a href="activity-player.html?act=${encodeURIComponent(c.id)}" class="challenge-cta nkm-btn nkm-btn--secondary">View</a>
     </article>
   `;
 }

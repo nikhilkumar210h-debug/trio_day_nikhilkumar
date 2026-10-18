@@ -140,6 +140,10 @@ onAuthStateChanged(auth, user => {
     trioCache.invalidatePrefix('posts_');
     trioCache.invalidatePrefix('connstate_');
     trioCache.invalidatePrefix('notif_');
+    trioCache.invalidatePrefix('admin_');
+    trioCache.invalidatePrefix('tasks_');
+    trioCache.invalidatePrefix('progress_');
+    trioCache.invalidatePrefix('my_rank_');
   }
   previousUid = user?.uid ?? null;
 });

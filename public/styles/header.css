@@ -56,7 +56,8 @@
 @media (min-width: 840px) { .nkm-header-search-btn { display: none; } }
 /* Keep header above content but below sheets (200+ ) */
 .topbar { z-index: var(--z-sticky); }
-.tricolor-strip { z-index: var(--z-sticky); }
+/* Tricolor strip sits above topbar to prevent clipping */
+.tricolor-strip { z-index: calc(var(--z-sticky) + 1); }
 /* Vertical centering — all header controls centered in 48px bar */
 .topbar-inner, .topbar-actions, #authStatus, .notification-wrap, .auth-chip { display: flex; align-items: center; }
 .auth-chip { align-items: center; line-height: 1; }

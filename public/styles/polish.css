@@ -32,11 +32,11 @@ button:disabled,.nkm-btn:disabled,.btn:disabled{cursor:not-allowed;opacity:.55;t
 .nkm-page-kicker{font-size:10px;letter-spacing:.16em;text-transform:uppercase;font-weight:900;color:var(--color-primary-text)}
 .td-skeleton{
   position:relative;overflow:hidden;border:1px solid var(--color-border);
-  border-radius:16px;background:linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,.02));
+  border-radius:16px;background:var(--color-glass);
 }
 .td-skeleton::after{
   content:"";position:absolute;inset:0;
-  background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,.09) 48%,transparent 100%);
+  background:linear-gradient(90deg,transparent 0%,var(--color-glass-strong) 48%,transparent 100%);
   transform:translateX(-100%);animation:tdShimmer 1.4s ease-in-out infinite;
 }
 .td-skeleton--line{height:12px;border-radius:999px}

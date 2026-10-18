@@ -5,6 +5,9 @@ import { ONESIGNAL_APP_ID } from "./onesignal-config.js";
 let sdkLoadPromise = null;
 let initPromise = null;
 
+// Session guard to prevent re-registration on navigation
+const ONESIGNAL_SESSION_KEY = 'trio_onesignal_init_v1';
+
 function isLocalHost() {
   const h = location.hostname;
   return h === 'localhost' || h === '127.0.0.1' || h === '' || location.protocol === 'file:' || h.endsWith('.local');
@@ -47,6 +50,13 @@ function withOneSignal(fn) {
 
 function ensureInit() {
   if (isLocalHost()) return Promise.resolve(null);
+  
+  // Session guard: skip re-init if already initialized in this session
+  if (sessionStorage.getItem(ONESIGNAL_SESSION_KEY) === 'done') {
+    console.debug('[OneSignal] Already initialized in this session, skipping re-init');
+    return Promise.resolve(null);
+  }
+  
   if (initPromise) return initPromise;
   initPromise = (async () => {
     const sdkLoaded = await loadSdk();
@@ -58,6 +68,8 @@ function ensureInit() {
         serviceWorkerPath: "push/onesignal/OneSignalSDKWorker.js",
         serviceWorkerParam: { scope: "/push/onesignal/" }
       });
+      // Mark as initialized for this session
+      sessionStorage.setItem(ONESIGNAL_SESSION_KEY, 'done');
       // Prefer in-app toasts while the tab is open (auth-ui Firestore listener).
       OneSignal.Notifications.addEventListener("foregroundWillDisplay", (event) => {
         if (document.visibilityState === "visible") {

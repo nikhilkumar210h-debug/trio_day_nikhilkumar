@@ -22,7 +22,7 @@ const BASE_ITEMS = [
 // Admin item (conditionally added)
 const ADMIN_ITEM = { key: 'admin', label: 'Admin', href: 'admin-activity.html', icon: SVG.admin };
 
-const AUTH_PAGES = new Set(['login.html', '404.html', 'sitemap.html', 'offline.html', 'admin-activity.html', 'admin-tasks.html']);
+const AUTH_PAGES = new Set(['login.html', '404.html', 'offline.html']);
 
 let isAdmin = false;
 
@@ -32,7 +32,16 @@ function pathKey() {
   if (p === '' || p === 'index' || p === 'index.html' || p === 'today') return 'today';
   if (p === 'leaderboard' || p === 'leaderboard.html') return 'leaderboard';
   if (p === 'chat' || p === 'chat.html' || p === 'private-chat' || p === 'private-chat.html') return 'chat';
-  if (p === 'profile' || p === 'profile.html' || p === 'you') return 'you';
+  if (p === 'profile' || p === 'profile.html' || p === 'you') {
+    // Check if viewing another user's profile via uid parameter
+    const params = new URLSearchParams(location.search);
+    const uid = params.get('uid');
+    // If uid is present and different from current user, don't mark "You" as active
+    // The current user's uid would need to be available globally or passed in
+    // For now, we'll check if there's a uid param at all - if so, it's likely another user's profile
+    if (uid) return '';
+    return 'you';
+  }
   if (p === 'admin-activity' || p === 'admin-activity.html' || p === 'admin-tasks' || p === 'admin-tasks.html' || p === 'admin') return 'admin';
   return '';
 }

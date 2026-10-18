@@ -1,5 +1,6 @@
 {
   "name": "trio-day",
   "compatibility_date": "2026-09-26",
+  "main": "./workers/site.js",
   "assets": { "directory": "./public" }
 }

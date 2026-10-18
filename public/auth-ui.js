@@ -8,9 +8,37 @@ import {
   orderBy, query, limit, updateDoc
 } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 import { enableOneSignalPush } from './onesignal.js?v=24';
+import { setAdminFlag as setNavAdminFlag } from './ui/nav.js';
+import { setAdminFlag as setSubnavAdminFlag } from './ui/subnav.js';
 
 const el = document.getElementById('authStatus');
 let notificationUnsubs = [];
+
+const ADMIN_EMAILS = ['nikhilkumar210h@gmail.com', 'nikhilkumar45374@gmail.com'];
+
+async function checkAdminStatus(user) {
+  if (!user?.email) return false;
+  const email = user.email.toLowerCase();
+  
+  // Check hardcoded admin emails first (immediate)
+  if (ADMIN_EMAILS.includes(email)) return true;
+  
+  // Check Firestore config/admins collection (fallback)
+  try {
+    const adminDoc = await getDoc(doc(db, 'config', 'admins'));
+    if (adminDoc.exists()) {
+      const data = adminDoc.data();
+      const adminUids = data.uids || [];
+      const adminEmails = data.emails || [];
+      if (adminUids.includes(user.uid) || adminEmails.map(e => e.toLowerCase()).includes(email)) {
+        return true;
+      }
+    }
+  } catch (err) {
+    console.warn('[AuthUI] Admin check failed:', err);
+  }
+  return false;
+}
 
 function clearNotificationListeners() { notificationUnsubs.forEach(u => u()); notificationUnsubs = []; }
 
@@ -217,6 +245,11 @@ onAuthStateChanged(auth, async user => {
       location.href = 'login.html';
     };
 
+    // Admin visibility: check both hardcoded emails and Firestore config/admins
+    const isAdmin = await checkAdminStatus(user);
+    setNavAdminFlag(isAdmin);
+    setSubnavAdminFlag(isAdmin);
+
     // Skip notification listener on notifications.html (notifications.js handles it)
     if (!location.pathname.endsWith('notifications.html')) {
       listenForNotifications(user);
@@ -226,6 +259,8 @@ onAuthStateChanged(auth, async user => {
 
   } else {
     el.innerHTML = '<a href="login.html" class="auth-login-btn">Login</a>';
+    setNavAdminFlag(false);
+    setSubnavAdminFlag(false);
   }
 });
 

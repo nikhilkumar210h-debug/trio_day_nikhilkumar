@@ -510,6 +510,12 @@ async function loadProfile(uid) {
     : '';
   $('profileBio').textContent = current.bio || 'No bio yet.';
 
+  // Update journey label for own vs other profiles
+  const journeyLabel = $('profileJourneyLabel');
+  if (journeyLabel) {
+    journeyLabel.textContent = isOwnProfile ? 'YOUR JOURNEY' : `${(current.displayName || current.name || 'Their').toUpperCase()}'S JOURNEY`;
+  }
+
   // 2. Follower / following counts — cached
   const [follCount, followingCount] = await Promise.all([
     getCachedFollowers(uid),
@@ -698,6 +704,9 @@ async function loadProfile(uid) {
 
   // 4. Connections panel — cached
   await loadConnections(uid, 'followers');
+  // Force reflow to ensure connections render immediately (prevents "visible on scroll" bug)
+  const connList = $('connectionsList');
+  if (connList) connList.style.display = 'grid';
 
 
 }

@@ -16,7 +16,7 @@
     if (!saved?.id) return;
     const bar = document.createElement('aside');
     bar.className = 'core-loop-continue';
-    bar.innerHTML = '<div><span class="core-loop-eyebrow">YOUR LAST MOVE</span><strong>You already picked an answer.</strong><small>See the community split and explain why you chose it.</small></div><a class="nkm-btn nkm-btn--primary nkm-btn--sm" href="challenge.html?challenge=' + encodeURIComponent(saved.id) + '">Compare now →</a>';
+    bar.innerHTML = '<div><span class="core-loop-eyebrow">YOUR LAST MOVE</span><strong>You already picked an answer.</strong><small>See the community split and explain why you chose it.</small></div><a class="nkm-btn nkm-btn--primary nkm-btn--sm" href="index.html">Browse Activities →</a>';
     focus.parentNode.insertBefore(bar, focus.nextSibling);
   }
   function enhanceDiscover() {
@@ -24,7 +24,7 @@
     if (!shell || shell.querySelector('.core-loop-discover')) return;
     const section = document.createElement('section');
     section.className = 'core-loop-discover';
-    section.innerHTML = '<div><span class="core-loop-eyebrow">THE TRIO LOOP</span><h2>Pick → compare → connect.</h2><p>Start with one quick choice. The useful part is what happens after you answer.</p></div><div class="core-loop-discover-actions"><a class="nkm-btn nkm-btn--primary" href="challenge.html">Pick a challenge</a><a class="nkm-btn nkm-btn--secondary" href="search.html">Find people</a></div>';
+    section.innerHTML = '<div><span class="core-loop-eyebrow">THE TRIO LOOP</span><h2>Pick → compare → connect.</h2><p>Start with one quick choice. The useful part is what happens after you answer.</p></div><div class="core-loop-discover-actions"><a class="nkm-btn nkm-btn--primary" href="index.html">Browse Activities</a><a class="nkm-btn nkm-btn--secondary" href="search.html">Find people</a></div>';
     const hub = shell.querySelector('.challenge-hub');
     (hub || shell.firstElementChild)?.after(section);
   }

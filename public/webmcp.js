@@ -34,14 +34,14 @@ if (modelContext?.registerTool) {
       annotations: { readOnlyHint: true, untrustedContentHint: true },
       execute: async ({ challengeId = '' } = {}) => {
         const id = String(challengeId || '').trim();
-        return navigate(id ? 'challenge.html?challenge=' + encodeURIComponent(id) : 'challenge.html');
+        return navigate(id ? 'activity-player.html?act=' + encodeURIComponent(id) : 'index.html');
       }
     }, { signal: controller.signal });
 
     await modelContext.registerTool({
       name: 'search_challenges',
-      title: 'Search Trio Day challenges',
-      description: 'Open the Challenge surface for browsing current community prompts.',
+      title: 'Search Trio Day activities',
+      description: 'Open the Activities surface for browsing current community activities.',
       inputSchema: {
         type: 'object',
         properties: { query: { type: 'string', description: 'Optional search phrase for the user interface.' } }
@@ -49,7 +49,7 @@ if (modelContext?.registerTool) {
       annotations: { readOnlyHint: true, untrustedContentHint: true },
       execute: async ({ query = '' } = {}) => ({
         ok: true,
-        surface: 'challenge.html',
+        surface: 'index.html',
         query: String(query || '').trim(),
         mechanics: ['pick', 'compare', 'discuss']
       })

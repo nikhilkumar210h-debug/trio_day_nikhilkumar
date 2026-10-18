@@ -133,7 +133,7 @@ guestTasksPlayed = parseInt(localStorage.getItem('trio_guest_tasks') || '0', 10)
 selectedCategory = localStorage.getItem('trio_selected_category');
 
 document.documentElement.setAttribute('data-lang', currentLanguage);
-applyTranslations();
+if (typeof applyTranslations === 'function') applyTranslations();
 
 onAuthStateChanged(auth, async user => {
   currentUser = user;

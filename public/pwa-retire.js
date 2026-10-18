@@ -4,7 +4,14 @@
   try {
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.getRegistrations()
-        .then(registrations => Promise.all(registrations.map(r => r.unregister())))
+        .then(registrations => Promise.all(registrations.map(r => {
+          // Preserve OneSignal's push service worker
+          if (r.scope.includes('OneSignalSDKWorker') || r.scope.includes('/push/onesignal/')) {
+            console.debug('[pwa-retire] Preserving OneSignal Service Worker:', r.scope);
+            return Promise.resolve();
+          }
+          return r.unregister();
+        })))
         .catch(() => {});
     }
     if ('caches' in window) {

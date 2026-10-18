@@ -29,7 +29,7 @@ export function pushUrl({ type, actorUid, postId, urlPath }) {
       ? `${APP_BASE}/profile.html?uid=${encodeURIComponent(actorUid)}`
       : `${APP_BASE}/all-users.html`;
   }
-  if (type === 'challenge_reminder') return `${APP_BASE}/challenge.html`;
+  if (type === 'challenge_reminder') return `${APP_BASE}/index.html`;
   if (type === 'badge_earned') return `${APP_BASE}/profile.html`;
   // postId is retained as the legacy story identifier in existing notifications.
   // Stories are now opened from Today, never through the retired Post viewer.

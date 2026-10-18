@@ -31,17 +31,17 @@
   "screenshots": [],
   "shortcuts": [
     {
-      "name": "Challenges",
-      "short_name": "Challenges",
-      "description": "Quick choices, guesses and debates",
-      "url": "/challenge.html",
+      "name": "Activities",
+      "short_name": "Activities",
+      "description": "Browse activities and earn XP",
+      "url": "/index.html",
       "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
     },
     {
       "name": "Discover",
       "short_name": "Discover",
-      "description": "Find trending challenges and people",
-      "url": "/all-users.html",
+      "description": "Find people and connect",
+      "url": "/search.html",
       "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
     },
     {

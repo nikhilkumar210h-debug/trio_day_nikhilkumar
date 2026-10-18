@@ -244,8 +244,9 @@ main section{scroll-margin-top:82px}
 @keyframes exp-spin{to{transform:rotate(360deg)}}
 @keyframes exp-pulse{0%,100%{transform:scaleY(.72);opacity:.55}50%{transform:scaleY(1);opacity:1}}
 .app-page main,.chat-page main{animation:exp-enter .32s cubic-bezier(.2,.8,.2,1) both}
-.td-skeleton{background:linear-gradient(100deg,var(--color-surface),var(--color-surface-strong),var(--color-surface));background-size:220% 100%;animation:exp-shimmer 1.4s ease-in-out infinite}
-@keyframes exp-shimmer{0%{background-position:120% 0}100%{background-position:-20% 0}}
+.td-skeleton{background:var(--color-glass);position:relative;overflow:hidden;border:1px solid var(--color-border);border-radius:16px;}
+.td-skeleton::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent 0%,var(--color-glass-strong) 48%,transparent 100%);transform:translateX(-100%);animation:exp-shimmer 1.4s ease-in-out infinite;}
+@keyframes exp-shimmer{to{transform:translateX(100%)}}
 @media(prefers-reduced-motion:reduce){
   .app-page main,.chat-page main{animation:none}
   .today-visual-orbit:before,.today-visual-bars i,.td-skeleton{animation:none}

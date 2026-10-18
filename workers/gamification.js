@@ -96,8 +96,6 @@ const SYSTEM_BADGES = [
 // ─── CORS ─────────────────────────────────────────────────────────────────────
 const ALLOWED_ORIGINS = [
   "https://trio-day.trioday-nikhil.workers.dev",
-  "https://nkm-ind.web.app",
-  "https://nkm-ind.firebaseapp.com",
   "https://trio-day.web.app",
 ];
 

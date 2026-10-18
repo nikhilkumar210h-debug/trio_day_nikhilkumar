@@ -54,7 +54,33 @@ export function initHeader() {
   }
   if (authStatus && authStatus.parentElement !== actions) actions.appendChild(authStatus);
 
-  // Canonical notifications control. auth-ui.js attaches the realtime badge/menu behavior.
+  // Define the canonical order of header controls (left to right in DOM = right to left visually on mobile)
+  // Order in actions (flex-end): [mobile-search, notification, theme, help, authStatus]
+  // We'll build them in reverse order since we're prepending to achieve correct visual order
+
+  // 1. Help button (rightmost before authStatus)
+  if (!document.querySelector('#headerHelpBtn')) {
+    const help = document.createElement('a');
+    help.id = 'headerHelpBtn';
+    help.className = 'header-help-btn';
+    help.href = 'help.html';
+    help.setAttribute('aria-label', 'Help Center');
+    help.title = 'Help Center';
+    help.textContent = '?';
+    // Insert before authStatus
+    if (authStatus) actions.insertBefore(help, authStatus); else actions.appendChild(help);
+  }
+
+  // 2. Theme toggle button (desktop only, near notification)
+  if (!document.querySelector('#headerThemeBtn') && window.TrioTheme) {
+    const themeBtn = window.TrioTheme.createThemeToggle();
+    themeBtn.id = 'headerThemeBtn';
+    // Insert before help button
+    const helpBtn = document.querySelector('#headerHelpBtn');
+    if (helpBtn) actions.insertBefore(themeBtn, helpBtn); else if (authStatus) actions.insertBefore(themeBtn, authStatus); else actions.appendChild(themeBtn);
+  }
+
+  // 3. Canonical notifications control (bell icon)
   if (!document.querySelector('#notificationButton')) {
     const wrap = document.createElement('div');
     wrap.className = 'notification-wrap';
@@ -63,10 +89,26 @@ export function initHeader() {
       '<span id="notificationBadge" class="notification-badge" hidden>0</span>' +
       '</button>' +
       '<div id="notificationMenu" class="notification-menu" hidden></div>';
-    actions.insertBefore(wrap, authStatus || null);
+    // Insert before theme button
+    const themeBtn = document.querySelector('#headerThemeBtn');
+    const helpBtn = document.querySelector('#headerHelpBtn');
+    const ref = themeBtn || helpBtn || authStatus;
+    if (ref) actions.insertBefore(wrap, ref); else actions.appendChild(wrap);
   }
 
-  // Inject header search slot (desktop inline, mobile via sheet)
+  // 4. Mobile search button (opens search page) - leftmost on mobile
+  if (!document.querySelector('.nkm-header-search-btn')) {
+    const btn = document.createElement('button');
+    btn.className = 'nkm-header-search-btn';
+    btn.type = 'button';
+    btn.setAttribute('aria-label', 'Search');
+    btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21L16.65 16.65"/></svg>`;
+    btn.addEventListener('click', () => { location.href = 'search.html'; });
+    // Prepend to actions (leftmost on mobile due to flex-end)
+    actions.prepend(btn);
+  }
+
+  // Inject header search slot (desktop inline, mobile via sheet) - goes in inner, before actions
   if (!document.querySelector('.nkm-header-search')) {
     const searchSlot = document.createElement('div');
     searchSlot.className = 'nkm-header-search';
@@ -83,36 +125,6 @@ export function initHeader() {
       input.addEventListener('input', () => { results.style.display = input.value.trim() ? 'block' : 'none'; });
       document.addEventListener('click', e => { if (!searchSlot.contains(e.target)) results.style.display = 'none'; });
     }
-  }
-
-  // Theme toggle button (desktop only, near notification)
-  if (!document.querySelector('#headerThemeBtn') && window.TrioTheme) {
-    const themeBtn = window.TrioTheme.createThemeToggle();
-    themeBtn.id = 'headerThemeBtn';
-    if (actions && authStatus) actions.insertBefore(themeBtn, authStatus); else if (actions) actions.prepend(themeBtn);
-  }
-
-  // Help is a first-class global destination; keep it reachable on every page.
-  if (!document.querySelector('#headerHelpBtn')) {
-    const help = document.createElement('a');
-    help.id = 'headerHelpBtn';
-    help.className = 'header-help-btn';
-    help.href = 'help.html';
-    help.setAttribute('aria-label', 'Help Center');
-    help.title = 'Help Center';
-    help.textContent = '?';
-    if (actions) actions.insertBefore(help, actions.querySelector('#headerThemeBtn') || actions.firstChild);
-  }
-
-  // Mobile search button (opens search page)
-  if (!document.querySelector('.nkm-header-search-btn')) {
-    const btn = document.createElement('button');
-    btn.className = 'nkm-header-search-btn';
-    btn.type = 'button';
-    btn.setAttribute('aria-label', 'Search');
-    btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21L16.65 16.65"/></svg>`;
-    btn.addEventListener('click', () => { location.href = 'search.html'; });
-    if (actions) actions.prepend(btn);
   }
   if (!document.querySelector('link[data-trio-experience-v3]')) {
     const link = document.createElement('link');

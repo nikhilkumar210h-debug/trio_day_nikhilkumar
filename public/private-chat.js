@@ -23,7 +23,7 @@ function messageHtml(m) {
   if (m?.sharedChallengeId) {
     const opts = Array.isArray(m.sharedChallengeOptions) ? m.sharedChallengeOptions : [];
     const optionsHtml = opts.slice(0,5).map((o,i)=>`<span style="display:block;margin-top:4px;font-size:11px;color:var(--color-ink-muted)"><b>${String.fromCharCode(65+i)}.</b> ${esc(o)}</span>`).join('');
-    const href = m.sharedChallengeUrl || ('challenge.html?id=' + encodeURIComponent(m.sharedChallengeId));
+    const href = m.sharedChallengeUrl || ('activity-player.html?act=' + encodeURIComponent(m.sharedChallengeId));
     return `<div class="shared-challenge-card" style="padding:10px;border:1px solid var(--color-border);border-radius:12px;background:var(--color-glass);margin-bottom:4px"><strong style="font-size:11px">⚡ Shared Challenge</strong><p style="margin:5px 0;font-size:12px;line-height:1.4">${esc(m.sharedChallengeQuestion || text)}</p>${optionsHtml}<a class="shared-post-link" href="${esc(href)}">Open Challenge →</a></div>`;
   }
   if (m?.replyToStoryId) {
