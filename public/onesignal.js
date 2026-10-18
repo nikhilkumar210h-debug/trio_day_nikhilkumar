@@ -122,9 +122,19 @@ export async function enableOneSignalPush(user) {
     console.warn("OneSignal.login failed", err);
   }
 
-  const native = OneSignal.Notifications?.permissionNative || Notification.permission;
-  if (native === "default" || native === "prompt") {
-    await OneSignal.Notifications.requestPermission();
+  try {
+    const native = OneSignal.Notifications?.permissionNative || Notification.permission;
+    if (native === "default" || native === "prompt") {
+      await OneSignal.Notifications.requestPermission();
+    }
+  } catch (err) {
+    // Handle AbortError and other push service errors gracefully
+    if (err?.name === 'AbortError' || err?.message?.includes('push service') || err?.message?.includes('Registration failed')) {
+      console.warn('[OneSignal] Push service registration failed (likely blocked or unsupported):', err.message);
+    } else {
+      console.warn('[OneSignal] Permission request failed:', err);
+    }
+    return null;
   }
 
   const granted =
@@ -132,9 +142,19 @@ export async function enableOneSignalPush(user) {
     Notification.permission === "granted";
   if (!granted) return null;
 
-  const subscriptionId = await waitForSubscriptionId(OneSignal);
-  if (!subscriptionId) return null;
+  try {
+    const subscriptionId = await waitForSubscriptionId(OneSignal);
+    if (!subscriptionId) return null;
 
-  await saveOneSignalId(user.uid, subscriptionId);
-  return subscriptionId;
+    await saveOneSignalId(user.uid, subscriptionId);
+    return subscriptionId;
+  } catch (err) {
+    // Handle AbortError during subscription
+    if (err?.name === 'AbortError' || err?.message?.includes('push service') || err?.message?.includes('Registration failed')) {
+      console.warn('[OneSignal] Push subscription failed (likely blocked or unsupported):', err.message);
+    } else {
+      console.warn('[OneSignal] Subscription failed:', err);
+    }
+    return null;
+  }
 }

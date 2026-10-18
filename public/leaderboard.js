@@ -68,9 +68,7 @@ function renderAuthStatus() {
     
     authStatus.innerHTML = `
       <span class="streak-badge">🔥 ${userProfile?.streakCurrent || 0}d Streak</span>
-      <a href="leaderboard.html" class="status-badge active" style="pointer-events:none">🏆 Leaderboard</a>
       <span class="xp-badge-nav">⚡ ${userProfile?.weeklyXp || 0} XP</span>
-      <button id="langToggleBtn" class="lang-toggle" aria-label="Language">${localStorage.getItem('trio_language') || 'EN'}</button>
       <div style="position:relative">
         <button id="profileAvatarBtn" class="profile-pic-btn" aria-label="Profile" style="background:none;border:none;padding:0;cursor:pointer">
           ${photo ? `<img src="${esc(photo)}" alt="" style="width:42px;height:42px;border-radius:50%;border:2px solid #00FFCC;object-fit:cover">` : `<div class="profile-pic-placeholder" style="width:42px;height:42px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,#8B5CF6,#00FFCC);color:#05070B;font-weight:900;font-size:16px;border:2px solid #00FFCC">${esc(initial)}</div>`}
@@ -84,22 +82,11 @@ function renderAuthStatus() {
   } else {
     authStatus.innerHTML = `
       <span class="streak-badge">🔥 0d Streak</span>
-      <a href="leaderboard.html" class="status-badge active" style="pointer-events:none">🏆 Leaderboard</a>
       <span class="xp-badge-nav">⚡ 0 XP</span>
-      <button id="langToggleBtn" class="lang-toggle" aria-label="Language">${localStorage.getItem('trio_language') || 'EN'}</button>
       <a href="login.html" class="status-badge">🔑 Login</a>
       <a href="login.html"><img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80" alt="Profile" class="profile-pic" style="width:42px;height:42px;border-radius:50%;border:2px solid #00FFCC;object-fit:cover"></a>
     `;
   }
-  
-  const langBtn = $('langToggleBtn');
-  if (langBtn) langBtn.onclick = () => {
-    const lang = localStorage.getItem('trio_language') === 'EN' ? 'HI' : 'EN';
-    localStorage.setItem('trio_language', lang);
-    // Smooth language change - just update the button text and re-render if needed
-    langBtn.textContent = lang;
-    // Could add toast notification here if needed
-  };
 }
 
 // ─── LOAD LEADERBOARD ───────────────────────────────────────────────────────

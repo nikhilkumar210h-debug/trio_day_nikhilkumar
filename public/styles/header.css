@@ -80,10 +80,24 @@
   .auth-avatar, .auth-avatar-fallback { width: 28px; height: 28px; flex: 0 0 28px; font-size: 12px; }
   .auth-name { max-width: 18vw; font-size: var(--text-xs); display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .auth-logout { width: 32px; height: 32px; flex: 0 0 32px; font-size: 14px; display: grid; place-items: center; }
+  /* Compact badges in authStatus on mobile */
+  #authStatus .streak-badge,
+  #authStatus .xp-badge-nav {
+    padding: 4px 10px !important;
+    font-size: 11px !important;
+    white-space: nowrap !important;
+  }
+  #authStatus .streak-badge { font-weight: 600 !important; }
+  #authStatus .xp-badge-nav { font-weight: 700 !important; padding: 4px 10px !important; }
 }
 @media (max-width: 360px) {
   .auth-name { display: none; }
   .auth-chip { padding: 4px; max-width: none; }
+  #authStatus .streak-badge,
+  #authStatus .xp-badge-nav {
+    padding: 3px 8px !important;
+    font-size: 10px !important;
+  }
 }
 /* Theme + search + chat icon buttons in header stay compact on mobile */
 @media (max-width: 839px) {

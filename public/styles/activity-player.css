@@ -63,7 +63,10 @@
 }
 
 @media (max-width: 768px) {
-  .activity-wrapper { padding: var(--space-3) var(--gutter-mobile) var(--space-8) var(--gutter-mobile); }
+  .activity-wrapper { 
+    margin-top: 65px; 
+    padding: var(--space-3) var(--gutter-mobile) var(--space-8) var(--gutter-mobile); 
+  }
   .activity-player-page .topbar-inner { padding: 0 var(--gutter-mobile); }
 }
 
