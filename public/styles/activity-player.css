@@ -1,0 +1,461 @@
+/* =========================================================
+   Activity Player Styles — Cyber-Purple + Neon Cyan Glassmorphism
+   Merged from trio-day_activity/style.css (Streamlit prototype)
+   Adapted for Vanilla JS + Trio Day tokens
+   ========================================================= */
+
+/* 1. CSS Variables Override for Activity Pages */
+:root {
+  --activity-bg: radial-gradient(circle at 12% 18%, rgba(139, 92, 246, 0.18) 0%, transparent 40%),
+                 radial-gradient(circle at 88% 80%, rgba(0, 255, 204, 0.12) 0%, transparent 40%),
+                 linear-gradient(180deg, #070913 0%, #0B0F1C 50%, #05070B 100%);
+  --glass-bg: linear-gradient(145deg, rgba(30, 41, 59, 0.55), rgba(15, 23, 42, 0.85));
+  --glass-border: rgba(139, 92, 246, 0.35);
+  --cyan: #00FFCC;
+  --purple: #8B5CF6;
+  --purple-strong: #A855F7;
+  --gold: #FBBF24;
+  --ink: #F8FAFC;
+  --ink-dim: #94A3B8;
+}
+
+/* 2. Page Background for Activity Player */
+.app-page.activity-player-page {
+  background: var(--activity-bg);
+}
+
+/* 3. Animations */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 12px rgba(0, 255, 204, 0.35); }
+  50% { box-shadow: 0 0 24px rgba(139, 92, 246, 0.7); }
+}
+
+@keyframes floatCard {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-5px); }
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@keyframes timerPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* 4. Top Glass Navbar (already in nav.css/header.css, but ensuring consistency) */
+.activity-player-page .topbar {
+  background: rgba(7, 9, 19, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(139, 92, 246, 0.22);
+  height: 76px;
+}
+
+.activity-player-page .topbar-inner {
+  padding: 0 45px;
+  max-width: 1120px;
+}
+
+/* 5. Layout Wrapper */
+.activity-wrapper {
+  margin-top: 105px;
+  padding: 10px 60px 60px 60px;
+  max-width: 1120px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@media (max-width: 768px) {
+  .activity-wrapper { padding: 10px 20px 40px 20px; }
+  .activity-player-page .topbar-inner { padding: 0 20px; }
+}
+
+/* 6. Category Banner */
+.category-banner {
+  background: linear-gradient(120deg, rgba(139, 92, 246, 0.16), rgba(0, 255, 204, 0.06));
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  border-left: 5px solid var(--cyan);
+  padding: 22px 30px;
+  border-radius: 18px;
+  margin-bottom: 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  animation: fadeInUp 0.4s ease forwards;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.category-banner h2 { margin: 0; font-size: 26px; font-weight: 900; }
+.category-banner p { margin: 0; color: var(--ink-dim); font-size: 15px; }
+
+/* 7. Goal Grid (Onboarding) */
+.goal-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 18px;
+  margin-top: 25px;
+}
+
+.goal-card {
+  text-decoration: none !important;
+  color: var(--ink) !important;
+  background: linear-gradient(145deg, rgba(30, 41, 59, 0.5), rgba(15, 23, 42, 0.8));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 28px 20px;
+  text-align: center;
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: fadeInUp 0.5s ease forwards;
+}
+
+.goal-card:hover {
+  transform: translateY(-8px);
+  border-color: var(--cyan);
+  box-shadow: 0 15px 35px rgba(0, 255, 204, 0.2);
+}
+
+.goal-icon { font-size: 40px; margin-bottom: 12px; display: block; }
+.goal-title { font-size: 18px; font-weight: 800; margin-bottom: 6px; }
+.goal-sub { font-size: 12px; color: var(--ink-dim); }
+
+/* 8. Activity Grid (Dashboard) */
+.activity-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.activity-card {
+  text-decoration: none !important;
+  color: var(--ink) !important;
+  background: linear-gradient(145deg, rgba(30, 41, 59, 0.42), rgba(15, 23, 42, 0.75));
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: 22px;
+  padding: 24px 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+  animation: fadeInUp 0.5s ease forwards;
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.activity-card:hover {
+  transform: translateY(-6px) scale(1.01);
+  border-color: var(--purple-strong);
+  box-shadow: 0 18px 40px -8px rgba(139, 92, 246, 0.32), 0 0 20px rgba(0, 255, 204, 0.15);
+}
+
+.card-left { display: flex; align-items: center; gap: 28px; }
+.card-number {
+  font-size: 48px; font-weight: 900; color: transparent;
+  -webkit-text-stroke: 1.5px rgba(148, 163, 184, 0.35);
+  transition: 0.35s;
+}
+.activity-card:hover .card-number {
+  -webkit-text-stroke: 1.5px var(--cyan);
+  text-shadow: 0 0 20px rgba(0, 255, 204, 0.5);
+  transform: scale(1.08);
+}
+.card-info h2 { margin: 0 0 8px 0; font-size: 22px; font-weight: 800; color: var(--ink); }
+.card-info p { margin: 0 0 12px 0; font-size: 14px; color: var(--ink-dim); }
+.card-tags { display: flex; gap: 10px; align-items: center; }
+
+.tag-pill {
+  font-size: 12px; font-weight: 700;
+  padding: 4px 12px; border-radius: 99px;
+  background: rgba(139, 92, 246, 0.18);
+  color: #C4B5FD; border: 1px solid rgba(139, 92, 246, 0.35);
+}
+
+.tag-xp {
+  font-size: 12px; font-weight: 800;
+  padding: 4px 12px; border-radius: 99px;
+  background: rgba(0, 255, 204, 0.12);
+  color: var(--cyan); border: 1px solid rgba(0, 255, 204, 0.3);
+}
+
+.card-right img {
+  width: 165px; height: 105px; object-fit: cover;
+  border-radius: 14px; transition: all 0.4s ease;
+}
+.activity-card:hover .card-right img {
+  transform: scale(1.07) rotate(1.5deg);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+}
+
+/* Card image placeholder when no image */
+.card-right .card-img-placeholder {
+  width: 165px; height: 105px; border-radius: 14px;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(0, 255, 204, 0.1));
+  display: grid; place-items: center; font-size: 48px;
+}
+
+/* 9. Progress Track & Fill */
+.progress-track {
+  width: 100%; height: 10px;
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 99px; overflow: hidden;
+  margin-bottom: 25px;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--cyan), var(--purple));
+  border-radius: 99px;
+  transition: width 0.5s ease;
+}
+
+/* 10. Task Box (Player) */
+.task-box {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 24px; padding: 45px 40px;
+  text-align: center; margin-bottom: 25px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  animation: fadeInUp 0.45s ease forwards;
+  max-width: 800px;
+  margin-left: auto; margin-right: auto;
+}
+
+.task-header {
+  display: flex; justify-content: center; gap: 12px; margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.task-title { font-size: 34px; margin-bottom: 15px; font-weight: 900; line-height: 1.2; }
+.task-detail { color: var(--ink-dim); font-size: 18px; max-width: 650px; margin: 0 auto 25px auto; line-height: 1.6; }
+
+/* 11. Timer Display */
+.task-timer {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: rgba(0, 255, 204, 0.1);
+  border: 1px solid rgba(0, 255, 204, 0.3);
+  border-radius: 99px; padding: 8px 16px;
+  font-family: 'Space Grotesk', monospace; font-weight: 700;
+  color: var(--cyan); font-size: 16px;
+}
+
+.task-timer.warning {
+  background: rgba(251, 191, 36, 0.15);
+  border-color: rgba(251, 191, 36, 0.5);
+  color: var(--gold);
+  animation: timerPulse 1s ease-in-out infinite;
+}
+
+.task-timer.danger {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.5);
+  color: #EF4444;
+  animation: timerPulse 0.5s ease-in-out infinite;
+}
+
+/* 12. Proof Input Area */
+.proof-input-wrapper {
+  margin-top: 30px;
+  text-align: left;
+  max-width: 600px;
+  margin-left: auto; margin-right: auto;
+}
+
+.proof-label {
+  display: block; font-size: 14px; font-weight: 700;
+  color: var(--ink); margin-bottom: 10px;
+}
+
+.proof-textarea {
+  width: 100%; min-height: 120px;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  border-radius: 16px; padding: 16px;
+  color: var(--ink); font-family: inherit; font-size: 15px;
+  line-height: 1.6; resize: vertical;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.proof-textarea:focus {
+  outline: none;
+  border-color: var(--cyan);
+  box-shadow: 0 0 20px rgba(0, 255, 204, 0.2);
+}
+
+.proof-textarea::placeholder { color: #64748B; }
+
+.char-count {
+  display: block; text-align: right; margin-top: 8px;
+  font-size: 12px; color: var(--ink-dim);
+}
+
+.char-count.warning { color: var(--gold); }
+.char-count.danger { color: #EF4444; }
+
+/* 13. Action Buttons (Complete / Skip) */
+.task-actions {
+  display: flex; gap: 16px; margin-top: 30px;
+  justify-content: center; flex-wrap: wrap;
+}
+
+.btn-task {
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 14px 32px; border-radius: 14px;
+  font-weight: 700; font-size: 15px; font-family: inherit;
+  border: none; cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-complete {
+  background: linear-gradient(135deg, var(--purple), var(--cyan));
+  color: #05070B;
+  box-shadow: 0 8px 25px rgba(99, 102, 241, 0.45);
+}
+
+.btn-complete:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px rgba(99, 102, 241, 0.6);
+}
+
+.btn-complete:disabled {
+  opacity: 0.5; cursor: not-allowed; transform: none;
+}
+
+.btn-skip {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--ink-dim);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.btn-skip:hover {
+  background: rgba(139, 92, 246, 0.2);
+  border-color: var(--purple-strong);
+  color: var(--ink);
+}
+
+/* 14. Completion Screen */
+.completion-screen {
+  text-align: center; padding: 40px 20px;
+}
+
+.completion-icon { font-size: 64px; margin-bottom: 16px; animation: floatCard 2s ease-in-out infinite; }
+.completion-title { font-size: 36px; font-weight: 900; color: var(--cyan); margin-bottom: 12px; }
+.completion-xp { font-size: 24px; font-weight: 800; color: var(--gold); margin-bottom: 8px; }
+.completion-text { color: var(--ink-dim); font-size: 18px; max-width: 500px; margin: 0 auto 30px; }
+
+/* 15. Guest Limit Notice */
+.guest-limit-notice .task-box { max-width: 500px; margin: 20px auto; text-align: center; }
+
+/* 16. Language Toggle (in navbar) */
+.lang-toggle {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--ink) !important;
+  padding: 7px 15px; border-radius: 12px;
+  font-weight: 600; font-size: 14px;
+  transition: all 0.25s ease;
+}
+.lang-toggle:hover {
+  background: rgba(139, 92, 246, 0.22);
+  border-color: var(--purple-strong); color: #fff !important;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(139, 92, 246, 0.35);
+}
+
+/* 17. XP Badge (in navbar) */
+.xp-badge-nav {
+  background: linear-gradient(135deg, var(--cyan), #6366F1);
+  color: #05070B !important;
+  padding: 7px 16px; border-radius: 99px;
+  font-weight: 800; font-size: 13px;
+  animation: pulseGlow 3s infinite ease-in-out;
+}
+
+/* 18. Streak Badge */
+.streak-badge {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 7px 15px; border-radius: 12px;
+  color: var(--ink) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-weight: 600; font-size: 14px;
+}
+
+/* 19. Language Toast */
+.lang-toast {
+  position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%);
+  background: var(--glass-bg); border: 1px solid var(--glass-border);
+  border-radius: 14px; padding: 14px 24px;
+  font-weight: 700; font-size: 14px; color: var(--cyan);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  z-index: 10000; animation: fadeInUp 0.3s ease;
+  pointer-events: none;
+}
+
+/* 20. Login Modal Specific */
+.login-modal { max-width: 420px; }
+.modal-tabs { display: flex; border-bottom: 1px solid var(--border); margin: 0 -24px; padding: 0 24px; }
+.modal-tab {
+  flex: 1; background: transparent; border: none; color: var(--ink-dim);
+  padding: 16px 12px; font-weight: 700; font-size: 13px;
+  cursor: pointer; position: relative;
+}
+.modal-tab::after {
+  content: ''; position: absolute; bottom: -1px; left: 50%; transform: translateX(-50%);
+  width: 0; height: 3px; background: linear-gradient(90deg, var(--cyan), var(--purple));
+  border-radius: 3px 3px 0 0; transition: width 0.3s ease;
+}
+.modal-tab.active { color: var(--cyan); }
+.modal-tab.active::after { width: 100%; }
+.modal-panel { padding: 24px; animation: fadeInUp 0.3s ease; }
+.field { margin-bottom: 16px; }
+.label-text { display: block; font-size: 12px; font-weight: 600; color: var(--ink-dim); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
+.field input { width: 100%; padding: 14px 16px; border-radius: 12px;
+  background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(139, 92, 246, 0.3);
+  color: var(--ink); font-size: 15px; font-family: inherit; }
+.field input:focus { outline: none; border-color: var(--cyan); box-shadow: 0 0 20px rgba(0, 255, 204, 0.2); }
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(8px); z-index: 10000; display: flex; align-items: center; justify-content: center; padding: 20px; }
+.modal { background: var(--surface); border: 1px solid var(--border); border-radius: 24px; overflow: hidden; width: 100%; max-height: 90vh; overflow-y: auto; animation: fadeInUp 0.4s ease; }
+.modal-head { display: flex; justify-content: space-between; align-items: flex-start; padding: 24px; border-bottom: 1px solid var(--border); }
+.eyebrow { font-size: 11px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--cyan); display: block; margin-bottom: 8px; }
+.modal-head h2 { margin: 0; font-size: 22px; font-weight: 900; }
+.modal-head .icon-btn { background: var(--glass-bg); border: 1px solid var(--border); border-radius: 12px; width: 40px; height: 40px; display: grid; place-items: center; font-size: 24px; color: var(--ink); cursor: pointer; }
+.btn.primary { background: linear-gradient(135deg, var(--purple), var(--cyan)); color: #05070B; border: none; padding: 14px 24px; border-radius: 14px; font-weight: 700; font-size: 15px; width: 100%; cursor: pointer; transition: all 0.3s; }
+.btn.primary:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(99, 102, 241, 0.45); }
+
+/* 21. Skeleton Loaders for Activity Cards */
+.activity-skeleton {
+  background: linear-gradient(145deg, rgba(30, 41, 59, 0.42), rgba(15, 23, 42, 0.75));
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: 22px; padding: 24px 32px;
+  display: flex; justify-content: space-between; align-items: center;
+  animation: shimmer 1.5s infinite linear;
+  background-size: 200% 100%;
+}
+.skeleton-num { width: 60px; height: 48px; border-radius: 8px; background: rgba(255,255,255,0.05); }
+.skeleton-title { width: 200px; height: 28px; border-radius: 8px; background: rgba(255,255,255,0.05); margin-bottom: 8px; }
+.skeleton-desc { width: 280px; height: 16px; border-radius: 8px; background: rgba(255,255,255,0.05); margin-bottom: 12px; }
+.skeleton-tags { display: flex; gap: 10px; }
+.skeleton-tag { width: 80px; height: 24px; border-radius: 99px; background: rgba(255,255,255,0.05); }
+.skeleton-img { width: 165px; height: 105px; border-radius: 14px; background: rgba(255,255,255,0.05); }
+
+/* 22. Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* 23. Print Styles */
+@media print {
+  .topbar, .bottom-nav, .task-actions, .lang-toast { display: none !important; }
+  .activity-wrapper { margin-top: 0; padding: 0; }
+}

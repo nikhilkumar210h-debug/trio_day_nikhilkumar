@@ -1,12 +1,18 @@
-# Secure Trio Day gamification API Worker
-# Deploy: npx wrangler deploy --config wrangler.gamification.toml
+# Secure Trio Day gamification + activities API Worker
+# Deploy: npx wrangler deploy --config workers/wrangler.gamification.toml
 #
-# Secrets:
-#   FIREBASE_PROJECT_ID
-#   FIREBASE_SA_CLIENT_EMAIL
-#   (FIREBASE_SA_PRIVATE_KEY moved to KV namespace FIREBASE_KEYS)
+# Secrets (set via: npx wrangler secret put SECRET_NAME):
+#   FIREBASE_SA_CLIENT_EMAIL      Firebase service account email
+#   SUPABASE_URL                  https://vccypxwiqcuexxrhtgyq.supabase.co
+#   SUPABASE_ANON_KEY             Supabase anon/public key
+#   ADMIN_EMAILS                  comma-separated: nikhilkumar210h@gmail.com,nikhilkumar45374@gmail.com
+#   CLOUDINARY_CLOUD_NAME         Your Cloudinary cloud name
+#   CLOUDINARY_API_KEY            Cloudinary API key
+#   CLOUDINARY_API_SECRET         Cloudinary API secret
 #
-# The API Worker is the source for authenticated gamification writes.
+# KV Namespace (for Firebase private key):
+#   npx wrangler kv namespace create FIREBASE_KEYS
+#   npx wrangler kv key put --binding FIREBASE_KEYS --path <pem-file> FIREBASE_SA_PRIVATE_KEY
 
 name = "trio-gamification"
 main = "gamification.js"
@@ -16,6 +22,12 @@ workers_dev = true
 [[kv_namespaces]]
 binding = "FIREBASE_KEYS"
 id = "c1786d0376844eb59ba03cadf4939496"
+
+# Environment variables (non-secret)
+[vars]
+FIREBASE_PROJECT_ID = "nkm-ind"
+XP_PER_LEVEL = "100"
+LEADERBOARD_TOP_N = "50"
 
 [observability]
 enabled = true

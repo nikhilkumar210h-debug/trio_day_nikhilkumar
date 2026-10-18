@@ -59,6 +59,9 @@ workers/.wrangler/
 
 # Test results
 test-results/
+*.spec.js
+*.test.js
+qa-audit.spec.js
 
 # Service account keys in any directory
 **/serviceAccountKey*.json

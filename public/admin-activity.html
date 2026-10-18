@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#070913">
+  <script>!function(){try{var k='trio-theme',t=localStorage.getItem(k);if(t!=='light'&&t!=='dark'){t=localStorage.getItem('trio_theme');t=(t==='light'||t==='dark')?t:null;}if(!t){t=matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';}document.documentElement.setAttribute('data-theme',t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',t==='light'?'#F8F7FF':'#070913');}catch(e){}}</script>
+  <title>Admin Activities — Trio Day</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet"></noscript>
+  <link rel="stylesheet" href="styles/tokens.css?v=20261018">
+  <link rel="stylesheet" href="styles/skeleton.css?v=20261018">
+  <link rel="stylesheet" href="styles/sheet.css?v=20261018">
+  <link rel="stylesheet" href="styles/nav.css?v=20261018">
+  <link rel="stylesheet" href="styles/header.css?v=20261018">
+  <link rel="stylesheet" href="styles/components.css?v=20261018">
+  <link rel="stylesheet" href="style.css?v=20261018-activity">
+  <link rel="stylesheet" href="styles/polish.css?v=7">
+  <link rel="stylesheet" href="styles/activity-player.css?v=1">
+  <style>
+    .admin-tabs { display:flex; gap:8px; margin-bottom:24px; border-bottom:1px solid var(--border); padding-bottom:8px; }
+    .admin-tab { padding:10px 20px; background:var(--glass-bg); border:1px solid var(--border); border-radius:99px; color:var(--ink); font-weight:700; cursor:pointer; transition:all .2s; }
+    .admin-tab.active { background:linear-gradient(135deg,var(--purple),var(--cyan)); color:#05070B; border-color:transparent; }
+    .admin-panel { display:none; }
+    .admin-panel.active { display:block; animation:fadeInUp .3s ease; }
+    .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+    @media(max-width:768px){ .form-grid{grid-template-columns:1fr} }
+    .field-full { grid-column:1/-1; }
+    .upload-area { border:2px dashed var(--border); border-radius:16px; padding:32px; text-align:center; cursor:pointer; transition:all .3s; }
+    .upload-area:hover, .upload-area.dragover { border-color:var(--cyan); background:rgba(0,255,204,.05); }
+    .upload-area.has-file { border-style:solid; border-color:var(--purple); }
+    .preview-img { max-width:100%; max-height:200px; border-radius:12px; margin-top:16px; }
+    .task-list-item { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:16px; margin-bottom:12px; display:flex; gap:16px; align-items:center; flex-wrap:wrap; }
+    .task-list-item.drag-over { border-color:var(--cyan); background:rgba(0,255,204,.05); }
+    .task-order { font-size:24px; font-weight:900; color:var(--cyan); min-width:50px; }
+    .task-info { flex:1; min-width:200px; }
+    .task-title { font-weight:800; font-size:16px; }
+    .task-meta { font-size:12px; color:var(--ink-dim); margin-top:4px; }
+    .task-actions { display:flex; gap:8px; }
+    .btn-sm { padding:8px 16px; font-size:13px; }
+    .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.7); backdrop-filter:blur(8px); z-index:10000; display:flex; align-items:center; justify-content:center; padding:20px; }
+    .modal { background:var(--surface); border:1px solid var(--border); border-radius:24px; width:100%; max-width:600px; max-height:90vh; overflow-y:auto; animation:fadeInUp .3s ease; }
+    .modal-head { display:flex; justify-content:space-between; align-items:flex-start; padding:24px; border-bottom:1px solid var(--border); }
+    .modal-body { padding:24px; }
+    .icon-btn { background:var(--glass-bg); border:1px solid var(--border); border-radius:12px; width:40px; height:40px; display:grid; place-items:center; font-size:24px; color:var(--ink); cursor:pointer; }
+  </style>
+</head>
+
+<body class="app-page activity-player-page">
+  <div class="tricolor-strip"><span></span><span></span><span></span></div>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="index.html"><span class="brand-chakra"><img src="icons/trio-day-logo.svg" alt="Trio Day" style="width:36px;height:36px;display:block;border-radius:10px;box-shadow:0 4px 18px rgba(99,102,241,.28)"></span><span class="brand-copy"><strong>trio_day</strong><small>ADMIN · ACTIVITIES</small></span></a>
+      <div id="authStatus" class="auth-status"></div>
+    </div>
+  </header>
+
+  <main class="activity-wrapper">
+    <div id="denied" class="task-box" hidden style="text-align:center; max-width:500px; margin:0 auto;">
+      <span class="tag-pill" style="background:rgba(239,68,68,.2); border-color:rgba(239,68,68,.5); color:#EF4444;">🔒 Admin Only</span>
+      <h2 style="color:#EF4444; margin:18px 0 12px;">Access Denied</h2>
+      <p style="color:#CBD5E1;">Only authorized admins can access this page.</p>
+      <a href="index.html" class="btn primary" style="margin-top:16px; display:inline-flex;">← Back to Activities</a>
+    </div>
+
+    <div id="adminPanel" hidden>
+      <div class="admin-tabs">
+        <button class="admin-tab active" data-tab="activities">📋 Activities</button>
+        <button class="admin-tab" data-tab="create-activity">➕ Create Activity</button>
+        <button class="admin-tab" data-tab="tasks">🧩 Tasks</button>
+      </div>
+
+      <!-- Activities List -->
+      <div id="panelActivities" class="admin-panel active">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
+          <h2 style="margin:0;">All Activities</h2>
+          <button id="refreshActivities" class="btn secondary">🔄 Refresh</button>
+        </div>
+        <div id="activitiesList" class="task-list"></div>
+      </div>
+
+      <!-- Create/Edit Activity Form -->
+      <div id="panelCreateActivity" class="admin-panel">
+        <h2 id="createActivityTitle" style="margin:0 0 24px;">Create New Activity</h2>
+        <form id="activityForm" class="form-grid">
+          <input type="hidden" id="activityId" name="id">
+          <div class="field">
+            <label class="label-text">Title *</label>
+            <input type="text" id="actTitle" name="title" required placeholder="e.g., Learning: Foundation Quest">
+          </div>
+          <div class="field">
+            <label class="label-text">Category *</label>
+            <select id="actCategory" name="category" required>
+              <option value="">Select...</option>
+              <option value="Learning">📚 Learning</option>
+              <option value="Digital Skill">💻 Digital Skill</option>
+              <option value="Personal Growth">🌱 Personal Growth</option>
+              <option value="Mind & Emotion">🧠 Mind & Emotion</option>
+              <option value="Social Life">🤝 Social Life</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="label-text">Icon</label>
+            <input type="text" id="actIcon" name="icon" placeholder="📚" maxlength="4">
+          </div>
+          <div class="field">
+            <label class="label-text">Order Index</label>
+            <input type="number" id="actOrder" name="order_index" value="0" min="0">
+          </div>
+          <div class="field field-full">
+            <label class="label-text">Description</label>
+            <textarea id="actDescription" name="description" rows="3" placeholder="What is this activity about?"></textarea>
+          </div>
+          <div class="field field-full">
+            <label class="label-text">Cover Image (Cloudinary URL)</label>
+            <div class="upload-area" id="actCoverUpload">
+              <div class="upload-icon" style="font-size:32px; margin-bottom:8px;">☁️</div>
+              <div class="upload-text"><strong>Click or drag to upload</strong><br><small>Auto-optimized: f_auto,q_auto,c_fill,g_auto,w_800</small></div>
+              <input type="file" id="actCoverFile" accept="image/*" hidden>
+            </div>
+            <input type="text" id="actCoverUrl" name="cover_image" placeholder="https://res.cloudinary.com/.../trio/activities/..." style="margin-top:12px; display:none;">
+            <img id="actCoverPreview" class="preview-img" hidden>
+          </div>
+          <div class="field field-full">
+            <label class="label-text">Difficulty Label</label>
+            <input type="text" id="actDifficulty" name="difficulty" placeholder="Easy • 3 Tasks">
+          </div>
+          <div class="field field-full">
+            <label class="label-text">XP Reward Label</label>
+            <input type="text" id="actXpReward" name="xp_reward" placeholder="+150 XP">
+          </div>
+          <div class="field field-full">
+            <label class="label-text">Guest Allowed</label>
+            <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+              <input type="checkbox" id="actGuestAllowed" name="is_guest_allowed" value="true">
+              <span>Allow guests to play (first 3 tasks free)</span>
+            </label>
+          </div>
+          <div class="field field-full">
+            <label class="label-text">Active</label>
+            <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+              <input type="checkbox" id="actActive" name="is_active" value="true" checked>
+              <span>Published and visible to users</span>
+            </label>
+          </div>
+          <div class="field-full" style="display:flex; gap:12px; justify-content:flex-end; margin-top:8px;">
+            <button type="button" id="cancelActivity" class="btn secondary">Cancel</button>
+            <button type="submit" class="btn primary">💾 Save Activity</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Tasks List -->
+      <div id="panelTasks" class="admin-panel">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
+          <h2 style="margin:0;">All Tasks</h2>
+          <div style="display:flex; gap:8px;">
+            <select id="filterActivity" class="btn secondary" style="padding:8px 12px; background:var(--glass-bg); border:1px solid var(--border); color:var(--ink); border-radius:8px;">
+              <option value="">All Activities</option>
+            </select>
+            <button id="createTaskBtn" class="btn primary">➕ Create Task</button>
+          </div>
+        </div>
+        <div id="tasksList" class="task-list"></div>
+      </div>
+    </div>
+  </main>
+
+  <nav class="bottom-nav" aria-label="Primary navigation">
+    <div class="nav-row"></div>
+  </nav>
+
+  <!-- Task Modal -->
+  <div id="taskModal" class="modal-overlay" hidden>
+    <div class="modal">
+      <div class="modal-head">
+        <div>
+          <span class="eyebrow" id="taskModalEyebrow">Create Task</span>
+          <h2 id="taskModalTitle">New Task</h2>
+        </div>
+        <button class="icon-btn" id="taskModalClose" aria-label="Close">×</button>
+      </div>
+      <div class="modal-body">
+        <form id="taskForm" class="form-grid">
+          <input type="hidden" id="taskId" name="id">
+          <input type="hidden" id="taskActivityId" name="activity_id">
+          <div class="field">
+            <label class="label-text">Order Index *</label>
+            <input type="number" id="taskOrder" name="order_index" required min="1" value="1">
+          </div>
+          <div class="field">
+            <label class="label-text">Type</label>
+            <select id="taskType" name="type">
+              <option value="Brainteaser">🧩 Brainteaser</option>
+              <option value="Action Step">⚡ Action Step</option>
+              <option value="Reflection">🪞 Reflection</option>
+              <option value="Boss Task">👑 Boss Task</option>
+            </select>
+          </div>
+          <div class="field field-full">
+            <label class="label-text">Title *</label>
+            <input type="text" id="taskTitle" name="title" required placeholder="e.g., Warm-up Logic Check">
+          </div>
+          <div class="field field-full">
+            <label class="label-text">Description</label>
+            <textarea id="taskDescription" name="description" rows="3" placeholder="Detailed instructions..."></textarea>
+          </div>
+          <div class="field field-full">
+            <label class="label-text">Instructions (English)</label>
+            <textarea id="taskInstructionsEn" name="instructions_en" rows="3" placeholder="How to complete this task (English)..."></textarea>
+          </div>
+          <div class="field field-full">
+            <label class="label-text">Instructions (Hindi)</label>
+            <textarea id="taskInstructionsHi" name="instructions_hi" rows="3" placeholder="How to complete this task (हिंदी में)..."></textarea>
+          </div>
+          <div class="field">
+            <label class="label-text">Min Time (seconds)</label>
+            <input type="number" id="taskMinTime" name="min_time_seconds" value="0" min="0">
+          </div>
+          <div class="field">
+            <label class="label-text">XP Reward</label>
+            <input type="number" id="taskXp" name="xp_reward" value="10" min="0">
+          </div>
+          <div class="field field-full">
+            <label class="label-text">AI Verification Prompt</label>
+            <textarea id="taskVerificationPrompt" name="verification_prompt" rows="3" placeholder="Prompt for AI to verify user's proof. e.g., 'Check if the user genuinely solved the logic puzzle described in the task. Reject generic responses like asdfg.'"></textarea>
+          </div>
+          <div class="field field-full">
+            <label class="label-text">Active</label>
+            <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+              <input type="checkbox" id="taskActive" name="is_active" value="true" checked>
+              <span>Published</span>
+            </label>
+          </div>
+          <div class="field-full" style="display:flex; gap:12px; justify-content:flex-end; margin-top:8px;">
+            <button type="button" id="cancelTask" class="btn secondary">Cancel</button>
+            <button type="submit" class="btn primary">💾 Save Task</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="auth-preload.js?v=20261018"></script>
+  <script type="module" src="auth-guard.js?v=20261018"></script>
+  <script type="module" src="auth-ui.js?v=20261018"></script>
+  <script type="module" src="theme.js?v=20261018"></script>
+  <script type="module" src="ui/header.js?v=20261018"></script>
+  <script type="module" src="ui/nav.js?v=20261018"></script>
+  <script type="module" src="ui/sheet.js?v=20261018"></script>
+  <script type="module" src="ui/sound.js?v=20261018"></script>
+  <script type="module" src="admin-activity.js?v=20261018"></script>
+</body>
+</html>
