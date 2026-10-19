@@ -1,6 +1,6 @@
 import { auth, db } from './firebase-init.js';
 import { escapeHtml as esc } from './utils.js';
-import { notificationText } from './services/notificationHelpers.js';
+import { notificationText } from './services/notifications.js';
 import { trioCache } from './trio-cache.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
 import {

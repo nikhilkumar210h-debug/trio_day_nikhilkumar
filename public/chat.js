@@ -6,7 +6,7 @@ import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.13.0/f
 import {
   collection, getDocs, query, orderBy, limit, addDoc
 } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
-import { notifyUser } from './services/notificationHelpers.js';
+import { notifyUser } from './services/notifications.js';
 import { getCachedUser } from './services/userCache.js';
 
 const $ = id => document.getElementById(id);

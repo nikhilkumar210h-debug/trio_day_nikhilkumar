@@ -1,5 +1,5 @@
 import { auth, db } from './firebase-init.js';
-import { notifyUser } from './services/notificationHelpers.js';
+import { notifyUser } from './services/notifications.js';
 import { uploadStoryMedia, cloudinaryAutoUrl } from './image-upload.js?v=20261018-img1';
 import { trioCache } from './trio-cache.js';
 import { getCachedUserProfile, getMyProfile, getCachedUser, ensureUserProfile } from './services/userCache.js';

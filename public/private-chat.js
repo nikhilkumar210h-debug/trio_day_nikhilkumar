@@ -1,5 +1,5 @@
 import { auth, db } from './firebase-init.js';
-import { notifyUser } from './services/notificationHelpers.js';
+import { notifyUser } from './services/notifications.js';
 import { SoundManager } from './sound-manager.js';
 import { escapeHtml as esc, avatarHtml, nameOf, timeOf, chatId } from './utils.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
@@ -16,7 +16,7 @@ const params = new URLSearchParams(location.search);
 const peerUid = params.get('uid');
 
 import { createSheet } from './ui/sheet.js';
-import { showToast } from './ui/toast.js';
+import { showToast } from './ui/ui-kit.js';
 
 function messageHtml(m) {
   const text = m?.text ?? m?.message ?? '';

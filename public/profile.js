@@ -1,5 +1,5 @@
 import { auth, db } from './firebase-init.js';
-import { notifyUser } from './services/notificationHelpers.js';
+import { notifyUser } from './services/notifications.js';
 import { uploadProfileImage, cloudinaryAutoUrl } from './image-upload.js?v=20261018-img1';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
 import { trioCache } from './trio-cache.js';

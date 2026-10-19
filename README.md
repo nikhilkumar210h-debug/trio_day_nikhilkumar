@@ -137,7 +137,6 @@ trio_day_main/
 ├─ firebase.json / .firebaserc # Legacy Firebase Hosting config + Firestore rules/indexes; project: nkm-ind
 ├─ firestore.rules              # Firestore security rules v2 (single source of truth for DB access)
 ├─ firestore.indexes.json       # Composite indexes
-├─ storage-rules.txt            # Firebase Storage rules (Cloudinary fallback path uploads/{uid}/)
 ├─ functions/index.js           # Firebase Functions v2 callable signInWithTrioUid (us-central1) + authRateLimits
 ├─ workers/                     # Separate Cloudflare Workers (own wrangler.*.toml each)
 │  ├─ gamification.js           #   trio-gamification — POST /gamification/* (legacy) + /api/activity/* + /api/admin/*
@@ -161,9 +160,9 @@ trio_day_main/
 │  ├─ image-upload.js          # Cloudinary client (signed uploads via trio-media-upload)
 │  ├─ core-loop.js / experience-v2.js / webmcp.js   # Injected at runtime by ui/header.js
 │  ├─ trio-cache.js / utils.js / sound-manager.js / theme.js / pwa-retire.js
-│  ├─ services/                # userCache, notificationHelpers/Settings/Worker
+│  ├─ services/                # userCache, notifications
 │  ├─ gamification/            # badges, community-tasks, constants, leaderboards, streaks, worker-config, xp-levels
-│  ├─ ui/                      # header, nav, sheet, toast, search, skeleton, achievements
+│  ├─ ui/                      # header, nav, sheet, ui-kit, search, sound, achievements
 │  └─ styles/ assets/ icons/ push/onesignal/
 └─ scripts/                    # validate-repo.mjs, migrate-base64-to-storage.mjs (offline tooling)
 ```

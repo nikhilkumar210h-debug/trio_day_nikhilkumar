@@ -1,7 +1,7 @@
 import { auth, db } from './firebase-init.js';
 import { trioCache } from './trio-cache.js';
 import { chatId, escapeHtml, cloudinaryAutoUrl } from './utils.js';
-import { notificationText } from './services/notificationHelpers.js';
+import { notificationText } from './services/notifications.js';
 import { getCachedUser } from './services/userCache.js';
 import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
 import {

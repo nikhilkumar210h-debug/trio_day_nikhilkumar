@@ -2,7 +2,7 @@ import { auth } from '../firebase-init.js';
 import { getUserTimeZone } from './constants.js';
 import { workerPost } from './worker-config.js';
 import { announceBadgesEarned } from '../ui/achievements.js';
-import { showToast } from '../ui/toast.js';
+import { showToast } from '../ui/ui-kit.js';
 import { SoundManager } from '../sound-manager.js';
 
 /**

@@ -6,10 +6,10 @@ import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 import { db } from './firebase-init.js';
 import { SoundManager } from './sound-manager.js';
-import { showToast } from './ui/toast.js';
+import { showToast } from './ui/ui-kit.js';
 import { createSheet } from './ui/sheet.js';
 import { trioCache } from './trio-cache.js';
-import { loadNotificationSettings, renderNotificationSettings, saveNotificationSetting, initNotificationSettingsUI } from './services/notificationSettings.js';
+import { loadNotificationSettings, renderNotificationSettings, saveNotificationSetting, initNotificationSettingsUI } from './services/notifications.js';
 import { enableOneSignalPush } from './onesignal.js';
 
 const $ = id => document.getElementById(id);
