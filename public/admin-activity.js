@@ -52,6 +52,7 @@ const adminPanel = $('adminPanel');
 const activitiesList = $('activitiesList');
 const tasksList = $('tasksList');
 const filterActivity = $('filterActivity');
+const filterActivityCategory = $('activityCategoryFilter');
 const activityForm = $('activityForm');
 const taskForm = $('taskForm');
 const taskModal = $('taskModal');
@@ -125,7 +126,12 @@ function setupTabs() {
       document.querySelectorAll('.admin-panel').forEach(p => p.classList.remove('active'));
       tab.classList.add('active');
       const key = tab.dataset.tab;
-      const panel = $(`panel${key.charAt(0).toUpperCase() + key.slice(1)}`);
+      const panelId = {
+        activities: 'panelActivities',
+        'create-activity': 'panelCreateActivity',
+        tasks: 'panelTasks'
+      }[key];
+      const panel = panelId ? $(panelId) : null;
       if (panel) panel.classList.add('active');
       if (key === 'tasks') loadTasks();
       if (key === 'create-activity') resetActivityForm();
@@ -238,12 +244,20 @@ async function loadActivities() {
 }
 
 function renderActivitiesList() {
-  if (!activitiesCache.length) {
+  const category = filterActivityCategory?.value || '';
+  const visibleActivities = category
+    ? activitiesCache.filter(act => act.category === category)
+    : activitiesCache;
+  if (!visibleActivities.length) {
+    if (activitiesCache.length) {
+      activitiesList.innerHTML = '<div class="admin-empty">No activities for this goal yet. Select <strong>Create Activity</strong> to add one.</div>';
+      return;
+    }
     activitiesList.innerHTML = '<div class="admin-empty">No activities yet. Use <strong>Create Activity</strong> to add the first one.</div>';
     return;
   }
 
-  activitiesList.innerHTML = activitiesCache.map(act => `
+  activitiesList.innerHTML = visibleActivities.map(act => `
     <div class="task-list-item" data-id="${esc(act.id)}">
       <span class="task-order">${act.display_order || 0}</span>
       <div class="task-info">
@@ -255,6 +269,7 @@ function renderActivitiesList() {
         </div>
       </div>
       <div class="task-actions">
+        <button class="btn primary btn-sm create-activity-task" data-id="${esc(act.id)}">➕ Add Task</button>
         <button class="btn secondary btn-sm edit-activity" data-id="${esc(act.id)}">✏️ Edit</button>
         <button class="btn secondary btn-sm delete-activity" data-id="${esc(act.id)}" style="color:var(--color-danger); border-color:var(--color-danger)">🗑️ Delete</button>
       </div>
@@ -263,6 +278,9 @@ function renderActivitiesList() {
 
   document.querySelectorAll('.edit-activity').forEach(btn => {
     btn.addEventListener('click', () => openActivityEditor(btn.dataset.id));
+  });
+  document.querySelectorAll('.create-activity-task').forEach(btn => {
+    btn.addEventListener('click', () => openNewTaskEditor(btn.dataset.id));
   });
   document.querySelectorAll('.delete-activity').forEach(btn => {
     btn.addEventListener('click', () => deleteActivity(btn.dataset.id));
@@ -398,11 +416,12 @@ async function deleteActivity(activityId) {
 }
 
 // ─── TASKS ──────────────────────────────────────────────────────────────────
-async function loadTasks() {
-  if (!tasksList) return;
-  const activityFilter = filterActivity?.value || '';
+async function loadTasks(activityIdFilter = filterActivity?.value || '') {
+  if (!tasksList) return false;
+  tasksCache = [];
+
   let url = `${SUPABASE_URL}/rest/v1/tasks?select=${TASK_SELECT_ADMIN}&order=activity_id.asc,task_number.asc`;
-  if (activityFilter) url += `&activity_id=eq.${encodeURIComponent(activityFilter)}`;
+  if (activityIdFilter) url += `&activity_id=eq.${encodeURIComponent(activityIdFilter)}`;
 
   tasksList.innerHTML = skeletonCards(3, 90);
 
@@ -414,11 +433,14 @@ async function loadTasks() {
     const data = await res.json();
     tasksCache = Array.isArray(data) ? data : [];
     renderTasksList();
+    return true;
   } catch (err) {
     console.error('[Admin] Load tasks error:', err);
+    tasksCache = [];
     tasksList.innerHTML = `<div class="admin-empty"><p>Failed to load tasks (${esc(err.message)}).</p>
       <button type="button" class="btn secondary" id="retryTasks">Retry</button></div>`;
-    $('retryTasks')?.addEventListener('click', loadTasks);
+    $('retryTasks')?.addEventListener('click', () => loadTasks(activityIdFilter));
+    return false;
   }
 }
 
@@ -487,14 +509,14 @@ function openTaskEditor(taskId) {
   document.body.style.overflow = 'hidden';
 }
 
-function openNewTaskEditor() {
+async function openNewTaskEditor(activityId = filterActivity?.value || '') {
   editingTaskId = null;
   $('taskModalEyebrow').textContent = 'Create Task';
   $('taskModalTitle').textContent = 'New Task';
 
+  const loadedActivityTasks = activityId ? await loadTasks(activityId) : true;
   taskForm.reset();
   $('taskId').value = '';
-  const activityId = filterActivity?.value || '';
   $('taskActivityId').value = activityId;
   if ($('taskActivityPicker')) $('taskActivityPicker').value = activityId;
   $('taskType').value = 'Action Step';
@@ -504,6 +526,7 @@ function openNewTaskEditor() {
   setVerificationPrompt('', false);
   if ($('taskTemplate')) $('taskTemplate').value = '';
   hideFormStatus('taskFormStatus');
+  if (!loadedActivityTasks) setFormStatus('taskFormStatus', 'error', 'Could not load this activity’s tasks. Check the activity selection and task number before saving.');
   suggestNextTaskNumber();
 
   taskModal.hidden = false;
@@ -659,7 +682,8 @@ function setupModals() {
   $('cancelActivity')?.addEventListener('click', resetActivityForm);
   $('createTaskBtn')?.addEventListener('click', openNewTaskEditor);
   $('refreshActivities')?.addEventListener('click', loadActivities);
-  filterActivity?.addEventListener('change', loadTasks);
+  filterActivityCategory?.addEventListener('change', renderActivitiesList);
+  filterActivity?.addEventListener('change', () => loadTasks());
 
   activityForm?.addEventListener('submit', saveActivity);
   taskForm?.addEventListener('submit', saveTask);

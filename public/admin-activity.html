@@ -81,7 +81,19 @@
       <div id="panelActivities" class="admin-panel active">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
           <h2 style="margin:0;">All Activities</h2>
-          <button id="refreshActivities" class="btn secondary">🔄 Refresh</button>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <select id="activityCategoryFilter" class="btn secondary" aria-label="Filter activities by goal" style="padding:8px 12px; background:var(--glass-bg); border:1px solid var(--border); color:var(--ink); border-radius:8px;">
+              <option value="">All Goals</option>
+              <option value="Learning">📚 Learning</option>
+              <option value="Digital Skill">💻 Digital Skill</option>
+              <option value="Personal Growth">🌱 Personal Growth</option>
+              <option value="Mind &amp; Emotion">🧠 Mind &amp; Emotion</option>
+              <option value="Social Life">🤝 Social Life</option>
+              <option value="Career &amp; Practical Life">🧭 Career &amp; Practical Life</option>
+              <option value="Starter">🔥 Starter</option>
+            </select>
+            <button id="refreshActivities" class="btn secondary">🔄 Refresh</button>
+          </div>
         </div>
         <div id="activitiesList" class="task-list"></div>
       </div>
@@ -286,6 +298,6 @@
   <script type="module" src="ui/nav.js?v=20261018"></script>
   <script type="module" src="ui/sheet.js?v=20261018"></script>
   <script type="module" src="ui/sound.js?v=20261018"></script>
-  <script type="module" src="admin-activity.js?v=20261018"></script>
+  <script type="module" src="admin-activity.js?v=20261019-admin-goals"></script>
 </body>
 </html>
