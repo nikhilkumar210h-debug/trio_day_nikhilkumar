@@ -22,23 +22,11 @@ jobs:
           cache: npm
       - name: Install
         run: npm install
-      - name: Syntax check JavaScript
+      - name: Validate current Activity workflow and JavaScript syntax
         run: |
-          node --input-type=module --check < public/core-loop.js
-          node --input-type=module --check < public/webmcp.js
-          node --input-type=module --check < public/ui/header.js
-          node --input-type=module --check < public/script.js
-          node --input-type=module --check < public/challenge.js
-          node --input-type=module --check < public/challenge-create.js
-          node --input-type=module --check < public/profile.js
-          node --input-type=module --check < public/auth.js
-          node --input-type=module --check < public/gamification/streaks.js
-          node --input-type=module --check < public/gamification/xp-levels.js
-          node --input-type=module --check < public/gamification/community-tasks.js
-          node --input-type=module --check < public/sound-manager.js
+          node scripts/validate-admin-activity.mjs
           node --check functions/index.js
           node --check server.js
-          node --check workers/gamification.js
       - name: Verify Playwright test discovery
         run: npm test -- --list
 
