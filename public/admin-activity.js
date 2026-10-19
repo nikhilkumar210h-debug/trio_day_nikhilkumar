@@ -117,13 +117,23 @@ async function getIdToken() {
 }
 
 function setupTabs() {
-  document.querySelectorAll('.admin-tab').forEach(tab => {
+  const tabs = [...document.querySelectorAll('.admin-tab')];
+  const panels = [...document.querySelectorAll('.admin-panel')];
+  const panelIds = { activities: 'panelActivities', 'create-activity': 'panelCreateActivity', tasks: 'panelTasks' };
+  tabs.forEach(tab => {
+    const panelId = panelIds[tab.dataset.tab];
+    tab.setAttribute('aria-controls', panelId);
+    tab.tabIndex = tab.classList.contains('active') ? 0 : -1;
     tab.onclick = () => {
-      document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
-      document.querySelectorAll('.admin-panel').forEach(p => p.classList.remove('active'));
-      tab.classList.add('active');
-      $(`panel${tab.dataset.tab.charAt(0).toUpperCase() + tab.dataset.tab.slice(1)}`).classList.add('active');
-      
+      const panel = $(panelId);
+      if (!panel) return;
+      tabs.forEach(t => {
+        const selected = t === tab;
+        t.classList.toggle('active', selected);
+        t.setAttribute('aria-selected', String(selected));
+        t.tabIndex = selected ? 0 : -1;
+      });
+      panels.forEach(p => p.classList.toggle('active', p === panel));
       if (tab.dataset.tab === 'tasks') loadTasks();
     };
   });
@@ -583,6 +593,7 @@ function setupUpload() {
   const preview = $('actCoverPreview');
   
   uploadArea.onclick = () => fileInput.click();
+  uploadArea.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInput.click(); } };
   uploadArea.ondragover = e => { e.preventDefault(); uploadArea.classList.add('dragover'); };
   uploadArea.ondragleave = () => uploadArea.classList.remove('dragover');
   uploadArea.ondrop = e => {
@@ -633,7 +644,6 @@ function setupUpload() {
       formData.append('signature', signature);
       formData.append('folder', folder);
       formData.append('public_id', publicId);
-      formData.append('transformation', 'f_auto,q_auto,c_fill,g_auto,w_800');
       
       const uploadRes = await fetch(uploadUrl, {
         method: 'POST',
