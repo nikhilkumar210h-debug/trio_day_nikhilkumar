@@ -8,11 +8,11 @@ export default {
     const url = new URL(request.url);
     let pathname = url.pathname;
 
-    // Handle extension-less URLs: /login → /login.html, /admin → /admin-activity.html
+    // Handle extension-less URLs: /login → /login.html, /admin/tasks → /admin-activity.html
     const routeMap = {
       '/login': '/login.html',
       '/admin': '/admin-activity.html',
-      '/admin/tasks': '/admin-tasks.html',
+      '/admin/tasks': '/admin-activity.html',
       '/profile': '/profile.html',
       '/leaderboard': '/leaderboard.html',
       '/chat': '/chat.html',
@@ -26,7 +26,7 @@ export default {
     // Check if path matches a route without extension
     if (routeMap[pathname]) {
       url.pathname = routeMap[pathname];
-      return fetch(url.toString(), request);
+      return env.ASSETS.fetch(new Request(url.toString(), request));
     }
 
     // If path doesn't have an extension and isn't root, try adding .html
@@ -35,13 +35,13 @@ export default {
       // Check if the .html file exists by trying to fetch it
       const testUrl = new URL(request.url);
       testUrl.pathname = htmlPath;
-      const response = await fetch(testUrl.toString(), request);
+      const response = await env.ASSETS.fetch(new Request(testUrl.toString(), request));
       if (response.status !== 404) {
         return response;
       }
     }
 
     // Default: serve static assets
-    return fetch(request);
+    return env.ASSETS.fetch(request);
   }
 };

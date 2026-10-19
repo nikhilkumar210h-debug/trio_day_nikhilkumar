@@ -8,6 +8,7 @@
     <link rel="manifest" href="manifest.json">
     <script>!function(){try{var k='trio-theme',t=localStorage.getItem(k);if(t!=='light'&&t!=='dark'){t=localStorage.getItem('trio_theme');t=(t==='light'||t==='dark')?t:null;}if(!t){t=matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';}document.documentElement.setAttribute('data-theme',t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',t==='light'?'#f8fafc':'#08051A');}catch(e){}}</script>
     <title>Profile — Trio Day</title>
+  <meta name="description" content="View your Trio Day profile, progress, goals, and account settings.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preload" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
@@ -43,7 +44,8 @@
 .connections-tab{flex:1;border:0;border-radius:10px;padding:9px 10px;background:transparent;color:var(--color-ink-muted);font:800 10px Inter,system-ui,sans-serif;cursor:pointer}
 .connections-tab.active{background:var(--color-primary-soft);color:var(--color-primary-text)}
 .connections-tab span{margin-left:4px;font-weight:900}
-</style></head>
+</style>  <link rel="stylesheet" href="styles/activity-motion.css?v=1">
+</head>
 
 <body>
     <div class="tricolor-strip"><span></span><span></span><span></span></div>

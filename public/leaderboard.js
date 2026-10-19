@@ -10,16 +10,11 @@
 
 import { auth, db } from './firebase-init.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
-import { collection, query, orderBy, limit, getDocs, onSnapshot, where, doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
+import { collection, query, orderBy, limit, getDocs, onSnapshot, where } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 import { SoundManager } from './sound-manager.js';
 import { escapeHtml as esc } from './utils.js';
-import { setAdminFlag } from './ui/nav.js';
-
-const ADMIN_EMAILS = ['nikhilkumar210h@gmail.com', 'nikhilkumar45374@gmail.com'];
 
 let currentUser = null;
-let userProfile = null;
-let isAdmin = false;
 let unsubscribe = null;
 
 // ─── DOM ────────────────────────────────────────────────────────────────────
@@ -36,58 +31,10 @@ const p3Name = $('p3Name'), p3Category = $('p3Category'), p3Xp = $('p3Xp');
 // ─── INIT ───────────────────────────────────────────────────────────────────
 SoundManager.init();
 
-onAuthStateChanged(auth, async user => {
+onAuthStateChanged(auth, user => {
   currentUser = user;
-  if (user) {
-    try {
-      const userDoc = await getDoc(doc(db, 'users', user.uid));
-      userProfile = userDoc.exists() ? userDoc.data() : null;
-      isAdmin = ADMIN_EMAILS.includes(user.email?.toLowerCase());
-      setAdminFlag(isAdmin);
-    } catch (err) {
-      console.error('[Leaderboard] Auth error:', err);
-    }
-  } else {
-    isAdmin = false;
-    setAdminFlag(false);
-    userProfile = null;
-  }
-  renderAuthStatus();
   loadLeaderboard();
 });
-
-// ─── AUTH STATUS ────────────────────────────────────────────────────────────
-function renderAuthStatus() {
-  const authStatus = $('authStatus');
-  if (!authStatus) return;
-  
-  if (currentUser) {
-    const name = userProfile?.displayName || userProfile?.name || currentUser.displayName || 'You';
-    const initial = name.trim().charAt(0).toUpperCase();
-    const photo = userProfile?.photoURL || currentUser.photoURL;
-    
-    authStatus.innerHTML = `
-      <span class="streak-badge">🔥 ${userProfile?.streakCurrent || 0}d Streak</span>
-      <span class="xp-badge-nav">⚡ ${userProfile?.weeklyXp || 0} XP</span>
-      <div style="position:relative">
-        <button id="profileAvatarBtn" class="profile-pic-btn" aria-label="Profile" style="background:none;border:none;padding:0;cursor:pointer">
-          ${photo ? `<img src="${esc(photo)}" alt="" style="width:42px;height:42px;border-radius:50%;border:2px solid #00FFCC;object-fit:cover">` : `<div class="profile-pic-placeholder" style="width:42px;height:42px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,#8B5CF6,#00FFCC);color:#05070B;font-weight:900;font-size:16px;border:2px solid #00FFCC">${esc(initial)}</div>`}
-        </button>
-      </div>
-    `;
-    
-    const avatarBtn = $('profileAvatarBtn');
-    if (avatarBtn) avatarBtn.onclick = () => location.href = 'profile.html';
-    
-  } else {
-    authStatus.innerHTML = `
-      <span class="streak-badge">🔥 0d Streak</span>
-      <span class="xp-badge-nav">⚡ 0 XP</span>
-      <a href="login.html" class="status-badge">🔑 Login</a>
-      <a href="login.html"><img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80" alt="Profile" class="profile-pic" style="width:42px;height:42px;border-radius:50%;border:2px solid #00FFCC;object-fit:cover"></a>
-    `;
-  }
-}
 
 // ─── LOAD LEADERBOARD ───────────────────────────────────────────────────────
 async function loadLeaderboard() {
@@ -96,8 +43,8 @@ async function loadLeaderboard() {
   
   // Show loading
   rankingList.innerHTML = `
-    <div class="skeleton-stack" style="width:100%;">
-      ${Array(8).fill('<div class="skeleton-card" style="height:80px; aspect-ratio:auto; border-radius:12px; margin-bottom:12px; background:linear-gradient(90deg,rgba(255,255,255,.04) 0%,rgba(255,255,255,.08) 50%,rgba(255,255,255,.04) 100%); background-size:200% 100%; animation:shimmer 1.5s infinite linear;"></div>').join('')}
+    <div class="nkm-skeleton-stack" style="width:100%;" aria-label="Loading rankings">
+      ${Array(8).fill('<div class="nkm-skeleton-card" style="height:80px;"></div>').join('')}
     </div>
   `;
   

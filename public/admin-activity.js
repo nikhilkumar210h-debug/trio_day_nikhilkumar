@@ -16,16 +16,12 @@
  *    it (blank = keep the stored prompt).
  */
 
-import { auth, db } from './firebase-init.js';
-import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
 import { SoundManager } from './sound-manager.js';
 import { escapeHtml as esc } from './utils.js';
-import { setAdminFlag } from './ui/nav.js';
 import { workerPost } from './gamification/worker-config.js';
 
 const SUPABASE_URL = 'https://vccypxwiqcuexxrhtgyq.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_zJvP50wf3CW2PNfkOD9yCQ_ffFhsZEp';
-const ADMIN_EMAILS = ['nikhilkumar210h@gmail.com', 'nikhilkumar45374@gmail.com'];
 const CLOUDINARY_CLOUD_NAME = 'vyhglthg'; // must match the media-upload Worker + image-upload.js
 
 const ACTIVITY_SELECT = 'id,display_order,category,title_en,title_hi,description_en,description_hi,difficulty,total_xp,cover_image_url,is_guest_allowed,is_published,created_at';
@@ -44,6 +40,7 @@ let tasksCache = [];
 let editingActivityId = null;
 let editingTaskId = null;
 let verificationPromptDirty = false;
+let adminInitialized = false;
 
 // ─── DOM ────────────────────────────────────────────────────────────────────
 const $ = id => document.getElementById(id);
@@ -61,22 +58,27 @@ const createActivityTitle = $('createActivityTitle');
 // ─── INIT ───────────────────────────────────────────────────────────────────
 SoundManager.init();
 
-onAuthStateChanged(auth, async user => {
-  currentUser = user;
-
-  if (user && ADMIN_EMAILS.includes(user.email?.toLowerCase())) {
-    isAdmin = true;
-    setAdminFlag(true);
+function handleAuthStatus(event) {
+  currentUser = event.detail?.user || null;
+  isAdmin = event.detail?.isAdmin === true;
+  if (currentUser && isAdmin) {
     if (denied) denied.hidden = true;
     if (adminPanel) adminPanel.hidden = false;
-    await initAdmin();
+    if (!adminInitialized) {
+      adminInitialized = true;
+      void initAdmin().catch(err => {
+        console.error('[Admin] Initialization error:', err);
+        if (activitiesList) activitiesList.innerHTML = `<div class="admin-empty">Admin tools could not be initialized: ${esc(err.message)}</div>`;
+      });
+    }
   } else {
-    isAdmin = false;
-    setAdminFlag(false);
+    adminInitialized = false;
     if (denied) denied.hidden = false;
     if (adminPanel) adminPanel.hidden = true;
   }
-});
+}
+window.addEventListener('trio-auth-status-rendered', handleAuthStatus);
+if (window.TrioAuthStatus) handleAuthStatus({ detail: window.TrioAuthStatus });
 
 // The header chip is rendered by auth-ui.js; this page adds only the Admin pill
 // (its admin-only action surface) and the language toggle.
@@ -102,6 +104,7 @@ function mountHeaderExtras() {
   el.appendChild(lang);
 }
 window.addEventListener('trio-auth-status-rendered', mountHeaderExtras);
+if (window.TrioAuthStatus) mountHeaderExtras();
 
 function toggleLanguage() {
   const lang = localStorage.getItem('trio_language') === 'EN' ? 'HI' : 'EN';
@@ -151,7 +154,7 @@ const TASK_TEMPLATES = {
   observe: ['Observation', 'Notice three details', 'Observe a safe, ordinary place or object. Note three specific details and one pattern.', 'Kisi safe jagah ya object ko observe karein. Teen details aur ek pattern likhein.', 180, 15, 'Check for three distinct observations. Avoid identifying strangers.'],
   habit: ['Habit Practice', 'Practice one tiny helpful habit', 'Choose a small helpful habit, do it once, and describe what helped you begin.', 'Ek chhoti helpful habit chunein, use ek baar karein aur batayein shuru kaise kiya.', 300, 20, 'Check for a specific, safe habit and a plausible description.'],
   problem: ['Problem Solving', 'Solve one everyday problem', 'Pick a harmless everyday problem, list two possible solutions, choose one, and explain why.', 'Ek chhoti safe problem chunein, do solutions likhein, ek chunein aur wajah samjhayen.', 600, 25, 'Check for a problem, two distinct options, and a reasoned choice.'],
-  boss: ['Boss Task', 'Complete a mini-project', 'Break the challenge into 2–3 steps, complete what is feasible today, then report the outcome and next step.', 'Challenge ko 2–3 steps mein baantein, aaj jitna ho sake karein aur result aur next step batayein.', 1200, 50, 'Look for planning, a concrete outcome, and a next step; do not imply incomplete work is complete.']
+  boss: ['Boss Task', 'Complete a mini-project', 'Break the task into 2–3 steps, complete what is feasible today, then report the outcome and next step.', 'Task ko 2–3 steps mein baantein, aaj jitna ho sake karein aur result aur next step batayein.', 1200, 50, 'Look for planning, a concrete outcome, and a next step; do not imply incomplete work is complete.']
 };
 
 function setupTaskForm() {
@@ -250,10 +253,15 @@ function renderActivitiesList() {
     : activitiesCache;
   if (!visibleActivities.length) {
     if (activitiesCache.length) {
-      activitiesList.innerHTML = '<div class="admin-empty">No activities for this goal yet. Select <strong>Create Activity</strong> to add one.</div>';
+      activitiesList.innerHTML = '<div class="admin-empty"><p>No activities for this goal yet.</p><button type="button" class="btn secondary" id="clearActivityGoalFilter">Show all activities</button></div>';
+      $('clearActivityGoalFilter')?.addEventListener('click', () => {
+        if (filterActivityCategory) filterActivityCategory.value = '';
+        renderActivitiesList();
+      });
       return;
     }
-    activitiesList.innerHTML = '<div class="admin-empty">No activities yet. Use <strong>Create Activity</strong> to add the first one.</div>';
+    activitiesList.innerHTML = '<div class="admin-empty"><p>No activities yet. Start with your first goal.</p><button type="button" class="btn primary" id="createFirstActivity">Create Activity</button></div>';
+    $('createFirstActivity')?.addEventListener('click', () => document.querySelector('[data-tab="create-activity"]')?.click());
     return;
   }
 
@@ -450,7 +458,8 @@ function activityTitleOf(activityId) {
 
 function renderTasksList() {
   if (!tasksCache.length) {
-    tasksList.innerHTML = '<div class="admin-empty">No tasks yet. Use <strong>Create Task</strong> to add one.</div>';
+    tasksList.innerHTML = '<div class="admin-empty"><p>No tasks yet. Add one to this activity.</p><button type="button" class="btn primary" id="createFirstTask">Create Task</button></div>';
+    $('createFirstTask')?.addEventListener('click', () => $('createTaskBtn')?.click());
     return;
   }
 

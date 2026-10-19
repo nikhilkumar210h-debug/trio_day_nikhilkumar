@@ -42,6 +42,7 @@
   min-height: 120px;
 }
 .nkm-chat-row {
+  position: relative;
   height: 70px;
   display: flex !important;
   width: 100%;
@@ -56,17 +57,32 @@
   cursor: pointer;
 }
 .nkm-chat-row > * {
-  pointer-events: none;
+  pointer-events: auto;
 }
 .nkm-chat-row .nkm-chat-row-main {
   display: flex;
-  width: 100%;
+  position: static;
+  flex: 1;
+  min-width: 0;
+  width: auto;
   align-items: center;
   gap: var(--space-3);
   text-decoration: none;
   color: inherit;
 }
+.nkm-chat-row .nkm-chat-row-main::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+.nkm-chat-row .nkm-chat-row-main > * { position: relative; z-index: 1; }
+.nkm-chat-row button { position: relative; z-index: 2; flex: 0 0 auto; }
 .nkm-chat-row:hover { background: var(--color-glass); border-color: var(--color-border); }
+.nkm-chat-row:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 2px;
+}
 .nkm-chat-avatar {
   width: 40px;
   height: 40px;
@@ -390,17 +406,29 @@
   width: 100%;
   cursor: pointer;
 }
+
 .nkm-chat-row > * {
-  pointer-events: none;
+  pointer-events: auto;
 }
 .nkm-chat-row .nkm-chat-row-main {
   display: flex;
-  width: 100%;
+  position: static;
+  flex: 1;
+  min-width: 0;
+  width: auto;
   align-items: center;
   gap: var(--space-3);
   text-decoration: none;
   color: inherit;
 }
+.nkm-chat-row .nkm-chat-row-main::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+.nkm-chat-row .nkm-chat-row-main > * { position: relative; z-index: 1; }
+.nkm-chat-row button { position: relative; z-index: 2; flex: 0 0 auto; }
 .nkm-chat-row:hover {
   transform: translateY(-1px);
   background: var(--color-glass-hover);

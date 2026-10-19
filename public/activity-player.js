@@ -32,15 +32,12 @@ import {
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 import { SoundManager } from './sound-manager.js';
 import { escapeHtml as esc } from './utils.js';
-import { setAdminFlag } from './ui/nav.js';
 import { ensureUserProfile } from './services/userCache.js';
 import { workerPost } from './gamification/worker-config.js';
 
 // ─── CONSTANTS ──────────────────────────────────────────────────────────────
 const SUPABASE_URL = 'https://vccypxwiqcuexxrhtgyq.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_zJvP50wf3CW2PNfkOD9yCQ_ffFhsZEp';
-const ADMIN_EMAILS = ['nikhilkumar210h@gmail.com', 'nikhilkumar45374@gmail.com'];
-
 const GUEST_TASK_LIMIT = 3;
 const GUEST_TASKS_KEY = 'trio_guest_tasks';
 const GUEST_CLAIMS_KEY = 'trio_guest_claims';
@@ -58,7 +55,6 @@ const CATEGORY_ICONS = {
 // ─── STATE ──────────────────────────────────────────────────────────────────
 let currentUser = null;
 let userProfile = null;
-let isAdmin = false;
 let activityId = null;
 let activityData = null;
 let tasks = [];
@@ -228,14 +224,10 @@ onAuthStateChanged(auth, async user => {
     try {
       const userDoc = await getDoc(doc(db, 'users', user.uid));
       userProfile = userDoc.exists() ? userDoc.data() : null;
-      isAdmin = ADMIN_EMAILS.includes(user.email?.toLowerCase());
-      setAdminFlag(isAdmin);
     } catch (err) {
       console.error('[ActivityPlayer] Auth error:', err);
     }
   } else {
-    isAdmin = false;
-    setAdminFlag(false);
     userProfile = null;
   }
   mountHeaderExtras();
@@ -429,6 +421,36 @@ function setButtonsLabel() {
   btnSkip.textContent = t('task_skip');
 }
 
+function celebrateTaskCompletion() {
+  const taskBox = $('taskBox');
+  if (taskBox) {
+    taskBox.classList.remove('task-completed-pulse');
+    void taskBox.offsetWidth;
+    taskBox.classList.add('task-completed-pulse');
+    taskBox.addEventListener('animationend', () => taskBox.classList.remove('task-completed-pulse'), { once: true });
+  }
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+  const bounds = (taskBox || taskPlayer).getBoundingClientRect();
+  const originX = bounds.left + bounds.width / 2;
+  const originY = bounds.top + Math.min(bounds.height / 3, 100);
+  const colors = ['#8B5CF6', '#10B981', '#F59E0B', '#06B6D4'];
+  for (let i = 0; i < 12; i += 1) {
+    const piece = document.createElement('span');
+    const angle = (Math.PI * 2 * i) / 12;
+    const distance = 34 + Math.random() * 44;
+    piece.className = 'task-confetti-piece';
+    piece.style.left = `${originX}px`;
+    piece.style.top = `${originY}px`;
+    piece.style.backgroundColor = colors[i % colors.length];
+    piece.style.setProperty('--confetti-x', `${Math.cos(angle) * distance}px`);
+    piece.style.setProperty('--confetti-y', `${Math.sin(angle) * distance - 24}px`);
+    piece.style.setProperty('--confetti-rotation', `${Math.round(Math.random() * 360)}deg`);
+    piece.addEventListener('animationend', () => piece.remove(), { once: true });
+    document.body.appendChild(piece);
+  }
+}
+
 // ─── COMPLETE TASK ──────────────────────────────────────────────────────────
 async function handleComplete(task) {
   if (isSubmitting) return;
@@ -463,6 +485,7 @@ async function handleComplete(task) {
       totalXpEarned += awarded;
       if (typeof result?.weeklyXp === 'number') lastWeeklyXp = result.weeklyXp;
       taskStates[currentTaskIndex] = 'completed';
+      celebrateTaskCompletion();
 
       if (result?.alreadyAwarded) setStatus('info', t('already_verified'));
       else setStatus('success', t('verified').replace('{xp}', String(awarded)));
@@ -491,6 +514,7 @@ async function handleComplete(task) {
     title: currentLanguage === 'HI' ? (task.title_hi || task.title_en) : task.title_en
   });
   taskStates[currentTaskIndex] = 'completed';
+  celebrateTaskCompletion();
   setStatus('info', t('guest_note'));
   advance();
 }

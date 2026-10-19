@@ -23,3 +23,7 @@
 .nkm-empty { text-align: center; padding: var(--space-8) var(--space-4); color: var(--color-ink-muted); }
 .nkm-empty h3 { font-size: var(--text-base); color: var(--color-ink); margin: 0 0 var(--space-2); }
 .nkm-empty p { font-size: var(--text-sm); margin: 0 0 var(--space-3); }
+@media (prefers-reduced-motion: reduce) {
+  .nkm-skeleton-card::after,
+  .skeleton-card::after { animation: none !important; }
+}

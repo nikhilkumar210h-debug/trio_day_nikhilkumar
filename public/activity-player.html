@@ -6,6 +6,7 @@
   <meta name="theme-color" content="#070913">
   <script>!function(){try{var k='trio-theme',t=localStorage.getItem(k);if(t!=='light'&&t!=='dark'){t=localStorage.getItem('trio_theme');t=(t==='light'||t==='dark')?t:null;}if(!t){t=matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';}document.documentElement.setAttribute('data-theme',t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',t==='light'?'#F8F7FF':'#070913');}catch(e){}}</script>
   <title>Play Activity — Trio Day</title>
+  <meta name="description" content="Play a guided Trio Day activity, complete practical tasks, and earn XP for your progress.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preload" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
@@ -35,7 +36,7 @@
     <!-- Activity Header -->
     <div id="activityHeader" class="category-banner" hidden>
       <div>
-        <h2 style="margin:0 0 6px 0; font-size: 22px;">🔥 <span id="playerCatName">Activity</span></h2>
+        <h2 style="margin:0 0 6px 0; font-size: 22px;"><span id="playerCatName">Activity</span></h2>
         <p style="margin:0; color:#94a3b8; font-size: 14px;" id="playerProgress">Task <span id="currTaskNum">1</span> of <span id="totalTaskNum">3</span></p>
       </div>
       <div><a href="index.html" class="status-badge">← Back</a></div>

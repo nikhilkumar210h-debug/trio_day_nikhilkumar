@@ -47,11 +47,17 @@
 }
 .nav-btn .nav-label {
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100%;
+  overflow: visible;
+  text-overflow: clip;
+  max-width: none;
   line-height: 1.1;
 }
+.bottom-nav .nav-btn[data-nav="leaderboard"] .nav-label,
+.nkm-rail .nav-btn[data-rail="leaderboard"] .nav-label {
+  overflow: visible;
+  text-overflow: clip;
+}
+.nkm-rail .nav-btn[data-rail="leaderboard"] .nav-label { white-space: normal; }
 @media (max-width: 390px) {
   .bottom-nav .nav-btn {
     font-size: 8px !important;
@@ -60,6 +66,10 @@
   .bottom-nav .nav-label {
     font-size: 8px !important;
     letter-spacing: .01em !important;
+  }
+  .bottom-nav .nav-btn[data-nav="leaderboard"] .nav-label {
+    font-size: 7px !important;
+    letter-spacing: 0 !important;
   }
 }
 .bottom-nav .nav-btn.active {
@@ -233,4 +243,3 @@ body[data-current-nav="you"] .nav-btn[data-nav="you"] .nav-icon { color: #C4B5FD
 
 /* None of the main containers need a sub-nav offset any more; the sticky
    topbar is in normal flow, so only the container's own padding applies. */
-

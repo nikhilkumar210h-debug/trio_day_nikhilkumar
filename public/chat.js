@@ -17,6 +17,7 @@ let users = [];
 // an arbitrary first-20 users snapshot. Saves Spark free-tier reads.
 const peerProfiles = new Map();
 const conversations = new Map();
+let inboxLoaded = false;
 const params = new URLSearchParams(location.search);
 const challengeId = params.get('challenge');
 const pendingChallengeShare = (() => {
@@ -50,6 +51,10 @@ function isChatUnread(uid, peerId, latest) {
 
 function renderInbox(filter = '') {
   const list = $('userList'); if (!list) return;
+  if (!inboxLoaded) {
+    list.innerHTML = '<div class="nkm-skeleton-stack" aria-label="Loading conversations"><div class="nkm-skeleton-card nkm-skeleton-card--sm"></div><div class="nkm-skeleton-card nkm-skeleton-card--sm"></div><div class="nkm-skeleton-card nkm-skeleton-card--sm"></div></div>';
+    return;
+  }
   const qText = filter.trim().toLowerCase(); list.innerHTML = '';
   const rows = [...conversations.keys()]
     .filter(pid => pid && pid !== currentUser.uid)
@@ -59,11 +64,12 @@ function renderInbox(filter = '') {
     .slice(0, 20);
   const countBadge = $('conversationCount'); if (countBadge) countBadge.textContent = String(rows.length);
   if (rows.length === 0) {
-    list.innerHTML = `<div class="nkm-chat-empty"><span>✉</span><p>No conversations yet.</p><div style="margin-top:10px"><a class="nkm-btn nkm-btn--primary nkm-btn--sm" href="search.html">Start a Conversation</a></div><div style="margin-top:8px"><a class="nkm-btn nkm-btn--secondary nkm-btn--sm" href="index.html">🔥 Browse Activities →</a></div></div>`;
+    list.innerHTML = `<div class="nkm-chat-empty"><span>✉</span><p>No conversations yet.</p><a class="nkm-btn nkm-btn--primary nkm-btn--sm" href="search.html">Start a Conversation</a></div>`;
     return;
   }
   rows.forEach(({ peer, latest, unread }) => {
-    const row = document.createElement('div'); row.className = 'nkm-chat-row';
+    const row = document.createElement('div');
+    row.className = 'nkm-chat-row';
     const open = document.createElement('a'); open.href = `private-chat.html?uid=${encodeURIComponent(peer.uid)}`; open.className='nkm-chat-row-main';
     open.innerHTML = `<span class="nkm-chat-avatar">${avatarHtml(peer)}</span>
       <span class="nkm-chat-meta">
@@ -111,6 +117,7 @@ function renderInbox(filter = '') {
 
 async function watchInbox() {
   conversations.clear();
+  inboxLoaded = false;
   renderInbox($('userSearch')?.value || '');
   // Efficient: get peerIds from cached following/followers (no full users scan), limit 20 most recent via one-time preview fetches
   const following = trioCache.get(`following_ids_${currentUser.uid}`) || [];
@@ -147,6 +154,7 @@ async function watchInbox() {
     const profile = await getCachedUser(p.pid).catch(() => null);
     peerProfiles.set(p.pid, profile || { uid: p.pid });
   }));
+  inboxLoaded = true;
   renderInbox($('userSearch')?.value || '');
 }
 

@@ -75,7 +75,9 @@ onAuthStateChanged(auth, async u => {
   me = u;
   const list = $('notificationsList');
   const empty = $('notificationsEmpty');
-  list.innerHTML = '<div class="notifications-loading">Loading…</div>';
+  list.innerHTML = '<div class="nkm-skeleton-stack" aria-label="Loading notifications">' +
+    Array.from({ length: 4 }, () => '<div class="nkm-skeleton-card"></div>').join('') +
+    '</div>';
   
   const unsubscribe = onSnapshot(
     query(collection(db, 'users', me.uid, 'notifications'), orderBy('createdAtMs', 'desc'), limit(50)),

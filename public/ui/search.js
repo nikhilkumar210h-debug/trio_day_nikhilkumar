@@ -26,7 +26,7 @@ export function attachSearch(inputEl, resultsEl, { onSelect } = {}) {
             <span class="nkm-avatar nkm-avatar--sm">${u.photoURL ? `<img src="${escapeHtml(u.photoURL)}" alt="">` : escapeHtml((u.name || 'U').charAt(0))}</span>
             <span><strong style="font-size:13px">${escapeHtml(u.name || 'User')}</strong><br><small style="color:#64748b">${escapeHtml(u.userId || u.uid)}</small></span>
           </a>`).join('')
-      : '<p class="nkm-empty" style="padding:12px">No people found.</p>';
+      : '<div class="nkm-empty" style="padding:12px"><p>No people found. Try another name or Trio UID.</p><a class="nkm-btn nkm-btn--primary nkm-btn--sm" href="index.html">Explore activities</a></div>';
     if (onSelect) resultsEl.querySelectorAll('a').forEach(a => a.addEventListener('click', onSelect));
   };
   inputEl.addEventListener('input', () => {

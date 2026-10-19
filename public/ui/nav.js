@@ -42,7 +42,8 @@ function pathKey() {
     if (uid) return '';
     return 'you';
   }
-  if (p === 'admin-activity' || p === 'admin-activity.html' || p === 'admin-tasks' || p === 'admin-tasks.html' || p === 'admin') return 'admin';
+  if (p === 'admin-activity' || p === 'admin-activity.html' || p === 'admin') return 'admin';
+  if (location.pathname.replace(/\/+$/, '') === '/admin/tasks') return 'admin';
   return '';
 }
 

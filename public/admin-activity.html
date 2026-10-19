@@ -6,10 +6,20 @@
   <meta name="theme-color" content="#070913">
   <script>!function(){try{var k='trio-theme',t=localStorage.getItem(k);if(t!=='light'&&t!=='dark'){t=localStorage.getItem('trio_theme');t=(t==='light'||t==='dark')?t:null;}if(!t){t=matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';}document.documentElement.setAttribute('data-theme',t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',t==='light'?'#F8F7FF':'#070913');}catch(e){}}</script>
   <title>Admin Activities — Trio Day</title>
+  <meta name="description" content="Manage Trio Day activities and tasks. Access is restricted to authorized administrators.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preload" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
   <noscript><link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet"></noscript>
+  
+  
+  
+  
+  
+  
+  
+  
+  
   <link rel="stylesheet" href="styles/tokens.css?v=20261018">
   <link rel="stylesheet" href="styles/skeleton.css?v=20261018">
   <link rel="stylesheet" href="styles/sheet.css?v=20261018">
@@ -18,8 +28,10 @@
   <link rel="stylesheet" href="styles/components.css?v=20261018">
   <link rel="stylesheet" href="style.css?v=20261018-activity">
   <link rel="stylesheet" href="styles/polish.css?v=7">
-  <link rel="stylesheet" href="styles/activity-player.css?v=1">
+  <link rel="stylesheet" href="styles/experience-polish.css?v=1">
   <link rel="stylesheet" href="styles/activity-motion.css?v=1">
+  <link rel="stylesheet" href="styles/activity-player.css?v=1">
+  
   <style>
     .admin-tabs { display:flex; gap:8px; margin-bottom:24px; border-bottom:1px solid var(--border); padding-bottom:8px; }
     .admin-tab { padding:10px 20px; background:var(--glass-bg); border:1px solid var(--border); border-radius:99px; color:var(--ink); font-weight:700; cursor:pointer; transition:all .2s; }
@@ -53,7 +65,7 @@
   </style>
 </head>
 
-<body class="app-page activity-player-page">
+<body class="app-page activity-player-page admin-page">
   <div class="tricolor-strip"><span></span><span></span><span></span></div>
   <header class="topbar">
     <div class="topbar-inner">
@@ -220,10 +232,10 @@
               <option value="social">🤝 Social connection</option>
               <option value="mindful">🧠 Mindful reset</option>
               <option value="planning">🗓️ Planning &amp; organization</option>
-              <option value="observe">🔎 Observation challenge</option>
+              <option value="observe">🔎 Observation Task</option>
               <option value="habit">🔁 Habit practice</option>
               <option value="problem">🧩 Problem-solving</option>
-              <option value="boss">👑 Boss challenge</option>
+              <option value="boss">👑 Boss Task</option>
             </select>
             <p class="field-hint">Templates are starting points—not locked formats. Edit every field before saving.</p>
           </div>

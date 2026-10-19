@@ -56,10 +56,19 @@
   margin-right: auto;
 }
 
+.leaderboard-page .activity-wrapper,
+.admin-page .activity-wrapper {
+  margin-top: 16px;
+}
+
 @media (max-width: 768px) {
   .activity-wrapper { 
     margin-top: 65px; 
     padding: var(--space-3) var(--gutter-mobile) var(--space-8) var(--gutter-mobile); 
+  }
+  .leaderboard-page .activity-wrapper,
+  .admin-page .activity-wrapper {
+    margin-top: 10px;
   }
 }
 

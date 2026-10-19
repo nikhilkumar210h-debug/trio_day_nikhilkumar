@@ -243,21 +243,69 @@ function avatarMarkup(name, photo) {
   return `<span class="auth-avatar-fallback" aria-hidden="true">${initial}</span>`;
 }
 
+function isStatsRowPage() {
+  return document.body.classList.contains('leaderboard-page') || document.body.classList.contains('admin-page');
+}
+
+function getStatsRow() {
+  let row = document.getElementById('headerStatsStrip');
+  if (row) return row;
+  const topbar = document.querySelector('.topbar');
+  if (!topbar) return null;
+  row = document.createElement('div');
+  row.id = 'headerStatsStrip';
+  row.className = 'header-stats-strip';
+  row.setAttribute('role', 'group');
+  row.setAttribute('aria-label', 'Your progress');
+  topbar.insertAdjacentElement('afterend', row);
+  return row;
+}
+
+function animateCount(element, value) {
+  const target = Math.max(0, Number(value) || 0);
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches || target === 0) {
+    element.textContent = String(target);
+    return;
+  }
+  const start = performance.now();
+  const duration = 500;
+  const frame = now => {
+    const progress = Math.min(1, (now - start) / duration);
+    element.textContent = String(Math.round(target * progress));
+    if (progress < 1) requestAnimationFrame(frame);
+  };
+  requestAnimationFrame(frame);
+}
+
 function renderHeaderStatus(user, profile) {
   const profileUrl = 'profile.html';
+  const statsRow = isStatsRowPage() ? getStatsRow() : null;
   if (!user) {
     el.innerHTML = `<a href="login.html" class="auth-login-btn">Login</a>`;
+    if (statsRow) {
+      statsRow.hidden = true;
+      statsRow.replaceChildren();
+    }
     return;
   }
   const name = profile?.name || profile?.displayName || user.displayName || (user.email ? user.email.split('@')[0] : 'You');
   const photo = profile?.photoURL || user.photoURL;
   const streak = Number(profile?.streakCurrent) || 0;
   const weeklyXp = Number(profile?.weeklyXp) || 0;
-  el.innerHTML = `
+  const markup = `
     <span class="streak-badge" title="Current streak">🔥 ${streak}d</span>
-    <span class="xp-badge-nav" title="Weekly XP">⚡ ${weeklyXp} XP</span>
+    <span class="xp-badge-nav" title="Weekly XP">⚡ <span class="xp-count">${weeklyXp}</span> XP</span>
     <a class="auth-avatar-link" href="${profileUrl}" aria-label="${escapeHtml(name)} — your profile">${avatarMarkup(name, photo)}</a>
   `;
+  if (statsRow) {
+    el.replaceChildren();
+    statsRow.innerHTML = markup;
+    statsRow.hidden = false;
+    const count = statsRow.querySelector('.xp-count');
+    if (count) animateCount(count, weeklyXp);
+  } else {
+    el.innerHTML = markup;
+  }
 }
 
 onAuthStateChanged(auth, async user => {
@@ -282,7 +330,9 @@ onAuthStateChanged(auth, async user => {
     // Cached profile fetch powers the streak / weekly-XP badges (never blocks).
     const profile = await getCachedUser(user.uid).catch(() => null);
     if (el.dataset.signedIn === 'true') renderHeaderStatus(user, profile);
-    window.dispatchEvent(new CustomEvent('trio-auth-status-rendered', { detail: { user, profile, isAdmin } }));
+    const status = { user, profile, isAdmin };
+    window.TrioAuthStatus = status;
+    window.dispatchEvent(new CustomEvent('trio-auth-status-rendered', { detail: status }));
 
     // Skip notification listener on notifications.html (notifications.js handles it)
     if (!location.pathname.endsWith('notifications.html')) {
@@ -294,7 +344,9 @@ onAuthStateChanged(auth, async user => {
   } else {
     el.dataset.signedIn = 'false';
     renderHeaderStatus(null, null);
-    window.dispatchEvent(new CustomEvent('trio-auth-status-rendered', { detail: { user: null, profile: null, isAdmin: false } }));
+    const status = { user: null, profile: null, isAdmin: false };
+    window.TrioAuthStatus = status;
+    window.dispatchEvent(new CustomEvent('trio-auth-status-rendered', { detail: status }));
     setNavAdminFlag(false);
   }
 });
