@@ -6,7 +6,7 @@
  * - Step-by-step task progression with progress bar
  * - Min-time timer per task (countdown)
  * - Proof/Reflection text input with character count
- * - AI Verification via Cloudflare Worker (/api/activity/complete-task)
+ * - Server-side task-response check via the gamification Worker (/api/activity/complete-task)
  * - Skip task (0 XP) → next task
  * - Guest limit enforcement (3 tasks max)
  * - Login modal trigger + XP sync on login
