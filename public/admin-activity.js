@@ -185,8 +185,11 @@ async function loadActivities() {
   activitiesList.innerHTML = '<div class="skeleton-stack" style="width:100%;"><div class="skeleton-card" style="height:120px; aspect-ratio:auto; border-radius:12px; margin-bottom:12px; background:linear-gradient(90deg,rgba(255,255,255,.04) 0%,rgba(255,255,255,.08) 50%,rgba(255,255,255,.04) 100%); background-size:200% 100%; animation:shimmer 1.5s infinite linear;"></div></div>'.repeat(3);
   
   try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/activities?select=${ACTIVITY_SELECT}&order=display_order.asc`, {
-      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` }
+    const idToken = await getIdToken();
+    const res = await fetch(`${WORKER_BASE}/api/admin/activity`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
+      body: JSON.stringify({ action: 'list' })
     });
     const payload = await res.json();
     if (!res.ok) throw new Error(payload?.message || payload?.error || `Supabase returned ${res.status}`);
@@ -403,8 +406,11 @@ async function loadTasks() {
   tasksList.innerHTML = '<div class="skeleton-stack" style="width:100%;"><div class="skeleton-card" style="height:100px; aspect-ratio:auto; border-radius:12px; margin-bottom:12px; background:linear-gradient(90deg,rgba(255,255,255,.04) 0%,rgba(255,255,255,.08) 50%,rgba(255,255,255,.04) 100%); background-size:200% 100%; animation:shimmer 1.5s infinite linear;"></div></div>'.repeat(3);
   
   try {
-    const res = await fetch(url, {
-      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` }
+    const idToken = await getIdToken();
+    const res = await fetch(`${WORKER_BASE}/api/admin/task`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
+      body: JSON.stringify({ action: 'list', activityId: activityFilter || null })
     });
     const payload = await res.json();
     if (!res.ok) throw new Error(payload?.message || payload?.error || `Supabase returned ${res.status}`);
