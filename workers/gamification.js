@@ -595,8 +595,7 @@ async function supabaseAdminRequest(method, path, body = null, env = {}) {
 
 // ─── AI Verification (Cloudflare Workers AI or Gemini) ────────────────────────
 async function checkTaskResponse(proof, verificationPrompt, taskTitle, taskDescription) {
-  // Try Cloudflare Workers AI first (if available)
-  // Fallback: simple heuristic check for demo
+  // Deterministic server-side response check. This is not an LLM/AI model call.
   if (!verificationPrompt || !verificationPrompt.trim()) {
     return { valid: false, reason: 'This task is missing its verification instructions. Please choose another task or contact an admin.' };
   }
