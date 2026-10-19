@@ -124,6 +124,9 @@
   align-items: center;
   line-height: 1;
 }
+.today-page #authStatus .streak-badge {
+  display: none;
+}
 .today-page #authStatus .xp-badge-nav,
 .activity-player-page #authStatus .xp-badge-nav {
   transform: translateY(-2px);
@@ -216,7 +219,9 @@
 @media (max-width: 480px) {
   #authStatus .guest-trial-chip { display: none !important; }
 }
-/* iPhone SE / small Android: the account chip + bell must win over Help. */
+/* iPhone SE / small Android: keep Help available on Today while other pages
+   prioritize the account chip and notification bell. */
 @media (max-width: 359px) {
   .topbar-actions .header-help-btn { display: none !important; }
+  .today-page .topbar-actions .header-help-btn { display: grid !important; }
 }
