@@ -13,8 +13,9 @@ import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.13.0/f
 import { SoundManager } from './sound-manager.js';
 import { escapeHtml as esc } from './utils.js';
 import { setAdminFlag } from './ui/nav.js';
+import { getGamificationWorkerUrl } from './gamification/worker-config.js';
 
-const WORKER_BASE = 'https://trio-day.trioday-nikhil.workers.dev';
+const WORKER_BASE = getGamificationWorkerUrl();
 const ADMIN_EMAILS = ['nikhilkumar210h@gmail.com', 'nikhilkumar45374@gmail.com'];
 
 let currentUser = null;
