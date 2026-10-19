@@ -767,7 +767,7 @@ async function handleSkipTask(uid, body, env) {
 async function handleAdminActivity(uid, body, env, request, tokenPayload) {
   const userEmail = tokenPayload.email?.toLowerCase();
   
-  if (!userEmail || !ADMIN_EMAILS.includes(userEmail)) {
+  if (!userEmail || !((env.ADMIN_EMAILS || ADMIN_EMAILS.join(',')).split(',').map(e => e.trim().toLowerCase()).includes(userEmail))) {
     throw new Error('Admin access required');
   }
   
@@ -838,7 +838,7 @@ async async function handleCloudinarySign(uid, body, env, request, tokenPayload)
   const safeName = originalName.replace(/[^a-zA-Z0-9_-]/g, '-').slice(0, 70) || 'activity-cover';
   if (!cloudName || !apiKey || !apiSecret) throw new Error('Cloudinary is not configured on the gamification Worker');
   const timestamp = Math.floor(Date.now() / 1000);
-  const publicId = `${folder}/${Date.now()}-${safeName}`;
+  const publicId = `${Date.now()}-${safeName}`;
   const params = `folder=${folder}&public_id=${publicId}&timestamp=${timestamp}`;
   const signature = await generateCloudinarySignature(params, apiSecret);
   return {
