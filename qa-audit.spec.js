@@ -42,10 +42,9 @@ test('admin task controls and form fields have stable IDs and names', async ({ r
 });
 
 test('task completion uses protected Worker and honors rejection responses', async ({ request }) => {
-  const [configResponse, playerResponse, workerResponse, adminResponse] = await Promise.all([
+  const [configResponse, playerResponse, adminResponse] = await Promise.all([
     request.get(`${BASE_URL}/gamification/worker-config.js`),
     request.get(`${BASE_URL}/activity-player.js`),
-    request.get(`${BASE_URL}/../workers/gamification.js`),
     request.get(`${BASE_URL}/admin-activity.js`)
   ]);
   expect(configResponse.ok()).toBeTruthy();
