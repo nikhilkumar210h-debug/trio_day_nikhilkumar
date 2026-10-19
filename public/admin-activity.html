@@ -96,6 +96,7 @@
             <label class="label-text">Category *</label>
             <select id="actCategory" name="category" required>
               <option value="">Select...</option>
+              <option value="Starter">✨ Starter</option>
               <option value="Learning">📚 Learning</option>
               <option value="Digital Skill">💻 Digital Skill</option>
               <option value="Personal Growth">🌱 Personal Growth</option>
@@ -127,12 +128,18 @@
             <img id="actCoverPreview" class="preview-img" hidden>
           </div>
           <div class="field field-full">
-            <label class="label-text">Difficulty Label</label>
-            <input type="text" id="actDifficulty" name="difficulty" placeholder="Easy • 3 Tasks">
+            <label class="label-text" for="actDifficulty">Difficulty</label>
+            <select id="actDifficulty" name="difficulty">
+              <option value="">Choose difficulty…</option>
+              <option value="Easy">🟢 Easy</option>
+              <option value="Medium">🟡 Medium</option>
+              <option value="Hard">🔴 Hard</option>
+              <option value="Boss Level">👑 Boss Level</option>
+            </select>
           </div>
           <div class="field field-full">
-            <label class="label-text">XP Reward Label</label>
-            <input type="text" id="actXpReward" name="xp_reward" placeholder="+150 XP">
+            <label class="label-text" for="actXpReward">Total XP Reward</label>
+            <input type="number" id="actXpReward" name="xp_reward" min="0" step="1" inputmode="numeric" placeholder="150">
           </div>
           <div class="field field-full">
             <label class="label-text">Guest Allowed</label>
