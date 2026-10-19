@@ -271,13 +271,8 @@ function renderCurrentTask() {
   taskTitle.textContent = taskTitleText;
   taskDetail.textContent = taskBrief;
   
-  // Timer
+  // Timer and proof input
   setupTimer(task.min_time_seconds || 0);
-  
-  // Proof input - verification_prompt is NOT returned by Supabase (hidden from anon), 
-  // but Worker has it via service role. We'll show proof input for all tasks that need verification.
-  // For now, show proof input for all tasks except possibly simple ones.
-  // The Worker will handle the actual verification prompt.
   proofInputWrapper.hidden = false;
   proofLabel.textContent = t('proof_label');
   proofTextarea.placeholder = t('proof_placeholder');
@@ -287,7 +282,7 @@ function renderCurrentTask() {
   // Buttons
   btnSkip.textContent = t('task_skip');
   btnComplete.textContent = t('task_complete');
-  btnComplete.disabled = false;
+  // setupTimer controls whether completion is enabled while a minimum timer is running.
   btnSkip.disabled = false;
   
   // Event listeners
@@ -313,22 +308,29 @@ function updateCharCount() {
 // ─── TIMER ──────────────────────────────────────────────────────────────────
 function setupTimer(minSeconds) {
   if (taskTimerInterval) clearInterval(taskTimerInterval);
-  
+  timerContainer.classList.remove('warning', 'danger', 'is-running');
+
   if (minSeconds > 0) {
     taskTimeRemaining = minSeconds;
     taskStartTime = Date.now();
     isTimerRunning = true;
     timerContainer.hidden = false;
+    timerContainer.classList.add('is-running');
+    btnComplete.disabled = true;
+    btnComplete.title = 'Wait for the minimum task time to finish';
     updateTimerDisplay();
-    
+
     taskTimerInterval = setInterval(() => {
-      taskTimeRemaining--;
+      taskTimeRemaining = Math.max(0, taskTimeRemaining - 1);
       updateTimerDisplay();
-      
+
       if (taskTimeRemaining <= 0) {
         clearInterval(taskTimerInterval);
         isTimerRunning = false;
+        timerContainer.classList.remove('is-running', 'warning');
         timerContainer.classList.add('danger');
+        btnComplete.disabled = false;
+        btnComplete.removeAttribute('title');
       } else if (taskTimeRemaining <= 30) {
         timerContainer.classList.add('warning');
         timerContainer.classList.remove('danger');
@@ -337,6 +339,8 @@ function setupTimer(minSeconds) {
   } else {
     timerContainer.hidden = true;
     isTimerRunning = false;
+    btnComplete.disabled = false;
+    btnComplete.removeAttribute('title');
   }
 }
 
@@ -379,14 +383,14 @@ async function handleComplete(task) {
       });
       
       const result = await res.json();
-      
-      if (!res.ok) {
+
+      if (!res.ok || result.ok === false) {
         throw new Error(result.error || t('verification_failed'));
       }
-      
-      // Success
-      totalXpEarned += task.xp_reward || 10;
-      showToast(t('verified'));
+
+      // Reflect only the amount the server actually awarded (0 for an idempotent retry).
+      totalXpEarned += Math.max(0, Number(result.awarded ?? result.xpAwarded ?? 0) || 0);
+      showToast(result.alreadyAwarded ? 'This task was already counted.' : t('verified'));
       
     } catch (err) {
       console.error('[ActivityPlayer] Complete error:', err);
@@ -416,21 +420,30 @@ async function handleComplete(task) {
 
 // ─── HANDLE SKIP ────────────────────────────────────────────────────────────
 async function handleSkip() {
+  const task = tasks[currentTaskIndex];
+  if (!task) return;
   if (taskTimerInterval) clearInterval(taskTimerInterval);
-  
+
   if (currentUser) {
+    btnSkip.disabled = true;
     try {
       const idToken = await currentUser.getIdToken();
-      await fetch(`${WORKER_BASE}/api/activity/skip-task`, {
+      const res = await fetch(`${WORKER_BASE}/api/activity/skip-task`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${idToken}`
         },
-        body: JSON.stringify({ activityId, taskId: tasks[currentTaskIndex].id, taskNumber: tasks[currentTaskIndex].task_number })
+        body: JSON.stringify({ activityId, taskId: task.id, taskNumber: task.task_number })
       });
+      const result = await res.json().catch(() => ({}));
+      if (!res.ok || result.ok === false) throw new Error(result.error || 'Skip could not be saved. Please try again.');
     } catch (err) {
       console.warn('[ActivityPlayer] Skip API failed:', err);
+      alert(err.message || 'Skip could not be saved. Please try again.');
+      btnSkip.disabled = false;
+      setupTimer(task.min_time_seconds || 0);
+      return;
     }
   } else {
     guestTasksPlayed++;
