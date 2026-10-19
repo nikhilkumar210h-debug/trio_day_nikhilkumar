@@ -597,11 +597,11 @@ async function supabaseAdminRequest(method, path, body = null, env = {}) {
 }
 
 // ─── AI Verification (Cloudflare Workers AI or Gemini) ────────────────────────
-async function verifyWithAI(proof, verificationPrompt, taskTitle, taskDescription) {
-  // Try Cloudflare Workers AI first (if available)
-  // Fallback: simple heuristic check for demo
+async function verifyTaskResponse(proof, verificationPrompt, taskTitle, taskDescription) {
+  // This is a server-side heuristic check, not an LLM call. Published tasks must
+  // have verification rules configured; missing rules must never auto-award XP.
   if (!verificationPrompt || !verificationPrompt.trim()) {
-    return { valid: true, reason: 'No verification prompt configured' };
+    return { valid: false, reason: 'This task is missing response-verification rules. Please contact an admin.' };
   }
   
   // Check for obvious spam
@@ -659,7 +659,7 @@ async function handleCompleteTask(uid, body, env) {
   const activityData = activity[0];
   
   // AI Verification - use verification_prompt from task data
-  const verification = await verifyWithAI(
+  const verification = await verifyTaskResponse(
     proof || '',
     taskData.verification_prompt,
     taskData.title_en,  // Use English title for keyword extraction
