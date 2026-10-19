@@ -63,7 +63,7 @@ const CLOUDINARY_API_KEY = globalThis.CLOUDINARY_API_KEY || '';
 const CLOUDINARY_API_SECRET = globalThis.CLOUDINARY_API_SECRET || '';
 
 // Supabase column selects (real schema)
-const ACTIVITY_SELECT = 'id,display_order,category,title_en,title_hi,description_en,description_hi,difficulty,total_xp,cover_image_url,is_guest_allowed,is_published,created_at';
+const ACTIVITY_SELECT = 'id,display_order,category,title_en,title_hi,description_en,description_hi,icon,difficulty,total_xp,cover_image_url,is_guest_allowed,is_published,created_at';
 const TASK_SELECT_PUBLIC = 'id,activity_id,task_number,task_type,title_en,title_hi,description_en,instructions_en,instructions_hi,min_time_seconds,xp_reward';
 const TASK_SELECT_ADMIN = 'id,activity_id,task_number,task_type,title_en,title_hi,description_en,instructions_en,instructions_hi,verification_prompt,min_time_seconds,xp_reward,is_published,created_at,updated_at';
 
