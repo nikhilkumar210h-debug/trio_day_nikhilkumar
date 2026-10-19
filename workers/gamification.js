@@ -647,7 +647,12 @@ async function handleCompleteTask(uid, body, env) {
   const task = await supabaseAdminRequest('GET', `tasks?id=eq.${taskId}&select=${TASK_SELECT_ADMIN}`, null, env);
   if (!task?.length) throw new Error('Task not found');
   const taskData = task[0];
-  
+  const minimumSeconds = Math.max(0, Number(taskData.min_time_seconds) || 0);
+  const submittedTime = Math.max(0, Number(timeSpent) || 0);
+  if (submittedTime < minimumSeconds) {
+    return { ok: false, error: `Please spend at least ${minimumSeconds} seconds on this task before completing.`, xpAwarded: 0 };
+  }
+
   // Fetch activity for XP reward
   const activity = await supabaseRequest('GET', `activities?id=eq.${activityId}&select=${ACTIVITY_SELECT}`, null, false, env);
   if (!activity?.length) throw new Error('Activity not found');
