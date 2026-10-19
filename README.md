@@ -386,6 +386,7 @@ CREATE TABLE activities (
   title_hi TEXT,
   description_en TEXT,
   description_hi TEXT,
+  icon TEXT,
   difficulty TEXT CHECK (difficulty IN ('Easy','Medium','Hard','Boss Level')),
   total_xp INT DEFAULT 0,
   cover_image_url TEXT,
