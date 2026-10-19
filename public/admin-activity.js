@@ -14,7 +14,6 @@ import { SoundManager } from './sound-manager.js';
 import { escapeHtml as esc } from './utils.js';
 import { setAdminFlag } from './ui/nav.js';
 
-const SUPABASE_URL = 'https://vccypxwiqcuexxrhtgyq.supabase.co';
 const WORKER_BASE = 'https://trio-day.trioday-nikhil.workers.dev';
 const ADMIN_EMAILS = ['nikhilkumar210h@gmail.com', 'nikhilkumar45374@gmail.com'];
 
