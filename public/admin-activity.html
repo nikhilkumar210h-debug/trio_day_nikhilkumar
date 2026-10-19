@@ -19,7 +19,7 @@
   <link rel="stylesheet" href="style.css?v=20261018-activity">
   <link rel="stylesheet" href="styles/polish.css?v=7">
   <link rel="stylesheet" href="styles/activity-player.css?v=1">
-  <link rel="stylesheet" href="styles/activity-motion.css?v=1">
+  <link rel="stylesheet" href="styles/activity-motion.css?v=2">
   <style>
     .admin-tabs { display:flex; gap:8px; margin-bottom:24px; border-bottom:1px solid var(--border); padding-bottom:8px; }
     .admin-tab { padding:10px 20px; background:var(--glass-bg); border:1px solid var(--border); border-radius:99px; color:var(--ink); font-weight:700; cursor:pointer; transition:all .2s; }
@@ -67,23 +67,24 @@
     </div>
 
     <div id="adminPanel" hidden>
-      <div class="admin-tabs">
-        <button class="admin-tab active" data-tab="activities">📋 Activities</button>
-        <button class="admin-tab" data-tab="create-activity">➕ Create Activity</button>
-        <button class="admin-tab" data-tab="tasks">🧩 Tasks</button>
+      <section class="admin-intro" aria-labelledby="adminPageTitle"><div><p class="admin-kicker">TRIO DAY · ADMIN STUDIO</p><h1 id="adminPageTitle">Activity Studio</h1><p>Create useful activities, then build varied tasks with clear instructions and fair XP rewards.</p></div><span class="admin-intro-mark" aria-hidden="true">✦</span></section>
+      <div class="admin-tabs" role="tablist" aria-label="Activity management sections">
+        <button type="button" role="tab" aria-selected="true" aria-controls="panelActivities" id="tabActivities" class="admin-tab active" data-tab="activities">📋 Activities</button>
+        <button type="button" role="tab" aria-selected="false" aria-controls="panelCreateActivity" id="tabCreateActivity" class="admin-tab" data-tab="create-activity">➕ Create Activity</button>
+        <button type="button" role="tab" aria-selected="false" aria-controls="panelTasks" id="tabTasks" class="admin-tab" data-tab="tasks">🧩 Tasks</button>
       </div>
 
       <!-- Activities List -->
-      <div id="panelActivities" class="admin-panel active">
+      <div id="panelActivities" class="admin-panel active" role="tabpanel" aria-labelledby="tabActivities" tabindex="0">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
           <h2 style="margin:0;">All Activities</h2>
-          <button id="refreshActivities" class="btn secondary">🔄 Refresh</button>
+          <button type="button" id="refreshActivities" class="btn secondary">↻ Refresh activities</button>
         </div>
         <div id="activitiesList" class="task-list"></div>
       </div>
 
       <!-- Create/Edit Activity Form -->
-      <div id="panelCreateActivity" class="admin-panel">
+      <div id="panelCreateActivity" class="admin-panel" role="tabpanel" aria-labelledby="tabCreateActivity" tabindex="0">
         <h2 id="createActivityTitle" style="margin:0 0 24px;">Create New Activity</h2>
         <form id="activityForm" class="form-grid">
           <input type="hidden" id="activityId" name="id">
@@ -117,7 +118,7 @@
           </div>
           <div class="field field-full">
             <label class="label-text">Cover Image (Cloudinary URL)</label>
-            <div class="upload-area" id="actCoverUpload">
+            <div class="upload-area" id="actCoverUpload" role="button" tabindex="0" aria-label="Upload an activity cover image" aria-controls="actCoverFile">
               <div class="upload-icon" style="font-size:32px; margin-bottom:8px;">☁️</div>
               <div class="upload-text"><strong>Click or drag to upload</strong><br><small>Auto-optimized: f_auto,q_auto,c_fill,g_auto,w_800</small></div>
               <input type="file" id="actCoverFile" accept="image/*" hidden>
@@ -155,14 +156,15 @@
       </div>
 
       <!-- Tasks List -->
-      <div id="panelTasks" class="admin-panel">
+      <div id="panelTasks" class="admin-panel" role="tabpanel" aria-labelledby="tabTasks" tabindex="0">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
           <h2 style="margin:0;">All Tasks</h2>
           <div style="display:flex; gap:8px;">
             <select id="filterActivity" class="btn secondary" style="padding:8px 12px; background:var(--glass-bg); border:1px solid var(--border); color:var(--ink); border-radius:8px;">
               <option value="">All Activities</option>
             </select>
-            <button id="createTaskBtn" class="btn primary">➕ Create Task</button>
+            <button type="button" id="refreshTasksBtn" class="btn secondary">↻ Refresh tasks</button>
+            <button type="button" id="createTaskBtn" class="btn primary">＋ Create task</button>
           </div>
         </div>
         <div id="tasksList" class="task-list"></div>
@@ -176,13 +178,13 @@
 
   <!-- Task Modal -->
   <div id="taskModal" class="modal-overlay" hidden>
-    <div class="modal">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="taskModalTitle" tabindex="-1">
       <div class="modal-head">
         <div>
           <span class="eyebrow" id="taskModalEyebrow">Create Task</span>
           <h2 id="taskModalTitle">New Task</h2>
         </div>
-        <button class="icon-btn" id="taskModalClose" aria-label="Close">×</button>
+        <button type="button" class="icon-btn" id="taskModalClose" aria-label="Close task editor">×</button>
       </div>
       <div class="modal-body">
         <form id="taskForm" class="form-grid">
@@ -212,7 +214,7 @@
           </div>
           <div class="field">
             <label class="label-text">Order Index *</label>
-            <input type="number" id="taskOrder" name="order_index" required min="1" value="1">
+            <input type="number" id="taskOrder" name="task_number" required min="1" step="1" value="1" inputmode="numeric">
           </div>
           <div class="field">
             <label class="label-text">Type</label>
@@ -257,8 +259,9 @@
             <input type="number" id="taskXp" name="xp_reward" value="10" min="0">
           </div>
           <div class="field field-full">
-            <label class="label-text">AI Verification Prompt</label>
-            <textarea id="taskVerificationPrompt" name="verification_prompt" rows="3" placeholder="Prompt for AI to verify user's proof. e.g., 'Check if the user genuinely solved the logic puzzle described in the task. Reject generic responses like asdfg.'"></textarea>
+            <label class="label-text">Task verification guidance</label>
+            <textarea id="taskVerificationPrompt" name="verification_prompt" rows="3" placeholder="Describe what a relevant, genuine completion should contain. Keep the check specific and safe."></textarea>
+            <p class="field-hint">Required for published tasks. Keep criteria concrete and avoid requesting private information.</p>
           </div>
           <div class="field field-full">
             <label class="label-text">Active</label>
@@ -285,6 +288,6 @@
   <script type="module" src="ui/subnav.js?v=20261018"></script>
   <script type="module" src="ui/sheet.js?v=20261018"></script>
   <script type="module" src="ui/sound.js?v=20261018"></script>
-  <script type="module" src="admin-activity.js?v=20261018"></script>
+  <script type="module" src="admin-activity.js?v=20261019"></script>
 </body>
 </html>

@@ -6,7 +6,7 @@
  * - Step-by-step task progression with progress bar
  * - Min-time timer per task (countdown)
  * - Proof/Reflection text input with character count
- * - AI Verification via Cloudflare Worker (/api/activity/complete-task)
+ * - Server-side task-response check via the gamification Worker (/api/activity/complete-task)
  * - Skip task (0 XP) → next task
  * - Guest limit enforcement (3 tasks max)
  * - Login modal trigger + XP sync on login
@@ -19,18 +19,19 @@ import { doc, getDoc, updateDoc, setDoc, serverTimestamp, increment, collection,
 import { SoundManager } from './sound-manager.js';
 import { escapeHtml as esc, cloudinaryAutoUrl } from './utils.js';
 import { setAdminFlag } from './ui/nav.js';
+import { getGamificationWorkerUrl } from './gamification/worker-config.js';
 
 // ─── CONSTANTS ──────────────────────────────────────────────────────────────
 const SUPABASE_URL = 'https://vccypxwiqcuexxrhtgyq.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_zJvP50wf3CW2PNfkOD9yCQ_ffFhsZEp';
-const WORKER_BASE = 'https://trio-day.trioday-nikhil.workers.dev'; // Update for local dev
+const WORKER_BASE = getGamificationWorkerUrl();
 const ADMIN_EMAILS = ['nikhilkumar210h@gmail.com', 'nikhilkumar45374@gmail.com'];
 
 const GUEST_TASK_LIMIT = 3;
 
 // Supabase column mapping for real schema
 const ACTIVITY_SELECT = 'id,display_order,category,title_en,title_hi,description_en,description_hi,difficulty,total_xp,cover_image_url,is_guest_allowed,is_published,created_at';
-const TASK_SELECT = 'id,activity_id,task_number,task_type,title_en,title_hi,instructions_en,instructions_hi,verification_prompt,min_time_seconds,xp_reward';
+const TASK_SELECT = 'id,activity_id,task_number,task_type,title_en,title_hi,instructions_en,instructions_hi,min_time_seconds,xp_reward';
 
 // ─── STATE ──────────────────────────────────────────────────────────────────
 let currentUser = null;
@@ -91,9 +92,9 @@ const TRANSLATIONS = {
     xp_earned: 'XP Earned',
     guest_limit: '3/3 Free Tasks Completed!',
     guest_msg: 'You\'ve used your demo quota. Login to save your XP, unlock custom goals, and access all activities.',
-    verifying: 'Verifying with AI...',
-    verified: 'Verified! XP awarded.',
-    verification_failed: 'AI verification failed. Please provide a genuine response.',
+    verifying: 'Checking your response...',
+    verified: 'Task checked! XP awarded.',
+    verification_failed: 'Your response does not seem to match the task yet. Add a specific result and try again.',
     error_generic: 'Something went wrong. Please try again.',
     login_save: 'Login to Save XP',
   },
@@ -108,9 +109,9 @@ const TRANSLATIONS = {
     xp_earned: 'XP Mila',
     guest_limit: '3/3 Free Tasks Pure Hue!',
     guest_msg: 'Aapna demo quota pura ho gaya. Apna XP save karne aur saare activities unlock karne ke liye login karein.',
-    verifying: 'AI se verify ho raha hai...',
-    verified: 'Verified! XP mil gaya.',
-    verification_failed: 'AI verification failed. Please provide a genuine response.',
+    verifying: 'Aapka response check ho raha hai...',
+    verified: 'Task check hua! XP mil gaya.',
+    verification_failed: 'Response task se match nahi kar raha. Specific result add karke dobara try karein.',
     error_generic: 'Kuch galat hua. Please try again.',
     login_save: 'XP Save Karne Login Karein',
   }
@@ -378,13 +379,14 @@ async function handleComplete(task) {
       
       const result = await res.json();
       
-      if (!res.ok) {
+      if (!res.ok || result.ok === false) {
         throw new Error(result.error || t('verification_failed'));
       }
       
       // Success
-      totalXpEarned += task.xp_reward || 10;
-      showToast(t('verified'));
+      const awarded = Math.max(0, Number(result.awarded ?? task.xp_reward ?? 10) || 0);
+      totalXpEarned += awarded;
+      showToast(result.alreadyAwarded ? 'This task was already counted; duplicate XP was not added.' : awarded > 0 ? t('verified') : 'Task checked. No additional XP was awarded.');
       
     } catch (err) {
       console.error('[ActivityPlayer] Complete error:', err);

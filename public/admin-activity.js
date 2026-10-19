@@ -13,13 +13,10 @@ import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.13.0/f
 import { SoundManager } from './sound-manager.js';
 import { escapeHtml as esc } from './utils.js';
 import { setAdminFlag } from './ui/nav.js';
+import { getGamificationWorkerUrl } from './gamification/worker-config.js';
 
-const SUPABASE_URL = 'https://vccypxwiqcuexxrhtgyq.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_zJvP50wf3CW2PNfkOD9yCQ_ffFhsZEp';
-const WORKER_BASE = 'https://trio-day.trioday-nikhil.workers.dev';
+const WORKER_BASE = getGamificationWorkerUrl();
 const ADMIN_EMAILS = ['nikhilkumar210h@gmail.com', 'nikhilkumar45374@gmail.com'];
-const CLOUDINARY_CLOUD_NAME = 'your-cloud-name'; // TODO: Update with actual Cloudinary cloud name
-const CLOUDINARY_UPLOAD_PRESET = 'trio_activities'; // TODO: Create unsigned upload preset
 
 let currentUser = null;
 let isAdmin = false;
@@ -27,6 +24,9 @@ let activitiesCache = [];
 let tasksCache = [];
 let editingActivityId = null;
 let editingTaskId = null;
+let adminInitialized = false;
+let taskPickerBound = false;
+let taskModalReturnFocus = null;
 
 // ─── DOM ────────────────────────────────────────────────────────────────────
 const $ = id => document.getElementById(id);
@@ -52,7 +52,15 @@ onAuthStateChanged(auth, async user => {
     denied.hidden = true;
     adminPanel.hidden = false;
     renderAuthStatus();
-    initAdmin();
+    if (!adminInitialized) {
+      adminInitialized = true;
+      try { await initAdmin(); }
+      catch (err) {
+        adminInitialized = false;
+        console.error('[Admin] Initialization failed:', err);
+        adminPanel.insertAdjacentHTML('afterbegin', `<div class="admin-error" role="alert">Admin panel could not initialize: ${esc(err.message || 'Unknown error')}. Refresh and try again.</div>`);
+      }
+    }
   } else {
     isAdmin = false;
     setAdminFlag(false);
@@ -105,13 +113,23 @@ async function getIdToken() {
 }
 
 function setupTabs() {
-  document.querySelectorAll('.admin-tab').forEach(tab => {
+  const tabs = [...document.querySelectorAll('.admin-tab')];
+  const panels = [...document.querySelectorAll('.admin-panel')];
+  const panelIds = { activities: 'panelActivities', 'create-activity': 'panelCreateActivity', tasks: 'panelTasks' };
+  tabs.forEach(tab => {
+    const panelId = panelIds[tab.dataset.tab];
+    tab.setAttribute('aria-controls', panelId);
+    tab.tabIndex = tab.classList.contains('active') ? 0 : -1;
     tab.onclick = () => {
-      document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
-      document.querySelectorAll('.admin-panel').forEach(p => p.classList.remove('active'));
-      tab.classList.add('active');
-      $(`panel${tab.dataset.tab.charAt(0).toUpperCase() + tab.dataset.tab.slice(1)}`).classList.add('active');
-      
+      const panel = $(panelId);
+      if (!panel) return;
+      tabs.forEach(t => {
+        const selected = t === tab;
+        t.classList.toggle('active', selected);
+        t.setAttribute('aria-selected', String(selected));
+        t.tabIndex = selected ? 0 : -1;
+      });
+      panels.forEach(p => p.classList.toggle('active', p === panel));
       if (tab.dataset.tab === 'tasks') loadTasks();
     };
   });
@@ -120,8 +138,11 @@ function setupTabs() {
 function setupTaskForm() {
   const activityPicker = $('taskActivityPicker');
   if (activityPicker) {
-    activityPicker.innerHTML = '<option value="">Choose an activity…</option>' + activitiesCache.map(act => `<option value="${act.id}">${esc(act.title_en || act.title || 'Untitled activity')} · ${esc(act.category || '')}</option>`).join('');
-    activityPicker.addEventListener('change', () => { $('taskActivityId').value = activityPicker.value; });
+    populateTaskActivityPicker();
+    if (!taskPickerBound) {
+      activityPicker.addEventListener('change', () => { $('taskActivityId').value = activityPicker.value; });
+      taskPickerBound = true;
+    }
   }
   const preset = $('taskTemplate');
   if (!preset) return;
@@ -160,14 +181,23 @@ async function loadActivities() {
   activitiesList.innerHTML = '<div class="skeleton-stack" style="width:100%;"><div class="skeleton-card" style="height:120px; aspect-ratio:auto; border-radius:12px; margin-bottom:12px; background:linear-gradient(90deg,rgba(255,255,255,.04) 0%,rgba(255,255,255,.08) 50%,rgba(255,255,255,.04) 100%); background-size:200% 100%; animation:shimmer 1.5s infinite linear;"></div></div>'.repeat(3);
   
   try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/activities?select=${ACTIVITY_SELECT}&order=display_order.asc`, {
-      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` }
+    const idToken = await getIdToken();
+    const res = await fetch(`${WORKER_BASE}/api/admin/activity`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
+      body: JSON.stringify({ action: 'list' })
     });
-    activitiesCache = await res.json();
+    const payload = await res.json();
+    if (!res.ok) throw new Error(payload?.message || payload?.error || `Supabase returned ${res.status}`);
+    if (!Array.isArray(payload)) throw new Error('Unexpected activities response from Supabase');
+    activitiesCache = payload;
     renderActivitiesList();
+    loadActivitiesForFilter();
+    populateTaskActivityPicker();
   } catch (err) {
     console.error('[Admin] Load activities error:', err);
-    activitiesList.innerHTML = `<div class="task-box" style="text-align:center"><p style="color:var(--color-danger)">Failed to load activities</p><button class="btn secondary" onclick="loadActivities()">Retry</button></div>`;
+    activitiesList.innerHTML = `<div class="task-box admin-empty-state" style="text-align:center" role="alert"><p class="admin-error-text">Failed to load activities: ${esc(err.message || 'Unknown error')}</p><button id="retryActivitiesBtn" type="button" class="btn secondary">Retry</button></div>`;
+    $('retryActivitiesBtn')?.addEventListener('click', loadActivities);
   }
 }
 
@@ -204,8 +234,20 @@ function renderActivitiesList() {
 }
 
 async function loadActivitiesForFilter() {
-  filterActivity.innerHTML = '<option value="">All Activities</option>' + 
+  const selected = filterActivity.value;
+  filterActivity.innerHTML = '<option value="">All Activities</option>' +
     activitiesCache.map(act => `<option value="${act.id}">${esc(act.title_en || act.title || 'Untitled activity')}</option>`).join('');
+  if (selected && activitiesCache.some(act => String(act.id) === selected)) filterActivity.value = selected;
+  populateTaskActivityPicker();
+}
+
+function populateTaskActivityPicker() {
+  const picker = $('taskActivityPicker');
+  if (!picker) return;
+  const selected = picker.value || $('taskActivityId')?.value || '';
+  picker.innerHTML = '<option value="">Choose an activity…</option>' +
+    activitiesCache.map(act => `<option value="${esc(String(act.id))}">${esc(act.title_en || act.title || 'Untitled activity')} · ${esc(act.category || '')}</option>`).join('');
+  if (selected && activitiesCache.some(act => String(act.id) === String(selected))) picker.value = selected;
 }
 
 function openActivityEditor(activityId) {
@@ -354,20 +396,25 @@ async function deleteActivity(activityId) {
 // ─── TASKS CRUD ─────────────────────────────────────────────────────────────
 async function loadTasks() {
   const activityFilter = filterActivity.value;
-  let url = `${SUPABASE_URL}/rest/v1/tasks?select=${TASK_SELECT_ADMIN}&order=activity_id.asc,task_number.asc`;
-  if (activityFilter) url += `&activity_id=eq.${activityFilter}`;
   
   tasksList.innerHTML = '<div class="skeleton-stack" style="width:100%;"><div class="skeleton-card" style="height:100px; aspect-ratio:auto; border-radius:12px; margin-bottom:12px; background:linear-gradient(90deg,rgba(255,255,255,.04) 0%,rgba(255,255,255,.08) 50%,rgba(255,255,255,.04) 100%); background-size:200% 100%; animation:shimmer 1.5s infinite linear;"></div></div>'.repeat(3);
   
   try {
-    const res = await fetch(url, {
-      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` }
+    const idToken = await getIdToken();
+    const res = await fetch(`${WORKER_BASE}/api/admin/task`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
+      body: JSON.stringify({ action: 'list', activityId: activityFilter || null })
     });
-    tasksCache = await res.json();
+    const payload = await res.json();
+    if (!res.ok) throw new Error(payload?.message || payload?.error || `Supabase returned ${res.status}`);
+    if (!Array.isArray(payload)) throw new Error('Unexpected tasks response from Supabase');
+    tasksCache = payload;
     renderTasksList();
   } catch (err) {
     console.error('[Admin] Load tasks error:', err);
-    tasksList.innerHTML = `<div class="task-box" style="text-align:center"><p style="color:var(--color-danger)">Failed to load tasks</p><button class="btn secondary" onclick="loadTasks()">Retry</button></div>`;
+    tasksList.innerHTML = `<div class="task-box admin-empty-state" style="text-align:center" role="alert"><p class="admin-error-text">Failed to load tasks: ${esc(err.message || 'Unknown error')}</p><button id="retryTasksBtn" type="button" class="btn secondary">Retry</button></div>`;
+    $('retryTasksBtn')?.addEventListener('click', loadTasks);
   }
 }
 
@@ -383,7 +430,7 @@ function renderTasksList() {
       <div class="task-info">
         <div class="task-title">${task.task_type || 'Task'}: ${esc(task.title_en)}</div>
         <div class="task-meta">
-          Activity: ${esc(task.activity_id)} | ${task.min_time_seconds ? `⏱️ ${task.min_time_seconds}s` : 'No timer'} | ⚡ ${task.xp_reward} XP | ${task.verification_prompt ? '🤖 AI Verify' : '✅ Auto-approve'} | ${task.is_published ? '✅ Published' : '⏸️ Draft'}
+          Activity: ${esc(activitiesCache.find(act => String(act.id) === String(task.activity_id))?.title_en || activitiesCache.find(act => String(act.id) === String(task.activity_id))?.title || 'Activity')} | ${task.min_time_seconds ? `⏱️ ${task.min_time_seconds}s` : 'No timer'} | ⚡ ${task.xp_reward ?? 10} XP | ${task.verification_prompt ? '🧭 Guidance set' : '⚠️ Guidance missing'} | ${task.is_published ? '✅ Published' : '⏸️ Draft'}
         </div>
       </div>
       <div class="task-actions">
@@ -424,8 +471,10 @@ function openTaskEditor(taskId) {
   $('taskVerificationPrompt').value = task.verification_prompt || '';
   $('taskActive').checked = task.is_published !== false;
   
+  taskModalReturnFocus = document.activeElement;
   taskModal.hidden = false;
   document.body.style.overflow = 'hidden';
+  $('taskModalClose').focus();
 }
 
 function openNewTaskEditor(activityId = null) {
@@ -441,14 +490,17 @@ function openNewTaskEditor(activityId = null) {
   $('taskType').value = 'Action Step';
   $('taskActive').checked = true;
   
+  taskModalReturnFocus = document.activeElement;
   taskModal.hidden = false;
   document.body.style.overflow = 'hidden';
+  $('taskModalClose').focus();
 }
 
 function closeTaskModal() {
   taskModal.hidden = true;
   document.body.style.overflow = '';
   editingTaskId = null;
+  if (taskModalReturnFocus && typeof taskModalReturnFocus.focus === 'function') taskModalReturnFocus.focus();
 }
 
 async function saveTask(e) {
@@ -458,9 +510,14 @@ async function saveTask(e) {
   const activityIdValue = $('taskActivityPicker')?.value || formData.get('activity_id');
   if (!activityIdValue) { alert('Choose which activity this task belongs to.'); $('taskActivityPicker')?.focus(); return; }
   $('taskActivityId').value = activityIdValue;
+  if ($('taskActive').checked && !$('taskVerificationPrompt').value.trim()) {
+    alert('Add verification guidance before publishing this task, or save it as a draft.');
+    $('taskVerificationPrompt').focus();
+    return;
+  }
   const data = {
     activity_id: activityIdValue,
-    task_number: parseInt(formData.get('task_number')) || 1,
+    task_number: Math.max(1, parseInt(formData.get('task_number'), 10) || 1),
     task_type: formData.get('type') || 'Action Step',
     title_en: formData.get('title'),
     description_en: formData.get('description') || '',
@@ -541,6 +598,7 @@ function setupUpload() {
   const preview = $('actCoverPreview');
   
   uploadArea.onclick = () => fileInput.click();
+  uploadArea.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInput.click(); } };
   uploadArea.ondragover = e => { e.preventDefault(); uploadArea.classList.add('dragover'); };
   uploadArea.ondragleave = () => uploadArea.classList.remove('dragover');
   uploadArea.ondrop = e => {
@@ -580,7 +638,8 @@ function setupUpload() {
       });
       
       if (!signRes.ok) throw new Error('Failed to get signed URL');
-      const { uploadUrl, signature, timestamp, apiKey, publicId } = await signRes.json();
+      const { uploadUrl, signature, timestamp, apiKey, publicId, folder = 'trio/activities' } = await signRes.json();
+      if (!uploadUrl || !signature || !timestamp || !apiKey || !publicId) throw new Error('Upload signing response is incomplete. Check the Cloudinary Worker configuration.');
       
       // Upload to Cloudinary
       const formData = new FormData();
@@ -588,11 +647,10 @@ function setupUpload() {
       formData.append('api_key', apiKey);
       formData.append('timestamp', timestamp);
       formData.append('signature', signature);
-      formData.append('folder', 'trio/activities');
+      formData.append('folder', folder);
       formData.append('public_id', publicId);
-      formData.append('transformation', 'f_auto,q_auto,c_fill,g_auto,w_800');
       
-      const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
+      const uploadRes = await fetch(uploadUrl, {
         method: 'POST',
         body: formData
       });
@@ -601,7 +659,8 @@ function setupUpload() {
       const result = await uploadRes.json();
       
       // Set the optimized URL
-      const optimizedUrl = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/f_auto,q_auto,c_fill,g_auto,w_800/${result.public_id}`;
+      const optimizedUrl = String(result.secure_url || '').replace('/image/upload/', '/image/upload/f_auto,q_auto,c_fill,g_auto,w_800/');
+      if (!optimizedUrl) throw new Error('Cloudinary did not return a secure image URL.');
       urlInput.value = optimizedUrl;
       urlInput.style.display = 'block';
       preview.src = optimizedUrl;
@@ -622,10 +681,13 @@ function setupUpload() {
 function setupModals() {
   $('taskModalClose').onclick = closeTaskModal;
   taskModal.onclick = e => { if (e.target === taskModal) closeTaskModal(); };
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !taskModal.hidden) closeTaskModal(); });
   $('cancelTask').onclick = closeTaskModal;
   $('cancelActivity').onclick = resetActivityForm;
   $('createTaskBtn').onclick = () => openNewTaskEditor(filterActivity.value || null);
   $('refreshActivities').onclick = loadActivities;
+  $('refreshTasksBtn').onclick = loadTasks;
+  filterActivity.onchange = loadTasks;
   
   // Activity form submit
   activityForm.onsubmit = saveActivity;

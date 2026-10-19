@@ -28,8 +28,11 @@ jobs:
           node --input-type=module --check < public/webmcp.js
           node --input-type=module --check < public/ui/header.js
           node --input-type=module --check < public/script.js
-          node --input-type=module --check < public/challenge.js
-          node --input-type=module --check < public/challenge-create.js
+          node --input-type=module --check < public/admin-activity.js
+          node --input-type=module --check < public/activity-player.js
+          node --input-type=module --check < public/today-activity.js
+          node --input-type=module --check < public/gamification/worker-config.js
+          node --input-type=module --check < public/ui/nav.js
           node --input-type=module --check < public/profile.js
           node --input-type=module --check < public/auth.js
           node --input-type=module --check < public/gamification/streaks.js
@@ -38,9 +41,9 @@ jobs:
           node --input-type=module --check < public/sound-manager.js
           node --check functions/index.js
           node --check server.js
-          node --check workers/gamification.js
+          node --input-type=module --check < workers/gamification.js
       - name: Verify Playwright test discovery
-        run: npm test -- --list
+        run: npm test -- qa-audit.spec.js --list
 
   playwright-qa:
     runs-on: ubuntu-latest
@@ -59,7 +62,7 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Start dev server
         run: |
-          npx serve public -l 5500 &
+          node server.js > /tmp/trio-day-server.log 2>&1 &
           sleep 5
           curl -f http://127.0.0.1:5500/index.html || exit 1
       - name: Run Playwright QA tests

@@ -65,14 +65,14 @@ Before significant code work, read [PLAN.md](PLAN.md), identify the stage being 
 - **Guest View**: 3 free starter activities (Supabase `is_guest_allowed=true`). Progress saved in `localStorage`. After 3 tasks → Login modal to sync XP.
 - **Logged-in Onboarding**: First visit shows 5 Goal Cards (Learning, Digital Skill, Personal Growth, Mind & Emotion, Social Life). Selection saved to Firestore.
 - **Dashboard**: Category-specific activities with clickable cards (Cyber-Purple + Neon Cyan glassmorphism). Each card shows difficulty, XP reward, cover image.
-- **Task Player**: Step-by-step with progress bar, min-time timer, proof/reflection textarea, AI verification via Cloudflare Worker.
+- **Task Player**: Step-by-step with progress bar, minimum-time timer, proof/reflection textarea, and server-side deterministic response checking via the gamification Worker.
 - **Language Toggle**: EN/HI persisted in `localStorage`, updates all UI text.
 
 ### Activity Player (`/activity-player.html?act=<id>`)
 - Fetches activity + tasks from Supabase.
 - Progress bar at top.
 - Each task: type badge, XP reward, title, description, timer (if `min_time_seconds > 0`), proof input.
-- **Complete**: Sends proof to Worker → AI verification → awards XP, updates weekly XP + leaderboards.
+- **Complete**: Sends proof to the gamification Worker → server-side response check → awards XP only after a valid result; updates weekly XP + leaderboards.
 - **Skip**: 0 XP, moves to next task, logged server-side.
 - **Completion Screen**: Total XP earned, final weekly XP, links to Dashboard & Leaderboard.
 
@@ -100,7 +100,7 @@ Before significant code work, read [PLAN.md](PLAN.md), identify the stage being 
 ### Admin (`/admin-activity.html`)
 - **Strict admin check**: Firebase token email must match `ADMIN_EMAILS`.
 - **Activities CRUD**: Create/edit/delete with Cloudinary signed upload (folder `trio/activities`, transform `f_auto,q_auto,c_fill,g_auto,w_800`).
-- **Tasks CRUD**: Create/edit/delete per activity. Fields: type, title, description, instructions (EN/HI), min time, XP reward, AI verification prompt, active toggle.
+- **Tasks CRUD**: Create/edit/delete per activity. Fields: type, title, description, instructions (EN/HI), minimum time, XP reward, verification guidance, and published/draft toggle.
 - **Cloudinary signed upload**: Worker generates signature, client uploads directly to Cloudinary.
 
 ### Notifications
@@ -233,17 +233,19 @@ The root `wrangler.jsonc` declares **no Worker script** — the production site 
 - **Tables**: `activities`, `tasks`
 - **Access**: Anon key for reads, service role for admin writes (via Worker)
 - **Row Level Security**: Enabled on both tables
-- **Key fields**:
-  - `activities`: id, title, category, icon, order_index, description, cover_image, difficulty, xp_reward, is_guest_allowed, is_active, created_at, updated_at
-  - `tasks`: id, activity_id, order_index, type, title, description, instructions_en, instructions_hi, min_time_seconds, xp_reward, verification_prompt, is_active, created_at, updated_at
+- **Canonical fields used by the current frontend and gamification Worker**:
+  - `activities`: `id`, `display_order`, `category`, `title_en`, `title_hi`, `description_en`, `description_hi`, `icon`, `difficulty`, `total_xp`, `cover_image_url`, `is_guest_allowed`, `is_published`, `created_at`, `updated_at`.
+  - `tasks`: `id`, `activity_id`, `task_number`, `task_type`, `title_en`, `title_hi`, `description_en`, `description_hi`, `instructions_en`, `instructions_hi`, `min_time_seconds`, `xp_reward`, `verification_prompt`, `is_published`, `created_at`, `updated_at`.
+  - `user_task_progress`: server-written task attempts/completions with `firebase_uid`, `activity_id`, `task_id`, `status`, `user_submission`, `ai_verified`, `ai_feedback`, `xp_awarded`, `week_key`, and `completed_at`.
+  - Public reads expose published activity/task fields only; `verification_prompt` and task-progress records must remain server-only. Admin list/create/update/delete operations go through the authenticated gamification Worker using the Supabase service-role key stored as a Worker secret.
 
 ## Security
 
 - Gamification fields are server-controlled (Worker-only writes).
-- Activity XP awards are verified server-side with AI verification and idempotent.
+- Activity XP awards are checked server-side and XP awards are idempotent. The current checker is heuristic-based, not a connected LLM; do not label it as model-based AI until a model binding/provider is configured.
 - Firestore rules restrict private-chat access.
 - Admin endpoints require strict email verification against `ADMIN_EMAILS`.
-- AI verification rejects spam/gibberish/off-topic submissions.
+- The current deterministic response checker rejects empty, very short, spam-like, and some off-topic submissions; it is not a substitute for model-based semantic verification.
 
 ## Retired product systems
 
