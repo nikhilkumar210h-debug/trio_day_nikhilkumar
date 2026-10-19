@@ -379,13 +379,14 @@ async function handleComplete(task) {
       
       const result = await res.json();
       
-      if (!res.ok) {
+      if (!res.ok || result.ok === false) {
         throw new Error(result.error || t('verification_failed'));
       }
       
       // Success
-      totalXpEarned += task.xp_reward || 10;
-      showToast(t('verified'));
+      const awarded = Math.max(0, Number(result.awarded ?? task.xp_reward ?? 10) || 0);
+      totalXpEarned += awarded;
+      showToast(result.alreadyAwarded ? 'This task was already counted; duplicate XP was not added.' : awarded > 0 ? t('verified') : 'Task checked. No additional XP was awarded.');
       
     } catch (err) {
       console.error('[ActivityPlayer] Complete error:', err);
