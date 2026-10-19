@@ -14,12 +14,8 @@ import { SoundManager } from './sound-manager.js';
 import { escapeHtml as esc } from './utils.js';
 import { setAdminFlag } from './ui/nav.js';
 
-const SUPABASE_URL = 'https://vccypxwiqcuexxrhtgyq.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_zJvP50wf3CW2PNfkOD9yCQ_ffFhsZEp';
 const WORKER_BASE = 'https://trio-day.trioday-nikhil.workers.dev';
 const ADMIN_EMAILS = ['nikhilkumar210h@gmail.com', 'nikhilkumar45374@gmail.com'];
-const CLOUDINARY_CLOUD_NAME = 'your-cloud-name'; // TODO: Update with actual Cloudinary cloud name
-const CLOUDINARY_UPLOAD_PRESET = 'trio_activities'; // TODO: Create unsigned upload preset
 
 let currentUser = null;
 let isAdmin = false;
@@ -97,24 +93,55 @@ async function initAdmin() {
   loadActivitiesForFilter();
 }
 
-// Get Firebase ID token for Worker API calls
+// Get Firebase ID token for authenticated Worker API calls.
 async function getIdToken() {
   const user = auth.currentUser;
   if (!user) throw new Error('Not authenticated');
   return user.getIdToken();
 }
+async function adminApi(path, payload) {
+  const idToken = await getIdToken();
+  const res = await fetch(`${WORKER_BASE}${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
+    body: JSON.stringify(payload)
+  });
+  const result = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(result.error || `Request failed (${res.status})`);
+  return result;
+}
+function showLoadError(container, message, retry) {
+  container.replaceChildren();
+  const box = document.createElement('div');
+  box.className = 'task-box admin-load-error';
+  const text = document.createElement('p');
+  text.setAttribute('role', 'alert');
+  text.textContent = message;
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'btn secondary';
+  button.textContent = 'Retry';
+  button.addEventListener('click', retry);
+  box.append(text, button);
+  container.appendChild(box);
+}
 
 function setupTabs() {
   document.querySelectorAll('.admin-tab').forEach(tab => {
+    const panelId = `panel${tab.dataset.tab.charAt(0).toUpperCase() + tab.dataset.tab.slice(1)}`;
+    tab.setAttribute('aria-controls', panelId);
+    tab.setAttribute('aria-selected', String(tab.classList.contains('active')));
     tab.onclick = () => {
-      document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.admin-tab').forEach(t => { t.classList.remove('active'); t.setAttribute('aria-selected', 'false'); });
       document.querySelectorAll('.admin-panel').forEach(p => p.classList.remove('active'));
       tab.classList.add('active');
-      $(`panel${tab.dataset.tab.charAt(0).toUpperCase() + tab.dataset.tab.slice(1)}`).classList.add('active');
-      
+      tab.setAttribute('aria-selected', 'true');
+      const panel = $(panelId);
+      if (panel) panel.classList.add('active');
       if (tab.dataset.tab === 'tasks') loadTasks();
     };
   });
+  if (filterActivity) filterActivity.addEventListener('change', loadTasks);
 }
 
 function setupTaskForm() {
@@ -157,17 +184,16 @@ function setupActivityForm() {
 
 // ─── ACTIVITIES CRUD ────────────────────────────────────────────────────────
 async function loadActivities() {
-  activitiesList.innerHTML = '<div class="skeleton-stack" style="width:100%;"><div class="skeleton-card" style="height:120px; aspect-ratio:auto; border-radius:12px; margin-bottom:12px; background:linear-gradient(90deg,rgba(255,255,255,.04) 0%,rgba(255,255,255,.08) 50%,rgba(255,255,255,.04) 100%); background-size:200% 100%; animation:shimmer 1.5s infinite linear;"></div></div>'.repeat(3);
-  
+  activitiesList.innerHTML = '<div class="skeleton-stack admin-skeleton"><div class="skeleton-card"></div><div class="skeleton-card"></div><div class="skeleton-card"></div></div>';
   try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/activities?select=${ACTIVITY_SELECT}&order=display_order.asc`, {
-      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` }
-    });
-    activitiesCache = await res.json();
+    const result = await adminApi('/api/admin/activity', { action: 'list' });
+    if (!Array.isArray(result)) throw new Error('Unexpected activities response from the Worker');
+    activitiesCache = result;
     renderActivitiesList();
+    await loadActivitiesForFilter();
   } catch (err) {
     console.error('[Admin] Load activities error:', err);
-    activitiesList.innerHTML = `<div class="task-box" style="text-align:center"><p style="color:var(--color-danger)">Failed to load activities</p><button class="btn secondary" onclick="loadActivities()">Retry</button></div>`;
+    showLoadError(activitiesList, `Could not load activities: ${err.message}`, loadActivities);
   }
 }
 
@@ -204,8 +230,16 @@ function renderActivitiesList() {
 }
 
 async function loadActivitiesForFilter() {
-  filterActivity.innerHTML = '<option value="">All Activities</option>' + 
-    activitiesCache.map(act => `<option value="${act.id}">${esc(act.title_en || act.title || 'Untitled activity')}</option>`).join('');
+  const previousFilter = filterActivity.value;
+  filterActivity.innerHTML = '<option value="">All Activities</option>' + activitiesCache.map(act => `<option value="${act.id}">${esc(act.title_en || act.title || 'Untitled activity')}</option>`).join('');
+  if (activitiesCache.some(act => String(act.id) === String(previousFilter))) filterActivity.value = previousFilter;
+  const picker = $('taskActivityPicker');
+  if (picker) {
+    const previousActivity = picker.value || $('taskActivityId').value;
+    picker.innerHTML = '<option value="">Choose an activity…</option>' + activitiesCache.map(act => `<option value="${act.id}">${esc(act.title_en || act.title || 'Untitled activity')} · ${esc(act.category || '')}</option>`).join('');
+    if (activitiesCache.some(act => String(act.id) === String(previousActivity))) picker.value = previousActivity;
+    $('taskActivityId').value = picker.value || '';
+  }
 }
 
 function openActivityEditor(activityId) {
@@ -354,51 +388,46 @@ async function deleteActivity(activityId) {
 // ─── TASKS CRUD ─────────────────────────────────────────────────────────────
 async function loadTasks() {
   const activityFilter = filterActivity.value;
-  let url = `${SUPABASE_URL}/rest/v1/tasks?select=${TASK_SELECT_ADMIN}&order=activity_id.asc,task_number.asc`;
-  if (activityFilter) url += `&activity_id=eq.${activityFilter}`;
-  
-  tasksList.innerHTML = '<div class="skeleton-stack" style="width:100%;"><div class="skeleton-card" style="height:100px; aspect-ratio:auto; border-radius:12px; margin-bottom:12px; background:linear-gradient(90deg,rgba(255,255,255,.04) 0%,rgba(255,255,255,.08) 50%,rgba(255,255,255,.04) 100%); background-size:200% 100%; animation:shimmer 1.5s infinite linear;"></div></div>'.repeat(3);
-  
+  tasksList.innerHTML = '<div class="skeleton-stack admin-skeleton"><div class="skeleton-card"></div><div class="skeleton-card"></div><div class="skeleton-card"></div></div>';
   try {
-    const res = await fetch(url, {
-      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` }
-    });
-    tasksCache = await res.json();
+    const result = await adminApi('/api/admin/task', { action: 'list', activityId: activityFilter || null });
+    if (!Array.isArray(result)) throw new Error('Unexpected tasks response from the Worker');
+    tasksCache = result;
     renderTasksList();
   } catch (err) {
     console.error('[Admin] Load tasks error:', err);
-    tasksList.innerHTML = `<div class="task-box" style="text-align:center"><p style="color:var(--color-danger)">Failed to load tasks</p><button class="btn secondary" onclick="loadTasks()">Retry</button></div>`;
+    showLoadError(tasksList, `Could not load tasks: ${err.message}`, loadTasks);
   }
 }
 
 function renderTasksList() {
   if (!tasksCache.length) {
-    tasksList.innerHTML = '<div class="task-box" style="text-align:center"><p style="color:var(--ink-dim)">No tasks yet. Click "Create Task" to add one.</p></div>';
+    tasksList.innerHTML = '<div class="task-box admin-empty-state"><p>No tasks match this filter yet.</p><p class="field-hint">Create a task or choose another activity filter.</p></div>';
     return;
   }
-  
-  tasksList.innerHTML = tasksCache.map(task => `
-    <div class="task-list-item" data-id="${task.id}">
-      <span class="task-order">${task.task_number}</span>
-      <div class="task-info">
-        <div class="task-title">${task.task_type || 'Task'}: ${esc(task.title_en)}</div>
-        <div class="task-meta">
-          Activity: ${esc(task.activity_id)} | ${task.min_time_seconds ? `⏱️ ${task.min_time_seconds}s` : 'No timer'} | ⚡ ${task.xp_reward} XP | ${task.verification_prompt ? '🤖 AI Verify' : '✅ Auto-approve'} | ${task.is_published ? '✅ Published' : '⏸️ Draft'}
+  tasksList.innerHTML = tasksCache.map(task => {
+    const activityTitle = activitiesCache.find(act => String(act.id) === String(task.activity_id))?.title_en || 'Unknown activity';
+    return `
+      <div class="task-list-item" data-id="${task.id}">
+        <span class="task-order" aria-label="Task order ${task.task_number}">${task.task_number}</span>
+        <div class="task-info">
+          <div class="task-title">${esc(task.task_type || 'Task')}: ${esc(task.title_en || 'Untitled task')}</div>
+          <div class="task-meta">
+            <span class="task-activity-name">${esc(activityTitle)}</span>
+            <span>${task.min_time_seconds ? `⏱️ ${task.min_time_seconds}s` : 'No timer'}</span>
+            <span>⚡ ${Number(task.xp_reward) || 0} XP</span>
+            <span>${task.verification_prompt ? '🤖 AI verify' : '⚠️ No verification prompt'}</span>
+            <span>${task.is_published ? '✅ Published' : '⏸️ Draft'}</span>
+          </div>
         </div>
-      </div>
-      <div class="task-actions">
-        <button class="btn secondary btn-sm edit-task" data-id="${task.id}">✏️ Edit</button>
-        <button class="btn secondary btn-sm delete-task" data-id="${task.id}" style="color:var(--color-danger); border-color:var(--color-danger)">🗑️ Delete</button>
-      </div>
-    </div>
-  `).join('');
-  
-  document.querySelectorAll('.edit-task').forEach(btn => {
-    btn.onclick = () => openTaskEditor(btn.dataset.id);
-  });
-  document.querySelectorAll('.delete-task').forEach(btn => {
-    btn.onclick = () => deleteTask(btn.dataset.id);
-  });
+        <div class="task-actions">
+          <button type="button" class="btn secondary btn-sm edit-task" data-id="${task.id}">✏️ Edit</button>
+          <button type="button" class="btn secondary btn-sm delete-task" data-id="${task.id}" style="color:var(--color-danger);border-color:var(--color-danger)">🗑️ Delete</button>
+        </div>
+      </div>`;
+  }).join('');
+  tasksList.querySelectorAll('.edit-task').forEach(btn => btn.addEventListener('click', () => openTaskEditor(btn.dataset.id)));
+  tasksList.querySelectorAll('.delete-task').forEach(btn => btn.addEventListener('click', () => deleteTask(btn.dataset.id)));
 }
 
 function openTaskEditor(taskId) {
@@ -423,6 +452,7 @@ function openTaskEditor(taskId) {
   $('taskXp').value = task.xp_reward || 10;
   $('taskVerificationPrompt').value = task.verification_prompt || '';
   $('taskActive').checked = task.is_published !== false;
+  taskForm.querySelector('button[type="submit"]').textContent = '💾 Update Task';
   
   taskModal.hidden = false;
   document.body.style.overflow = 'hidden';
@@ -440,6 +470,7 @@ function openNewTaskEditor(activityId = null) {
   $('taskOrder').value = 1;
   $('taskType').value = 'Action Step';
   $('taskActive').checked = true;
+  taskForm.querySelector('button[type="submit"]').textContent = '💾 Save Task';
   
   taskModal.hidden = false;
   document.body.style.overflow = 'hidden';
@@ -449,6 +480,7 @@ function closeTaskModal() {
   taskModal.hidden = true;
   document.body.style.overflow = '';
   editingTaskId = null;
+  taskForm.querySelector('button[type="submit"]').textContent = '💾 Save Task';
 }
 
 async function saveTask(e) {
@@ -460,7 +492,7 @@ async function saveTask(e) {
   $('taskActivityId').value = activityIdValue;
   const data = {
     activity_id: activityIdValue,
-    task_number: parseInt(formData.get('task_number')) || 1,
+    task_number: parseInt(formData.get('order_index'), 10) || 1,
     task_type: formData.get('type') || 'Action Step',
     title_en: formData.get('title'),
     description_en: formData.get('description') || '',
@@ -592,7 +624,7 @@ function setupUpload() {
       formData.append('public_id', publicId);
       formData.append('transformation', 'f_auto,q_auto,c_fill,g_auto,w_800');
       
-      const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
+      const uploadRes = await fetch(uploadUrl, {
         method: 'POST',
         body: formData
       });
@@ -601,7 +633,9 @@ function setupUpload() {
       const result = await uploadRes.json();
       
       // Set the optimized URL
-      const optimizedUrl = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/f_auto,q_auto,c_fill,g_auto,w_800/${result.public_id}`;
+      const originalUrl = result.secure_url || result.url;
+      if (!originalUrl) throw new Error('Cloudinary did not return an image URL');
+      const optimizedUrl = originalUrl.replace('/image/upload/', '/image/upload/f_auto,q_auto,c_fill,g_auto,w_800/');
       urlInput.value = optimizedUrl;
       urlInput.style.display = 'block';
       preview.src = optimizedUrl;
