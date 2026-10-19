@@ -65,7 +65,7 @@ const CLOUDINARY_API_SECRET = globalThis.CLOUDINARY_API_SECRET || '';
 // Supabase column selects (real schema)
 const ACTIVITY_SELECT = 'id,display_order,category,title_en,title_hi,description_en,description_hi,difficulty,total_xp,cover_image_url,is_guest_allowed,is_published,created_at';
 const TASK_SELECT_PUBLIC = 'id,activity_id,task_number,task_type,title_en,title_hi,instructions_en,instructions_hi,min_time_seconds,xp_reward';
-const TASK_SELECT_ADMIN = 'id,activity_id,task_number,task_type,title_en,title_hi,instructions_en,instructions_hi,verification_prompt,min_time_seconds,xp_reward,is_published,created_at,updated_at';
+const TASK_SELECT_ADMIN = 'id,activity_id,task_number,task_type,title_en,title_hi,description_en,description_hi,instructions_en,instructions_hi,verification_prompt,min_time_seconds,xp_reward,is_published,created_at,updated_at';
 
 // ─── Per-UID rate limiting (10 requests/minute) ───────────────────────────────
 const RATE_LIMIT_WINDOW_MS = 60 * 1000;
@@ -562,8 +562,11 @@ function evaluateBadgesDelta(currentBadges, xp, streak) {
 
 // ─── Supabase helpers ─────────────────────────────────────────────────────────
 // Use service role key for writes and admin reads (verification_prompt), anon key for public reads
-function supabaseHeaders(useServiceRole = false) {
-  const key = useServiceRole && SUPABASE_SERVICE_ROLE_KEY ? SUPABASE_SERVICE_ROLE_KEY : SUPABASE_ANON_KEY;
+function supabaseHeaders(useServiceRole = false, env = {}) {
+  const anonKey = env.SUPABASE_ANON_KEY || SUPABASE_ANON_KEY;
+  const serviceRoleKey = env.SUPABASE_SERVICE_ROLE_KEY || SUPABASE_SERVICE_ROLE_KEY;
+  const key = useServiceRole ? serviceRoleKey : anonKey;
+  if (!key) throw new Error(useServiceRole ? 'Supabase service-role key is not configured on the Worker' : 'Supabase public key is not configured on the Worker');
   return {
     'apikey': key,
     'Authorization': `Bearer ${key}`,
@@ -572,9 +575,10 @@ function supabaseHeaders(useServiceRole = false) {
   };
 }
 
-async function supabaseRequest(method, path, body = null, useServiceRole = false) {
-  const url = `${SUPABASE_URL}/rest/v1/${path}`;
-  const headers = supabaseHeaders(useServiceRole);
+async function supabaseRequest(method, path, body = null, useServiceRole = false, env = {}) {
+  const baseUrl = env.SUPABASE_URL || SUPABASE_URL;
+  const url = `${baseUrl}/rest/v1/${path}`;
+  const headers = supabaseHeaders(useServiceRole, env);
   const res = await fetch(url, { method, headers, body: body ? JSON.stringify(body) : undefined });
   if (!res.ok) {
     const txt = await res.text();
@@ -585,8 +589,8 @@ async function supabaseRequest(method, path, body = null, useServiceRole = false
 }
 
 // Admin read with service role to get verification_prompt
-async function supabaseAdminRequest(method, path, body = null) {
-  return supabaseRequest(method, path, body, true);
+async function supabaseAdminRequest(method, path, body = null, env = {}) {
+  return supabaseRequest(method, path, body, true, env);
 }
 
 // ─── AI Verification (Cloudflare Workers AI or Gemini) ────────────────────────
@@ -637,12 +641,12 @@ async function handleCompleteTask(uid, body, env) {
   if (!activityId || !taskId) throw new Error('activityId and taskId required');
   
   // Fetch task details from Supabase with service role to get verification_prompt
-  const task = await supabaseAdminRequest('GET', `tasks?id=eq.${taskId}&select=${TASK_SELECT_ADMIN}`);
+  const task = await supabaseAdminRequest('GET', `tasks?id=eq.${taskId}&select=${TASK_SELECT_ADMIN}`, null, env);
   if (!task?.length) throw new Error('Task not found');
   const taskData = task[0];
   
   // Fetch activity for XP reward
-  const activity = await supabaseRequest('GET', `activities?id=eq.${activityId}&select=${ACTIVITY_SELECT}`);
+  const activity = await supabaseRequest('GET', `activities?id=eq.${activityId}&select=${ACTIVITY_SELECT}`, null, false, env);
   if (!activity?.length) throw new Error('Activity not found');
   const activityData = activity[0];
   
@@ -720,7 +724,7 @@ async function handleCompleteTask(uid, body, env) {
     xp_awarded: xpReward,
     week_key: weekKeyStr,
     completed_at: new Date().toISOString()
-  });
+  }, env);
   
   return { ok: true, xp: newXp, level: newLevel, leveledUp: newLevel > levelFromXp(prevXp), awarded: xpReward, alreadyAwarded: false, badgesEarned: earned.map(id => SYSTEM_BADGES.find(b => b.id === id) || { id }) };
 }
@@ -754,7 +758,7 @@ async function handleSkipTask(uid, body, env) {
     xp_awarded: 0,
     week_key: weekKeyStr,
     completed_at: new Date().toISOString()
-  });
+  }, env);
   
   return { ok: true, skipped: true };
 }
@@ -767,20 +771,22 @@ async function handleAdminActivity(uid, body, env, request, tokenPayload) {
     throw new Error('Admin access required');
   }
   
-  const { action, activityId, data } = body; // action: create, update, delete
+  const { action, activityId, data } = body; // action: list, create, update, delete
   
   switch (action) {
+    case 'list':
+      return supabaseAdminRequest('GET', `activities?select=${ACTIVITY_SELECT}&order=display_order.asc`, null, env);
     case 'create':
       data.created_at = new Date().toISOString();
       data.updated_at = new Date().toISOString();
-      return supabaseAdminRequest('POST', 'activities', data);
+      return supabaseAdminRequest('POST', 'activities', data, env);
     case 'update':
       data.updated_at = new Date().toISOString();
-      return supabaseAdminRequest('PATCH', `activities?id=eq.${activityId}`, data);
+      return supabaseAdminRequest('PATCH', `activities?id=eq.${activityId}`, data, env);
     case 'delete':
       // Delete tasks first
-      await supabaseAdminRequest('DELETE', `tasks?activity_id=eq.${activityId}`);
-      return supabaseAdminRequest('DELETE', `activities?id=eq.${activityId}`);
+      await supabaseAdminRequest('DELETE', `tasks?activity_id=eq.${activityId}`, null, env);
+      return supabaseAdminRequest('DELETE', `activities?id=eq.${activityId}`, null, env);
     default:
       throw new Error('Invalid action');
   }
@@ -794,18 +800,23 @@ async function handleAdminTask(uid, body, env, request, tokenPayload) {
     throw new Error('Admin access required');
   }
   
-  const { action, taskId, data } = body;
+  const { action, taskId, activityId, data } = body;
   
   switch (action) {
+    case 'list': {
+      let path = `tasks?select=${TASK_SELECT_ADMIN}&order=activity_id.asc,task_number.asc`;
+      if (activityId) path += `&activity_id=eq.${encodeURIComponent(activityId)}`;
+      return supabaseAdminRequest('GET', path, null, env);
+    }
     case 'create':
       data.created_at = new Date().toISOString();
       data.updated_at = new Date().toISOString();
-      return supabaseAdminRequest('POST', 'tasks', data);
+      return supabaseAdminRequest('POST', 'tasks', data, env);
     case 'update':
       data.updated_at = new Date().toISOString();
-      return supabaseAdminRequest('PATCH', `tasks?id=eq.${taskId}`, data);
+      return supabaseAdminRequest('PATCH', `tasks?id=eq.${taskId}`, data, env);
     case 'delete':
-      return supabaseAdminRequest('DELETE', `tasks?id=eq.${taskId}`);
+      return supabaseAdminRequest('DELETE', `tasks?id=eq.${taskId}`, null, env);
     default:
       throw new Error('Invalid action');
   }
