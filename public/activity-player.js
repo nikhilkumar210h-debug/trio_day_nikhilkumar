@@ -262,12 +262,14 @@ function renderCurrentTask() {
   
   // Task content - use title_en/title_hi based on language
   const taskTitleText = currentLanguage === 'HI' ? (task.title_hi || task.title_en) : task.title_en;
+  const taskDescription = task.description_en || '';
   const taskInstructions = currentLanguage === 'HI' ? (task.instructions_hi || task.instructions_en) : task.instructions_en;
-  
+  const taskBrief = [taskDescription, taskInstructions].filter(Boolean).join('\n\n');
+
   taskTypeBadge.textContent = `🧩 ${task.task_type || 'Task'}`;
   taskXpBadge.textContent = `⚡ +${task.xp_reward || 10} XP`;
   taskTitle.textContent = taskTitleText;
-  taskDetail.textContent = taskInstructions || '';
+  taskDetail.textContent = taskBrief;
   
   // Timer
   setupTimer(task.min_time_seconds || 0);
