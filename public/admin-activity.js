@@ -430,7 +430,7 @@ function renderTasksList() {
       <div class="task-info">
         <div class="task-title">${task.task_type || 'Task'}: ${esc(task.title_en)}</div>
         <div class="task-meta">
-          Activity: ${esc(activitiesCache.find(act => String(act.id) === String(task.activity_id))?.title_en || activitiesCache.find(act => String(act.id) === String(task.activity_id))?.title || 'Activity')} | ${task.min_time_seconds ? `⏱️ ${task.min_time_seconds}s` : 'No timer'} | ⚡ ${task.xp_reward ?? 10} XP | ${task.verification_prompt ? '🤖 AI Verify' : '📝 Reflection check'} | ${task.is_published ? '✅ Published' : '⏸️ Draft'}
+          Activity: ${esc(activitiesCache.find(act => String(act.id) === String(task.activity_id))?.title_en || activitiesCache.find(act => String(act.id) === String(task.activity_id))?.title || 'Activity')} | ${task.min_time_seconds ? `⏱️ ${task.min_time_seconds}s` : 'No timer'} | ⚡ ${task.xp_reward ?? 10} XP | ${task.verification_prompt ? '🧭 Guidance set' : '⚠️ Guidance missing'} | ${task.is_published ? '✅ Published' : '⏸️ Draft'}
         </div>
       </div>
       <div class="task-actions">
