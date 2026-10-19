@@ -796,7 +796,7 @@ async function handleAdminActivity(uid, body, env, request, tokenPayload) {
 async function handleAdminTask(uid, body, env, request, tokenPayload) {
   const userEmail = tokenPayload.email?.toLowerCase();
   
-  if (!userEmail || !ADMIN_EMAILS.includes(userEmail)) {
+  if (!userEmail || !((env.ADMIN_EMAILS || ADMIN_EMAILS.join(',')).split(',').map(e => e.trim().toLowerCase()).includes(userEmail))) {
     throw new Error('Admin access required');
   }
   
@@ -826,7 +826,7 @@ async function handleAdminTask(uid, body, env, request, tokenPayload) {
 async async function handleCloudinarySign(uid, body, env, request, tokenPayload) {
   const userEmail = tokenPayload.email?.toLowerCase();
   
-  if (!userEmail || !ADMIN_EMAILS.includes(userEmail)) {
+  if (!userEmail || !((env.ADMIN_EMAILS || ADMIN_EMAILS.join(',')).split(',').map(e => e.trim().toLowerCase()).includes(userEmail))) {
     throw new Error('Admin access required');
   }
   
