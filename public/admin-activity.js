@@ -505,7 +505,14 @@ async function saveTask(e) {
     updated_at: new Date().toISOString()
   };
   
+  if (data.is_published && !data.verification_prompt.trim()) {
+    alert('Add a verification prompt before publishing this task. You can save it as a draft without one.');
+    $('taskVerificationPrompt').focus();
+    return;
+  }
+
   const submitBtn = taskForm.querySelector('button[type="submit"]');
+  const submitLabel = editingTaskId ? '💾 Update Task' : '💾 Save Task';
   submitBtn.disabled = true;
   submitBtn.textContent = 'Saving...';
   
@@ -535,7 +542,7 @@ async function saveTask(e) {
     alert('Failed to save: ' + err.message);
   } finally {
     submitBtn.disabled = false;
-    submitBtn.textContent = '💾 Save Task';
+    submitBtn.textContent = submitLabel;
   }
 }
 
