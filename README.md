@@ -72,7 +72,7 @@ Before significant code work, read [PLAN.md](PLAN.md), identify the stage being 
 - Fetches activity + tasks from Supabase.
 - Progress bar at top.
 - Each task: type badge, XP reward, title, description, timer (if `min_time_seconds > 0`), proof input.
-- **Complete**: Sends proof to Worker → AI verification → awards XP, updates weekly XP + leaderboards.
+- **Complete**: Sends proof to the gamification Worker → server-side response check → awards XP only after a valid result; updates weekly XP + leaderboards.
 - **Skip**: 0 XP, moves to next task, logged server-side.
 - **Completion Screen**: Total XP earned, final weekly XP, links to Dashboard & Leaderboard.
 
@@ -242,7 +242,7 @@ The root `wrangler.jsonc` declares **no Worker script** — the production site 
 ## Security
 
 - Gamification fields are server-controlled (Worker-only writes).
-- Activity XP awards are verified server-side with AI verification and idempotent.
+- Activity XP awards are checked server-side and XP awards are idempotent. The current checker is heuristic-based, not a connected LLM; do not label it as model-based AI until a model binding/provider is configured.
 - Firestore rules restrict private-chat access.
 - Admin endpoints require strict email verification against `ADMIN_EMAILS`.
 - AI verification rejects spam/gibberish/off-topic submissions.
