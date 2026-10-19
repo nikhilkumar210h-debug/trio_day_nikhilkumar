@@ -15,12 +15,8 @@ import { escapeHtml as esc } from './utils.js';
 import { setAdminFlag } from './ui/nav.js';
 
 const SUPABASE_URL = 'https://vccypxwiqcuexxrhtgyq.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_zJvP50wf3CW2PNfkOD9yCQ_ffFhsZEp';
 const WORKER_BASE = 'https://trio-day.trioday-nikhil.workers.dev';
 const ADMIN_EMAILS = ['nikhilkumar210h@gmail.com', 'nikhilkumar45374@gmail.com'];
-// Keep frontend selects aligned with the deployed Activity/Task schema used by the player and Worker.
-const ACTIVITY_SELECT = 'id,display_order,category,title_en,title_hi,description_en,description_hi,difficulty,total_xp,cover_image_url,is_guest_allowed,is_published,created_at';
-const TASK_SELECT_ADMIN = 'id,activity_id,task_number,task_type,title_en,title_hi,description_en,description_hi,instructions_en,instructions_hi,verification_prompt,min_time_seconds,xp_reward,is_published,created_at,updated_at';
 
 let currentUser = null;
 let isAdmin = false;
@@ -400,8 +396,6 @@ async function deleteActivity(activityId) {
 // ─── TASKS CRUD ─────────────────────────────────────────────────────────────
 async function loadTasks() {
   const activityFilter = filterActivity.value;
-  let url = `${SUPABASE_URL}/rest/v1/tasks?select=${TASK_SELECT_ADMIN}&order=activity_id.asc,task_number.asc`;
-  if (activityFilter) url += `&activity_id=eq.${activityFilter}`;
   
   tasksList.innerHTML = '<div class="skeleton-stack" style="width:100%;"><div class="skeleton-card" style="height:100px; aspect-ratio:auto; border-radius:12px; margin-bottom:12px; background:linear-gradient(90deg,rgba(255,255,255,.04) 0%,rgba(255,255,255,.08) 50%,rgba(255,255,255,.04) 100%); background-size:200% 100%; animation:shimmer 1.5s infinite linear;"></div></div>'.repeat(3);
   
