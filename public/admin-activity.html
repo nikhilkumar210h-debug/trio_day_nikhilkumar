@@ -163,6 +163,7 @@
             <select id="filterActivity" class="btn secondary" style="padding:8px 12px; background:var(--glass-bg); border:1px solid var(--border); color:var(--ink); border-radius:8px;">
               <option value="">All Activities</option>
             </select>
+            <button type="button" id="refreshTasksBtn" class="btn secondary">↻ Refresh tasks</button>
             <button type="button" id="createTaskBtn" class="btn primary">＋ Create task</button>
           </div>
         </div>
@@ -258,8 +259,8 @@
             <input type="number" id="taskXp" name="xp_reward" value="10" min="0">
           </div>
           <div class="field field-full">
-            <label class="label-text">AI Verification Prompt</label>
-            <textarea id="taskVerificationPrompt" name="verification_prompt" rows="3" placeholder="Prompt for AI to verify user's proof. e.g., 'Check if the user genuinely solved the logic puzzle described in the task. Reject generic responses like asdfg.'"></textarea>
+            <label class="label-text">Task verification guidance *</label>
+            <textarea id="taskVerificationPrompt" name="verification_prompt" rows="3" placeholder="Describe what a relevant, genuine completion should contain. Keep the check specific and safe."></textarea>
           </div>
           <div class="field field-full">
             <label class="label-text">Active</label>
