@@ -69,6 +69,46 @@
 .notification-btn { display: grid; place-items: center; line-height: 1; }
 .nkm-header-chat svg { display: block; }
 
+/* Keep Today and Admin controls aligned without changing the header box. */
+.today-page .topbar-actions,
+.activity-player-page .topbar-actions {
+  align-items: center;
+  flex-wrap: nowrap;
+}
+.today-page #authStatus,
+.activity-player-page #authStatus {
+  align-items: center;
+  gap: 8px;
+}
+.today-page #authStatus .streak-badge,
+.activity-player-page #authStatus .streak-badge,
+.today-page #authStatus .xp-badge-nav,
+.activity-player-page #authStatus .xp-badge-nav {
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
+}
+.today-page #authStatus .xp-badge-nav,
+.activity-player-page #authStatus .xp-badge-nav {
+  transform: translateY(-2px);
+}
+.today-page #authStatus .auth-avatar-link,
+.activity-player-page #authStatus .auth-avatar-link,
+.today-page #notificationButton,
+.activity-player-page #notificationButton,
+.today-page #headerHelpBtn,
+.activity-player-page #headerHelpBtn {
+  align-self: center;
+}
+.today-page #authStatus .auth-avatar-link,
+.activity-player-page #authStatus .auth-avatar-link {
+  order: 1;
+}
+.today-page #notificationButton svg,
+.activity-player-page #notificationButton svg {
+  display: block;
+}
+
 /* ── Mobile header compact — 52px hierarchy: NKM branding → flexible middle → Chat → notification → compact user ── */
 @media (max-width: 839px) {
   header.topbar { height: 52px !important; min-height: 52px !important; }
