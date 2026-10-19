@@ -84,7 +84,7 @@
   #panelTasks > div:first-child { display:flex !important; flex-direction:column; align-items:stretch; }
   #panelTasks > div:first-child > div { display:grid !important; grid-template-columns:minmax(0,1fr); width:100%; }
   #filterActivity { width:100%; min-width:0; }
-  #createTaskBtn, #refreshActivities { width:100%; justify-content:center; }
+  #createTaskBtn, #refreshActivities, #refreshTasksBtn { width:100%; justify-content:center; }
   .task-list-item { display:grid; grid-template-columns:32px minmax(0,1fr); gap:10px; padding:14px; }
   .task-info { grid-column:2; width:100%; }
   .task-actions { grid-column:1/-1; width:100%; margin:0; }
