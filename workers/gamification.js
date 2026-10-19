@@ -598,7 +598,7 @@ async function verifyWithAI(proof, verificationPrompt, taskTitle, taskDescriptio
   // Try Cloudflare Workers AI first (if available)
   // Fallback: simple heuristic check for demo
   if (!verificationPrompt || !verificationPrompt.trim()) {
-    return { valid: true, reason: 'No verification prompt configured' };
+    return { valid: false, reason: 'This task is missing its verification instructions. Please choose another task or contact an admin.' };
   }
   
   // Check for obvious spam
@@ -636,14 +636,21 @@ async function verifyWithAI(proof, verificationPrompt, taskTitle, taskDescriptio
 
 // ─── Activity Completion Handler ──────────────────────────────────────────────
 async function handleCompleteTask(uid, body, env) {
-  const { activityId, taskId, taskNumber, proof, timeSpent } = body;
-  
+  const { activityId, taskId, proof, timeSpent } = body;
   if (!activityId || !taskId) throw new Error('activityId and taskId required');
+  const proofText = String(proof || '').trim();
+  if (!proofText) throw new Error('Please provide a proof or reflection before completing this task');
+  if (proofText.length > 2000) throw new Error('Proof must be 2000 characters or fewer');
   
-  // Fetch task details from Supabase with service role to get verification_prompt
-  const task = await supabaseAdminRequest('GET', `tasks?id=eq.${taskId}&select=${TASK_SELECT_ADMIN}`, null, env);
-  if (!task?.length) throw new Error('Task not found');
+  // Fetch only the published task that belongs to the submitted activity. The server derives task number for XP idempotency.
+  const task = await supabaseAdminRequest('GET', `tasks?id=eq.${encodeURIComponent(taskId)}&activity_id=eq.${encodeURIComponent(activityId)}&is_published=eq.true&select=${TASK_SELECT_ADMIN}`, null, env);
+  if (!task?.length) throw new Error('Published task not found for this activity');
   const taskData = task[0];
+  const actualTaskNumber = Number(taskData.task_number);
+  if (!Number.isInteger(actualTaskNumber) || actualTaskNumber < 1) throw new Error('Task ordering is not configured correctly');
+  const requiredSeconds = Math.max(0, Number(taskData.min_time_seconds) || 0);
+  const elapsedSeconds = Math.max(0, Number(timeSpent) || 0);
+  if (elapsedSeconds < requiredSeconds) throw new Error(`Please spend at least ${requiredSeconds} seconds on this task before completing it`);
   
   // Fetch activity for XP reward
   const activity = await supabaseRequest('GET', `activities?id=eq.${activityId}&select=${ACTIVITY_SELECT}`, null, false, env);
@@ -652,7 +659,7 @@ async function handleCompleteTask(uid, body, env) {
   
   // AI Verification - use verification_prompt from task data
   const verification = await verifyWithAI(
-    proof || '',
+    proofText,
     taskData.verification_prompt,
     taskData.title_en,  // Use English title for keyword extraction
     taskData.instructions_en  // Use English instructions for keyword extraction
@@ -670,7 +677,7 @@ async function handleCompleteTask(uid, body, env) {
   const token = await getAccessToken(env);
   
   // Check if already awarded for this task (use taskNumber for uniqueness)
-  const grantKey = `activity_${activityId}_task_${taskNumber}`;
+  const grantKey = `activity_${activityId}_task_${actualTaskNumber}`;
   const created = await fsCreateDoc(projectId, token, 'users/'+uid+'/xpAwards/'+grantKey, {
     uid, grantKey, amount: xpReward, createdAtMs: Date.now()
   });
@@ -718,7 +725,7 @@ async function handleCompleteTask(uid, body, env) {
     activity_id: activityId,
     task_id: taskId,
     status: 'completed',
-    user_submission: proof,
+    user_submission: proofText,
     ai_verified: true,
     ai_feedback: verification.reason,
     xp_awarded: xpReward,
