@@ -594,7 +594,7 @@ async function supabaseAdminRequest(method, path, body = null, env = {}) {
 }
 
 // ─── AI Verification (Cloudflare Workers AI or Gemini) ────────────────────────
-async function verifyWithAI(proof, verificationPrompt, taskTitle, taskDescription) {
+async function checkTaskResponse(proof, verificationPrompt, taskTitle, taskDescription) {
   // Try Cloudflare Workers AI first (if available)
   // Fallback: simple heuristic check for demo
   if (!verificationPrompt || !verificationPrompt.trim()) {
@@ -658,7 +658,7 @@ async function handleCompleteTask(uid, body, env) {
   const activityData = activity[0];
   
   // AI Verification - use verification_prompt from task data
-  const verification = await verifyWithAI(
+  const verification = await checkTaskResponse(
     proofText,
     taskData.verification_prompt,
     taskData.title_en,  // Use English title for keyword extraction
