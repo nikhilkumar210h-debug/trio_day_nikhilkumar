@@ -19,18 +19,19 @@ import { doc, getDoc, updateDoc, setDoc, serverTimestamp, increment, collection,
 import { SoundManager } from './sound-manager.js';
 import { escapeHtml as esc, cloudinaryAutoUrl } from './utils.js';
 import { setAdminFlag } from './ui/nav.js';
+import { getGamificationWorkerUrl } from './gamification/worker-config.js';
 
 // ─── CONSTANTS ──────────────────────────────────────────────────────────────
 const SUPABASE_URL = 'https://vccypxwiqcuexxrhtgyq.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_zJvP50wf3CW2PNfkOD9yCQ_ffFhsZEp';
-const WORKER_BASE = 'https://trio-day.trioday-nikhil.workers.dev'; // Update for local dev
+const WORKER_BASE = getGamificationWorkerUrl();
 const ADMIN_EMAILS = ['nikhilkumar210h@gmail.com', 'nikhilkumar45374@gmail.com'];
 
 const GUEST_TASK_LIMIT = 3;
 
 // Supabase column mapping for real schema
 const ACTIVITY_SELECT = 'id,display_order,category,title_en,title_hi,description_en,description_hi,difficulty,total_xp,cover_image_url,is_guest_allowed,is_published,created_at';
-const TASK_SELECT = 'id,activity_id,task_number,task_type,title_en,title_hi,instructions_en,instructions_hi,verification_prompt,min_time_seconds,xp_reward';
+const TASK_SELECT = 'id,activity_id,task_number,task_type,title_en,title_hi,instructions_en,instructions_hi,min_time_seconds,xp_reward';
 
 // ─── STATE ──────────────────────────────────────────────────────────────────
 let currentUser = null;
