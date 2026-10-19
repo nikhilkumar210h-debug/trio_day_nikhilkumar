@@ -64,8 +64,8 @@ const CLOUDINARY_API_SECRET = globalThis.CLOUDINARY_API_SECRET || '';
 
 // Supabase column selects (real schema)
 const ACTIVITY_SELECT = 'id,display_order,category,title_en,title_hi,description_en,description_hi,difficulty,total_xp,cover_image_url,is_guest_allowed,is_published,created_at';
-const TASK_SELECT_PUBLIC = 'id,activity_id,task_number,task_type,title_en,title_hi,instructions_en,instructions_hi,min_time_seconds,xp_reward';
-const TASK_SELECT_ADMIN = 'id,activity_id,task_number,task_type,title_en,title_hi,instructions_en,instructions_hi,verification_prompt,min_time_seconds,xp_reward,is_published,created_at,updated_at';
+const TASK_SELECT_PUBLIC = 'id,activity_id,task_number,task_type,title_en,title_hi,description_en,instructions_en,instructions_hi,min_time_seconds,xp_reward';
+const TASK_SELECT_ADMIN = 'id,activity_id,task_number,task_type,title_en,title_hi,description_en,instructions_en,instructions_hi,verification_prompt,min_time_seconds,xp_reward,is_published,created_at,updated_at';
 
 // ─── Per-UID rate limiting (10 requests/minute) ───────────────────────────────
 const RATE_LIMIT_WINDOW_MS = 60 * 1000;
@@ -658,7 +658,7 @@ async function handleCompleteTask(uid, body, env) {
     proof || '',
     taskData.verification_prompt,
     taskData.title_en,  // Use English title for keyword extraction
-    taskData.instructions_en  // Use English instructions for keyword extraction
+    [taskData.description_en, taskData.instructions_en].filter(Boolean).join('\n')  // Include the task brief and instructions
   );
   
   if (!verification.valid) {
