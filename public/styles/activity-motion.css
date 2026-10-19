@@ -34,3 +34,66 @@
 }
 
 .goal-career .goal-icon { color: var(--color-accent, #10b981); }
+
+
+/* Admin Activity Studio: responsive, aligned controls and accessible touch targets. */
+.admin-intro {
+  display:flex; align-items:center; justify-content:space-between; gap:20px;
+  margin:0 0 22px; padding:clamp(18px,3vw,28px);
+  border:1px solid var(--color-border,rgba(139,92,246,.22)); border-radius:22px;
+  background:radial-gradient(circle at 90% 0%,rgba(139,92,246,.18),transparent 40%),var(--color-surface,var(--surface));
+}
+.admin-intro h1 { margin:2px 0 6px; font:700 clamp(25px,4vw,34px)/1.1 "Space Grotesk",sans-serif; letter-spacing:-.035em; }
+.admin-intro p:not(.admin-kicker) { margin:0; max-width:640px; color:var(--color-ink-muted,var(--ink-dim)); line-height:1.6; }
+.admin-kicker { margin:0; color:var(--color-primary-text,var(--purple)); font-size:11px; font-weight:800; letter-spacing:.14em; }
+.admin-intro-mark { display:grid; place-items:center; flex:0 0 54px; width:54px; height:54px; border:1px solid var(--color-border,rgba(139,92,246,.25)); border-radius:17px; color:var(--color-primary-text,var(--purple)); background:var(--color-primary-soft,rgba(139,92,246,.12)); font-size:28px; }
+.admin-tabs { flex-wrap:wrap; gap:8px; }
+.admin-tab { min-height:44px; padding:10px 16px; font-size:14px; }
+.admin-panel { min-width:0; }
+.admin-panel h2 { letter-spacing:-.02em; }
+.admin-panel .form-grid { align-items:start; }
+.admin-panel .field { min-width:0; }
+.admin-panel input:not([type=checkbox]), .admin-panel select, .admin-panel textarea { width:100%; min-height:44px; box-sizing:border-box; }
+.admin-panel textarea { min-height:92px; resize:vertical; }
+.admin-panel .field-full[style*="justify-content:flex-end"] { flex-wrap:wrap; }
+#panelTasks > div:first-child { align-items:center; }
+#panelTasks > div:first-child > div { flex-wrap:wrap; align-items:center; }
+#filterActivity { min-width:min(240px,100%); min-height:44px; }
+#panelTasks .task-list-item { align-items:flex-start; }
+.task-order { flex:0 0 auto; font-size:20px; min-width:36px; }
+.task-info { min-width:0; overflow-wrap:anywhere; }
+.task-title { line-height:1.4; }
+.task-meta { line-height:1.6; overflow-wrap:anywhere; }
+.task-actions { flex-wrap:wrap; margin-left:auto; }
+.btn-sm { min-height:40px; }
+.admin-empty-state { padding:clamp(22px,4vw,34px); }
+.admin-error-text { color:var(--color-danger,#ef4444); overflow-wrap:anywhere; }
+#taskModal[hidden] { display:none !important; }
+#taskModal .modal { max-height:min(90dvh,900px); overscroll-behavior:contain; }
+#taskModal .modal-head { position:sticky; top:0; z-index:2; background:var(--color-surface,var(--surface)); }
+#taskModal .modal-body { padding:clamp(16px,3vw,24px); }
+#taskModal .field-hint { max-width:70ch; }
+#taskModal .field-full[style*="justify-content:flex-end"] { position:sticky; bottom:0; padding:12px 0 0; background:var(--color-surface,var(--surface)); }
+#actCoverUpload:focus-visible { outline:3px solid var(--color-accent,#10b981); outline-offset:3px; }
+@media (max-width:640px) {
+  .admin-intro { padding:18px; border-radius:18px; }
+  .admin-intro-mark { flex-basis:42px; width:42px; height:42px; border-radius:14px; }
+  .admin-tabs { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; }
+  .admin-tab { min-width:0; padding:10px 6px; border-radius:12px; font-size:12px; line-height:1.25; }
+  .admin-panel > div:first-child { align-items:stretch !important; }
+  #panelTasks > div:first-child { display:flex !important; flex-direction:column; align-items:stretch; }
+  #panelTasks > div:first-child > div { display:grid !important; grid-template-columns:minmax(0,1fr); width:100%; }
+  #filterActivity { width:100%; min-width:0; }
+  #createTaskBtn, #refreshActivities { width:100%; justify-content:center; }
+  .task-list-item { display:grid; grid-template-columns:32px minmax(0,1fr); gap:10px; padding:14px; }
+  .task-info { grid-column:2; width:100%; }
+  .task-actions { grid-column:1/-1; width:100%; margin:0; }
+  .task-actions .btn { flex:1 1 110px; justify-content:center; }
+  #taskModal.modal-overlay { padding:10px; align-items:flex-end; }
+  #taskModal .modal { max-height:92dvh; border-radius:20px 20px 12px 12px; }
+  #taskModal .modal-head { padding:18px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .admin-panel.active { animation:none; }
+  .task-list-item:hover { transform:none; }
+}
