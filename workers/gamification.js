@@ -823,7 +823,7 @@ async async function handleCloudinarySign(uid, body, env, request, tokenPayload)
   const apiKey = env.CLOUDINARY_API_KEY || CLOUDINARY_API_KEY;
   const apiSecret = env.CLOUDINARY_API_SECRET || CLOUDINARY_API_SECRET;
   const folder = 'trio/activities';
-  const originalName = String(body?.filename || 'activity-cover').split(/[\\\\/]/).pop().replace(/\\.[^.]+$/, '');
+  const originalName = String(body?.filename || 'activity-cover').split('/').pop().split(String.fromCharCode(92)).pop().replace(/\.[^.]+$/, '');
   const safeName = originalName.replace(/[^a-zA-Z0-9_-]/g, '-').slice(0, 70) || 'activity-cover';
   if (!cloudName || !apiKey || !apiSecret) throw new Error('Cloudinary is not configured on the gamification Worker');
   const timestamp = Math.floor(Date.now() / 1000);
@@ -840,7 +840,6 @@ async function generateCloudinarySignature(params, apiSecret) {
   const encoder = new TextEncoder();
   const digest = await crypto.subtle.digest('SHA-1', encoder.encode(params + apiSecret));
   return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('');
-}
 }
 
 // ─── Legacy Challenge Handlers (unchanged) ────────────────────────────────────
