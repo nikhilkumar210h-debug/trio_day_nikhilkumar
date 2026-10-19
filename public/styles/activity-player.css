@@ -45,12 +45,6 @@
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-bottom: 1px solid rgba(139, 92, 246, 0.22);
-  height: 76px;
-}
-
-.activity-player-page .topbar-inner {
-  padding: 0 var(--gutter-desktop);
-  max-width: var(--content-max-wide);
 }
 
 /* 4. Layout Wrapper */
@@ -67,7 +61,6 @@
     margin-top: 65px; 
     padding: var(--space-3) var(--gutter-mobile) var(--space-8) var(--gutter-mobile); 
   }
-  .activity-player-page .topbar-inner { padding: 0 var(--gutter-mobile); }
 }
 
 /* 5. Category Banner */

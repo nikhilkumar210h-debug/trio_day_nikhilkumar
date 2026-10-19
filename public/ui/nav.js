@@ -24,7 +24,7 @@ const ADMIN_ITEM = { key: 'admin', label: 'Admin', href: 'admin-activity.html', 
 
 const AUTH_PAGES = new Set(['login.html', '404.html', 'offline.html']);
 
-let isAdmin = false;
+let isAdmin = document.body?.dataset.isAdmin === 'true';
 
 function pathKey() {
   const raw = (location.pathname || '/').replace(/\/+$/, '') || '/';
@@ -90,9 +90,15 @@ function forceNavVisibility(el) {
 }
 
 export function setAdminFlag(flag) {
-  isAdmin = !!flag;
-  renderNav();
+  const adminStatus = Boolean(flag);
+  if (document.body) document.body.dataset.isAdmin = String(adminStatus);
+  window.dispatchEvent(new CustomEvent('trio-admin-status-change', { detail: { isAdmin: adminStatus } }));
 }
+
+window.addEventListener('trio-admin-status-change', event => {
+  isAdmin = event.detail?.isAdmin === true;
+  renderNav();
+});
 
 export function renderNav() {
   const p = (location.pathname.split('/').pop() || '').toLowerCase();
@@ -120,12 +126,17 @@ export function renderNav() {
     document.body.appendChild(nav);
   }
 
-  if (!document.querySelector('.nkm-rail')) {
-    const rail = document.createElement('nav');
+  let rail = document.querySelector('.nkm-rail');
+  if (!rail) {
+    rail = document.createElement('nav');
     rail.className = 'nkm-rail';
     rail.setAttribute('aria-label', 'Primary navigation');
-    rail.innerHTML = items.map(i => linkMarkup(i, active, 'data-rail')).join('');
     document.body.appendChild(rail);
+  }
+  if (rail) {
+    const existing = rail.querySelectorAll('[data-rail]');
+    const hasCorrectStructure = existing.length === items.length && [...existing].every((el, idx) => el.dataset.rail === items[idx].key);
+    if (!hasCorrectStructure) rail.innerHTML = items.map(i => linkMarkup(i, active, 'data-rail')).join('');
   }
 
   const bottomRoot = document.querySelector('.bottom-nav');

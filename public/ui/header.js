@@ -80,8 +80,8 @@ export function initHeader() {
     if (helpBtn) actions.insertBefore(themeBtn, helpBtn); else if (authStatus) actions.insertBefore(themeBtn, authStatus); else actions.appendChild(themeBtn);
   }
 
-  // 3. Canonical notifications control (bell icon)
-  if (!document.querySelector('#notificationButton')) {
+  // Notifications are a Today-only header action.
+  if (document.body.classList.contains('today-page') && !document.querySelector('#notificationButton')) {
     const wrap = document.createElement('div');
     wrap.className = 'notification-wrap';
     wrap.innerHTML = '<button id="notificationButton" class="notification-btn" type="button" aria-label="Notifications" title="Notifications">' +

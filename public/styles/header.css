@@ -19,6 +19,10 @@
   .topbar { height: 60px; min-height: 60px; top: 3px; }
   .topbar-inner { height: 60px; min-height: 60px; padding: 6px 16px; gap: var(--space-4); max-width: 1280px; }
 }
+@media (min-width: 840px) {
+  .today-page .topbar-inner,
+  .activity-player-page .topbar-inner { min-height: 64px !important; padding: 0 16px !important; max-width: 1200px !important; }
+}
 /* Ensure content never hidden behind sticky header: app-main already flows after header (sticky), no extra padding needed.
    Bottom nav covers content on mobile: body padding-bottom via style.css 96px already; keep. */
 @media (max-width: 839px) {
