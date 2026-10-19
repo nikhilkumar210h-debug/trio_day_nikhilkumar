@@ -3,7 +3,7 @@
  * 
  * Handles:
  * - Guest View: 3 free starter activities (Supabase: is_guest_allowed=true)
- * - Logged-in Onboarding: 5 Goal Cards → Category selection
+ * - Logged-in Onboarding: 6 Goal Cards → Category selection
  * - Dashboard: Category activities with clickable cards
  * - Activity Player: Step-by-step tasks with timer, proof input, AI verification
  * - Language Toggle (EN/HI) with localStorage persistence
