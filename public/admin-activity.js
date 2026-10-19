@@ -128,7 +128,8 @@ function showLoadError(container, message, retry) {
 
 function setupTabs() {
   document.querySelectorAll('.admin-tab').forEach(tab => {
-    const panelId = `panel${tab.dataset.tab.charAt(0).toUpperCase() + tab.dataset.tab.slice(1)}`;
+    const panelName = tab.dataset.tab.split('-').map(part => part.charAt(0).toUpperCase() + part.slice(1)).join('');
+    const panelId = `panel${panelName}`;
     tab.setAttribute('aria-controls', panelId);
     tab.setAttribute('aria-selected', String(tab.classList.contains('active')));
     tab.onclick = () => {
