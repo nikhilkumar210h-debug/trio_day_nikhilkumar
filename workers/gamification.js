@@ -593,7 +593,7 @@ async function supabaseAdminRequest(method, path, body = null, env = {}) {
   return supabaseRequest(method, path, body, true, env);
 }
 
-// ─── AI Verification (Cloudflare Workers AI or Gemini) ────────────────────────
+// ─── Task Response Checking ──────────────────────────────────────────────────
 async function checkTaskResponse(proof, verificationPrompt, taskTitle, taskDescription) {
   // Deterministic server-side response check. This is not an LLM/AI model call.
   if (!verificationPrompt || !verificationPrompt.trim()) {
