@@ -95,7 +95,7 @@ function toggleLanguage() {
 }
 
 // ─── INIT ADMIN ─────────────────────────────────────────────────────────────
-async async function initAdmin() {
+async function initAdmin() {
   await loadActivities();
   setupTabs();
   setupActivityForm();
