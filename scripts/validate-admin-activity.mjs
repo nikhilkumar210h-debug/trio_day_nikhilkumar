@@ -21,6 +21,7 @@ const checks = [
   ['Task order field maps to the actual task_number column', files.adminJs.includes("task_number: parseInt(formData.get('order_index'), 10) || 1")],
   ['New activity selector options refresh after activity changes', files.adminJs.includes("const picker = $('taskActivityPicker')")],
   ['Task filter updates when its select changes', files.adminJs.includes("filterActivity.addEventListener('change', loadTasks)")],
+  ['Hyphenated tabs map to their real panel IDs', files.adminJs.includes("tab.dataset.tab.split('-').map")],
   ['Published tasks require response-verification rules', files.adminJs.includes('Add response-verification rules before publishing')],
   ['Worker rejects tasks missing verification rules', files.worker.includes('This task is missing response-verification rules')],
   ['Minimum task time is checked by the Worker', files.worker.includes('submittedTime < minimumSeconds')],
