@@ -69,13 +69,13 @@
     <div id="adminPanel" hidden>
       <section class="admin-intro" aria-labelledby="adminPageTitle"><div><p class="admin-kicker">TRIO DAY · ADMIN STUDIO</p><h1 id="adminPageTitle">Activity Studio</h1><p>Create useful activities, then build varied tasks with clear instructions and fair XP rewards.</p></div><span class="admin-intro-mark" aria-hidden="true">✦</span></section>
       <div class="admin-tabs" role="tablist" aria-label="Activity management sections">
-        <button type="button" role="tab" aria-selected="true" class="admin-tab active" data-tab="activities">📋 Activities</button>
-        <button type="button" role="tab" aria-selected="false" class="admin-tab" data-tab="create-activity">➕ Create Activity</button>
-        <button type="button" role="tab" aria-selected="false" class="admin-tab" data-tab="tasks">🧩 Tasks</button>
+        <button type="button" role="tab" aria-selected="true" aria-controls="panelActivities" id="tabActivities" class="admin-tab active" data-tab="activities">📋 Activities</button>
+        <button type="button" role="tab" aria-selected="false" aria-controls="panelCreateActivity" id="tabCreateActivity" class="admin-tab" data-tab="create-activity">➕ Create Activity</button>
+        <button type="button" role="tab" aria-selected="false" aria-controls="panelTasks" id="tabTasks" class="admin-tab" data-tab="tasks">🧩 Tasks</button>
       </div>
 
       <!-- Activities List -->
-      <div id="panelActivities" class="admin-panel active" role="tabpanel">
+      <div id="panelActivities" class="admin-panel active" role="tabpanel" aria-labelledby="tabActivities" tabindex="0">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
           <h2 style="margin:0;">All Activities</h2>
           <button type="button" id="refreshActivities" class="btn secondary">↻ Refresh activities</button>
@@ -84,7 +84,7 @@
       </div>
 
       <!-- Create/Edit Activity Form -->
-      <div id="panelCreateActivity" class="admin-panel" role="tabpanel">
+      <div id="panelCreateActivity" class="admin-panel" role="tabpanel" aria-labelledby="tabCreateActivity" tabindex="0">
         <h2 id="createActivityTitle" style="margin:0 0 24px;">Create New Activity</h2>
         <form id="activityForm" class="form-grid">
           <input type="hidden" id="activityId" name="id">
@@ -156,7 +156,7 @@
       </div>
 
       <!-- Tasks List -->
-      <div id="panelTasks" class="admin-panel" role="tabpanel">
+      <div id="panelTasks" class="admin-panel" role="tabpanel" aria-labelledby="tabTasks" tabindex="0">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
           <h2 style="margin:0;">All Tasks</h2>
           <div style="display:flex; gap:8px;">
