@@ -149,9 +149,9 @@ test('admin activity buttons, task CRUD, filters and mobile layout work with moc
   await page.goto('/admin-activity.html', { waitUntil: 'domcontentloaded' });
 
   await expect(page.locator('#adminPanel')).toBeVisible();
-  await expect(page.locator('.task-list-item')).toHaveCount(1);
+  await expect(page.locator('#activitiesList .task-list-item')).toHaveCount(1);
   await page.locator('#refreshActivities').click();
-  await expect(page.locator('.task-list-item')).toHaveCount(1);
+  await expect(page.locator('#activitiesList .task-list-item')).toHaveCount(1);
 
   // Activity creation, including the signed-upload path.
   await page.locator('[data-tab="create-activity"]').click();
@@ -164,7 +164,7 @@ test('admin activity buttons, task CRUD, filters and mobile layout work with moc
   });
   await expect(page.locator('#actCoverUrl')).toHaveValue(/res\.cloudinary\.com/);
   await page.locator('#activityForm button[type="submit"]').click();
-  await expect(page.locator('.task-list-item').filter({ hasText: 'Career starter pack' })).toBeVisible();
+  await expect(page.locator('#activitiesList .task-list-item').filter({ hasText: 'Career starter pack' })).toBeVisible();
 
   const createdActivity = backend.activities.find(item => item.title_en === 'Career starter pack');
   expect(createdActivity).toBeTruthy();
@@ -178,7 +178,7 @@ test('admin activity buttons, task CRUD, filters and mobile layout work with moc
   await page.locator('#taskOrder').fill('2');
   await page.locator('#taskActivityPicker').selectOption(createdActivity.id);
   await page.locator('#taskForm button[type="submit"]').click();
-  await expect(page.locator('.task-list-item')).toHaveCount(1);
+  await expect(page.locator('#tasksList .task-list-item')).toHaveCount(1);
   const createdTask = backend.tasks.find(item => item.activity_id === createdActivity.id);
   expect(createdTask).toBeTruthy();
   expect(createdTask.task_number).toBe(2);
@@ -190,7 +190,7 @@ test('admin activity buttons, task CRUD, filters and mobile layout work with moc
   await expect(page.locator('#taskForm button[type="submit"]')).toHaveText(/Update Task/);
   await page.locator('#taskTitle').fill('Updated learning task');
   await page.locator('#taskForm button[type="submit"]').click();
-  await expect(page.locator('.task-list-item')).toContainText('Updated learning task');
+  await expect(page.locator('#tasksList .task-list-item')).toContainText('Updated learning task');
 
   await page.locator('#createTaskBtn').click();
   await page.locator('#taskModalClose').click();
@@ -201,17 +201,17 @@ test('admin activity buttons, task CRUD, filters and mobile layout work with moc
 
   page.once('dialog', dialog => dialog.accept());
   await page.locator(`.delete-task[data-id="${createdTask.id}"]`).click();
-  await expect(page.locator('.task-list-item')).toHaveCount(0);
+  await expect(page.locator('#tasksList .task-list-item')).toHaveCount(0);
 
   // Activity edit/delete and the category selector/filter must keep working.
   await page.locator('[data-tab="activities"]').click();
   await page.locator(`.edit-activity[data-id="${createdActivity.id}"]`).click();
   await page.locator('#actTitle').fill('Updated career pack');
   await page.locator('#activityForm button[type="submit"]').click();
-  await expect(page.locator('.task-list-item')).toContainText('Updated career pack');
+  await expect(page.locator('#activitiesList .task-list-item')).toContainText('Updated career pack');
   page.once('dialog', dialog => dialog.accept());
   await page.locator(`.delete-activity[data-id="${createdActivity.id}"]`).click();
-  await expect(page.locator('.task-list-item').filter({ hasText: 'Updated career pack' })).toHaveCount(0);
+  await expect(page.locator('#activitiesList .task-list-item').filter({ hasText: 'Updated career pack' })).toHaveCount(0);
 
   expect(backend.calls.some(call => call.path.endsWith('/task') && call.payload.action === 'list' && call.payload.activityId === createdActivity.id)).toBe(true);
   expect(backend.calls.some(call => call.path.endsWith('/cloudinary-sign'))).toBe(true);
