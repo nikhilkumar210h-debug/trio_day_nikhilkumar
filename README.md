@@ -233,9 +233,11 @@ The root `wrangler.jsonc` declares **no Worker script** — the production site 
 - **Tables**: `activities`, `tasks`
 - **Access**: Anon key for reads, service role for admin writes (via Worker)
 - **Row Level Security**: Enabled on both tables
-- **Key fields**:
-  - `activities`: id, title, category, icon, order_index, description, cover_image, difficulty, xp_reward, is_guest_allowed, is_active, created_at, updated_at
-  - `tasks`: id, activity_id, order_index, type, title, description, instructions_en, instructions_hi, min_time_seconds, xp_reward, verification_prompt, is_active, created_at, updated_at
+- **Canonical fields used by the current frontend and gamification Worker**:
+  - `activities`: `id`, `display_order`, `category`, `title_en`, `title_hi`, `description_en`, `description_hi`, `icon`, `difficulty`, `total_xp`, `cover_image_url`, `is_guest_allowed`, `is_published`, `created_at`, `updated_at`.
+  - `tasks`: `id`, `activity_id`, `task_number`, `task_type`, `title_en`, `title_hi`, `description_en`, `description_hi`, `instructions_en`, `instructions_hi`, `min_time_seconds`, `xp_reward`, `verification_prompt`, `is_published`, `created_at`, `updated_at`.
+  - `user_task_progress`: server-written task attempts/completions with `firebase_uid`, `activity_id`, `task_id`, `status`, `user_submission`, `ai_verified`, `ai_feedback`, `xp_awarded`, `week_key`, and `completed_at`.
+  - Public reads expose published activity/task fields only; `verification_prompt` and task-progress records must remain server-only. Admin list/create/update/delete operations go through the authenticated gamification Worker using the Supabase service-role key stored as a Worker secret.
 
 ## Security
 
