@@ -829,7 +829,7 @@ async function handleAdminTask(uid, body, env, request, tokenPayload) {
 }
 
 // ─── Cloudinary Signed Upload ─────────────────────────────────────────────────
-async async function handleCloudinarySign(uid, body, env, request, tokenPayload) {
+async function handleCloudinarySign(uid, body, env, request, tokenPayload) {
   const userEmail = tokenPayload.email?.toLowerCase();
   
   if (!userEmail || !((env.ADMIN_EMAILS || ADMIN_EMAILS.join(',')).split(',').map(e => e.trim().toLowerCase()).includes(userEmail))) {
