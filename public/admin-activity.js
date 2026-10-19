@@ -510,6 +510,11 @@ async function saveTask(e) {
   const activityIdValue = $('taskActivityPicker')?.value || formData.get('activity_id');
   if (!activityIdValue) { alert('Choose which activity this task belongs to.'); $('taskActivityPicker')?.focus(); return; }
   $('taskActivityId').value = activityIdValue;
+  if ($('taskActive').checked && !$('taskVerificationPrompt').value.trim()) {
+    alert('Add verification guidance before publishing this task, or save it as a draft.');
+    $('taskVerificationPrompt').focus();
+    return;
+  }
   const data = {
     activity_id: activityIdValue,
     task_number: Math.max(1, parseInt(formData.get('task_number'), 10) || 1),
