@@ -680,7 +680,7 @@ function setupModals() {
   });
   $('cancelTask')?.addEventListener('click', closeTaskModal);
   $('cancelActivity')?.addEventListener('click', resetActivityForm);
-  $('createTaskBtn')?.addEventListener('click', openNewTaskEditor);
+  $('createTaskBtn')?.addEventListener('click', () => openNewTaskEditor());
   $('refreshActivities')?.addEventListener('click', loadActivities);
   filterActivityCategory?.addEventListener('change', renderActivitiesList);
   filterActivity?.addEventListener('change', () => loadTasks());
