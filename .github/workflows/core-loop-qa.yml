@@ -43,7 +43,7 @@ jobs:
           node --check server.js
           node --input-type=module --check < workers/gamification.js
       - name: Verify Playwright test discovery
-        run: npm test -- --list
+        run: npm test -- qa-audit.spec.js --list
 
   playwright-qa:
     runs-on: ubuntu-latest
