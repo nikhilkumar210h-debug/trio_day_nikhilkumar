@@ -20,6 +20,7 @@
   <link rel="stylesheet" href="styles/polish.css?v=7">
   <link rel="stylesheet" href="styles/activity-player.css?v=1">
   <link rel="stylesheet" href="styles/activity-motion.css?v=1">
+  <link rel="stylesheet" href="styles/admin-activity-polish.css?v=1">
   <style>
     .admin-tabs { display:flex; gap:8px; margin-bottom:24px; border-bottom:1px solid var(--border); padding-bottom:8px; }
     .admin-tab { padding:10px 20px; background:var(--glass-bg); border:1px solid var(--border); border-radius:99px; color:var(--ink); font-weight:700; cursor:pointer; transition:all .2s; }
@@ -95,6 +96,7 @@
             <label class="label-text">Category *</label>
             <select id="actCategory" name="category" required>
               <option value="">Select...</option>
+              <option value="Starter">✨ Starter</option>
               <option value="Learning">📚 Learning</option>
               <option value="Digital Skill">💻 Digital Skill</option>
               <option value="Personal Growth">🌱 Personal Growth</option>
@@ -126,12 +128,18 @@
             <img id="actCoverPreview" class="preview-img" hidden>
           </div>
           <div class="field field-full">
-            <label class="label-text">Difficulty Label</label>
-            <input type="text" id="actDifficulty" name="difficulty" placeholder="Easy • 3 Tasks">
+            <label class="label-text" for="actDifficulty">Difficulty</label>
+            <select id="actDifficulty" name="difficulty">
+              <option value="">Choose difficulty…</option>
+              <option value="Easy">🟢 Easy</option>
+              <option value="Medium">🟡 Medium</option>
+              <option value="Hard">🔴 Hard</option>
+              <option value="Boss Level">👑 Boss Level</option>
+            </select>
           </div>
           <div class="field field-full">
-            <label class="label-text">XP Reward Label</label>
-            <input type="text" id="actXpReward" name="xp_reward" placeholder="+150 XP">
+            <label class="label-text" for="actXpReward">Total XP Reward</label>
+            <input type="number" id="actXpReward" name="xp_reward" min="0" step="1" inputmode="numeric" placeholder="150">
           </div>
           <div class="field field-full">
             <label class="label-text">Guest Allowed</label>
@@ -257,8 +265,8 @@
             <input type="number" id="taskXp" name="xp_reward" value="10" min="0">
           </div>
           <div class="field field-full">
-            <label class="label-text">AI Verification Prompt</label>
-            <textarea id="taskVerificationPrompt" name="verification_prompt" rows="3" placeholder="Prompt for AI to verify user's proof. e.g., 'Check if the user genuinely solved the logic puzzle described in the task. Reject generic responses like asdfg.'"></textarea>
+            <label class="label-text" for="taskVerificationPrompt">Response Verification Rules</label>
+            <textarea id="taskVerificationPrompt" name="verification_prompt" rows="3" placeholder="Describe what a genuine, task-specific response must include. Avoid requiring photos or private information."></textarea>
           </div>
           <div class="field field-full">
             <label class="label-text">Active</label>
@@ -285,6 +293,6 @@
   <script type="module" src="ui/subnav.js?v=20261018"></script>
   <script type="module" src="ui/sheet.js?v=20261018"></script>
   <script type="module" src="ui/sound.js?v=20261018"></script>
-  <script type="module" src="admin-activity.js?v=20261018"></script>
+  <script type="module" src="admin-activity.js?v=20261019-adminfix1"></script>
 </body>
 </html>

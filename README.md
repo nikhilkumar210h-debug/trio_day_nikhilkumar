@@ -63,7 +63,7 @@ Before significant code work, read [PLAN.md](PLAN.md), identify the stage being 
 
 ### Today (Activities Dashboard)
 - **Guest View**: 3 free starter activities (Supabase `is_guest_allowed=true`). Progress saved in `localStorage`. After 3 tasks → Login modal to sync XP.
-- **Logged-in Onboarding**: First visit shows 5 Goal Cards (Learning, Digital Skill, Personal Growth, Mind & Emotion, Social Life). Selection saved to Firestore.
+- **Logged-in Onboarding**: First visit shows 6 Goal Cards (Learning, Digital Skill, Personal Growth, Mind & Emotion, Social Life, Career & Practical Life). Selection saved to Firestore.
 - **Dashboard**: Category-specific activities with clickable cards (Cyber-Purple + Neon Cyan glassmorphism). Each card shows difficulty, XP reward, cover image.
 - **Task Player**: Step-by-step with progress bar, min-time timer, proof/reflection textarea, AI verification via Cloudflare Worker.
 - **Language Toggle**: EN/HI persisted in `localStorage`, updates all UI text.
@@ -381,11 +381,12 @@ npx wrangler secret put CLOUDINARY_API_SECRET
 CREATE TABLE activities (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   display_order INT DEFAULT 0,
-  category TEXT NOT NULL CHECK (category IN ('Starter','Learning','Digital Skill','Personal Growth','Mind & Emotion','Social Life')),
+  category TEXT NOT NULL CHECK (category IN ('Starter','Learning','Digital Skill','Personal Growth','Mind & Emotion','Social Life','Career & Practical Life')),
   title_en TEXT NOT NULL,
   title_hi TEXT,
   description_en TEXT,
   description_hi TEXT,
+  icon TEXT,
   difficulty TEXT CHECK (difficulty IN ('Easy','Medium','Hard','Boss Level')),
   total_xp INT DEFAULT 0,
   cover_image_url TEXT,
@@ -400,9 +401,10 @@ CREATE TABLE tasks (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   activity_id UUID REFERENCES activities(id) ON DELETE CASCADE,
   task_number INT NOT NULL,
-  task_type TEXT CHECK (task_type IN ('Brainteaser','Action Step','Boss Task')),
+  task_type TEXT CHECK (task_type IN ('Brainteaser','Action Step','Boss Task','Real-life Action','Learning Sprint','Creative Build','Reflection','Social Connection','Mindful Reset','Planning','Observation','Habit Practice','Problem Solving')),
   title_en TEXT NOT NULL,
   title_hi TEXT,
+  description_en TEXT,
   instructions_en TEXT,
   instructions_hi TEXT,
   verification_prompt TEXT,
