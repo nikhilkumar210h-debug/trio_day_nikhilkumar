@@ -416,7 +416,7 @@ function renderTasksList() {
             <span class="task-activity-name">${esc(activityTitle)}</span>
             <span>${task.min_time_seconds ? `⏱️ ${task.min_time_seconds}s` : 'No timer'}</span>
             <span>⚡ ${Number(task.xp_reward) || 0} XP</span>
-            <span>${task.verification_prompt ? '🤖 AI verify' : '⚠️ No verification prompt'}</span>
+            <span>${task.verification_prompt ? '🔎 Rules configured' : '⚠️ No verification rules'}</span>
             <span>${task.is_published ? '✅ Published' : '⏸️ Draft'}</span>
           </div>
         </div>
@@ -506,7 +506,7 @@ async function saveTask(e) {
   };
   
   if (data.is_published && !data.verification_prompt.trim()) {
-    alert('Add a verification prompt before publishing this task. You can save it as a draft without one.');
+    alert('Add response-verification rules before publishing this task. You can save it as a draft without rules.');
     $('taskVerificationPrompt').focus();
     return;
   }
