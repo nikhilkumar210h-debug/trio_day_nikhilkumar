@@ -1,0 +1,66 @@
+/* Trio Day — Admin Activity UX polish. Responsive controls; no data/schema changes. */
+.activity-wrapper{width:min(100% - 32px,1120px);margin-inline:auto;padding:clamp(16px,3vw,32px) 0 calc(100px + env(safe-area-inset-bottom))}
+#adminPanel{min-width:0}
+#adminPanel>.admin-tabs{display:flex;align-items:center;gap:8px;width:100%;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:thin;padding:4px 2px 12px;margin:0 0 24px;border-bottom:1px solid var(--color-border,var(--border))}
+#adminPanel .admin-tab{flex:0 0 auto;min-height:44px;padding:10px 16px;white-space:nowrap;font-size:13px;line-height:1.2;border-radius:14px}
+#adminPanel .admin-tab:focus-visible,#adminPanel button:focus-visible,#adminPanel a:focus-visible,#taskModal button:focus-visible,#taskModal input:focus-visible,#taskModal textarea:focus-visible,#taskModal select:focus-visible{outline:3px solid color-mix(in srgb,var(--purple,#8b5cf6) 55%,transparent);outline-offset:2px}
+#adminPanel h2{font-size:clamp(20px,3vw,27px);line-height:1.15;letter-spacing:-.035em}
+#panelActivities>div:first-child,#panelTasks>div:first-child{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px!important}
+#panelTasks>div:first-child>div{display:flex;align-items:center;gap:8px;min-width:0}
+#filterActivity{min-height:44px;max-width:min(100%,320px);width:auto;flex:1 1 190px;padding:10px 34px 10px 12px!important;font:inherit;font-size:13px}
+#adminPanel .btn{min-height:44px;display:inline-flex;align-items:center;justify-content:center;gap:7px;white-space:normal;line-height:1.25;text-align:center;touch-action:manipulation}
+#adminPanel .btn-sm{min-height:40px;padding:8px 12px;white-space:nowrap}
+#adminPanel .form-grid{align-items:start;gap:18px}
+#adminPanel .field{min-width:0}
+#adminPanel .field .label-text{display:block;margin-bottom:7px;line-height:1.4}
+#adminPanel input:not([type=checkbox]):not([type=file]),#adminPanel select,#adminPanel textarea{width:100%;min-width:0;min-height:46px;box-sizing:border-box;border-radius:12px;padding:11px 13px;font:inherit;font-size:14px;line-height:1.45}
+#adminPanel textarea{min-height:96px;resize:vertical}
+#adminPanel input[type=checkbox]{width:18px;height:18px;flex:0 0 auto;accent-color:var(--purple,#8b5cf6)}
+#adminPanel .field label:has(input[type=checkbox]){min-height:44px;padding:10px 12px;border:1px solid var(--color-border,var(--border));border-radius:12px;background:var(--color-surface,var(--surface))}
+#adminPanel .field-full{min-width:0}
+#adminPanel .field-full[style*="justify-content:flex-end"]{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:10px!important;padding-top:14px;border-top:1px solid var(--color-border,var(--border))}
+#adminPanel .field-full[style*="justify-content:flex-end"] .btn{min-width:132px}
+#adminPanel .upload-area{padding:clamp(18px,4vw,30px);border-radius:16px}
+#adminPanel .task-list-item{display:grid;grid-template-columns:44px minmax(0,1fr) auto;align-items:center;gap:14px;padding:16px;border-radius:18px;background:var(--color-surface,var(--surface));border-color:var(--color-border,var(--border))}
+#adminPanel .task-order{display:grid;place-items:center;width:40px;min-width:40px;height:40px;border-radius:13px;font-size:16px;background:color-mix(in srgb,var(--cyan,#00ffcc) 10%,transparent)}
+#adminPanel .task-info{min-width:0;overflow-wrap:anywhere}
+#adminPanel .task-title{font-size:14px;line-height:1.4}
+#adminPanel .task-meta{display:flex;flex-wrap:wrap;align-items:center;gap:5px 8px;line-height:1.55;overflow-wrap:anywhere}
+#adminPanel .task-activity-name{font-weight:700;color:var(--color-ink,var(--ink))}
+#adminPanel .task-actions{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:8px}
+#adminPanel .admin-load-error,#adminPanel .admin-empty-state{padding:24px;border:1px solid var(--color-border,var(--border));border-radius:18px;text-align:center}
+#adminPanel .admin-load-error p{color:var(--color-danger,#ef4444);overflow-wrap:anywhere}
+#adminPanel .admin-skeleton{display:grid;gap:12px}
+#adminPanel .admin-skeleton .skeleton-card{height:88px;border-radius:16px;background:var(--color-glass,var(--glass-bg));border:1px solid var(--color-border,var(--border));animation:adminPulse 1.2s ease-in-out infinite alternate}
+#taskModal[hidden]{display:none!important}
+#taskModal.modal-overlay{align-items:center;overflow-y:auto;overscroll-behavior:contain;padding:max(12px,env(safe-area-inset-top)) 12px max(12px,env(safe-area-inset-bottom))}
+#taskModal .modal{width:min(100%,680px);max-height:min(90dvh,900px);overflow:auto;overscroll-behavior:contain;border-radius:22px}
+#taskModal .modal-head{position:sticky;top:0;z-index:2;align-items:center;gap:12px;padding:18px 20px;background:var(--color-surface,var(--surface))}
+#taskModal .modal-head h2{margin:4px 0 0;overflow-wrap:anywhere}
+#taskModal .modal-body{padding:20px}
+#taskModal .form-grid{gap:16px}
+#taskModal .field-hint{display:block;margin-top:6px;line-height:1.5}
+#taskModal .field-full[style*="justify-content:flex-end"]{position:sticky;bottom:-20px;z-index:1;margin:0 -20px -20px!important;padding:14px 20px calc(14px + env(safe-area-inset-bottom));background:var(--color-surface,var(--surface))}
+#taskModal .field-full[style*="justify-content:flex-end"] .btn{flex:1 1 120px}
+@keyframes adminPulse{from{opacity:.55}to{opacity:1}}
+@media(max-width:700px){
+ .activity-wrapper{width:calc(100% - 22px);padding-top:12px;padding-bottom:calc(104px + env(safe-area-inset-bottom))}
+ #adminPanel>.admin-tabs{gap:6px;margin-bottom:18px}
+ #adminPanel .admin-tab{min-height:42px;padding:10px 12px;font-size:12px}
+ #panelActivities>div:first-child,#panelTasks>div:first-child{align-items:stretch;flex-direction:column;gap:10px}
+ #panelActivities>div:first-child .btn{align-self:flex-start}
+ #panelTasks>div:first-child>div{width:100%;display:grid;grid-template-columns:minmax(0,1fr) auto}
+ #filterActivity{width:100%;max-width:none;min-width:0}
+ #adminPanel .task-list-item{grid-template-columns:38px minmax(0,1fr);gap:10px;padding:12px}
+ #adminPanel .task-order{width:36px;min-width:36px;height:36px}
+ #adminPanel .task-actions{grid-column:1/-1;justify-content:stretch;display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+ #adminPanel .task-actions .btn{width:100%}
+ #adminPanel .form-grid{grid-template-columns:minmax(0,1fr)}
+ #adminPanel .field-full{grid-column:1}
+ #adminPanel .field-full[style*="justify-content:flex-end"] .btn{flex:1 1 120px}
+ #taskModal .modal{max-height:calc(100dvh - 20px);border-radius:18px}
+ #taskModal .modal-head{padding:14px 16px}
+ #taskModal .modal-body{padding:16px}
+ #taskModal .field-full[style*="justify-content:flex-end"]{margin:0 -16px -16px!important;padding-inline:16px}
+}
+@media(prefers-reduced-motion:reduce){#adminPanel .admin-panel.active,#adminPanel .admin-skeleton .skeleton-card{animation:none!important}}
