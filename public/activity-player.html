@@ -46,6 +46,9 @@
       <div class="progress-fill" id="progressFill" style="width: 0%;"></div>
     </div>
 
+    <!-- Per-task state strip (pending / current / verified / skipped) -->
+    <div id="taskSteps" class="task-steps" role="list" aria-label="Task progress" hidden></div>
+
     <!-- Loading State -->
     <div id="loadingState" class="task-box" style="text-align:center">
       <div class="skeleton-stack" style="width:100%; max-width:400px; margin:0 auto;">
@@ -64,17 +67,21 @@
         </div>
         <h1 id="taskTitle" class="task-title">Loading...</h1>
         <p id="taskDetail" class="task-detail"></p>
-        
-        <!-- Timer -->
+
+        <!-- Inline state feedback: verifying / verified / failed / skipped -->
+        <div id="taskStatus" class="task-status" role="status" aria-live="polite" hidden></div>
+
+        <!-- Timer: shows the suggested minimum time only -->
         <div id="timerContainer" class="task-timer" hidden>
-          <span>⏱</span>
-          <span id="timerDisplay">00:00</span>
+          <span class="timer-label">Suggested minimum time</span>
+          <span class="timer-value"><span aria-hidden="true">⏱</span> <span id="timerDisplay">00:00</span></span>
         </div>
 
         <!-- Proof Input -->
         <div id="proofInputWrapper" class="proof-input-wrapper" hidden>
-          <label class="proof-label" id="proofLabel">Your Proof / Reflection</label>
+          <label class="proof-label" for="proofTextarea" id="proofLabel">Your reflection / proof</label>
           <textarea id="proofTextarea" class="proof-textarea" placeholder="Describe what you did, paste a link, or share your reflection..." rows="5"></textarea>
+          <span class="field-hint" id="proofHint">Minimum 15 characters. Write what you actually did.</span>
           <span class="char-count" id="charCount">0 / 2000 characters</span>
         </div>
 
@@ -89,14 +96,16 @@
     <!-- Completion Screen -->
     <div id="completionScreen" class="completion-screen" hidden>
       <div class="task-box">
-        <div class="completion-icon">🎉</div>
-        <h1 class="completion-title">Mission Accomplished!</h1>
-        <p class="completion-text">Amazing! You've completed all tasks in this activity.</p>
+        <div class="completion-icon" id="completionIcon">🎉</div>
+        <h1 class="completion-title" id="completionTitle">Mission Accomplished!</h1>
+        <p class="completion-text" id="completionText">Amazing! You've completed all tasks in this activity.</p>
         <div class="completion-xp" id="totalXpEarned">+0 XP Earned</div>
         <p style="color:#94a3b8; margin:8px 0 24px;">Your Weekly XP is now <strong id="finalWeeklyXp">0</strong></p>
+        <p id="completionNote" class="field-hint" style="margin:0 0 24px" hidden></p>
         <div class="task-actions">
+          <button type="button" id="completionClaimBtn" class="btn-task btn-complete" hidden>✉ Sign in to claim your XP</button>
           <a href="index.html" class="btn-task btn-complete" style="text-decoration:none">🏠 Back to Dashboard</a>
-          <a href="leaderboard.html" class="btn-task btn-skip" style="text-decoration:none">🏆 View Leaderboard</a>
+          <a id="completionLeaderboardLink" href="leaderboard.html" class="btn-task btn-skip" style="text-decoration:none">🏆 View Leaderboard</a>
         </div>
       </div>
     </div>
@@ -115,8 +124,8 @@
       <div class="modal-head">
         <div>
           <span class="eyebrow">🔒 Save Your Progress</span>
-          <h2 id="loginTitle">Login to Sync XP & Unlock All</h2>
-          <p class="story-composer-sub">You've earned <strong id="guestXpDisplay">0 XP</strong>! Create an account to save it forever.</p>
+          <h2 id="loginTitle">Sign in to claim your XP</h2>
+          <p class="story-composer-sub">Your finished tasks are saved on this device. Sign in and the server will credit <strong id="guestXpDisplay">0 XP</strong> to your account.</p>
         </div><button id="loginModalClose" class="icon-btn" type="button" aria-label="Close">×</button>
       </div>
       <div class="modal-tabs" role="tablist">
@@ -129,7 +138,7 @@
             <label class="field"><span class="label-text">Email</span><input type="email" id="loginEmail" placeholder="you@example.com" required autocomplete="email"></label>
             <label class="field"><span class="label-text">Password</span><input type="password" id="loginPassword" placeholder="••••••••" required autocomplete="current-password"></label>
             <p id="loginError" class="status" style="color:var(--color-danger); min-height:20px; display:none;"></p>
-            <button type="submit" class="btn primary" style="width:100%; margin-top:8px;">Login & Sync XP</button>
+            <button type="submit" class="btn primary" style="width:100%; margin-top:8px;">Login &amp; Save Progress</button>
           </form>
         </div>
         <div id="signupTabPanel" class="modal-panel" hidden role="tabpanel">
@@ -138,7 +147,7 @@
             <label class="field"><span class="label-text">Email</span><input type="email" id="signupEmail" placeholder="you@example.com" required autocomplete="email"></label>
             <label class="field"><span class="label-text">Password</span><input type="password" id="signupPassword" placeholder="••••••••" required minlength="6" autocomplete="new-password"></label>
             <p id="signupError" class="status" style="color:var(--color-danger); min-height:20px; display:none;"></p>
-            <button type="submit" class="btn primary" style="width:100%; margin-top:8px;">Create Account & Claim XP</button>
+            <button type="submit" class="btn primary" style="width:100%; margin-top:8px;">Create Account</button>
           </form>
         </div>
       </div>
@@ -151,7 +160,6 @@
   <script type="module" src="theme.js?v=20261018"></script>
   <script type="module" src="ui/header.js?v=20261018"></script>
   <script type="module" src="ui/nav.js?v=20261018"></script>
-  <script type="module" src="ui/subnav.js?v=20261018"></script>
   <script type="module" src="ui/sheet.js?v=20261018"></script>
   <script type="module" src="ui/sound.js?v=20261018"></script>
   <script type="module" src="activity-player.js?v=20261018"></script>

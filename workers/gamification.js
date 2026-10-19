@@ -7,6 +7,7 @@
  *   POST /gamification/use-shield      — streak shield
  *   POST /api/activity/complete-task   — AI verification + XP + leaderboard (NEW Activities)
  *   POST /api/activity/skip-task       — Skip task, move to next (NEW Activities)
+ *   POST /api/activity/claim-guest-xp  — Replay guest-trial task claims after sign-in
  *   POST /api/admin/activity           — Admin CRUD for Activities (strict admin check)
  *   POST /api/admin/task               — Admin CRUD for Tasks (strict admin check)
  *   POST /api/admin/cloudinary-sign    — Signed Cloudinary upload (strict admin check)
@@ -62,10 +63,37 @@ const CLOUDINARY_CLOUD_NAME = globalThis.CLOUDINARY_CLOUD_NAME || '';
 const CLOUDINARY_API_KEY = globalThis.CLOUDINARY_API_KEY || '';
 const CLOUDINARY_API_SECRET = globalThis.CLOUDINARY_API_SECRET || '';
 
-// Supabase column selects (real schema)
+// Supabase column selects (verified against the live `activities` / `tasks` tables).
+// NOTE: activities has NO `icon` / `updated_at`; tasks has NO `description_en`,
+// `is_published`, `is_active` or `updated_at`. Selecting a missing column makes
+// PostgREST return 400, so these lists must stay limited to real columns.
 const ACTIVITY_SELECT = 'id,display_order,category,title_en,title_hi,description_en,description_hi,difficulty,total_xp,cover_image_url,is_guest_allowed,is_published,created_at';
 const TASK_SELECT_PUBLIC = 'id,activity_id,task_number,task_type,title_en,title_hi,instructions_en,instructions_hi,min_time_seconds,xp_reward';
-const TASK_SELECT_ADMIN = 'id,activity_id,task_number,task_type,title_en,title_hi,instructions_en,instructions_hi,verification_prompt,min_time_seconds,xp_reward,is_published,created_at,updated_at';
+const TASK_SELECT_ADMIN = 'id,activity_id,task_number,task_type,title_en,title_hi,instructions_en,instructions_hi,verification_prompt,min_time_seconds,xp_reward,created_at';
+
+// Writable column allow-lists (unknown columns make PostgREST reject the write).
+const ACTIVITY_WRITABLE = [
+  'display_order', 'category', 'title_en', 'title_hi', 'description_en', 'description_hi',
+  'difficulty', 'total_xp', 'cover_image_url', 'is_guest_allowed', 'is_published'
+];
+const TASK_WRITABLE = [
+  'activity_id', 'task_number', 'task_type', 'title_en', 'title_hi',
+  'instructions_en', 'instructions_hi', 'verification_prompt', 'min_time_seconds', 'xp_reward'
+];
+const ACTIVITY_CATEGORIES = ['Starter', 'Learning', 'Digital Skill', 'Personal Growth', 'Mind & Emotion', 'Social Life', 'Career & Practical Life'];
+const TASK_TYPES = ['Brainteaser', 'Action Step', 'Reflection', 'Boss Task', 'Real-life Action', 'Learning Sprint', 'Creative Build', 'Social Connection', 'Mindful Reset', 'Planning', 'Observation', 'Habit Practice', 'Problem Solving'];
+
+// Guest trial: max tasks a guest may claim XP for, and the hard cap on the claim payload.
+const GUEST_TASK_LIMIT = 3;
+
+/** Keep only known columns, dropping undefined values (PATCH = leave unchanged). */
+function pickColumns(data, allowed) {
+  const out = {};
+  for (const key of allowed) {
+    if (data && data[key] !== undefined) out[key] = data[key];
+  }
+  return out;
+}
 
 // ─── Per-UID rate limiting (10 requests/minute) ───────────────────────────────
 const RATE_LIMIT_WINDOW_MS = 60 * 1000;
@@ -630,120 +658,161 @@ async function verifyWithAI(proof, verificationPrompt, taskTitle, taskDescriptio
   return { valid: true, reason: 'Verified' };
 }
 
-// ─── Activity Completion Handler ──────────────────────────────────────────────
-async function handleCompleteTask(uid, body, env) {
-  const { activityId, taskId, taskNumber, proof, timeSpent } = body;
-  
-  if (!activityId || !taskId) throw new Error('activityId and taskId required');
-  
-  // Fetch task details from Supabase with service role to get verification_prompt
-  const task = await supabaseAdminRequest('GET', `tasks?id=eq.${taskId}&select=${TASK_SELECT_ADMIN}`);
-  if (!task?.length) throw new Error('Task not found');
-  const taskData = task[0];
-  
-  // Fetch activity for XP reward
-  const activity = await supabaseRequest('GET', `activities?id=eq.${activityId}&select=${ACTIVITY_SELECT}`);
-  if (!activity?.length) throw new Error('Activity not found');
-  const activityData = activity[0];
-  
-  // AI Verification - use verification_prompt from task data
-  const verification = await verifyWithAI(
-    proof || '',
-    taskData.verification_prompt,
-    taskData.title_en,  // Use English title for keyword extraction
-    taskData.instructions_en  // Use English instructions for keyword extraction
-  );
-  
-  if (!verification.valid) {
-    return { ok: false, error: verification.reason, xpAwarded: 0 };
-  }
-  
-  const xpReward = taskData.xp_reward || 10;
-  
-  // Award XP via Firestore (same as challenge system)
-  const userTimeZone = resolveUserTimeZone(body?.timeZone);
+// ─── Shared XP award (idempotent per grantKey) ────────────────────────────────
+// Server-authoritative: the client never sends an XP amount, only what it did.
+async function awardActivityXp({ uid, env, amount, grantKey, timeZone }) {
   const projectId = 'nkm-ind';
   const token = await getAccessToken(env);
-  
-  // Check if already awarded for this task (use taskNumber for uniqueness)
-  const grantKey = `activity_${activityId}_task_${taskNumber}`;
+
   const created = await fsCreateDoc(projectId, token, 'users/'+uid+'/xpAwards/'+grantKey, {
-    uid, grantKey, amount: xpReward, createdAtMs: Date.now()
+    uid, grantKey, amount, createdAtMs: Date.now()
   });
-  
+
   const userData = await fsGet(projectId, token, 'users/'+uid) || {};
   if (!created) {
-    return { ok: true, xp: Number(userData.xp)||0, level: Number(userData.level)||levelFromXp(userData.xp), leveledUp: false, awarded: 0, alreadyAwarded: true, badgesEarned: [] };
+    return {
+      ok: true, xp: Number(userData.xp) || 0,
+      level: Number(userData.level) || levelFromXp(userData.xp),
+      leveledUp: false, awarded: 0, alreadyAwarded: true, badgesEarned: []
+    };
   }
-  
+
   const prevXp = Number(userData.xp) || 0;
-  const newXp = prevXp + xpReward;
+  const newXp = prevXp + amount;
   const newLevel = levelFromXp(newXp);
   const now = new Date();
-  const weekKey = localWeekKey(now, userTimeZone);
-  const monthKey = localMonthKey(now, userTimeZone);
-  
-  const weeklyXp = (userData.weeklyXpKey === weekKey ? Number(userData.weeklyXp) || 0 : 0) + xpReward;
-  const monthlyXp = (userData.monthlyXpKey === monthKey ? Number(userData.monthlyXp) || 0 : 0) + xpReward;
-  
+  const weekKey = localWeekKey(now, timeZone);
+  const monthKey = localMonthKey(now, timeZone);
+
+  const weeklyXp = (userData.weeklyXpKey === weekKey ? Number(userData.weeklyXp) || 0 : 0) + amount;
+  const monthlyXp = (userData.monthlyXpKey === monthKey ? Number(userData.monthlyXp) || 0 : 0) + amount;
+
   const allowedBadges = new Set(SYSTEM_BADGES.map(b => b.id));
   const currentBadges = Array.isArray(userData.badges) ? userData.badges.filter(id => allowedBadges.has(id)) : [];
   const earned = evaluateBadgesDelta(currentBadges, newXp, Number(userData.streakCurrent) || 0);
-  
+
   const patch = { xp: newXp, level: newLevel, weeklyXp, monthlyXp, weeklyXpKey: weekKey, monthlyXpKey: monthKey };
   if (earned.length) patch.badges = [...currentBadges, ...earned];
-  
+
   await fsPatch(projectId, token, 'users/'+uid, patch, Object.keys(patch));
-  
+
   const entry = {
     uid, name: userData.name || 'User', photoURL: userData.photoURL || null,
     level: newLevel, xp: newXp, weeklyXp, monthlyXp, streakCurrent: Number(userData.streakCurrent) || 0
   };
-  
+
   await Promise.all([
     upsertLeaderboard(projectId, token, 'global', entry, 'xp'),
     upsertLeaderboard(projectId, token, 'weekly_'+weekKey, entry, 'weeklyXp'),
     upsertLeaderboard(projectId, token, 'monthly_'+monthKey, entry, 'monthlyXp'),
     upsertLeaderboard(projectId, token, 'streak', entry, 'streakCurrent')
   ]);
-  
-  // Log task completion to user_task_progress (via Worker with service role)
-  const weekKeyStr = localWeekKey(new Date(), userTimeZone);
-  await supabaseAdminRequest('POST', 'user_task_progress', {
-    firebase_uid: uid,
-    activity_id: activityId,
-    task_id: taskId,
-    status: 'completed',
-    user_submission: proof,
-    ai_verified: true,
-    ai_feedback: verification.reason,
-    xp_awarded: xpReward,
-    week_key: weekKeyStr,
-    completed_at: new Date().toISOString()
-  });
-  
-  return { ok: true, xp: newXp, level: newLevel, leveledUp: newLevel > levelFromXp(prevXp), awarded: xpReward, alreadyAwarded: false, badgesEarned: earned.map(id => SYSTEM_BADGES.find(b => b.id === id) || { id }) };
+
+  return {
+    ok: true, xp: newXp, level: newLevel, weeklyXp,
+    leveledUp: newLevel > levelFromXp(prevXp), awarded: amount, alreadyAwarded: false,
+    badgesEarned: earned.map(id => SYSTEM_BADGES.find(b => b.id === id) || { id })
+  };
+}
+
+// Progress log is best-effort: a logging failure must never undo an XP award
+// that has already been granted (that would let a user "lose" a verified task).
+async function logTaskProgress(row) {
+  try {
+    await supabaseAdminRequest('POST', 'user_task_progress', row);
+  } catch (err) {
+    console.error('[gamification] user_task_progress log failed:', err.message);
+  }
+}
+
+// ─── Activity Completion Handler ──────────────────────────────────────────────
+async function handleCompleteTask(uid, body, env) {
+  const { activityId, taskId, taskNumber, proof } = body;
+
+  if (!activityId || !taskId) throw new Error('activityId and taskId required');
+
+  // Input validation before anything is awarded.
+  const submission = String(proof || '').trim();
+  if (submission.length < 10) {
+    return { ok: false, error: 'Please write at least a short, specific reflection (10+ characters).', xpAwarded: 0 };
+  }
+  if (submission.length > 2000) {
+    return { ok: false, error: 'Reflection is too long (max 2000 characters).', xpAwarded: 0 };
+  }
+
+  // Fetch task details from Supabase with service role to get verification_prompt
+  const task = await supabaseAdminRequest('GET', `tasks?id=eq.${taskId}&select=${TASK_SELECT_ADMIN}`);
+  if (!task?.length) throw new Error('Task not found');
+  const taskData = task[0];
+
+  // The task must really belong to the activity being played.
+  if (String(taskData.activity_id) !== String(activityId)) {
+    throw new Error('Task does not belong to this activity');
+  }
+
+  // Fetch activity (public columns) — also confirms the activity exists.
+  const activity = await supabaseRequest('GET', `activities?id=eq.${activityId}&select=${ACTIVITY_SELECT}`);
+  if (!activity?.length) throw new Error('Activity not found');
+
+  // AI / rule-based verification uses the server-side verification_prompt.
+  const verification = await verifyWithAI(
+    submission,
+    taskData.verification_prompt,
+    taskData.title_en,
+    taskData.instructions_en
+  );
+
+  if (!verification.valid) {
+    return { ok: false, error: verification.reason, xpAwarded: 0 };
+  }
+
+  const amount = Math.min(MAX_XP_AWARD, Math.max(0, Number(taskData.xp_reward) || 10));
+  const timeZone = resolveUserTimeZone(body?.timeZone);
+  const taskNo = Number(taskData.task_number) || Number(taskNumber) || 0;
+  const weekKey = localWeekKey(new Date(), timeZone);
+
+  // Idempotent per user + activity + task + week: a task can be verified once a
+  // week (matching the weekly-XP leaderboard), and a retried request or double
+  // tap can never award twice.
+  const grantKey = `activity_${activityId}_task_${taskNo}_w_${weekKey}`;
+
+  const result = await awardActivityXp({ uid, env, amount, grantKey, timeZone });
+
+  if (!result.alreadyAwarded) {
+    await logTaskProgress({
+      firebase_uid: uid,
+      activity_id: activityId,
+      task_id: taskId,
+      status: 'completed',
+      user_submission: submission,
+      ai_verified: true,
+      ai_feedback: verification.reason,
+      xp_awarded: amount,
+      week_key: weekKey,
+      completed_at: new Date().toISOString()
+    });
+  }
+
+  return { ...result, verification: verification.reason, weekKey };
 }
 
 // ─── Activity Skip Handler ────────────────────────────────────────────────────
 async function handleSkipTask(uid, body, env) {
   const { activityId, taskId, taskNumber } = body;
-  
+
   if (!activityId || !taskId) throw new Error('activityId and taskId required');
-  
+
   const projectId = 'nkm-ind';
   const token = await getAccessToken(env);
-  
-  // Log skip (no XP) to Firestore
+
+  // A skip never awards XP and is only recorded for history (idempotent).
   const grantKey = `activity_${activityId}_task_${taskNumber}_skip`;
   await fsCreateDoc(projectId, token, 'users/'+uid+'/taskSkips/'+grantKey, {
     uid, activityId, taskId, taskNumber, createdAtMs: Date.now()
   });
-  
-  // Log skip to user_task_progress via Supabase (service role)
-  const userTimeZone = resolveUserTimeZone(body?.timeZone);
-  const weekKeyStr = localWeekKey(new Date(), userTimeZone);
-  await supabaseAdminRequest('POST', 'user_task_progress', {
+
+  const timeZone = resolveUserTimeZone(body?.timeZone);
+  await logTaskProgress({
     firebase_uid: uid,
     activity_id: activityId,
     task_id: taskId,
@@ -752,35 +821,116 @@ async function handleSkipTask(uid, body, env) {
     ai_verified: false,
     ai_feedback: null,
     xp_awarded: 0,
-    week_key: weekKeyStr,
+    week_key: localWeekKey(new Date(), timeZone),
     completed_at: new Date().toISOString()
   });
-  
-  return { ok: true, skipped: true };
+
+  return { ok: true, skipped: true, awarded: 0 };
+}
+
+// ─── Guest trial claim ────────────────────────────────────────────────────────
+// A guest plays up to GUEST_TASK_LIMIT tasks locally (no account). When they sign
+// in, the client replays those claims here. The XP amount always comes from the
+// server-side task row, never from the client, and each task is claimable once.
+async function handleClaimGuestXp(uid, body, env) {
+  const rawClaims = Array.isArray(body?.claims) ? body.claims.slice(0, GUEST_TASK_LIMIT) : [];
+  if (!rawClaims.length) return { ok: true, awarded: 0, claimed: 0, alreadyClaimed: true, results: [] };
+
+  const timeZone = resolveUserTimeZone(body?.timeZone);
+  const results = [];
+  let awardedTotal = 0;
+  let claimed = 0;
+
+  for (const claim of rawClaims) {
+    const taskId = String(claim?.taskId || '').trim();
+    if (!taskId) continue;
+
+    let taskData = null;
+    try {
+      const rows = await supabaseAdminRequest('GET', `tasks?id=eq.${taskId}&select=${TASK_SELECT_ADMIN}`);
+      taskData = rows?.[0] || null;
+    } catch (err) {
+      console.error('[gamification] guest claim task lookup failed:', err.message);
+    }
+    if (!taskData) continue;
+    if (claim?.activityId && String(taskData.activity_id) !== String(claim.activityId)) continue;
+
+    const amount = Math.min(MAX_XP_AWARD, Math.max(0, Number(taskData.xp_reward) || 10));
+    const result = await awardActivityXp({
+      uid, env, amount,
+      grantKey: `guest_task_${taskId}`,
+      timeZone
+    });
+    awardedTotal += result.awarded || 0;
+    if (!result.alreadyAwarded) claimed++;
+    results.push({ taskId, awarded: result.awarded || 0, alreadyAwarded: !!result.alreadyAwarded });
+  }
+
+  // Persist the bootstrap marker so the client never replays it endlessly.
+  try {
+    const token = await getAccessToken(env);
+    await fsPatch(
+      'nkm-ind', token, 'users/'+uid,
+      { guestXpClaimed: true, guestTasksClaimed: claimed, guestClaimedAtMs: Date.now() },
+      ['guestXpClaimed', 'guestTasksClaimed', 'guestClaimedAtMs']
+    );
+  } catch (err) {
+    console.error('[gamification] guest claim marker failed:', err.message);
+  }
+
+  return { ok: true, awarded: awardedTotal, claimed, alreadyClaimed: claimed === 0, results };
 }
 
 // ─── Admin Activity CRUD ──────────────────────────────────────────────────────
-async function handleAdminActivity(uid, body, env, request, tokenPayload) {
-  const userEmail = tokenPayload.email?.toLowerCase();
-  
+function assertAdmin(tokenPayload) {
+  const userEmail = tokenPayload?.email?.toLowerCase();
   if (!userEmail || !ADMIN_EMAILS.includes(userEmail)) {
     throw new Error('Admin access required');
   }
-  
+}
+
+function coerceInt(value, fallback) {
+  const n = parseInt(value, 10);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+async function handleAdminActivity(uid, body, env, request, tokenPayload) {
+  assertAdmin(tokenPayload);
+
   const { action, activityId, data } = body; // action: create, update, delete
-  
+  const payload = pickColumns(data, ACTIVITY_WRITABLE);
+
+  const validate = () => {
+    if (payload.title_en !== undefined && !String(payload.title_en).trim()) throw new Error('Activity title is required');
+    if (payload.category !== undefined && !ACTIVITY_CATEGORIES.includes(payload.category)) {
+      throw new Error('Unknown category: ' + payload.category);
+    }
+    if (payload.display_order !== undefined) payload.display_order = coerceInt(payload.display_order, 0);
+    if (payload.total_xp !== undefined) payload.total_xp = Math.max(0, coerceInt(payload.total_xp, 0));
+    if (payload.is_guest_allowed !== undefined) payload.is_guest_allowed = payload.is_guest_allowed === true || payload.is_guest_allowed === 'true';
+    if (payload.is_published !== undefined) payload.is_published = payload.is_published === true || payload.is_published === 'true';
+  };
+
   switch (action) {
-    case 'create':
-      data.created_at = new Date().toISOString();
-      data.updated_at = new Date().toISOString();
-      return supabaseAdminRequest('POST', 'activities', data);
-    case 'update':
-      data.updated_at = new Date().toISOString();
-      return supabaseAdminRequest('PATCH', `activities?id=eq.${activityId}`, data);
-    case 'delete':
-      // Delete tasks first
+    case 'create': {
+      if (!String(payload.title_en || '').trim()) throw new Error('Activity title is required');
+      if (!payload.category) throw new Error('Activity category is required');
+      validate();
+      payload.created_at = new Date().toISOString();
+      return supabaseAdminRequest('POST', 'activities', payload);
+    }
+    case 'update': {
+      if (!activityId) throw new Error('activityId required');
+      validate();
+      if (!Object.keys(payload).length) throw new Error('Nothing to update');
+      return supabaseAdminRequest('PATCH', `activities?id=eq.${activityId}`, payload);
+    }
+    case 'delete': {
+      if (!activityId) throw new Error('activityId required');
+      // Delete child tasks first so no orphan tasks remain.
       await supabaseAdminRequest('DELETE', `tasks?activity_id=eq.${activityId}`);
       return supabaseAdminRequest('DELETE', `activities?id=eq.${activityId}`);
+    }
     default:
       throw new Error('Invalid action');
   }
@@ -788,24 +938,52 @@ async function handleAdminActivity(uid, body, env, request, tokenPayload) {
 
 // ─── Admin Task CRUD ──────────────────────────────────────────────────────────
 async function handleAdminTask(uid, body, env, request, tokenPayload) {
-  const userEmail = tokenPayload.email?.toLowerCase();
-  
-  if (!userEmail || !ADMIN_EMAILS.includes(userEmail)) {
-    throw new Error('Admin access required');
-  }
-  
+  assertAdmin(tokenPayload);
+
   const { action, taskId, data } = body;
-  
+  // verification_prompt is omitted from `data` when the admin did not edit it —
+  // the browser cannot read that column, so leaving it out preserves the value.
+  const payload = pickColumns(data, TASK_WRITABLE);
+
+  const validate = () => {
+    if (payload.title_en !== undefined && !String(payload.title_en).trim()) throw new Error('Task title is required');
+    if (payload.task_type !== undefined && !TASK_TYPES.includes(payload.task_type)) {
+      throw new Error('Unknown task type: ' + payload.task_type);
+    }
+    if (payload.task_number !== undefined) {
+      const n = coerceInt(payload.task_number, 0);
+      if (n < 1) throw new Error('Task number must be 1 or greater');
+      payload.task_number = n;
+    }
+    if (payload.min_time_seconds !== undefined) payload.min_time_seconds = Math.max(0, coerceInt(payload.min_time_seconds, 0));
+    if (payload.xp_reward !== undefined) payload.xp_reward = Math.max(0, Math.min(MAX_XP_AWARD, coerceInt(payload.xp_reward, 10)));
+    if (payload.verification_prompt !== undefined) payload.verification_prompt = String(payload.verification_prompt);
+  };
+
   switch (action) {
-    case 'create':
-      data.created_at = new Date().toISOString();
-      data.updated_at = new Date().toISOString();
-      return supabaseAdminRequest('POST', 'tasks', data);
-    case 'update':
-      data.updated_at = new Date().toISOString();
-      return supabaseAdminRequest('PATCH', `tasks?id=eq.${taskId}`, data);
-    case 'delete':
+    case 'create': {
+      if (!payload.activity_id) throw new Error('Task must belong to an activity');
+      if (!String(payload.title_en || '').trim()) throw new Error('Task title is required');
+      validate();
+      payload.created_at = new Date().toISOString();
+
+      // Reject a duplicate task_number up front with a readable message
+      // (the table has UNIQUE(activity_id, task_number)).
+      const existing = await supabaseAdminRequest('GET', `tasks?activity_id=eq.${payload.activity_id}&task_number=eq.${payload.task_number}&select=id`);
+      if (existing?.length) throw new Error(`Task #${payload.task_number} already exists in this activity. Choose a different number.`);
+
+      return supabaseAdminRequest('POST', 'tasks', payload);
+    }
+    case 'update': {
+      if (!taskId) throw new Error('taskId required');
+      validate();
+      if (!Object.keys(payload).length) throw new Error('Nothing to update');
+      return supabaseAdminRequest('PATCH', `tasks?id=eq.${taskId}`, payload);
+    }
+    case 'delete': {
+      if (!taskId) throw new Error('taskId required');
       return supabaseAdminRequest('DELETE', `tasks?id=eq.${taskId}`);
+    }
     default:
       throw new Error('Invalid action');
   }
@@ -1025,6 +1203,7 @@ export default {
       else if (path === '/gamification/use-shield') result = await handleUseShield(uid, body, env);
       else if (path === '/api/activity/complete-task') result = await handleCompleteTask(uid, body, env);
       else if (path === '/api/activity/skip-task') result = await handleSkipTask(uid, body, env);
+      else if (path === '/api/activity/claim-guest-xp') result = await handleClaimGuestXp(uid, body, env);
       else if (path === '/api/admin/activity') result = await handleAdminActivity(uid, body, env, request, tokenPayload);
       else if (path === '/api/admin/task') result = await handleAdminTask(uid, body, env, request, tokenPayload);
       else if (path === '/api/admin/cloudinary-sign') result = await handleCloudinarySign(uid, body, env, request, tokenPayload);

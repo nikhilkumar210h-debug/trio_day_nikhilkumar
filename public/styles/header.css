@@ -117,3 +117,26 @@
 .brand-copy strong{font-family:Inter,system-ui,sans-serif;font-weight:850;letter-spacing:-.045em}
 .brand-copy small{color:var(--color-ink-dim);font-weight:800}
 @media(max-width:839px){.brand-chakra{flex-basis:32px;width:32px!important;height:32px!important;border-radius:10px!important}.brand-copy strong{font-size:14px!important}}
+
+/* ── Mobile header de-clutter ────────────────────────────────────────────────
+   On a phone the header row is: brand · notification · account chip. Everything
+   else has an in-app home, so the row stops overlapping at 320px:
+     · search  → You (profile) → Discover, and Today's Discover section
+     · theme   → Settings → Appearance
+     · help    → Settings → Help Center (and the site map)
+   The account chip must hug its content (flex-grow 0) instead of stretching
+   under the icon buttons. */
+@media (max-width: 839px) {
+  .topbar-actions .nkm-header-search-btn,
+  .topbar-actions #headerThemeBtn { display: none !important; }
+  .topbar-actions #authStatus { flex: 0 1 auto; }
+}
+/* Guest quota is already stated in the Today hero — drop the duplicate chip
+   once the row is too narrow to hold brand + account + bell. */
+@media (max-width: 480px) {
+  #authStatus .guest-trial-chip { display: none !important; }
+}
+/* iPhone SE / small Android: the account chip + bell must win over Help. */
+@media (max-width: 359px) {
+  .topbar-actions .header-help-btn { display: none !important; }
+}

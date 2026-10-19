@@ -27,7 +27,7 @@ export function pushUrl({ type, actorUid, postId, urlPath }) {
   if (type === 'connect') {
     return actorUid
       ? `${APP_BASE}/profile.html?uid=${encodeURIComponent(actorUid)}`
-      : `${APP_BASE}/all-users.html`;
+      : `${APP_BASE}/search.html`;
   }
   if (type === 'challenge_reminder') return `${APP_BASE}/index.html`;
   if (type === 'badge_earned') return `${APP_BASE}/profile.html`;

@@ -3,6 +3,11 @@
    Provides button, input, card, avatar, badge, tab, search, skeleton primitives.
    ═══════════════════════════════════════════════════════════════ */
 
+/* The `hidden` attribute must always win. Component classes set `display`
+   (e.g. .btn-task, .nkm-btn), which otherwise overrides the UA rule for
+   [hidden] and leaves "hidden" elements visible. */
+[hidden] { display: none !important; }
+
 /* ── Buttons (reuse semantic tokens) ── */
 .nkm-btn {
   display: inline-flex;

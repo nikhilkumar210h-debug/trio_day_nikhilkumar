@@ -1,7 +1,8 @@
 import { auth, db } from './firebase-init.js';
 import { trioCache } from './trio-cache.js';
-import { chatId } from './utils.js';
+import { chatId, escapeHtml, cloudinaryAutoUrl } from './utils.js';
 import { notificationText } from './services/notificationHelpers.js';
+import { getCachedUser } from './services/userCache.js';
 import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
 import {
   collection, doc, getDoc, onSnapshot,
@@ -9,7 +10,6 @@ import {
 } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 import { enableOneSignalPush } from './onesignal.js?v=24';
 import { setAdminFlag as setNavAdminFlag } from './ui/nav.js';
-import { setAdminFlag as setSubnavAdminFlag } from './ui/subnav.js';
 
 const el = document.getElementById('authStatus');
 let notificationUnsubs = [];
@@ -230,12 +230,42 @@ window.addEventListener('trio-header-ready', () => {
 });
 
 // ── Auth state → render header chip ─────────────────────────────────────────
+// This is the SINGLE renderer for #authStatus across the app: every page that
+// loads auth-ui.js shows the same controls in the same order, so Today, the
+// Activity Player, Leaderboard, Chat, Profile and Admin no longer disagree.
+// Pages that need an extra control (e.g. the language toggle) listen for the
+// `trio-auth-status-rendered` event and append to #authStatus themselves.
+function avatarMarkup(name, photo) {
+  if (photo) {
+    return `<img src="${escapeHtml(cloudinaryAutoUrl(photo))}" alt="" class="auth-avatar">`;
+  }
+  const initial = escapeHtml((name || 'U').trim().charAt(0).toUpperCase() || 'U');
+  return `<span class="auth-avatar-fallback" aria-hidden="true">${initial}</span>`;
+}
+
+function renderHeaderStatus(user, profile) {
+  const profileUrl = 'profile.html';
+  if (!user) {
+    el.innerHTML = `<a href="login.html" class="auth-login-btn">Login</a>`;
+    return;
+  }
+  const name = profile?.name || profile?.displayName || user.displayName || (user.email ? user.email.split('@')[0] : 'You');
+  const photo = profile?.photoURL || user.photoURL;
+  const streak = Number(profile?.streakCurrent) || 0;
+  const weeklyXp = Number(profile?.weeklyXp) || 0;
+  el.innerHTML = `
+    <span class="streak-badge" title="Current streak">🔥 ${streak}d</span>
+    <span class="xp-badge-nav" title="Weekly XP">⚡ ${weeklyXp} XP</span>
+    <a class="auth-avatar-link" href="${profileUrl}" aria-label="${escapeHtml(name)} — your profile">${avatarMarkup(name, photo)}</a>
+  `;
+}
+
 onAuthStateChanged(auth, async user => {
   clearNotificationListeners();
   if (!el) return;
   if (user) {
     el.innerHTML = '';
-
+    el.dataset.signedIn = 'true';
 
     // Header logout removed — now only in Profile section. Keep handler for profile page.
     const profileLogout = document.getElementById('profileLogoutBtn');
@@ -248,7 +278,11 @@ onAuthStateChanged(auth, async user => {
     // Admin visibility: check both hardcoded emails and Firestore config/admins
     const isAdmin = await checkAdminStatus(user);
     setNavAdminFlag(isAdmin);
-    setSubnavAdminFlag(isAdmin);
+
+    // Cached profile fetch powers the streak / weekly-XP badges (never blocks).
+    const profile = await getCachedUser(user.uid).catch(() => null);
+    if (el.dataset.signedIn === 'true') renderHeaderStatus(user, profile);
+    window.dispatchEvent(new CustomEvent('trio-auth-status-rendered', { detail: { user, profile, isAdmin } }));
 
     // Skip notification listener on notifications.html (notifications.js handles it)
     if (!location.pathname.endsWith('notifications.html')) {
@@ -258,9 +292,10 @@ onAuthStateChanged(auth, async user => {
     enableOneSignalPush(user).catch(err => console.warn('OneSignal enable failed', err));
 
   } else {
-    el.innerHTML = '<a href="login.html" class="auth-login-btn">Login</a>';
+    el.dataset.signedIn = 'false';
+    renderHeaderStatus(null, null);
+    window.dispatchEvent(new CustomEvent('trio-auth-status-rendered', { detail: { user: null, profile: null, isAdmin: false } }));
     setNavAdminFlag(false);
-    setSubnavAdminFlag(false);
   }
 });
 

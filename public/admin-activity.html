@@ -46,6 +46,10 @@
     .modal-head { display:flex; justify-content:space-between; align-items:flex-start; padding:24px; border-bottom:1px solid var(--border); }
     .modal-body { padding:24px; }
     .icon-btn { background:var(--glass-bg); border:1px solid var(--border); border-radius:12px; width:40px; height:40px; display:grid; place-items:center; font-size:24px; color:var(--ink); cursor:pointer; }
+    .form-status { margin:0; padding:10px 14px; border-radius:12px; font-size:13px; font-weight:700; grid-column:1/-1; }
+    .form-status.is-error { background:rgba(239,68,68,.14); border:1px solid rgba(239,68,68,.5); color:#FCA5A5; }
+    .form-status.is-ok { background:rgba(16,185,129,.14); border:1px solid rgba(16,185,129,.5); color:#6EE7B7; }
+    .admin-empty { text-align:center; padding:28px 16px; border:1px dashed var(--border); border-radius:16px; color:var(--ink-dim); }
   </style>
 </head>
 
@@ -95,21 +99,20 @@
             <label class="label-text">Category *</label>
             <select id="actCategory" name="category" required>
               <option value="">Select...</option>
+              <option value="Starter">🔥 Starter (guest-friendly)</option>
               <option value="Learning">📚 Learning</option>
               <option value="Digital Skill">💻 Digital Skill</option>
               <option value="Personal Growth">🌱 Personal Growth</option>
-              <option value="Mind & Emotion">🧠 Mind & Emotion</option>
+              <option value="Mind &amp; Emotion">🧠 Mind &amp; Emotion</option>
               <option value="Social Life">🤝 Social Life</option>
               <option value="Career &amp; Practical Life">🧭 Career &amp; Practical Life</option>
             </select>
+            <span class="field-hint">The card icon comes from this category (there is no icon column in the database).</span>
           </div>
           <div class="field">
-            <label class="label-text">Icon</label>
-            <input type="text" id="actIcon" name="icon" placeholder="📚" maxlength="4">
-          </div>
-          <div class="field">
-            <label class="label-text">Order Index</label>
+            <label class="label-text">Display order</label>
             <input type="number" id="actOrder" name="order_index" value="0" min="0">
+            <span class="field-hint">Lower numbers appear first.</span>
           </div>
           <div class="field field-full">
             <label class="label-text">Description</label>
@@ -130,8 +133,9 @@
             <input type="text" id="actDifficulty" name="difficulty" placeholder="Easy • 3 Tasks">
           </div>
           <div class="field field-full">
-            <label class="label-text">XP Reward Label</label>
-            <input type="text" id="actXpReward" name="xp_reward" placeholder="+150 XP">
+            <label class="label-text">Total XP (number)</label>
+            <input type="number" id="actXpReward" name="total_xp" min="0" step="1" placeholder="150">
+            <span class="field-hint">Shown on the activity card as “+N XP”.</span>
           </div>
           <div class="field field-full">
             <label class="label-text">Guest Allowed</label>
@@ -141,12 +145,13 @@
             </label>
           </div>
           <div class="field field-full">
-            <label class="label-text">Active</label>
+            <label class="label-text">Published</label>
             <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
               <input type="checkbox" id="actActive" name="is_active" value="true" checked>
-              <span>Published and visible to users</span>
+              <span>Visible to users on Today</span>
             </label>
           </div>
+          <p id="activityFormStatus" class="form-status" role="status" aria-live="polite" hidden></p>
           <div class="field-full" style="display:flex; gap:12px; justify-content:flex-end; margin-top:8px;">
             <button type="button" id="cancelActivity" class="btn secondary">Cancel</button>
             <button type="submit" class="btn primary">💾 Save Activity</button>
@@ -211,8 +216,9 @@
             <p class="field-hint">Templates are starting points—not locked formats. Edit every field before saving.</p>
           </div>
           <div class="field">
-            <label class="label-text">Order Index *</label>
-            <input type="number" id="taskOrder" name="order_index" required min="1" value="1">
+            <label class="label-text" for="taskOrder">Task number (order) *</label>
+            <input type="number" id="taskOrder" name="task_number" required min="1" value="1">
+            <span class="field-hint">Must be unique inside the activity.</span>
           </div>
           <div class="field">
             <label class="label-text">Type</label>
@@ -233,12 +239,12 @@
             </select>
           </div>
           <div class="field field-full">
-            <label class="label-text">Title *</label>
+            <label class="label-text">Title (English) *</label>
             <input type="text" id="taskTitle" name="title" required placeholder="e.g., Warm-up Logic Check">
           </div>
           <div class="field field-full">
-            <label class="label-text">Description</label>
-            <textarea id="taskDescription" name="description" rows="3" placeholder="Detailed instructions..."></textarea>
+            <label class="label-text">Title (Hindi)</label>
+            <input type="text" id="taskTitleHi" name="title_hi" placeholder="जैसे: वॉर्मअप लॉजिक चेक">
           </div>
           <div class="field field-full">
             <label class="label-text">Instructions (English)</label>
@@ -249,24 +255,20 @@
             <textarea id="taskInstructionsHi" name="instructions_hi" rows="3" placeholder="How to complete this task (हिंदी में)..."></textarea>
           </div>
           <div class="field">
-            <label class="label-text">Min Time (seconds)</label>
+            <label class="label-text">Suggested min time (seconds)</label>
             <input type="number" id="taskMinTime" name="min_time_seconds" value="0" min="0">
+            <span class="field-hint">A hint for the user. It never completes the task by itself.</span>
           </div>
           <div class="field">
             <label class="label-text">XP Reward</label>
             <input type="number" id="taskXp" name="xp_reward" value="10" min="0">
           </div>
           <div class="field field-full">
-            <label class="label-text">AI Verification Prompt</label>
-            <textarea id="taskVerificationPrompt" name="verification_prompt" rows="3" placeholder="Prompt for AI to verify user's proof. e.g., 'Check if the user genuinely solved the logic puzzle described in the task. Reject generic responses like asdfg.'"></textarea>
+            <label class="label-text">Verification prompt (server-side)</label>
+            <textarea id="taskVerificationPrompt" name="verification_prompt" rows="3" placeholder="What should the verifier check in the user's reflection? e.g. 'Check that the user names a real concept and gives one concrete example. Reject generic filler.'"></textarea>
+            <span class="field-hint">Leave blank to keep the existing prompt (it cannot be read back in the browser). An empty prompt means the reflection is accepted after the basic checks.</span>
           </div>
-          <div class="field field-full">
-            <label class="label-text">Active</label>
-            <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
-              <input type="checkbox" id="taskActive" name="is_active" value="true" checked>
-              <span>Published</span>
-            </label>
-          </div>
+          <p id="taskFormStatus" class="form-status" role="status" aria-live="polite" hidden></p>
           <div class="field-full" style="display:flex; gap:12px; justify-content:flex-end; margin-top:8px;">
             <button type="button" id="cancelTask" class="btn secondary">Cancel</button>
             <button type="submit" class="btn primary">💾 Save Task</button>
@@ -282,7 +284,6 @@
   <script type="module" src="theme.js?v=20261018"></script>
   <script type="module" src="ui/header.js?v=20261018"></script>
   <script type="module" src="ui/nav.js?v=20261018"></script>
-  <script type="module" src="ui/subnav.js?v=20261018"></script>
   <script type="module" src="ui/sheet.js?v=20261018"></script>
   <script type="module" src="ui/sound.js?v=20261018"></script>
   <script type="module" src="admin-activity.js?v=20261018"></script>

@@ -224,118 +224,13 @@ body[data-current-nav="you"] .nav-btn[data-nav="you"] .nav-icon { color: #C4B5FD
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   NKM Sub-Navigation — Unified section bar below topbar
-   Desktop: horizontal bar with icons + labels
-   Mobile: horizontal scroll with icons + labels
+   Section sub-bar (Activities | Progress | Leaderboard | Profile)
+   was removed: it duplicated the primary bottom nav / desktop rail
+   with the same destinations (and linked Progress and Profile to the
+   same page), stealing 48px of vertical space on every page.
+   The global nav (ui/nav.js) is the single source of navigation.
    ═══════════════════════════════════════════════════════════════ */
-.nkm-subnav {
-  position: sticky;
-  top: 55px; /* sits below topbar (52px + 3px tricolor) */
-  z-index: 59;
-  background: var(--color-bg-elevated);
-  backdrop-filter: blur(18px) saturate(180%);
-  -webkit-backdrop-filter: blur(18px) saturate(180%);
-  border-bottom: 1px solid var(--color-border);
-  padding: 0;
-}
 
-.nkm-subnav .subnav-row {
-  display: flex;
-  align-items: center;
-  gap: 0;
-  padding: 0 12px;
-  overflow-x: auto;
-  scrollbar-width: thin;
-  scrollbar-color: var(--color-border) transparent;
-  max-width: 1280px;
-  margin: 0 auto;
-  min-height: 48px;
-}
+/* None of the main containers need a sub-nav offset any more; the sticky
+   topbar is in normal flow, so only the container's own padding applies. */
 
-.nkm-subnav .subnav-btn {
-  flex: 0 0 auto;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 10px 14px;
-  border: none;
-  background: transparent;
-  color: var(--color-ink-muted);
-  font-size: var(--text-sm);
-  font-weight: var(--font-semibold);
-  text-decoration: none;
-  white-space: nowrap;
-  border-radius: var(--radius-md);
-  margin: 4px 2px;
-  transition: color var(--duration-fast) var(--ease-out),
-              background var(--duration-fast) var(--ease-out);
-  min-height: 40px;
-}
-
-.nkm-subnav .subnav-btn:hover {
-  color: var(--color-ink);
-  background: var(--color-glass);
-}
-
-.nkm-subnav .subnav-btn.active {
-  color: var(--color-primary-text);
-  background: var(--color-primary-soft);
-  border: 1px solid var(--color-primary);
-}
-
-.nkm-subnav .subnav-btn.active .subnav-icon {
-  color: var(--color-primary);
-}
-
-.nkm-subnav .subnav-icon {
-  display: inline-flex;
-  flex-shrink: 0;
-  color: inherit;
-  transition: color var(--duration-fast) var(--ease-out);
-}
-
-.nkm-subnav .subnav-label {
-  display: inline-block;
-}
-
-@media (max-width: 839px) {
-  .nkm-subnav {
-    top: 55px;
-  }
-  .nkm-subnav .subnav-row {
-    padding: 0 8px;
-    gap: 4px;
-  }
-  .nkm-subnav .subnav-btn {
-    padding: 8px 12px;
-    font-size: var(--text-xs);
-    min-height: 36px;
-  }
-}
-
-/* Ensure main content has proper top offset for subnav */
-@media (max-width: 839px) {
-  .app-main, .profile-main, .users-main, .chat-main, .tasks-main,
-  .private-main, .notifications-main, .search-main, .policy-main,
-  .view-post-main, .auth-wrap, .activity-wrapper {
-    padding-top: 108px !important; /* tricolor(3) + topbar(52) + subnav(48) + buffer */
-  }
-}
-
-@media (min-width: 840px) {
-  .nkm-subnav {
-    top: 63px; /* tricolor(3) + topbar(60) */
-  }
-  .nkm-subnav .subnav-row {
-    padding: 0 16px;
-  }
-  .nkm-subnav .subnav-btn {
-    padding: 12px 18px;
-  }
-  .app-main, .profile-main, .users-main, .chat-main, .tasks-main,
-  .private-main, .notifications-main, .search-main, .policy-main,
-  .view-post-main, .auth-wrap, .activity-wrapper {
-    padding-top: 116px !important; /* tricolor(3) + topbar(60) + subnav(48) + buffer */
-  }
-}
