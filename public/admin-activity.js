@@ -681,6 +681,8 @@ function setupModals() {
   $('cancelActivity').onclick = resetActivityForm;
   $('createTaskBtn').onclick = () => openNewTaskEditor(filterActivity.value || null);
   $('refreshActivities').onclick = loadActivities;
+  $('refreshTasksBtn').onclick = loadTasks;
+  filterActivity.onchange = loadTasks;
   
   // Activity form submit
   activityForm.onsubmit = saveActivity;
