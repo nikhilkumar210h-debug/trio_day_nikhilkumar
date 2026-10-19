@@ -117,6 +117,38 @@ function setupTabs() {
   });
 }
 
+function setupTaskForm() {
+  const activityPicker = $('taskActivityPicker');
+  if (activityPicker) {
+    activityPicker.innerHTML = '<option value="">Choose an activity…</option>' + activitiesCache.map(act => `<option value="${act.id}">${esc(act.title_en || act.title || 'Untitled activity')} · ${esc(act.category || '')}</option>`).join('');
+    activityPicker.addEventListener('change', () => { $('taskActivityId').value = activityPicker.value; });
+  }
+  const preset = $('taskTemplate');
+  if (!preset) return;
+  const templates = {
+    offline: ['Real-life Action','Complete one useful real-world action','Choose one small, safe action that helps you or your surroundings. Do it today and describe the concrete result.','Aaj ek chhota aur safe kaam karein jo aapki ya aas-paas ki madad kare. Phir uska result batayein.',600,25,'Check for a specific, plausible action and a concrete result. Do not require photos or private information.'],
+    learning: ['Learning Sprint','Learn one concept and explain it','Study one concept, explain it in your own words, and give one example.','Ek concept padhein, apne shabdon mein samjhayen aur ek example dein.',900,30,'Check relevance, own reasoning, and a meaningful example.'],
+    creative: ['Creative Build','Create a tiny original thing','Create a small sketch, paragraph, mini design, or code snippet. Explain one choice you made.','Ek chhoti original cheez banayein—sketch, paragraph, design ya code snippet. Apna ek choice samjhayen.',900,30,'Look for a concrete description of the creation. Do not claim to verify unseen work.'],
+    reflection: ['Reflection','Reflect on one moment and one lesson','Think of one ordinary moment today. What happened, what did you learn, and what small step will you try next?','Aaj ke ek aam moment par sochein: kya hua, kya seekha aur agla chhota step kya hoga?',180,15,'Accept relevant reflection; do not require sensitive personal details.'],
+    social: ['Social Connection','Make one thoughtful connection','Have a brief, respectful conversation or offer useful help. Respect boundaries and do not share names.','Kisi se respectful baat karein ya madad karein. Boundaries ka dhyan rakhein aur naam share na karein.',300,25,'Check for a specific, respectful interaction. Do not request other people’s private information.'],
+    mindful: ['Mindful Reset','Take a calm screen-free pause','Pause for a few minutes, notice your surroundings, and choose one thing to return to with attention.','Kuch minute ruk kar aas-paas par dhyan dein aur phir ek kaam focus se karne ke liye chunein.',180,15,'Accept a relevant reflection without inferring mental-health status.'],
+    planning: ['Planning','Plan the next small step','Write one goal, the next action, when you will do it, and one possible obstacle.','Ek goal, agla action, use kab karenge aur ek possible rukawat likhein.',300,20,'Check for a concrete action and realistic time or cue.'],
+    observe: ['Observation','Notice three details','Observe a safe, ordinary place or object. Note three specific details and one pattern.','Kisi safe jagah ya object ko observe karein. Teen details aur ek pattern likhein.',180,15,'Check for three distinct observations. Avoid identifying strangers.'],
+    habit: ['Habit Practice','Practice one tiny helpful habit','Choose a small helpful habit, do it once, and describe what helped you begin.','Ek chhoti helpful habit chunein, use ek baar karein aur batayein shuru kaise kiya.',300,20,'Check for a specific, safe habit and a plausible description.'],
+    problem: ['Problem Solving','Solve one everyday problem','Pick a harmless everyday problem, list two possible solutions, choose one, and explain why.','Ek chhoti safe problem chunein, do solutions likhein, ek chunein aur wajah samjhayen.',600,25,'Check for a problem, two distinct options, and a reasoned choice.'],
+    boss: ['Boss Task','Complete a mini-project','Break the challenge into 2–3 steps, complete what is feasible today, then report the outcome and next step.','Challenge ko 2–3 steps mein baantein, aaj jitna ho sake karein aur result aur next step batayein.',1200,50,'Look for planning, a concrete outcome, and a next step; do not imply incomplete work is complete.']
+  };
+  preset.addEventListener('change', () => {
+    const p = templates[preset.value];
+    if (!p) return;
+    $('taskType').value = p[0]; $('taskTitle').value = p[1];
+    $('taskDescription').value = p[2]; $('taskInstructionsEn').value = p[2];
+    $('taskInstructionsHi').value = p[3]; $('taskMinTime').value = p[4];
+    $('taskXp').value = p[5]; $('taskVerificationPrompt').value = p[6];
+    $('taskTitle').focus();
+  });
+}
+
 function setupActivityForm() {
   // Form submit handler is set up in setupModals()
   // This function exists to satisfy initAdmin() call
@@ -173,7 +205,7 @@ function renderActivitiesList() {
 
 async function loadActivitiesForFilter() {
   filterActivity.innerHTML = '<option value="">All Activities</option>' + 
-    activitiesCache.map(act => `<option value="${act.id}">${esc(act.title)}</option>`).join('');
+    activitiesCache.map(act => `<option value="${act.id}">${esc(act.title_en || act.title || 'Untitled activity')}</option>`).join('');
 }
 
 function openActivityEditor(activityId) {
@@ -380,6 +412,7 @@ function openTaskEditor(taskId) {
   taskForm.reset();
   $('taskId').value = task.id;
   $('taskActivityId').value = task.activity_id;
+  if ($('taskActivityPicker')) $('taskActivityPicker').value = task.activity_id;
   $('taskOrder').value = task.task_number;
   $('taskType').value = task.task_type || 'Action Step';
   $('taskTitle').value = task.title_en;
@@ -403,6 +436,7 @@ function openNewTaskEditor(activityId = null) {
   taskForm.reset();
   $('taskId').value = '';
   $('taskActivityId').value = activityId || (filterActivity.value || '');
+  if ($('taskActivityPicker')) $('taskActivityPicker').value = $('taskActivityId').value;
   $('taskOrder').value = 1;
   $('taskType').value = 'Action Step';
   $('taskActive').checked = true;
@@ -421,9 +455,12 @@ async function saveTask(e) {
   e.preventDefault();
   
   const formData = new FormData(taskForm);
+  const activityIdValue = $('taskActivityPicker')?.value || formData.get('activity_id');
+  if (!activityIdValue) { alert('Choose which activity this task belongs to.'); $('taskActivityPicker')?.focus(); return; }
+  $('taskActivityId').value = activityIdValue;
   const data = {
-    activity_id: formData.get('activity_id'),
-    task_number: parseInt(formData.get('order_index')) || 1,
+    activity_id: activityIdValue,
+    task_number: parseInt(formData.get('task_number')) || 1,
     task_type: formData.get('type') || 'Action Step',
     title_en: formData.get('title'),
     description_en: formData.get('description') || '',

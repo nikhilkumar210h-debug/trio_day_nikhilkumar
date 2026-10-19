@@ -29,6 +29,7 @@ const GOAL_CATEGORIES = [
   { key: 'Personal Growth', icon: '🌱', title: 'Personal Growth', sub: 'Habits & discipline', colorClass: 'goal-growth' },
   { key: 'Mind & Emotion', icon: '🧠', title: 'Mind & Emotion', sub: 'Focus & mindfulness', colorClass: 'goal-mind' },
   { key: 'Social Life', icon: '🤝', title: 'Social Life', sub: 'Network & communication', colorClass: 'goal-social' },
+  { key: 'Career & Practical Life', icon: '🧭', title: 'Career & Practical Life', sub: 'Projects, decisions & everyday skills', colorClass: 'goal-career' },
 ];
 
 // Supabase column mapping for real schema

@@ -19,6 +19,7 @@
   <link rel="stylesheet" href="style.css?v=20261018-activity">
   <link rel="stylesheet" href="styles/polish.css?v=7">
   <link rel="stylesheet" href="styles/activity-player.css?v=1">
+  <link rel="stylesheet" href="styles/activity-motion.css?v=1">
   <style>
     .admin-tabs { display:flex; gap:8px; margin-bottom:24px; border-bottom:1px solid var(--border); padding-bottom:8px; }
     .admin-tab { padding:10px 20px; background:var(--glass-bg); border:1px solid var(--border); border-radius:99px; color:var(--ink); font-weight:700; cursor:pointer; transition:all .2s; }
@@ -99,6 +100,7 @@
               <option value="Personal Growth">🌱 Personal Growth</option>
               <option value="Mind & Emotion">🧠 Mind & Emotion</option>
               <option value="Social Life">🤝 Social Life</option>
+              <option value="Career &amp; Practical Life">🧭 Career &amp; Practical Life</option>
             </select>
           </div>
           <div class="field">
@@ -186,6 +188,28 @@
         <form id="taskForm" class="form-grid">
           <input type="hidden" id="taskId" name="id">
           <input type="hidden" id="taskActivityId" name="activity_id">
+          <div class="field field-full">
+            <label class="label-text" for="taskActivityPicker">Activity this task belongs to *</label>
+            <select id="taskActivityPicker" required><option value="">Choose an activity…</option></select>
+          </div>
+          <div class="field field-full template-field">
+            <label class="label-text" for="taskTemplate">Quick-start template <span class="field-hint">Optional · fills editable fields</span></label>
+            <select id="taskTemplate" name="task_template">
+              <option value="">Start from scratch</option>
+              <option value="offline">🌿 Real-life action</option>
+              <option value="learning">📚 Learning sprint</option>
+              <option value="creative">🎨 Creative build</option>
+              <option value="reflection">🪞 Reflection</option>
+              <option value="social">🤝 Social connection</option>
+              <option value="mindful">🧠 Mindful reset</option>
+              <option value="planning">🗓️ Planning &amp; organization</option>
+              <option value="observe">🔎 Observation challenge</option>
+              <option value="habit">🔁 Habit practice</option>
+              <option value="problem">🧩 Problem-solving</option>
+              <option value="boss">👑 Boss challenge</option>
+            </select>
+            <p class="field-hint">Templates are starting points—not locked formats. Edit every field before saving.</p>
+          </div>
           <div class="field">
             <label class="label-text">Order Index *</label>
             <input type="number" id="taskOrder" name="order_index" required min="1" value="1">
@@ -197,6 +221,15 @@
               <option value="Action Step">⚡ Action Step</option>
               <option value="Reflection">🪞 Reflection</option>
               <option value="Boss Task">👑 Boss Task</option>
+              <option value="Real-life Action">🌿 Real-life Action</option>
+              <option value="Learning Sprint">📚 Learning Sprint</option>
+              <option value="Creative Build">🎨 Creative Build</option>
+              <option value="Social Connection">🤝 Social Connection</option>
+              <option value="Mindful Reset">🧠 Mindful Reset</option>
+              <option value="Planning">🗓️ Planning</option>
+              <option value="Observation">🔎 Observation</option>
+              <option value="Habit Practice">🔁 Habit Practice</option>
+              <option value="Problem Solving">🧠 Problem Solving</option>
             </select>
           </div>
           <div class="field field-full">
