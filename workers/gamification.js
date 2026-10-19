@@ -812,40 +812,35 @@ async function handleAdminTask(uid, body, env, request, tokenPayload) {
 }
 
 // ─── Cloudinary Signed Upload ─────────────────────────────────────────────────
-async function handleCloudinarySign(uid, body, env, request, tokenPayload) {
+async async function handleCloudinarySign(uid, body, env, request, tokenPayload) {
   const userEmail = tokenPayload.email?.toLowerCase();
   
   if (!userEmail || !ADMIN_EMAILS.includes(userEmail)) {
     throw new Error('Admin access required');
   }
   
-  const { folder = 'trio/activities', filename } = body;
+  const cloudName = env.CLOUDINARY_CLOUD_NAME || CLOUDINARY_CLOUD_NAME;
+  const apiKey = env.CLOUDINARY_API_KEY || CLOUDINARY_API_KEY;
+  const apiSecret = env.CLOUDINARY_API_SECRET || CLOUDINARY_API_SECRET;
+  const folder = 'trio/activities';
+  const originalName = String(body?.filename || 'activity-cover').split(/[\\\\/]/).pop().replace(/\\.[^.]+$/, '');
+  const safeName = originalName.replace(/[^a-zA-Z0-9_-]/g, '-').slice(0, 70) || 'activity-cover';
+  if (!cloudName || !apiKey || !apiSecret) throw new Error('Cloudinary is not configured on the gamification Worker');
   const timestamp = Math.floor(Date.now() / 1000);
-  const publicId = `${folder}/${Date.now()}-${filename.replace(/\.[^.]+$/, '')}`;
-  
-  // Create signature
+  const publicId = `${folder}/${Date.now()}-${safeName}`;
   const params = `folder=${folder}&public_id=${publicId}&timestamp=${timestamp}`;
-  const signature = await generateCloudinarySignature(params);
-  
+  const signature = await generateCloudinarySignature(params, apiSecret);
   return {
-    uploadUrl: `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
-    signature,
-    timestamp,
-    apiKey: CLOUDINARY_API_KEY,
-    publicId,
-    folder
+    uploadUrl: `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+    signature, timestamp, apiKey, publicId, folder
   };
 }
 
-async function generateCloudinarySignature(params) {
-  const msg = params + CLOUDINARY_API_SECRET;
+async function generateCloudinarySignature(params, apiSecret) {
   const encoder = new TextEncoder();
-  const key = await crypto.subtle.importKey(
-    'raw', encoder.encode(CLOUDINARY_API_SECRET),
-    { name: 'HMAC', hash: 'SHA-1' }, false, ['sign']
-  );
-  const sig = await crypto.subtle.sign('HMAC', key, encoder.encode(params));
-  return Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, '0')).join('');
+  const digest = await crypto.subtle.digest('SHA-1', encoder.encode(params + apiSecret));
+  return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
 }
 
 // ─── Legacy Challenge Handlers (unchanged) ────────────────────────────────────
