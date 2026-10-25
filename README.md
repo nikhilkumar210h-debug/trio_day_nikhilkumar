@@ -45,6 +45,45 @@ The app should not depend on having an existing social graph just to provide fir
 - **Media:** Cloudinary where configured (auto-optimized: `f_auto,q_auto,c_fill,g_auto,w_800`).
 - **Notifications:** Existing OneSignal/notification Worker where configured.
 
+### Native Android app
+
+The Kotlin Android app is in `android/`. It uses the existing Firebase project
+through Firebase Auth and Firestore REST APIs, reads published activities and
+tasks from the existing Supabase project, and submits task completion to the
+existing gamification Worker. It does not register an Android app or change
+Firebase, Cloudflare, or Cloudinary configuration.
+
+Build a locally installable debug APK on Windows:
+
+```powershell
+$env:ANDROID_HOME = "$env:LOCALAPPDATA\Android\Sdk"
+$env:ANDROID_SDK_ROOT = $env:ANDROID_HOME
+.\android\gradlew.bat -p android assembleDebug
+```
+
+The APK is written to `android/app/build/outputs/apk/debug/app-debug.apk`.
+The native implementation includes email/password and Trio ID sign-in, account
+creation, password reset, the three-task guest trial with later XP claiming,
+category-based English/Hindi activity and task content, server-verified task completion,
+the weekly/global/monthly/streak leaderboards, people discovery, connections,
+private chat, the notifications inbox/read status, profile editing, light/dark
+themes, language preferences, and sideload update checking. Push notifications,
+Google sign-in, and the web admin
+CRUD/upload tools are not available in the native app: Firebase Android/OAuth
+registration was not approved, and the admin workflow remains web-only.
+Retired web systems such as the generic feed and legacy Challenges are not
+reintroduced.
+
+Sideload updates are checked against the repository's latest GitHub release.
+Publish each update with a semantic version tag such as `v1.0.1` and attach the
+APK as `trio-day.apk`; increment `versionCode` and `versionName` in
+`android/app/build.gradle.kts`. Android only installs an update when it has the
+same package ID (`com.trioday.app`) and signing certificate as the installed
+app. Debug APKs use the local Android debug key and are for development; use a
+privately stored, stable release key for APKs distributed to other users.
+Installing the first release-signed APK over this debug APK requires uninstalling
+the debug build first.
+
 ### Legacy hosting
 
 `https://nkm-ind.web.app/` is a **legacy Firebase Hosting URL** and must not be treated as the designated production host.

@@ -427,7 +427,7 @@ h1, h2, h3, h4, .brand strong {
 .story-react-wrap .react-btn { min-width: 84px; }
 .story-reply-btn { background: var(--color-primary-soft); border-color: rgba(99,102,241,.18); color: var(--color-primary-strong); }
 .story-reply-btn:hover { background: rgba(99,102,241,.18); color: var(--color-primary); }
-.story-share-btn { }
+
 .story-reply-composer {
   display: flex; gap: 8px; align-items: center;
   padding: 10px 16px; border-top: 1px solid var(--color-border);

@@ -16,10 +16,14 @@ firebase-adminsdk-*.json
 *.key
 *.p12
 *.pfx
+*.jks
+*.keystore
+local.properties
 
 # Build / cache
 dist/
 build/
+.gradle/
 .cache/
 .parcel-cache/
 .vite/
