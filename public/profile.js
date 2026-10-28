@@ -345,6 +345,9 @@ async function openProfileMenu(userData) {
           <span>🔊</span> Sound Effects
           <input type="checkbox" id="sheetSoundToggle" ${SoundManager.isEnabled() ? 'checked' : ''} style="margin-left:auto">
         </label>
+        <button type="button" class="profile-menu-item" data-action="download">
+          <span>📲</span> Download Native App
+        </button>
         <button type="button" class="profile-menu-item profile-menu-danger" data-action="logout">
           <span>🚪</span> Logout
         </button>
@@ -378,16 +381,16 @@ async function openProfileMenu(userData) {
           const { sendPasswordResetEmail } = await import('https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js');
           const userEmail = me?.email || userData.email;
           if (!userEmail) {
-            const { showToast } = await import('./ui/toast.js');
+            const { showToast } = await import('./ui/ui-kit.js');
             showToast('Google account me password change Google se karo', 'error');
             return;
           }
           await sendPasswordResetEmail(auth, userEmail);
-          const { showToast } = await import('./ui/toast.js');
+          const { showToast } = await import('./ui/ui-kit.js');
           showToast('Reset link bhej diya! Email check karo ✉️');
         } catch (err) {
           console.error(err);
-          const { showToast } = await import('./ui/toast.js');
+          const { showToast } = await import('./ui/ui-kit.js');
           showToast(err.message, 'error');
         }
       } else if (action === 'theme') {
@@ -413,6 +416,28 @@ async function openProfileMenu(userData) {
             closeTheme();
           });
         });
+      } else if (action === 'download') {
+        close();
+        const { showToast } = await import('./ui/ui-kit.js');
+        const APK_URL = 'https://github.com/nikhilkumar210h-debug/trio_day_nikhilkumar/releases/download/v2.0.0/app-debug.apk';
+        const ua = navigator.userAgent || '';
+        const isNativeWebView = /wv|wvs|TrioDay|trio_day|Android.*WebView/i.test(ua)
+          || !!window.AndroidWebView
+          || (typeof window.trio_native !== 'undefined');
+        try {
+          if (isNativeWebView) {
+            location.href = APK_URL;
+            showToast('Downloading native app...');
+          } else {
+            window.open(APK_URL, '_blank', 'noopener,noreferrer');
+            showToast('Opening APK download in a new tab');
+          }
+          SoundManager.click();
+          SoundManager.success();
+        } catch (err) {
+          console.error('APK download failed:', err);
+          showToast('Failed to start download', 'error');
+        }
       } else if (action === 'logout') {
         try {
           await signOut(auth);

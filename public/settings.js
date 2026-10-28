@@ -336,7 +336,6 @@ document.addEventListener('DOMContentLoaded', () => {
   renderThemeChoices();
   initSoundToggles();
   initClearCache();
-  initApkDownload();
   
   onAuthStateChanged(auth, async (user) => {
     if (user) {
