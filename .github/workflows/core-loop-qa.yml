@@ -28,8 +28,6 @@ jobs:
           node --input-type=module --check < public/webmcp.js
           node --input-type=module --check < public/ui/header.js
           node --input-type=module --check < public/script.js
-          node --input-type=module --check < public/challenge.js
-          node --input-type=module --check < public/challenge-create.js
           node --input-type=module --check < public/profile.js
           node --input-type=module --check < public/auth.js
           node --input-type=module --check < public/gamification/streaks.js
