@@ -296,11 +296,47 @@ async function initAccountActions(user) {
   }
 }
 
+// ─── Download Native APK ─────────────────────────────────────────────────────
+function initApkDownload() {
+  const btn = $('downloadApkBtn');
+  if (!btn) return;
+
+  const APK_URL = 'https://github.com/nikhilkumar210h-debug/trio_day_nikhilkumar/releases/download/v2.0.0/app-debug.apk';
+
+  btn.addEventListener('click', (e) => {
+    e.preventDefault();
+    SoundManager.click();
+
+    // Detect if running inside a native Android WebView
+    const ua = navigator.userAgent || '';
+    const isNativeWebView = /wv|wvs|TrioDay|trio_day|Android.*WebView/i.test(ua)
+      || !!window.AndroidWebView
+      || (typeof window.trio_native !== 'undefined');
+
+    try {
+      if (isNativeWebView) {
+        // Inside native WebView: navigate so the system download manager picks up the APK
+        location.href = APK_URL;
+        showToast('Downloading native app...');
+      } else {
+        // In a browser: open the release link in a new tab so the APK downloads
+        window.open(APK_URL, '_blank', 'noopener,noreferrer');
+        showToast('Opening APK download in a new tab');
+      }
+      SoundManager.success();
+    } catch (err) {
+      console.error('APK download failed:', err);
+      showToast('Failed to start download', 'error');
+    }
+  });
+}
+
 // ─── Initialize ─────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   renderThemeChoices();
   initSoundToggles();
   initClearCache();
+  initApkDownload();
   
   onAuthStateChanged(auth, async (user) => {
     if (user) {

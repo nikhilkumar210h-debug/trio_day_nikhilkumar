@@ -1,6 +1,7 @@
 # Dependencies
 node_modules/
 .playwright-mcp
+*.qa
 # Environment / secrets
 .env
 .env.*
