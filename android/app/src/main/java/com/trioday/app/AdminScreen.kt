@@ -1,6 +1,7 @@
 ﻿package com.trioday.app
 
 import android.net.Uri
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -53,7 +54,8 @@ import kotlinx.coroutines.launch
 fun AdminScreen(
     api: TrioApi,
     me: UserProfile? = null,
-    onNotice: (String?) -> Unit
+    onNotice: (String?) -> Unit,
+    onBack: () -> Unit = {}
 ) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
@@ -88,6 +90,25 @@ fun AdminScreen(
     }
 
     LaunchedEffect(Unit) { reload() }
+
+    // ── Back navigation within Admin editors ───────────────────────────────
+    // Consumes back while inside any editor, otherwise bubbles up to
+    // TrioDayApp (which handles route == "Admin" → route = "Today").
+    BackHandler {
+        if (editingTask != null || creatingTask) {
+            editingTask = null
+            creatingTask = false
+            error = null
+        } else if (editingActivity != null || creatingActivity) {
+            editingActivity = null
+            creatingActivity = false
+            error = null
+        } else if (managingTasksFor != null) {
+            managingTasksFor = null
+            error = null
+        }
+        // Otherwise return false → bubble up to TrioDayApp's BackHandler
+    }
 
     // ── Task editor (create/edit) ────────────────────────────────────────
     if (managingTasksFor != null) {

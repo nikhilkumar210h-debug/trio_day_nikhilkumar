@@ -308,9 +308,16 @@ trio_day_main/                                    # Project root (git repo)
 - **If it breaks:** Chat inbox non-functional.
 
 **`public/private-chat.html`** + **`public/private-chat.js`**
-- **Purpose:** 1:1 private conversation. `chatId = [uid1, uid2].sort().join('_')`. Messages in `privateChats/{chatId}/messages`. Delete own messages. Seen tracking.
+- **Purpose:** 1:1 private conversation (web). `chatId = [uid1, uid2].sort().join('_')`. Messages in `privateChats/{chatId}/messages`. Delete own messages. Seen tracking.
 - **Imports:** `firebase-init.js`, `userCache`, `utils`, `notifications`.
-- **If it breaks:** Private messaging non-functional.
+- **If it breaks:** Private messaging non-functional on web.
+
+**Android local chat — `android/app/src/main/java/com/trioday/app/ChatDatabase.kt`**
+- **Purpose:** On-device SQLite store (`trio_day_chat.db`) for Android private chat messages only.
+- **Scope:** Chat messages only — never account, profile, activity, XP, or connection data.
+- **Auto-cleanup:** Messages older than 30 days are deleted from the local SQLite database. This cleanup applies **only to chat messages**; the database file itself is never auto-deleted by the app.
+- **User control:** The SQLite database file is under user control. It is removed only when the user uninstalls the app or clears app data (Android Settings → Apps → Trio Day → Storage → Clear data). The app never deletes it.
+- **If it breaks:** Android chat falls back to no local persistence; messages still sync via Firestore `privateChats/{chatId}/messages`.
 
 **`public/all-users.html`** + **`public/all-users.js`**
 - **Purpose:** Discover — user directory with avatars, names, XP, categories. Streak leaderboard. "Challenge them" links.
@@ -596,6 +603,12 @@ trio_day_main/                                    # Project root (git repo)
 | `badges/{badgeId}` | Document | Admin (isAdmin) | id, name, icon, desc | Read: signed-in. Write: admin only. |
 | `leaderboards/{boardId}` | Document | **Server only** (gamification Worker) | entries[] (uid, name, photoURL, level, value) | Read: signed-in. Write: disabled for clients. |
 
+### Local SQLite (Android chat only)
+
+| Path | Type | Who Writes | Key Fields | Rules |
+|------|------|-----------|------------|-------|
+| `trio_day_chat.db` → `chat_messages` | Local SQLite table | App (owner) | id, peer_uid, uid, name, text, created_at_ms, seen, is_mine | Read/write: app only. Auto-cleanup: messages older than 30 days deleted. Database file never auto-deleted by app; removed only on uninstall or "Clear data". Chat messages only — never account/profile/activity/XP data. |
+
 **Supabase tables (PostgreSQL):**
 
 | Table | Key Fields | Access |
@@ -697,6 +710,18 @@ gamification-cron triggered hourly (0 * * * *)
   → deleteExpiredTempChats(): queries tempMessages where expireAt < now
     → deletes messages + rooms
   → Daily (15 0 * * *): publishDailyQuestion() → patches config/dailyQuestion
+```
+
+#### Path G: Android → Local SQLite (Chat Messages Only)
+```
+Android app (ChatScreen.kt / TrioSocialApi.kt)
+  → ChatDatabase.init(context) opens trio_day_chat.db (SQLiteOpenHelper)
+  → Table chat_messages (id, peer_uid, uid, name, text, created_at_ms, seen, is_mine)
+  → Messages written/read locally via raw SQLite (no Firestore path for Android chat storage)
+  → Auto-cleanup (ChatDatabase.cleanupOldMessages): deletes rows where created_at_ms < now - 30 days
+    → Applies ONLY to chat_messages table — never account/profile/activity/XP/connection data
+    → Never deletes the trio_day_chat.db file itself
+  → Database file removed only on: app uninstall, or Android Settings → Apps → Trio Day → Storage → Clear data
 ```
 
 ---

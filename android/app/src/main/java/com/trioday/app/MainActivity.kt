@@ -10,6 +10,7 @@ import android.os.Bundle
 import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -511,7 +512,7 @@ private fun TrioDayApp(
                                     )
                                     "Help" -> HelpScreen(me = profile, onBack = { route = "Today" })
                                     "Admin" -> if (isAdmin) {
-                                        AdminScreen(api = api, me = profile, onNotice = { notice = it })
+                                        AdminScreen(api = api, me = profile, onNotice = { notice = it }, onBack = { route = "Today" })
                                     } else {
                                         StateBox("🔒", "Admin only", "This area is restricted to Trio Day admins.", "Back to Today", onAction = { route = "Today" })
                                     }
@@ -544,6 +545,16 @@ private fun TrioDayApp(
                         }
                     }
                 }
+            }
+            BackHandler {
+                if (playerActivity != null) {
+                    playerActivity = null
+                } else if (route == "Privacy" || route == "Terms") {
+                    route = legalBack
+                } else if (route == "Admin") {
+                    route = "Today"
+                }
+                // Otherwise: return false → default system back behavior (app closes)
             }
         }
     }
