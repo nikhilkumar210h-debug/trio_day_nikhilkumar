@@ -258,6 +258,11 @@
         <button id="themeToggle" class="theme-btn" type="button" aria-label="Toggle theme" aria-pressed="false">☀️</button>
       </div>
 
+      <button id="installAppBtn" type="button" class="install-app-btn" style="width:100%;height:44px;border-radius:12px;font-weight:850;font-size:11px;border:1px solid var(--login-border);background:rgba(255,255,255,.025);color:var(--login-ink);margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:8px">
+        <span style="font-size:16px">📲</span>
+        <span>Install Native App</span>
+      </button>
+
       <div class="mode-tabs" role="tablist" aria-label="Account mode">
         <button id="loginTab" class="mode-tab active" type="button" role="tab" aria-selected="true">Log in</button>
         <button id="signupTab" class="mode-tab" type="button" role="tab" aria-selected="false">Create account</button>
@@ -320,6 +325,27 @@
     sync();
   });
   new MutationObserver(sync).observe(document.documentElement, {attributes:true,attributeFilter:['data-theme']});
+
+  // Install Native App button
+  const installBtn = document.getElementById('installAppBtn');
+  if (installBtn) {
+    installBtn.addEventListener('click', async () => {
+      const APK_URL = 'https://github.com/nikhilkumar210h-debug/trio_day_nikhilkumar/releases/download/v2.0.0/app-debug.apk';
+      const ua = navigator.userAgent || '';
+      const isNativeWebView = /wv|wvs|TrioDay|trio_day|Android.*WebView/i.test(ua)
+        || !!window.AndroidWebView
+        || (typeof window.trio_native !== 'undefined');
+      try {
+        if (isNativeWebView) {
+          location.href = APK_URL;
+        } else {
+          window.open(APK_URL, '_blank', 'noopener,noreferrer');
+        }
+      } catch (err) {
+        console.error('APK download failed:', err);
+      }
+    });
+  }
 </script>
 <script type="module" src="auth.js?v=20260922-login-ui"></script>
 </body>
