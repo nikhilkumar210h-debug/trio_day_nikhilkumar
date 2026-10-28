@@ -18,7 +18,7 @@
   width: min(560px, 100%) !important;
   margin: 0 auto !important;
   display: grid !important;
-  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr)) !important;
   gap: 4px !important;
   padding: 6px 8px 4px !important;
   align-items: stretch !important;
