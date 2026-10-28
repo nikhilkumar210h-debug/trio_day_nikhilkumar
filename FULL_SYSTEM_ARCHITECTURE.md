@@ -1222,7 +1222,7 @@ GOOGLE_APPLICATION_CREDENTIALS=C:\Users\Nikhil Kumar\Documents\trio_day_main\scr
 
 # OneSignal (public app ID — REST key should NOT be in frontend)
 ONESIGNAL_APP_ID=ae462d86-13fe-48d1-a577-a484f539f4cb
-ONESIGNAL_REST_API_KEY=os_v2_app_vzdc3bqt7zendjlxuscpkopuzmjz7yq57ndesdup4oembjsxqrjo4dvfd2szfgguz42isvswviaswyqbhtzm6dkgqdk4eedacaj3vma
+ONESIGNAL_REST_API_KEY=os_v2_app_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx  # real key sirf .env / wrangler secret me
 
 # Frontend origins allowed to call APIs
 ALLOWED_ORIGINS=http://127.0.0.1:5500,http://localhost:5500

@@ -1,4 +1,4 @@
-package com.trioday.app
+﻿package com.trioday.app
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -49,6 +49,7 @@ private val LeaderboardKinds = listOf("Weekly XP", "Global XP", "Monthly", "Stre
 fun LeaderboardScreen(
     socialApi: TrioSocialApi,
     myUid: String?,
+    me: UserProfile? = null,
     onOpenProfile: (TrioUser) -> Unit
 ) {
     val c = TrioTheme.colors
@@ -71,7 +72,11 @@ fun LeaderboardScreen(
     }
 
     Column(Modifier.fillMaxSize().background(c.bg)) {
-        ScreenTopBar("🏆 Leaderboard")
+        ScreenTopBar(
+            "Leaderboard",
+            avatarName = me?.name,
+            avatarUrl = me?.photoUrl
+        )
 
         // Tabs
         Row(

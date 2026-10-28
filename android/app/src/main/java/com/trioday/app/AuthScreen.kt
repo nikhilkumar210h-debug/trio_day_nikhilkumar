@@ -1,6 +1,7 @@
 package com.trioday.app
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -42,6 +43,9 @@ fun AuthScreen(
     error: String?,
     onAuth: (name: String, identifier: String, password: String, isSignUp: Boolean, useTrioId: Boolean) -> Unit,
     onPasswordReset: (String) -> Unit,
+    onGoogle: () -> Unit,
+    onOpenTerms: () -> Unit,
+    onOpenPrivacy: () -> Unit,
     onContinueGuest: () -> Unit
 ) {
     val c = TrioTheme.colors
@@ -50,6 +54,7 @@ fun AuthScreen(
     var name by remember { mutableStateOf("") }
     var identifier by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var termsAccepted by remember { mutableStateOf(false) }
 
     Column(
         Modifier
@@ -127,7 +132,7 @@ fun AuthScreen(
             maxLength = 80
         )
         Spacer(Modifier.height(12.dp))
-        TrioInput("Password", password, { password = it }, Modifier.fillMaxWidth(), placeholder = "••••••••", password = true, maxLength = 80)
+        TrioInput("Password", password, { password = it }, Modifier.fillMaxWidth(), placeholder = "••••••••", password = true, showToggle = true, maxLength = 80)
         error?.let {
             Text(it, color = c.danger, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 12.dp))
         }
@@ -136,6 +141,7 @@ fun AuthScreen(
             label = if (signUp) "Create account" else "Sign in",
             onClick = { onAuth(name.trim(), identifier.trim().uppercase(), password, signUp, useTrioId) },
             enabled = !busy &&
+                termsAccepted &&
                 identifier.isNotBlank() &&
                 password.length >= 6 &&
                 (!signUp || name.isNotBlank()),
@@ -154,6 +160,64 @@ fun AuthScreen(
                 TextButton(onClick = { onPasswordReset(identifier.trim()) }, enabled = !busy) {
                     Text("Forgot password?", color = c.inkMuted, fontSize = 13.sp)
                 }
+            }
+        }
+        Spacer(Modifier.height(14.dp))
+        // Divider
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+            Box(Modifier.weight(1f).height(1.dp).background(c.border))
+            Text("  or  ", color = c.inkDim, fontSize = 12.sp)
+            Box(Modifier.weight(1f).height(1.dp).background(c.border))
+        }
+        Spacer(Modifier.height(14.dp))
+        // Google sign-in (same accounts as the webapp's Google button)
+        TrioButton(
+            label = if (busy) "Connecting…" else "Continue with Google",
+            onClick = onGoogle,
+            enabled = !busy && termsAccepted,
+            loading = busy,
+            style = TrioButtonStyle.Secondary,
+            modifier = Modifier.fillMaxWidth(),
+            height = 52.dp
+        )
+        Spacer(Modifier.height(16.dp))
+        // Terms acceptance — required before sign-in
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Box(
+                Modifier
+                    .size(20.dp)
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(if (termsAccepted) Primary else androidx.compose.ui.graphics.Color.Transparent)
+                    .border(
+                        1.dp,
+                        if (termsAccepted) Primary else c.borderStrong,
+                        RoundedCornerShape(6.dp)
+                    )
+                    .clickable { termsAccepted = !termsAccepted },
+                contentAlignment = Alignment.Center
+            ) {
+                if (termsAccepted) Text("✓", color = androidx.compose.ui.graphics.Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+            }
+            Spacer(Modifier.width(10.dp))
+            Text(
+                "I accept the Terms & Conditions and Privacy Policy",
+                color = c.inkMuted,
+                fontSize = 12.sp,
+                modifier = Modifier.weight(1f)
+            )
+        }
+        Row(
+            Modifier.fillMaxWidth().padding(start = 30.dp),
+            horizontalArrangement = Arrangement.spacedBy(18.dp)
+        ) {
+            TextButton(onClick = onOpenTerms, contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 0.dp)) {
+                Text("View Terms & Conditions", color = c.primaryText, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+            }
+            TextButton(onClick = onOpenPrivacy, contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 0.dp)) {
+                Text("View Privacy Policy", color = c.primaryText, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
             }
         }
         TextButton(onClick = onContinueGuest, modifier = Modifier.align(Alignment.CenterHorizontally)) {

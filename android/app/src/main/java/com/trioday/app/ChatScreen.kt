@@ -1,4 +1,4 @@
-package com.trioday.app
+﻿package com.trioday.app
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -55,15 +55,22 @@ import java.util.Locale
 fun ChatScreen(
     socialApi: TrioSocialApi,
     myUid: String?,
+    me: UserProfile? = null,
     language: String,
     onOpenProfile: (TrioUser) -> Unit,
-    onFindPeople: () -> Unit
+    onFindPeople: () -> Unit,
+    initialPeer: TrioUser? = null
 ) {
     val c = TrioTheme.colors
     var threads by remember { mutableStateOf<List<ChatThread>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
     var openPeer by remember { mutableStateOf<TrioUser?>(null) }
+
+    // "Message" from a member profile opens the conversation immediately.
+    LaunchedEffect(initialPeer?.uid) {
+        initialPeer?.let { openPeer = it }
+    }
 
     LaunchedEffect(myUid) {
         if (myUid == null) return@LaunchedEffect
@@ -85,7 +92,9 @@ fun ChatScreen(
 
     Column(Modifier.fillMaxSize().background(c.bg)) {
         ScreenTopBar(
-            "💬 Chat",
+            "Chat",
+            avatarName = me?.name,
+            avatarUrl = me?.photoUrl,
             trailing = {
                 TextButton(onClick = onFindPeople) { Text("Find people", color = c.primaryText, fontSize = 12.sp, fontWeight = FontWeight.Bold) }
             }
@@ -222,6 +231,8 @@ private fun Conversation(
         ScreenTopBar(
             peer.name.ifBlank { "Chat" },
             onBack = onBack,
+            avatarName = peer.name,
+            avatarUrl = peer.photoUrl,
             trailing = {
                 TextButton(onClick = { onOpenProfile(peer) }) { Text("Profile", color = c.primaryText, fontSize = 12.sp, fontWeight = FontWeight.Bold) }
             }

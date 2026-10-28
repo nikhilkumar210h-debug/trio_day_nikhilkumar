@@ -20,6 +20,9 @@ android {
         buildConfigField("String", "SUPABASE_ANON_KEY", "\"sb_publishable_zJvP50wf3CW2PNfkOD9yCQ_ffFhsZEp\"")
         buildConfigField("String", "GAMIFICATION_WORKER_URL", "\"https://trio-gamification.trioday-nikhil.workers.dev\"")
         buildConfigField("String", "GITHUB_RELEASES_URL", "\"https://api.github.com/repos/nikhilkumar210h-debug/trio_day_nikhilkumar/releases/latest\"")
+        // Web OAuth client from google-services.json (client_type 3) — required
+        // as the serverClientId for Credential Manager Google Sign-In.
+        buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"180091505382-ugo62duumiul4mqnngvk6l7d5nc6ipob.apps.googleusercontent.com\"")
     }
 
     buildFeatures {
@@ -51,6 +54,11 @@ dependencies {
     implementation("io.coil-kt:coil-compose:2.5.0")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.0")
+    // Google Sign-In via Android Credential Manager (same Firebase accounts
+    // as the webapp's Google button; config comes from google-services.json).
+    implementation("androidx.credentials:credentials:1.2.2")
+    implementation("androidx.credentials:credentials-play-services-auth:1.2.2")
+    implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
 
     debugImplementation("androidx.compose.ui:ui-tooling")
 }

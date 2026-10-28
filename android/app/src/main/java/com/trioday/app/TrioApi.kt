@@ -66,7 +66,7 @@ class TrioApi(context: Context) {
         val nextRefreshToken = response.getString("refresh_token")
         val restored = AuthSession(
             uid = response.getString("user_id"),
-            email = "",
+            email = settings.getString("sessionEmail", "").orEmpty(),
             idToken = response.getString("id_token"),
             refreshToken = nextRefreshToken,
             expiresAtMillis = System.currentTimeMillis() + response.optLong("expires_in", 3600) * 1000
@@ -97,6 +97,26 @@ class TrioApi(context: Context) {
         saveAuthenticatedSession(tokenResponse)
     }
 
+    /**
+     * Google Sign-In (same accounts as the webapp): exchange a Google ID
+     * token from Credential Manager for a Firebase session via
+     * accounts:signInWithIdp — the same endpoint the Firebase SDK uses.
+     * Returns the session plus the Google display name for profile self-heal.
+     */
+    suspend fun signInWithGoogleIdToken(googleIdToken: String): Pair<AuthSession, String> =
+        withContext(Dispatchers.IO) {
+            val response = requestJson(
+                "https://identitytoolkit.googleapis.com/v1/accounts:signInWithIdp?key=${BuildConfig.FIREBASE_API_KEY}",
+                JSONObject()
+                    .put("postBody", "id_token=${urlEncode(googleIdToken)}&providerId=google.com")
+                    .put("requestUri", "http://localhost")
+                    .put("returnSecureToken", true)
+                    .toString()
+            )
+            val displayName = response.optString("displayName").orEmpty()
+            saveAuthenticatedSession(response) to displayName
+        }
+
     suspend fun sendPasswordReset(email: String) = withContext(Dispatchers.IO) {
         requestJson(
             "https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key=${BuildConfig.FIREBASE_API_KEY}",
@@ -109,32 +129,104 @@ class TrioApi(context: Context) {
             endpoint = "signUp",
             body = JSONObject().put("email", email).put("password", password).put("returnSecureToken", true)
         )
+        val trioId = makeUserId(created.uid)
         val profile = JSONObject()
             .put("name", name)
             .put("uid", created.uid)
             .put("displayName", name)
-            .put("userId", makeUserId(created.uid))
-            .put("trioUid", makeUserId(created.uid))
+            .put("userId", trioId)
+            .put("trioUid", trioId)
             .put("bio", "")
             .put("photoURL", JSONObject.NULL)
             .put("emailHidden", false)
             .put("onboardingComplete", false)
             .put("createdAt", JSONObject().put("timestampValue", java.time.Instant.now().toString()))
             .put("updatedAt", JSONObject().put("timestampValue", java.time.Instant.now().toString()))
+        // Rules-safe profile creation (same write the web SDK's setDoc sends).
+        // A failure here is NOT fatal: ensureProfileDoc() retries on sign-in,
+        // so the freshly created account never becomes a dead end.
         try {
-            firestoreRequest(created, "users/${created.uid}", "PATCH", JSONObject().put("fields", encodeFirestoreFields(profile)))
-            firestoreRequest(
-                created,
-                "usersPrivate/${created.uid}",
-                "PATCH",
-                JSONObject().put("fields", encodeFirestoreFields(JSONObject().put("email", email)))
-            )
+            setDocument("users/${created.uid}", profile)
+            setDocument("usersPrivate/${created.uid}", JSONObject().put("email", email))
         } catch (error: IOException) {
-            signOut()
-            throw IOException("Your account was created, but its profile could not be saved: ${error.message}", error)
+            // Profile will be healed automatically right after sign-in.
         }
         return created
     }
+
+    /**
+     * SDK-style document upsert via documents:commit (a bare update write with
+     * no precondition) — identical semantics to the webapp's setDoc. Unlike a
+     * PATCH with updateMask, the rules engine evaluates it as a clean CREATE
+     * when the document does not exist.
+     */
+    internal suspend fun setDocument(path: String, values: JSONObject) = withContext(Dispatchers.IO) {
+        val current = requireSession()
+        val body = JSONObject().put(
+            "writes",
+            JSONArray().put(
+                JSONObject()
+                    .put(
+                        "update",
+                        JSONObject()
+                            .put(
+                                "name",
+                                "projects/${BuildConfig.FIREBASE_PROJECT_ID}/databases/(default)/documents/$path"
+                            )
+                            .put("fields", encodeFirestoreFields(values))
+                    )
+            )
+        )
+        val request = Request.Builder()
+            .url("https://firestore.googleapis.com/v1/projects/${BuildConfig.FIREBASE_PROJECT_ID}/databases/(default)/documents:commit")
+            .header("Authorization", "Bearer ${getIdToken(current)}")
+            .post(body.toString().toRequestBody(JSON_MEDIA_TYPE))
+            .build()
+        execute(request)
+    }
+
+    /**
+     * Native port of the webapp's ensureUserProfile self-heal: if the
+     * users/{uid} document is missing (an account created while the old
+     * broken rules were live), create it now. Gamification fields are never
+     * seeded — only the gamification Worker may write those. Returns true
+     * when a profile document exists afterwards.
+     */
+    suspend fun ensureProfileDoc(displayName: String? = null): Boolean = withContext(Dispatchers.IO) {
+        val current = requireSession()
+        try {
+            firestoreRequest(current, "users/${current.uid}", "GET")
+            true
+        } catch (_: Exception) {
+            try {
+                val name = displayName?.trim().takeUnless { it.isNullOrBlank() }
+                    ?: sessionEmail().substringBefore("@").takeIf { it.isNotBlank() }
+                    ?: "Trio Member"
+                val trioId = makeUserId(current.uid)
+                val profile = JSONObject()
+                    .put("uid", current.uid)
+                    .put("name", name)
+                    .put("displayName", name)
+                    .put("userId", trioId)
+                    .put("trioUid", trioId)
+                    .put("bio", "")
+                    .put("emailHidden", false)
+                    .put("onboardingComplete", false)
+                    .put("createdAt", JSONObject().put("timestampValue", java.time.Instant.now().toString()))
+                    .put("updatedAt", JSONObject().put("timestampValue", java.time.Instant.now().toString()))
+                setDocument("users/${current.uid}", profile)
+                if (sessionEmail().isNotBlank()) {
+                    runCatching { setDocument("usersPrivate/${current.uid}", JSONObject().put("email", sessionEmail())) }
+                }
+                true
+            } catch (_: Exception) {
+                false
+            }
+        }
+    }
+
+    /** Last known account email, persisted locally (used by self-heal + admin gate). */
+    fun sessionEmail(): String = settings.getString("sessionEmail", session?.email.orEmpty()).orEmpty()
 
     private suspend fun authenticate(endpoint: String, body: JSONObject): AuthSession = withContext(Dispatchers.IO) {
         val response = requestJson(
@@ -154,12 +246,16 @@ class TrioApi(context: Context) {
             expiresAtMillis = System.currentTimeMillis() + expiresIn * 1000
         )
         tokenStore.write(authenticated.refreshToken())
+        if (authenticated.email.isNotBlank()) {
+            settings.edit().putString("sessionEmail", authenticated.email).apply()
+        }
         session = authenticated
         return authenticated
     }
 
     suspend fun signOut() = withContext(Dispatchers.IO) {
         tokenStore.clear()
+        settings.edit().remove("sessionEmail").apply()
         session = null
     }
 
@@ -268,23 +364,25 @@ class TrioApi(context: Context) {
     suspend fun loadProfile(): UserProfile = withContext(Dispatchers.IO) {
         val current = requireSession()
         val document = firestoreRequest(current, "users/${current.uid}", "GET")
-        val fields = document.optJSONObject("fields") ?: JSONObject()
+        // The *Field helpers expect the DOCUMENT root (they unwrap .fields
+        // themselves). Calling them on the already-unwrapped fields object
+        // made every profile field parse as empty — the "blank profile" bug.
         UserProfile(
-            uid = fields.stringField("uid").ifBlank { current.uid },
-            name = fields.stringField("name").ifBlank { current.email.substringBefore("@") },
-            userId = fields.stringField("userId"),
-            bio = fields.stringField("bio"),
-            photoUrl = fields.stringField("photoURL"),
-            selectedCategory = fields.stringField("selectedCategory"),
-            onboardingComplete = fields.booleanField("onboardingComplete"),
-            xp = fields.longField("xp"),
-            level = fields.longField("level"),
-            weeklyXp = fields.longField("weeklyXp"),
-            monthlyXp = fields.longField("monthlyXp"),
-            streak = fields.longField("streakCurrent"),
-            bestStreak = fields.longField("streakBest"),
-            shields = fields.longField("shields"),
-            badges = fields.stringListField("badges")
+            uid = document.stringField("uid").ifBlank { current.uid },
+            name = document.stringField("name").ifBlank { current.email.substringBefore("@") },
+            userId = document.stringField("userId"),
+            bio = document.stringField("bio"),
+            photoUrl = document.stringField("photoURL"),
+            selectedCategory = document.stringField("selectedCategory"),
+            onboardingComplete = document.booleanField("onboardingComplete"),
+            xp = document.longField("xp"),
+            level = document.longField("level").coerceAtLeast(1),
+            weeklyXp = document.longField("weeklyXp"),
+            monthlyXp = document.longField("monthlyXp"),
+            streak = document.longField("streakCurrent"),
+            bestStreak = document.longField("streakBest"),
+            shields = document.longField("shields"),
+            badges = document.stringListField("badges")
         )
     }
 
@@ -429,23 +527,48 @@ class TrioApi(context: Context) {
         when (method) {
             "PATCH" -> {
                 val fields = body?.optJSONObject("fields") ?: JSONObject()
-                val updateMask = fields.keys().asSequence().toList()
-                if (updateMask.isEmpty()) throw IOException("Refusing to update a profile without fields.")
-                val patchUrl = buildString {
-                    append(url)
-                    updateMask.forEachIndexed { index, field ->
-                        append(if (index == 0) '?' else '&')
-                        append("updateMask.fieldPaths=")
-                        append(urlEncode(field))
-                    }
-                }
-                builder.url(patchUrl).patch((body ?: JSONObject()).toString().toRequestBody(JSON_MEDIA_TYPE))
+                if (fields.length() == 0) throw IOException("Refusing to update a document without fields.")
+                // Masked updates MUST use the documents:commit form with the
+                // updateMask INSIDE the write — the exact wire format the
+                // Firestore SDKs send. The ?updateMask.fieldPaths= query
+                // binding is rejected/mis-evaluated by this API and was the
+                // cause of every "Missing or insufficient permissions"
+                // failure on profile saves, goal switches and mark-read.
+                // No precondition: masked bare-update upserts, so relation
+                // documents (follows) are still created when missing.
+                val mask = JSONArray()
+                fields.keys().asSequence().forEach { mask.put(it) }
+                val write = JSONObject()
+                    .put(
+                        "update",
+                        JSONObject()
+                            .put(
+                                "name",
+                                "projects/${BuildConfig.FIREBASE_PROJECT_ID}/databases/(default)/documents/$path"
+                            )
+                            .put("fields", fields)
+                    )
+                    .put("updateMask", JSONObject().put("fieldPaths", mask))
+                val commitBody = JSONObject().put("writes", JSONArray().put(write))
+                val commitRequest = Request.Builder()
+                    .url("https://firestore.googleapis.com/v1/projects/${BuildConfig.FIREBASE_PROJECT_ID}/databases/(default)/documents:commit")
+                    .header("Authorization", "Bearer $token")
+                    .post(commitBody.toString().toRequestBody(JSON_MEDIA_TYPE))
+                    .build()
+                val response = execute(commitRequest)
+                if (response.isBlank()) JSONObject() else JSONObject(response)
             }
-            "DELETE" -> builder.url(url).delete()
-            else -> builder.url(url).get()
+            "DELETE" -> {
+                builder.url(url).delete()
+                val response = execute(builder.build())
+                if (response.isBlank()) JSONObject() else JSONObject(response)
+            }
+            else -> {
+                builder.url(url).get()
+                val response = execute(builder.build())
+                if (response.isBlank()) JSONObject() else JSONObject(response)
+            }
         }
-        val response = execute(builder.build())
-        if (response.isBlank()) JSONObject() else JSONObject(response)
     }
 
     internal fun requestJson(url: String, body: String, contentType: String = "application/json"): JSONObject {

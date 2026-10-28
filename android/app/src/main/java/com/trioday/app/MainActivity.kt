@@ -38,6 +38,7 @@ private var lightMode by mutableStateOf(false)
 class MainActivity : ComponentActivity() {
     private val api by lazy { TrioApi(applicationContext) }
     private val updater by lazy { AppUpdate(applicationContext) }
+    private val googleIdentity by lazy { GoogleIdentity(this) }
     private var downloadId: Long? = null
     private var pendingInstallUri: Uri? = null
 
@@ -75,7 +76,8 @@ class MainActivity : ComponentActivity() {
                 TrioDayApp(
                     api = api,
                     updater = updater,
-                    onStartDownload = { release -> startDownload(release) }
+                    onStartDownload = { release -> startDownload(release) },
+                    googleIdTokenProvider = { googleIdentity.fetchGoogleIdToken() }
                 )
             }
         }
@@ -124,11 +126,44 @@ class MainActivity : ComponentActivity() {
 
 private val AdminEmails = listOf("nikhilkumar210h@gmail.com", "nikhilkumar45374@gmail.com")
 
+/**
+ * Friendly auth error mapping — port of the webapp's prettyAuthError.
+ * Firebase REST messages are technical ("EMAIL_EXISTS"); users see the
+ * same human phrasing as on the web.
+ */
+private fun prettyAuthError(message: String?): String {
+    val raw = message ?: return "Something went wrong. Please try again."
+    val m = raw.lowercase()
+    return when {
+        m.contains("email_exists") || m.contains("email already in use") ->
+            "That email already has an account — try signing in instead."
+        m.contains("invalid_login_credentials") || m.contains("invalid_password") ||
+            m.contains("email_not_found") || m.contains("password is invalid") ||
+            m.contains("wrong password") ->
+            "Email or password is incorrect."
+        m.contains("invalid_email") -> "Please enter a valid email address."
+        m.contains("weak_password") || m.contains("6 characters") ->
+            "Password must be at least 6 characters."
+        m.contains("too_many_attempts") || m.contains("too many requests") ->
+            "Too many attempts — please wait a minute and try again."
+        m.contains("network") || m.contains("failed to connect") ->
+            "Network problem. Check your connection and try again."
+        m.contains("credential already in use") || m.contains("federated_user_account_already") || m.contains("already associated") ->
+            "This Google account is linked to a different sign-in method. Try email sign-in."
+        m.contains("missing or insufficient permissions") ->
+            "Your profile couldn't sync yet — it will finish automatically."
+        m.contains("not found") && m.contains("documents") ->
+            "Your profile is being created — it will appear in a moment."
+        else -> raw
+    }
+}
+
 @Composable
 private fun TrioDayApp(
     api: TrioApi,
     updater: AppUpdate,
-    onStartDownload: (AppRelease) -> Unit
+    onStartDownload: (AppRelease) -> Unit,
+    googleIdTokenProvider: suspend () -> String
 ) {
     val scope = rememberCoroutineScope()
     val c = TrioTheme.colors
@@ -147,6 +182,9 @@ private fun TrioDayApp(
     var language by remember { mutableStateOf(api.preference("language", "EN")) }
     var updateBusy by remember { mutableStateOf(false) }
     var selectedMember by remember { mutableStateOf<TrioUser?>(null) }
+    var chatPeer by remember { mutableStateOf<TrioUser?>(null) }
+    var discoverBack by remember { mutableStateOf("You") }
+    var legalBack by remember { mutableStateOf("Today") }
 
     // Auto-clear notices.
     LaunchedEffect(notice) {
@@ -161,24 +199,43 @@ private fun TrioDayApp(
             try {
                 profile = api.loadProfile()
             } catch (e: Exception) {
-                error = e.message ?: "Could not refresh your profile."
+                error = prettyAuthError(e.message)
             }
         }
     }
 
-    fun afterSignIn() {
-        reloadProfile()
+    /**
+     * Post-sign-in pipeline: load (or self-heal) the profile, resolve admin
+     * status and replay guest progress — mirrors the webapp's
+     * ensureUserProfile + auth-ui.js behaviour.
+     */
+    fun afterSignIn(preferredName: String? = null) {
         scope.launch {
             try {
-                val email = api.loadPrivateEmail().lowercase()
-                isAdmin = AdminEmails.contains(email) || session?.email?.lowercase()?.let { AdminEmails.contains(it) } == true
-            } catch (_: Exception) { }
+                profile = api.loadProfile()
+            } catch (_: Exception) {
+                profile = null
+            }
+            if (profile == null) {
+                // Account exists in Firebase Auth but has no Firestore doc
+                // (created while the old broken rules were live) — heal it.
+                if (api.ensureProfileDoc(preferredName)) {
+                    try {
+                        profile = api.loadProfile()
+                    } catch (_: Exception) {
+                    }
+                    if (profile != null) notice = "Your profile has been created. Welcome to Trio Day!"
+                }
+            }
+            val knownEmail = api.sessionEmail().lowercase()
+            isAdmin = AdminEmails.contains(knownEmail) ||
+                session?.email?.lowercase()?.let { AdminEmails.contains(it) } == true
             if (api.guestClaims().length() > 0) {
                 try {
                     val claimed = api.claimGuestProgress().optInt("claimed")
                     if (claimed > 0) notice = "$claimed guest task(s) credited to your account."
-                } catch (e: Exception) {
-                    error = "Guest progress will be claimed next time you're online."
+                } catch (_: Exception) {
+                    // Claim retries automatically on the next sign-in.
                 }
             }
         }
@@ -189,14 +246,13 @@ private fun TrioDayApp(
         try {
             session = api.restoreSession()
         } catch (e: Exception) {
-            error = e.message
+            error = prettyAuthError(e.message)
         }
         if (session != null) {
             try {
                 profile = api.loadProfile()
-                if (profile?.onboardingComplete == false) route = "Today"
-            } catch (e: Exception) {
-                error = e.message ?: "Could not load your profile."
+            } catch (_: Exception) {
+                profile = null
             }
             afterSignIn()
         }
@@ -211,6 +267,16 @@ private fun TrioDayApp(
                 booting -> Box(Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.Center) {
                     androidx.compose.material3.CircularProgressIndicator(color = Primary)
                 }
+
+                // ── Native legal screens (from auth or settings) ─────────
+                route == "Privacy" -> PrivacyPolicyScreen(
+                    me = profile,
+                    onBack = { route = legalBack }
+                )
+                route == "Terms" -> TermsScreen(
+                    me = profile,
+                    onBack = { route = legalBack }
+                )
 
                 // ── Task player overlay ─────────────────────────────────
                 playerActivity != null -> PlayerScreen(
@@ -234,9 +300,9 @@ private fun TrioDayApp(
                                 session = if (isSignUp) api.signUp(name, identifier, password)
                                 else if (useTrioId) api.signInWithTrioUid(identifier, password)
                                 else api.signIn(identifier, password)
-                                afterSignIn()
+                                afterSignIn(if (isSignUp) name.trim().ifBlank { null } else null)
                             } catch (e: Exception) {
-                                error = e.message ?: "Sign-in failed."
+                                error = prettyAuthError(e.message)
                             } finally {
                                 busy = false
                             }
@@ -249,12 +315,29 @@ private fun TrioDayApp(
                                 api.sendPasswordReset(email)
                                 notice = "Password reset instructions have been sent."
                             } catch (e: Exception) {
-                                error = e.message ?: "Could not send the reset email."
+                                error = prettyAuthError(e.message)
                             } finally {
                                 busy = false
                             }
                         }
                     },
+                    onGoogle = {
+                        scope.launch {
+                            busy = true; error = null
+                            try {
+                                val googleToken = googleIdTokenProvider()
+                                val (sessionOut, googleName) = api.signInWithGoogleIdToken(googleToken)
+                                session = sessionOut
+                                afterSignIn(googleName.ifBlank { null })
+                            } catch (e: Exception) {
+                                error = prettyAuthError(e.message)
+                            } finally {
+                                busy = false
+                            }
+                        }
+                    },
+                    onOpenTerms = { legalBack = "Today"; route = "Terms" },
+                    onOpenPrivacy = { legalBack = "Today"; route = "Privacy" },
                     onContinueGuest = { guestMode = true }
                 )
 
@@ -270,7 +353,11 @@ private fun TrioDayApp(
                                     myUid = session?.uid,
                                     person = member,
                                     onBack = { selectedMember = null },
-                                    onMessage = { route = "Chat"; selectedMember = null }
+                                    onMessage = { peer ->
+                                        chatPeer = peer
+                                        selectedMember = null
+                                        route = "Chat"
+                                    }
                                 )
                                 else -> when (route) {
                                     "Today" -> TodayScreen(
@@ -297,19 +384,23 @@ private fun TrioDayApp(
                                             val next = if (lightMode) "dark" else "light"
                                             api.setPreference("theme", next)
                                             lightMode = next == "light"
-                                        }
+                                        },
+                                        onOpenProfile = { route = "You" }
                                     )
                                     "Leaderboard" -> LeaderboardScreen(
                                         socialApi = socialApi,
                                         myUid = session?.uid,
+                                        me = profile,
                                         onOpenProfile = { selectedMember = it }
                                     )
                                     "Chat" -> ChatScreen(
                                         socialApi = socialApi,
                                         myUid = session?.uid,
+                                        me = profile,
                                         language = language,
                                         onOpenProfile = { selectedMember = it },
-                                        onFindPeople = { route = "Discover" }
+                                        onFindPeople = { discoverBack = "Chat"; route = "Discover" },
+                                        initialPeer = chatPeer
                                     )
                                     "You" -> if (session == null) {
                                         // Guest gate — the profile is auth-guarded on the webapp too.
@@ -347,7 +438,10 @@ private fun TrioDayApp(
                                         socialApi = socialApi,
                                         profile = profile,
                                         language = language,
-                                        onNavigate = { route = it },
+                                        onNavigate = { target ->
+                                            if (target == "Discover") discoverBack = "You"
+                                            route = target
+                                        },
                                         onSignOut = {
                                             scope.launch {
                                                 api.signOut()
@@ -361,16 +455,23 @@ private fun TrioDayApp(
                                     "Discover" -> DiscoverScreen(
                                         socialApi = socialApi,
                                         myUid = session?.uid,
-                                        onOpenChat = { route = "Chat" }
+                                        me = profile,
+                                        onBack = { route = discoverBack },
+                                        onOpenChat = { peer ->
+                                            chatPeer = peer
+                                            route = "Chat"
+                                        }
                                     )
                                     "Connections" -> ConnectionsScreen(
                                         socialApi = socialApi,
                                         myUid = session?.uid,
+                                        me = profile,
                                         onBack = { route = "You" }
                                     )
                                     "Notifications" -> NotificationsScreen(
                                         socialApi = socialApi,
                                         myUid = session?.uid,
+                                        me = profile,
                                         onBack = { route = "You" },
                                         onNotice = { notice = it }
                                     )
@@ -391,6 +492,7 @@ private fun TrioDayApp(
                                         onProfileChanged = { reloadProfile() },
                                         onNotice = { notice = it },
                                         onBack = { route = "You" },
+                                        onOpenPrivacy = { legalBack = "Settings"; route = "Privacy" },
                                         onCheckUpdates = {
                                             scope.launch {
                                                 updateBusy = true; error = null; notice = null
@@ -407,9 +509,9 @@ private fun TrioDayApp(
                                         },
                                         busy = updateBusy
                                     )
-                                    "Help" -> HelpScreen(onBack = { route = "Today" })
+                                    "Help" -> HelpScreen(me = profile, onBack = { route = "Today" })
                                     "Admin" -> if (isAdmin) {
-                                        AdminScreen(api = api, onNotice = { notice = it })
+                                        AdminScreen(api = api, me = profile, onNotice = { notice = it })
                                     } else {
                                         StateBox("🔒", "Admin only", "This area is restricted to Trio Day admins.", "Back to Today", onAction = { route = "Today" })
                                     }
@@ -427,7 +529,8 @@ private fun TrioDayApp(
                                             val next = if (lightMode) "dark" else "light"
                                             api.setPreference("theme", next)
                                             lightMode = next == "light"
-                                        }
+                                        },
+                                        onOpenProfile = { route = "You" }
                                     )
                                 }
                             }

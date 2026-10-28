@@ -1,4 +1,4 @@
-package com.trioday.app
+﻿package com.trioday.app
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -42,6 +43,7 @@ import kotlinx.coroutines.launch
 fun NotificationsScreen(
     socialApi: TrioSocialApi,
     myUid: String?,
+    me: UserProfile? = null,
     onBack: () -> Unit,
     onNotice: (String?) -> Unit
 ) {
@@ -70,8 +72,10 @@ fun NotificationsScreen(
 
     Column(Modifier.fillMaxSize().background(c.bg)) {
         ScreenTopBar(
-            "🔔 Notifications",
+            "Notifications",
             onBack = onBack,
+            avatarName = me?.name,
+            avatarUrl = me?.photoUrl,
             trailing = {
                 TextButton(
                     enabled = alerts.any { !it.read } && !loading,
@@ -104,7 +108,7 @@ fun NotificationsScreen(
         ) {
             if (loading) items(5) { ActivitySkeletonRow() }
             else {
-                items(alerts, key = { it.id }) { alert ->
+                itemsIndexed(alerts, key = { index, alert -> alert.id.ifBlank { "notif-$index" } }) { _, alert ->
                     Column(
                         Modifier
                             .fillMaxWidth()

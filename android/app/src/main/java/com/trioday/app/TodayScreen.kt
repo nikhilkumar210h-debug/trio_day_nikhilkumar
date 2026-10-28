@@ -60,7 +60,8 @@ fun TodayScreen(
     onSignOut: () -> Unit,
     onProfileChanged: () -> Unit,
     onToggleLanguage: () -> Unit,
-    onToggleTheme: () -> Unit
+    onToggleTheme: () -> Unit,
+    onOpenProfile: () -> Unit
 ) {
     val scope = rememberCoroutineScope()
     val c = TrioTheme.colors
@@ -71,10 +72,12 @@ fun TodayScreen(
     var showingAll by remember { mutableStateOf(false) }
     var savingCategory by remember { mutableStateOf(false) }
     var retryToken by remember { mutableStateOf(0) }
+    var showGoalPicker by remember { mutableStateOf(false) }
 
     val guestMode = session == null
     val needsOnboarding = session != null && profile != null &&
         (!profile.onboardingComplete || profile.selectedCategory.isBlank())
+    val showGoalCards = needsOnboarding || showGoalPicker
     val selectedCategory = profile?.selectedCategory?.takeIf { it.isNotBlank() }
     val guestRemaining = (GUEST_TASK_LIMIT - api.guestTasksPlayed()).coerceAtLeast(0)
 
@@ -86,12 +89,16 @@ fun TodayScreen(
             loading = true; loadError = null
             try {
                 activities = api.loadActivities(guestAllowed = true, limit = GUEST_TASK_LIMIT)
+            } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                throw cancelled // normal recomposition cancellation — not an error
             } catch (e: Exception) { loadError = e.message ?: "Could not load activities." }
             loading = false
-        } else if (!needsOnboarding) {
+        } else if (!showGoalCards) {
             loading = true; loadError = null
             try {
                 activities = api.loadActivities(category = activeCategory, limit = 12)
+            } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                throw cancelled
             } catch (e: Exception) { loadError = e.message ?: "Could not load activities." }
             loading = false
         } else {
@@ -108,6 +115,16 @@ fun TodayScreen(
         ) {
             BrandHeader()
             Row(verticalAlignment = Alignment.CenterVertically) {
+                // Signed-in identity chip (mirrors the webapp header avatar)
+                profile?.let { p ->
+                    TrioAvatar(
+                        name = p.name.ifBlank { "You" },
+                        photoUrl = p.photoUrl,
+                        size = 30.dp,
+                        modifier = Modifier.clickable { onOpenProfile() }
+                    )
+                    Spacer(Modifier.width(8.dp))
+                }
                 // Theme toggle — mirrors the webapp header control (all users)
                 Text(
                     if (TrioTheme.colors.isLight) "🌙" else "☀️",
@@ -132,10 +149,6 @@ fun TodayScreen(
                         .clickable { onToggleLanguage() }
                         .padding(horizontal = 12.dp, vertical = 5.dp)
                 )
-                Spacer(Modifier.width(8.dp))
-                TextButton(onClick = if (session != null) onSignOut else onSignIn) {
-                    Text(if (session != null) "Sign out" else "Sign in", color = c.inkMuted, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
-                }
             }
         }
 
@@ -241,8 +254,8 @@ fun TodayScreen(
                     }
                 }
 
-                // ── ONBOARDING (growth path cards) ────────────────────────
-                needsOnboarding -> {
+                // ── ONBOARDING / GOAL PICKER (growth path cards) ───────────
+                showGoalCards -> {
                     item {
                         Column(
                             Modifier.fillMaxWidth().padding(vertical = 24.dp),
@@ -268,6 +281,8 @@ fun TodayScreen(
                                     scope.launch {
                                         try {
                                             api.saveCategory(goal.key)
+                                            showGoalPicker = false
+                                            showingAll = false
                                             onProfileChanged()
                                         } catch (e: Exception) {
                                             loadError = e.message
@@ -313,7 +328,7 @@ fun TodayScreen(
                                         modifier = Modifier.padding(top = 4.dp)
                                     )
                                 }
-                                TextButton(onClick = { showingAll = false; onProfileChanged() }) {
+                                TextButton(onClick = { showingAll = false; showGoalPicker = true }) {
                                     Text(T.t("change_goal", language), color = c.primaryText, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                                 }
                             }
@@ -340,7 +355,7 @@ fun TodayScreen(
                                     title = T.t("no_activities", language),
                                     body = "${T.t("no_activities_hint", language)} (${selectedCategory})",
                                     actionLabel = T.t("show_all", language), onAction = { showingAll = true },
-                                    secondActionLabel = T.t("change_goal", language), onSecondAction = { showingAll = false }
+                                    secondActionLabel = T.t("change_goal", language), onSecondAction = { showGoalPicker = true }
                                 )
                             }
                         }

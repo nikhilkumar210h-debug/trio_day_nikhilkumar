@@ -403,6 +403,8 @@ fun XpProgressTrack(xpIntoLevel: Long, xpPerLevel: Long = 100) {
 fun ScreenTopBar(
     title: String,
     onBack: (() -> Unit)? = null,
+    avatarName: String? = null,
+    avatarUrl: String? = null,
     trailing: @Composable (() -> Unit)? = null
 ) {
     Row(
@@ -414,7 +416,18 @@ fun ScreenTopBar(
     ) {
         if (onBack != null) {
             TextButton(onClick = onBack) { Text("‹", color = TrioTheme.colors.primaryText, fontSize = 26.sp, fontWeight = FontWeight.Bold) }
-        } else {
+        }
+        if (avatarName != null) {
+            // Signed-in identity — the user's (or peer's) photo replaces the
+            // brand mark, matching the webapp header's auth chip. Shown either
+            // standalone or beside a back button in detail screens.
+            TrioAvatar(
+                name = avatarName,
+                photoUrl = avatarUrl.orEmpty(),
+                size = 30.dp,
+                modifier = Modifier.padding(start = if (onBack != null) 0.dp else 6.dp)
+            )
+        } else if (onBack == null) {
             BrandMark(size = 30.dp)
         }
         Text(
@@ -439,6 +452,7 @@ fun TrioInput(
     modifier: Modifier = Modifier,
     placeholder: String = "",
     password: Boolean = false,
+    showToggle: Boolean = false,
     singleLine: Boolean = true,
     minLines: Int = 1,
     maxLines: Int = if (singleLine) 1 else 5,
@@ -446,6 +460,20 @@ fun TrioInput(
     maxLength: Int = 2000,
     trailing: @Composable (() -> Unit)? = null
 ) {
+    var passwordVisible by remember { mutableStateOf(false) }
+    val effectiveTrailing: (@Composable (() -> Unit))? = when {
+        password && showToggle -> {
+            {
+                TextButton(
+                    onClick = { passwordVisible = !passwordVisible },
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 10.dp)
+                ) {
+                    Text(if (passwordVisible) "🙈" else "👁", fontSize = 16.sp)
+                }
+            }
+        }
+        else -> trailing
+    }
     OutlinedTextField(
         value = value,
         onValueChange = { if (it.length <= maxLength) onValueChange(it) },
@@ -457,7 +485,8 @@ fun TrioInput(
         maxLines = maxLines,
         shape = RoundedCornerShape(14.dp),
         keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
-        visualTransformation = if (password) PasswordVisualTransformation() else VisualTransformation.None,
+        visualTransformation = if (password && !passwordVisible) PasswordVisualTransformation() else VisualTransformation.None,
+        trailingIcon = effectiveTrailing,
         colors = OutlinedTextFieldDefaults.colors(
             focusedBorderColor = Primary,
             unfocusedBorderColor = TrioTheme.colors.border,
@@ -466,8 +495,7 @@ fun TrioInput(
             focusedTextColor = TrioTheme.colors.ink,
             unfocusedTextColor = TrioTheme.colors.ink,
             cursorColor = Primary
-        ),
-        trailingIcon = trailing
+        )
     )
 }
 

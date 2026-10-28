@@ -1,4 +1,4 @@
-package com.trioday.app
+﻿package com.trioday.app
 
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -52,6 +52,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun AdminScreen(
     api: TrioApi,
+    me: UserProfile? = null,
     onNotice: (String?) -> Unit
 ) {
     val scope = rememberCoroutineScope()
@@ -247,7 +248,9 @@ fun AdminScreen(
     // ── Activity list ────────────────────────────────────────────────────
     Column(Modifier.fillMaxSize().background(c.bg)) {
         ScreenTopBar(
-            "🛠️ Admin",
+            "Admin",
+            avatarName = me?.name,
+            avatarUrl = me?.photoUrl,
             trailing = {
                 TextButton(onClick = { creatingActivity = true; error = null }) {
                     Text("＋ Activity", color = c.primaryText, fontSize = 12.sp, fontWeight = FontWeight.Bold)

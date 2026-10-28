@@ -1,4 +1,4 @@
-package com.trioday.app
+﻿package com.trioday.app
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -45,6 +45,8 @@ import kotlinx.coroutines.launch
 fun DiscoverScreen(
     socialApi: TrioSocialApi,
     myUid: String?,
+    me: UserProfile? = null,
+    onBack: (() -> Unit)? = null,
     onOpenChat: (TrioUser) -> Unit
 ) {
     val scope = rememberCoroutineScope()
@@ -89,7 +91,12 @@ fun DiscoverScreen(
     }
 
     Column(Modifier.fillMaxSize().background(c.bg)) {
-        ScreenTopBar("🔍 Discover")
+        ScreenTopBar(
+            "Discover",
+            onBack = onBack,
+            avatarName = me?.name,
+            avatarUrl = me?.photoUrl
+        )
 
         if (myUid == null) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -319,6 +326,7 @@ fun MemberDetailScreen(
 fun ConnectionsScreen(
     socialApi: TrioSocialApi,
     myUid: String?,
+    me: UserProfile? = null,
     onBack: () -> Unit
 ) {
     val c = TrioTheme.colors
@@ -342,7 +350,7 @@ fun ConnectionsScreen(
     }
 
     Column(Modifier.fillMaxSize().background(c.bg)) {
-        ScreenTopBar("🤝 Connections", onBack = onBack)
+        ScreenTopBar("Connections", onBack = onBack, avatarName = me?.name, avatarUrl = me?.photoUrl)
         Row(
             Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(6.dp)

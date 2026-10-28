@@ -1,4 +1,4 @@
-package com.trioday.app
+﻿package com.trioday.app
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -48,6 +48,7 @@ fun SettingsScreen(
     onProfileChanged: () -> Unit,
     onNotice: (String?) -> Unit,
     onBack: () -> Unit,
+    onOpenPrivacy: () -> Unit,
     onCheckUpdates: () -> Unit,
     busy: Boolean
 ) {
@@ -60,7 +61,7 @@ fun SettingsScreen(
     }
 
     Column(Modifier.fillMaxSize().background(c.bg)) {
-        ScreenTopBar("⚙️ Settings", onBack = onBack)
+        ScreenTopBar("Settings", onBack = onBack, avatarName = profile?.name, avatarUrl = profile?.photoUrl)
         ErrorBanner(error)
         LazyColumn(
             Modifier.fillMaxSize(),
@@ -154,6 +155,34 @@ fun SettingsScreen(
                         modifier = Modifier.weight(1f).padding(start = 10.dp)
                     )
                     if (active) Text("✓", color = c.primaryText, fontSize = 15.sp, fontWeight = FontWeight.ExtraBold)
+                }
+            }
+
+            // ── Legal ────────────────────────────────────────────────────
+            item { SectionLabel("LEGAL") }
+            item {
+                Column(
+                    Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp))
+                        .background(c.surface)
+                        .border(1.dp, c.border, RoundedCornerShape(18.dp))
+                        .padding(vertical = 6.dp)
+                ) {
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .clickable { onOpenPrivacy() }
+                            .padding(horizontal = 16.dp, vertical = 13.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("🔒", fontSize = 16.sp)
+                        Spacer(Modifier.padding(horizontal = 3.dp))
+                        Text(
+                            "Privacy Policy",
+                            color = c.ink, fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.weight(1f).padding(start = 10.dp)
+                        )
+                        Text("›", color = c.inkDim, fontSize = 16.sp)
+                    }
                 }
             }
 

@@ -182,8 +182,10 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if signedIn();
       // A new profile must never seed protected gamification fields.
+      // NOTE: Map.hasAny() mis-evaluates on this database's rules engine —
+      // Map.keys().hasAny(List) is the equivalent, verified formulation.
       allow create: if owner(userId)
-        && !request.resource.data.hasAny(gamificationKeys());
+        && !request.resource.data.keys().hasAny(gamificationKeys());
       allow update: if owner(userId)
       && noGamificationWrite()
       && (!request.resource.data.diff(resource.data).affectedKeys().hasAll(['userId']) || canChangeUserId());

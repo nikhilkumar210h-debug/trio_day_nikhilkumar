@@ -38,7 +38,13 @@ The app is a full native port of the web experience:
   guest-allowed toggles and cover-image uploads — through the same
   gamification Worker endpoints the web admin page uses.
 - **Settings**: dark/light theme, EN/HI language, daily goal switcher,
-  sideload update checker.
+  sideload update checker and a native Privacy Policy viewer.
+- **Legal (fully native, no WebView)**: the Privacy Policy and Terms &
+  Conditions are built into the app (copied from the webapp's legal pages,
+  effective 18 October 2026). The login screen shows a mandatory, unchecked
+  acceptance checkbox — Sign in, Create account and Google remain disabled
+  until the user accepts the Terms & Conditions and Privacy Policy. Nothing
+  inside the app can open external browser tabs.
 
 Everything XP-, streak-, shield- and badge-related stays server
 authoritative: completions are verified and awarded by the

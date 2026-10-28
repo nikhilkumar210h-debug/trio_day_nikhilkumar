@@ -82,3 +82,12 @@ backend/__pycache__/
 .playwright-mcp/
 local_changes_backup.patch
 temp_secret.bin
+
+# Python virtual environments
+.venv/
+venv/
+
+# Mobile app build configs (contain API keys)
+google-services.json
+GoogleService-Info.plist
+android/app/google-services.json

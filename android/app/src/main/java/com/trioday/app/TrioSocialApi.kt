@@ -129,11 +129,15 @@ class TrioSocialApi(private val api: TrioApi) {
                 limit = 50
             ).mapNotNull(::parseMessage)
             val latest = recent.firstOrNull()
-            if (latest == null) continue
             val unread = recent.count { it.uid == peerId && it.seen == 0L }
+            // Include connections without messages yet — so a fresh chat
+            // started from a member profile is visible in the inbox.
             conversations.add(ChatThread(peer, latest, unread))
         }
-        conversations.sortedByDescending { it.lastMessage?.createdAtMs ?: 0L }
+        conversations.sortedWith(
+            compareByDescending<ChatThread> { it.lastMessage?.createdAtMs ?: 0L }
+                .thenBy { it.peer.name.lowercase() }
+        )
     }
 
     /** Number of unread messages a peer has sent (for the inbox unread dot). */
@@ -222,8 +226,13 @@ class TrioSocialApi(private val api: TrioApi) {
         listCollection("users/${pathSegment(current.uid)}/notifications", 50)
             .mapNotNull { document ->
                 val fields = firestoreFields(document)
+                // Firestore REST list responses expose the id only inside the
+                // document "name" path. Using a blank id here previously broke
+                // the LazyColumn (duplicate keys) and mark-as-read writes.
+                val id = document.optString("name").substringAfterLast('/')
+                    .ifBlank { document.optString("id") }
                 TrioNotification(
-                    id = document.optString("id"),
+                    id = id,
                     type = fields.optString("type"),
                     actorName = fields.optString("actorName"),
                     actorUid = fields.optString("actorUid"),

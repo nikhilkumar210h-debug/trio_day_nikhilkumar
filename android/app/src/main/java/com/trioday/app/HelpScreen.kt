@@ -1,4 +1,4 @@
-package com.trioday.app
+﻿package com.trioday.app
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -51,10 +51,10 @@ private val HelpFaqs = listOf(
 )
 
 @Composable
-fun HelpScreen(onBack: () -> Unit) {
+fun HelpScreen(me: UserProfile? = null, onBack: () -> Unit) {
     val c = TrioTheme.colors
     Column(Modifier.fillMaxSize().background(c.bg)) {
-        ScreenTopBar("❓ Help Center", onBack = onBack)
+        ScreenTopBar("Help Center", onBack = onBack, avatarName = me?.name, avatarUrl = me?.photoUrl)
         LazyColumn(
             Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(12.dp),
